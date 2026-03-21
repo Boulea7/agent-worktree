@@ -281,3 +281,13 @@ export interface ExecutionSessionSpawnCandidate {
   context: ExecutionSessionContext;
   readiness: ExecutionSessionSpawnReadiness;
 }
+
+export interface ExecutionSessionSpawnTargetInput {
+  candidate: ExecutionSessionSpawnCandidate;
+}
+
+export interface ExecutionSessionSpawnTarget {
+  attemptId: string;
+  runtime: string;
+  sessionId: string;
+}
