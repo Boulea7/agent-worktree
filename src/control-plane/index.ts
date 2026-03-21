@@ -11,6 +11,7 @@ export {
 } from "./runtime-state.js";
 export { deriveExecutionSessionContext } from "./runtime-state-context.js";
 export { deriveExecutionSessionLifecycleDisposition } from "./runtime-state-lifecycle-disposition.js";
+export { deriveExecutionSessionSpawnCandidate } from "./runtime-state-spawn-candidate.js";
 export { deriveExecutionSessionSpawnReadiness } from "./runtime-state-spawn-readiness.js";
 export { deriveExecutionSessionCloseCandidate } from "./runtime-state-close-candidate.js";
 export { deriveExecutionSessionCloseReadiness } from "./runtime-state-close-readiness.js";
@@ -47,6 +48,8 @@ export {
   type ExecutionSessionRecordSource,
   type ExecutionSessionSelector,
   type ExecutionSessionSpawnBlockingReason,
+  type ExecutionSessionSpawnCandidate,
+  type ExecutionSessionSpawnCandidateInput,
   type ExecutionSessionSpawnReadiness,
   type ExecutionSessionSpawnReadinessInput,
   type ExecutionSessionView,

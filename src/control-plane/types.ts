@@ -271,3 +271,13 @@ export interface ExecutionSessionSpawnReadiness {
   withinChildLimit: boolean;
   withinDepthLimit: boolean;
 }
+
+export interface ExecutionSessionSpawnCandidateInput {
+  selector: ExecutionSessionSelector;
+  view: ExecutionSessionView;
+}
+
+export interface ExecutionSessionSpawnCandidate {
+  context: ExecutionSessionContext;
+  readiness: ExecutionSessionSpawnReadiness;
+}
