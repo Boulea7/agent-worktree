@@ -1,0 +1,43 @@
+{
+  "events": [
+    {
+      "kind": "unknown",
+      "rawType": "thread.started",
+      "payload": {
+        "thread_id": "thr_demo",
+        "type": "thread.started"
+      },
+      "index": 0
+    },
+    {
+      "kind": "unknown",
+      "rawType": "turn.started",
+      "payload": {
+        "type": "turn.started"
+      },
+      "index": 1
+    },
+    {
+      "kind": "message_completed",
+      "rawType": "item.completed",
+      "payload": {
+        "id": "item_0",
+        "text": "ok",
+        "type": "agent_message"
+      },
+      "index": 2
+    },
+    {
+      "kind": "run_completed",
+      "rawType": "turn.completed",
+      "payload": {
+        "type": "turn.completed",
+        "usage": {
+          "input_tokens": 1,
+          "output_tokens": 1
+        }
+      },
+      "index": 3
+    }
+  ]
+}

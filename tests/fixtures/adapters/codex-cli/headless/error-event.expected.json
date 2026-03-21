@@ -1,0 +1,14 @@
+{
+  "events": [
+    {
+      "kind": "error",
+      "rawType": "error",
+      "payload": {
+        "type": "error",
+        "message": "codex failed",
+        "code": "EPIPE"
+      },
+      "index": 0
+    }
+  ]
+}

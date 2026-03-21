@@ -1,0 +1,38 @@
+# Local AI handoff and research state
+.local/
+*.local.md
+
+# Local tool state
+.claude/settings.local.json
+.gemini/.env
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Local MCP wiring
+.mcp.json
+!.mcp.json.example
+
+# Local eval and transcript outputs
+evals/runs/
+evals/results/
+tmp/ai/
+transcripts/
+
+# OS and editor noise
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Python
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+dist/
+coverage/

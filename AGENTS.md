@@ -1,0 +1,126 @@
+# agent-worktree Shared Instructions
+
+This file is the canonical, committed instruction source for repository-aware coding agents.
+
+## Project Purpose
+
+`agent-worktree` is building a git-native orchestration layer for coding agents that:
+
+- uses isolated worktrees as the scheduling primitive
+- treats deterministic validation as the selection primitive
+- stays compatible with multiple agent tools instead of locking to one vendor
+
+## Current Phase
+
+This repository is in an early implementation phase.
+The current workspace still has no usable Git `HEAD`, so maintainer workflows and documentation must not assume `git rev-parse HEAD` succeeds yet.
+
+Agents working in this repository should prioritize:
+
+1. contract fidelity for config, manifests, and machine-readable CLI behavior
+2. test coverage and deterministic validation
+3. thin worktree lifecycle slices before richer runtime orchestration
+4. explicit public/private doc boundaries
+
+The currently implemented Phase 2 slice includes:
+
+- `attempt create`
+- `attempt list`
+- safety-first `attempt cleanup`
+
+The current thin Phase 3 foundation also includes:
+
+- static adapter descriptors derived from the shared compatibility vocabulary
+- capability-first adapter resolution
+- render-only command contracts for the initial `codex-cli` reference adapter
+- structured degradation for unsupported adapter capabilities
+- a bounded internal `codex-cli` execution contract for detect, `codex exec --json`, minimal canonical event parsing, and an env-gated smoke scaffold
+- a minimal internal session-tree/control-plane foundation derived from attempt provenance and bounded execution observation, implemented as pure helpers only
+- a bounded internal execution-to-control-plane bridge for `codex-cli`, where supplied attempt lineage may derive an internal session snapshot in the execution result
+- a minimal internal runtime-state foundation that may derive execution-session records and indexes from lineage, observation, and optional internal session snapshots without persisting them
+- a minimal internal runtime-state read model that may build queryable execution-session views from derived records without becoming a lifecycle manager or registry
+- a minimal internal runtime-context layer that may derive a single-consumer execution-session context from the runtime-state read model without becoming lifecycle control, persistence, or runtime truth
+- a minimal internal lifecycle-disposition layer that may derive shared terminal/session-known/descendant-impact facts from runtime-context without becoming lifecycle truth
+- a minimal internal spawn-readiness layer that may derive guardrail-aware delegated-child preflight blockers from runtime-context plus runtime-state views without becoming actual spawn support, public selectors, or lifecycle truth
+- a minimal internal wait-readiness layer that may derive wait preconditions and blocking reasons from runtime-context without becoming actual wait support, close support, public selectors, or lifecycle truth
+- a minimal internal wait-candidate layer that may combine runtime-context and wait-readiness into a single derived object for future internal wait-oriented consumers without becoming actual wait support, close support, public selectors, or lifecycle truth
+- a minimal internal wait-target layer that may derive a future internal wait-oriented target from an existing wait-candidate without becoming actual wait support, close support, public selectors, or lifecycle truth
+- a minimal internal close-oriented helper chain that may derive capability-aware close-readiness, close-candidates, and minimal close-targets from runtime-context without becoming actual close support, public selectors, or lifecycle truth
+
+Cleanup is expected to keep manifests as audit records, target a single `attemptId`, and fail loudly on invalid manifests or unsafe path conditions.
+
+Do not assume advanced runtime orchestration exists yet.
+The current adapter layer only launches a bounded internal execution path for `codex-cli`.
+It does not provide interactive runtime control, attach or resume behavior, general session lifecycle management, MCP transport execution, manifest-backed execution persistence, or public spawn/wait/close semantics.
+Treat the current smoke coverage as an optional compatibility probe only: the narrower env-gated Vitest harness currently passes in this workspace, but it still remains non-default validation rather than a public reliability guarantee and may stay green even when a real `codex exec --json` success baseline is unavailable locally.
+Treat executable probing the same way: it is an internal `codex-cli` execution-helper detail used to locate a `codex` binary that really supports `exec --json`, not a generic runtime-resolution framework or a public adapter guarantee.
+The bounded parser may preserve obvious non-JSON prelude lines, including bracket-prefixed log noise, as `unknown` events, but malformed JSON-looking records still remain loud failures.
+The current manifest layer may also record thin attempt provenance through `sourceKind` and an optional `parentAttemptId`. Treat those fields as additive audit metadata only; they do not imply delegated execution, fork/resume runtime support, or session-tree lifecycle behavior.
+The current internal control-plane layer may derive node references, lifecycle summaries, and parent/child indexes from provenance and observation, but those derived values are non-persistent and must not be written into `manifest.session` or exposed as public CLI contract.
+The current `codex-cli` execution path may consume supplied attempt lineage and attach an internal session snapshot to execution results, but that snapshot remains adapter-internal metadata only and does not imply wait, close, attach, or resume support.
+The current internal runtime-state layer, when present, must remain derived, non-persistent, and non-manifest-backed: execution-session records or indexes are future-facing internal inputs only and must not be treated as public lifecycle state or orchestration truth.
+The current internal runtime-state read model, when present, must remain query-only and deterministic: selector helpers or parent/child views may serve future internal consumers, but they must not become mutable registries, wait/close controllers, or public lifecycle APIs.
+The current internal runtime-context layer, when present, must remain derived, non-persistent, non-manifest-backed, and non-public: it may prepare a single execution-session context for future internal wait/close-oriented consumers, but it must not become wait/close/attach/resume support, a mutable registry or manager, or a source of lifecycle truth.
+The current internal lifecycle-disposition layer, when present, must remain derived, non-persistent, non-manifest-backed, and non-public: it may centralize shared terminal/session-known/descendant-impact facts for sibling wait-readiness and close-readiness helpers, but it must not resolve adapter capability, validate parent graphs, generate blocker vocabularies, become a mutable registry or manager, write into manifests, or become a source of lifecycle truth.
+The current internal spawn-readiness layer, when present, must remain derived, non-persistent, non-manifest-backed, and non-public: it may combine existing runtime-context facts, parent/child lineage visibility, and optional guardrails into delegated-child preflight blockers, but it must not become actual spawn support, public selectors, manifest-backed guardrail truth, or a mutable lifecycle manager.
+The current internal wait-readiness layer, when present, must remain derived, non-persistent, non-manifest-backed, and non-public: it may prepare internal wait preconditions or blocking reasons for future wait-oriented consumers, but it must not become actual wait support, close support, public selectors, or a mutable lifecycle manager.
+The current internal wait-candidate layer, when present, must remain derived, non-persistent, non-manifest-backed, and non-public: it may compose an existing execution-session context plus wait-readiness into a single-consumer internal object for future wait-oriented consumers, but it must not become actual wait support, close support, public selectors, a mutable lifecycle manager, or a source of lifecycle truth.
+The current internal wait-target layer, when present, must remain derived, non-persistent, non-manifest-backed, and non-public: it may project a minimal future internal wait-oriented target from an existing wait-candidate, but it must not become actual wait support, close support, public selectors, a mutable lifecycle manager, or a source of lifecycle truth.
+The current internal close-oriented helper chain, when present, must remain derived, non-persistent, non-manifest-backed, and non-public: it may prepare capability-aware close-readiness blockers, composed close-candidates, or minimal internal close-targets from runtime-context, but it must not become actual close support, public selectors, a mutable lifecycle manager, or a source of lifecycle truth.
+
+## Canonical Sources
+
+When working in this repository, prefer these files in order:
+
+1. `SPEC.md`
+2. `README.md`
+3. `docs/index.md`
+4. `docs/specs/*`
+5. `docs/compat/*`
+6. `docs/research/*`
+
+## Local-Only Handoff Notes
+
+A visible local handoff file may exist at `PROJECT_STATUS.local.md`.
+
+- It is intentionally ignored by Git.
+- It may contain current progress, next steps, and local research pointers.
+- Treat it as operational context, not public policy.
+
+## Repository Rules
+
+- Keep public documents sanitized and reusable.
+- Do not place secrets, machine-specific paths, transcripts, or raw scratch notes in committed docs.
+- Prefer updating existing canonical docs over creating overlapping documents.
+- Treat compatibility claims carefully: document supported, experimental, and future targets separately.
+
+## Compatibility Intent
+
+Tier 1:
+
+- Claude Code
+- Codex CLI
+- Gemini CLI
+- OpenCode
+
+Experimental:
+
+- OpenClaw
+- Other coding-agent CLIs through a generic adapter contract
+
+## Implementation Boundary
+
+The current implementation boundary should stay narrow:
+
+- prioritize `Phase 1: Core Scaffold` and thin, testable `Phase 2` slices
+- keep machine-readable output and runtime manifests clearer than human-readable text
+- avoid introducing runtime adapters, verification ranking, or speculative orchestration features before their contracts are justified
+- keep internal architecture flexible unless a spec explicitly defines a public contract
+- keep adapter work thin and contract-first even when a later Phase 3 sub-slice introduces a bounded internal `codex-cli` execution contract
+
+## Future Work Tracking
+
+Use public RFCs and ADRs for durable decisions.
+Use the local handoff file for session continuity and short-lived operational notes.
+Once this repository has a usable Git commit baseline, future implementation windows should actively use non-destructive Git commits and branches as archival checkpoints for each completed thin slice or debugging milestone.
+Until then, maintainers must not assume commit-backed checkpoints, commit-derived worktree fan-out, or other `HEAD`-dependent flows are available in this workspace.

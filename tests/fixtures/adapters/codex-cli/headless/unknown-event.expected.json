@@ -1,0 +1,44 @@
+{
+  "events": [
+    {
+      "kind": "message_delta",
+      "rawType": "message_delta",
+      "payload": {
+        "delta": {
+          "text": "o"
+        },
+        "type": "message_delta"
+      },
+      "index": 0
+    },
+    {
+      "kind": "unknown",
+      "rawType": "weird.event",
+      "payload": {
+        "foo": "bar",
+        "type": "weird.event"
+      },
+      "index": 1
+    },
+    {
+      "kind": "message_completed",
+      "rawType": "message_completed",
+      "payload": {
+        "message": {
+          "text": "ok"
+        },
+        "type": "message_completed"
+      },
+      "index": 2
+    },
+    {
+      "kind": "run_completed",
+      "rawType": "run_completed",
+      "payload": {
+        "status": "ok",
+        "type": "run_completed"
+      },
+      "index": 3
+    }
+  ]
+}

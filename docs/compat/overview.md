@@ -1,0 +1,107 @@
+# Compatibility Overview
+
+## Philosophy
+
+`agent-worktree` should normalize intent-level behavior, not vendor-specific primitives.
+
+That means:
+
+- one canonical guidance model
+- one capability vocabulary
+- many outward adapters
+
+## Current Phase 3 Boundary
+
+The current Phase 3 implementation boundary is intentionally thin.
+
+The first slice landed as a static adapter foundation.
+A later Phase 3 sub-slice now extends only `codex-cli` into a bounded internal execution contract rather than full runtime support.
+
+The currently implemented boundary is expected to cover:
+
+- adapter descriptors derived from the shared capability vocabulary
+- capability-first runtime resolution
+- machine-checkable command rendering contracts
+- structured degradation for unsupported capabilities
+- real `codex-cli` detection for the `codex exec --json` path
+- a bounded internal `codex exec --json` execution contract
+- minimal canonical event parsing for the `codex-cli` headless path
+- internal execution observation summaries derived from canonical events
+- an env-gated smoke scaffold for narrow compatibility probing
+
+Within that boundary, executable probing remains internal to the `codex-cli` execution helper.
+It may resolve a different executable than shell `command -v codex` when `PATH` contains same-name shadow binaries, but that behavior is not part of the public adapter surface and must not be generalized into a runtime-wide command-resolution framework.
+The bounded parser also remains intentionally narrow: obvious non-JSON prelude lines, including bracket-prefixed log noise, may normalize to `unknown`, while malformed JSON-looking records still fail loudly.
+The same boundary now allows a thin internal observation layer on top of canonical events, but that observation is still diagnostic execution metadata rather than a public session or persistence protocol.
+
+The first concrete reference path is intentionally narrow:
+
+- `codex-cli` has the only concrete adapter implementation, and that implementation remains limited to detection, command rendering, bounded internal execution, parsing, degradation, and optional smoke scaffolding
+- any execution observation summaries remain internal to that bounded path and are not treated as a public compatibility promise
+- other runtimes remain descriptor-level compatibility targets until a later execution-backed phase
+
+Adapter descriptors in this phase are expected to describe only the capabilities implemented by the thin adapter foundation itself.
+They must not be treated as a one-to-one copy of the broader tool-level compatibility matrix.
+
+It is still not expected to cover:
+
+- session attach, stop, or resume behavior
+- interactive runtime control
+- general subprocess orchestration beyond the bounded internal `codex-cli` path
+- MCP transport execution
+- public execution CLI commands
+- manifest-backed execution persistence
+- internal observation summaries promoted into manifest-backed lifecycle state
+
+Compatibility docs in this phase describe mapping and support boundaries, not a promise that a given runtime already works end to end inside `agent-worktree`. The current `codex-cli` boundary is direct-shell verified, while the Vitest smoke harness remains narrower and is not the repository's default validation path.
+
+## Support Tiers
+
+### Tier 1
+
+First-class targets:
+
+- Claude Code
+- Codex CLI
+- Gemini CLI
+- OpenCode
+
+Tier 1 means the repository should maintain:
+
+- explicit compatibility docs
+- public mapping rules
+- future smoke-test expectations
+
+### Experimental
+
+Documented but lower-commitment targets:
+
+- OpenClaw
+- other coding-agent CLIs
+
+Experimental means:
+
+- best-effort compatibility
+- smaller guaranteed surface
+- explicit caveats in docs
+
+## What We Normalize
+
+The future implementation should normalize:
+
+- execution mode
+- session lifecycle
+- safety intent
+- project guidance
+- machine-readable output
+- MCP and extension capabilities
+
+In the current thin Phase 3 slice, only the static contract layer is expected to be normalized.
+The only implemented execution backend is the bounded internal `codex-cli` path.
+Runtime lifecycle behavior, cross-runtime parity, and broader execution surfaces remain future work even when a runtime has a documented adapter descriptor.
+
+## Canonical Shared Guidance
+
+For this repository, the canonical committed instruction source is `AGENTS.md`.
+
+Thin compatibility files such as `CLAUDE.md` and `GEMINI.md` exist to help specific tools without creating duplicated policy.

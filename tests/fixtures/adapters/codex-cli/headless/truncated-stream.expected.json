@@ -1,0 +1,23 @@
+{
+  "events": [
+    {
+      "kind": "unknown",
+      "rawType": "thread.started",
+      "payload": {
+        "thread_id": "thr_demo",
+        "type": "thread.started"
+      },
+      "index": 0
+    },
+    {
+      "kind": "message_completed",
+      "rawType": "item.completed",
+      "payload": {
+        "id": "item_0",
+        "text": "partial",
+        "type": "agent_message"
+      },
+      "index": 1
+    }
+  ]
+}

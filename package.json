@@ -1,0 +1,29 @@
+{
+  "name": "agent-worktree",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A git-native, worktree-native orchestration layer for coding agents.",
+  "type": "module",
+  "bin": {
+    "agent-worktree": "dist/cli/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "commander": "^14.0.2",
+    "yaml": "^2.8.1",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^24.7.2",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

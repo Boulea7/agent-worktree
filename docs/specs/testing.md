@@ -1,0 +1,361 @@
+# Testing Strategy
+
+This document defines the intended testing expectations for future implementation work.
+
+The goal is to make later coding sessions predictable enough that an automated coding agent can work against explicit quality gates instead of guessing.
+
+## Principles
+
+- tests are part of the engineering contract
+- deterministic checks outrank subjective confidence
+- unit tests cover silent logic regressions
+- integration tests cover workflow boundaries
+- Tier 1 compatibility should eventually have smoke coverage
+
+## Test Layers
+
+### Unit Tests
+
+Unit tests should be the default for:
+
+- config parsing
+- config validation
+- implemented precedence resolution
+- branch and worktree naming
+- runtime manifest serialization
+- manifest status vocabulary and serialization
+- capability mapping
+- safety-intent mapping
+- machine-readable output parsing
+- selection helpers
+- idempotency helpers
+- invalid-manifest classification
+- cleanup outcome serialization
+
+### Contract Tests
+
+Contract tests should validate:
+
+- JSON output schemas
+- runtime-manifest shape
+- config examples
+- generated compatibility files if generation is added later
+- default list visibility for cleaned attempts
+- additive provenance fields survive machine-readable create/list/cleanup flows
+- invalid manifests fail the command in machine-readable output
+- missing `manifest.json` files in attempt directories fail the command in machine-readable output
+- cleanup returns structured outcomes
+
+### Integration Tests
+
+Integration tests should validate:
+
+- attempt creation lifecycle
+- worktree lifecycle
+- session attach and stop behavior
+- checkpoint recording
+- merge and cleanup workflow
+- verification execution flow
+- local-only file boundaries
+- cleanup preserves the manifest record
+- cleanup preserves additive provenance metadata
+- invalid manifests fail loudly rather than being skipped
+
+### Tool Smoke Tests
+
+Once runtime execution is implemented, smoke coverage should exist for:
+
+- Claude Code
+- Codex CLI
+- Gemini CLI
+- OpenCode
+
+Smoke tests should verify:
+
+- tool detection
+- headless execution path
+- structured output parsing
+- guidance file loading
+
+Before real runtime execution exists, adapter-foundation work SHOULD rely on unit and contract tests rather than tool-launch smoke tests.
+In the current limited execution phase, `codex-cli` smoke coverage SHOULD remain an env-gated smoke scaffold and MUST NOT become part of the default repository test pass.
+The bounded internal execution contract MAY be re-verified through both direct-shell invocation and the narrower Vitest smoke harness when they pass locally, but that smoke coverage still remains a secondary compatibility probe rather than the primary repository validation path.
+The env-gated smoke scaffold SHOULD assert bounded detection, launch, and diagnostic capture rather than successful model completion; credential-dependent live-success baselines, such as real Codex execution that requires `OPENAI_API_KEY`, SHOULD be tracked separately and may drift by environment.
+
+## Unit Test Requirements By Subsystem
+
+## Config
+
+Must test:
+
+- missing required fields
+- unknown-key handling
+- reserved extension namespace behavior
+- implemented precedence rules
+- example config validity
+
+## Runtime Manifest
+
+Must test:
+
+- required field presence
+- opaque ID handling
+- additive unknown-field tolerance
+- status vocabulary validity
+- condition derivation later, if introduced
+- additive `repoRoot` handling
+- thin `sourceKind` / `parentAttemptId` validation rules
+- cleanup-state persistence when a worktree is removed
+- attempt directory and manifest `attemptId` consistency
+- backward compatibility for manifests that predate lineage/source fields
+
+## Worktree Logic
+
+Must test:
+
+- branch naming
+- handle naming
+- duplicate-attempt behavior
+- cleanup safety
+- repeat-operation handling
+- cleanup targets `--attempt-id`
+- cleaned attempts remain listable by default
+- invalid manifests fail explicitly
+- already-cleaned attempts return predictable idempotent results
+- missing-worktree convergence is covered explicitly
+- provenance metadata is preserved across create, list, and cleanup
+- lineage/source metadata does not get conflated with live `session` state
+
+## Adapter Layer
+
+Must test:
+
+- capability detection
+- command rendering
+- static descriptor resolution
+- missing-feature degradation
+- bounded executable probing behavior for `codex-cli`
+- detect and execution consistency across the shared probing helper boundary
+- canonical event normalization once a bounded execution path exists
+- parser fallback behavior for unknown events
+- line-oriented parse failures when malformed JSONL is encountered
+- bracket-prefixed parser-noise heuristics and malformed bracket-prefixed JSON-looking failures
+
+The earliest Phase 3 slice was static.
+In the current limited `codex-cli` execution sub-slice, tests SHOULD focus on resolver behavior, machine-checkable rendered commands, a bounded internal execution contract, minimal parser behavior, and structured degradation payloads.
+That includes executable probing contract tests for the default subprocess runner, explicit confirmation that injected runners do not silently inherit the default `PATH` scan policy, and fixture-driven parser tests for bracket-prefixed log noise versus malformed JSON-looking lines.
+If a thin internal execution observation summary is layered on top of canonical events, tests SHOULD verify its derivation from existing canonical events rather than treating it as a separate persistence or CLI contract.
+If a bounded execution path starts consuming attempt lineage to emit internal control-plane snapshots, tests SHOULD verify that invalid lineage is rejected before subprocess launch, that derived snapshots remain execution-result-only metadata, and that omitted lineage does not create synthetic control-plane output.
+If a separate internal runtime-state layer is added on top of execution results, tests SHOULD verify that execution-session records remain derived, non-persistent, and non-public, that omitted lineage does not create synthetic runtime-state records, and that deterministic indexes fail loudly on duplicate keys instead of merging mutable state.
+If a read-only query/view layer is added on top of internal runtime-state, tests SHOULD verify selector validation, lookup-by-attempt and lookup-by-session behavior, parent/child traversal, and explicit separation from mutable registry or lifecycle-manager semantics.
+Environment injection, general session lifecycle tests, MCP execution tests, and cross-runtime execution parity SHOULD wait for a later phase.
+
+## Internal Control Plane
+
+Must test:
+
+- pure derivation of node lineage from `attemptId` / `sourceKind` / `parentAttemptId`
+- bounded lifecycle-state classification from internal observation inputs
+- guardrail validation for additive internal limits such as depth or child count
+- parent/child indexing without parent-existence validation or delegated-runtime inference
+- explicit confirmation that internal control-plane helpers do not widen the public CLI or manifest persistence contract
+
+## Internal Runtime State
+
+Must test:
+
+- derived execution-session records built from attempt lineage, execution observation, and optional internal session snapshots
+- omitted-lineage behavior that returns no execution-session record
+- fallback derivation when an internal session snapshot is absent but bounded execution observation exists
+- deterministic indexing by `attemptId` and optional `sessionId`
+- loud failures for duplicate `attemptId` or duplicate non-empty `sessionId`
+- explicit confirmation that internal runtime-state helpers do not widen public CLI payloads or manifest persistence
+- read-only query/view helpers that resolve records by `attemptId` or `sessionId`
+- selector validation for missing, conflicting, or blank lookup keys
+- parent/child traversal that preserves input order and tolerates missing parents without treating them as runtime truth
+
+## Internal Runtime Context
+
+Must test:
+
+- context derivation from the existing read model plus a selector
+- lookup-by-`attemptId` and lookup-by-`sessionId` context resolution
+- loud failures for invalid selectors inherited from the read model contract
+- `undefined` results for selector misses without returning partial context objects
+- unresolved-parent handling that tolerates missing parent records without graph validation
+- child-record ordering that is preserved from the read model
+- explicit confirmation that internal runtime-context helpers do not widen public CLI payloads, manifest persistence, or lifecycle semantics
+
+## Internal Lifecycle Disposition
+
+Must test:
+
+- lifecycle-disposition derivation from an existing internal runtime-context
+- `alreadyFinal` derivation for terminal lifecycle states such as `completed`, `failed`, and `closed`
+- `hasKnownSession` derivation from existing context session knowledge without inventing new session truth
+- `wouldAffectDescendants` derivation from existing child-attempt presence without subtree policy expansion
+- unresolved-parent handling that remains neutral and does not become a new blocker source
+- explicit confirmation that internal lifecycle-disposition helpers do not resolve adapter capability, widen public CLI payloads, widen manifest persistence, or become lifecycle truth
+
+## Internal Spawn Readiness
+
+Must test:
+
+- spawn-readiness derivation from an existing internal runtime-context plus runtime-state view
+- guardrail carry-through from execution lineage into internal session snapshots and execution-session records
+- readiness success when the selected context is active, has a known session, and has no blocking child/depth guardrail violations
+- child-limit blocking when `maxChildren` is present and the selected context already has the maximum allowed child attempts
+- depth-limit blocking when `maxDepth` is present and the next delegated child would exceed the resolved lineage depth budget
+- lineage-depth-unknown blocking when `maxDepth` is present and ancestry contains unresolved gaps
+- unresolved ancestry remains neutral when `maxDepth` is absent
+- deterministic blocking-reason ordering for lifecycle, session-known, lineage-depth, depth-limit, and child-limit blockers
+- explicit confirmation that internal spawn-readiness helpers do not imply actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
+
+## Internal Wait Readiness
+
+Must test:
+
+- wait-readiness derivation from an existing internal runtime-context
+- deterministic blocking-reason ordering when multiple wait blockers are present
+- readiness success when the selected context is non-terminal, has a known session, and has no child attempts
+- wait blockers for terminal lifecycle state, unknown session identity, and present child attempts
+- behavior and blocker ordering remain unchanged after shared lifecycle-disposition extraction
+- explicit confirmation that internal wait-readiness helpers do not imply actual wait support, close support, public selectors, or mutable lifecycle state
+
+## Internal Wait Candidate
+
+Must test:
+
+- wait-candidate derivation from an existing read model plus selector without introducing a second selector contract
+- successful composition of an existing internal runtime-context and internal wait-readiness object
+- `undefined` results for selector misses without creating partial candidate objects
+- loud failures for invalid selectors inherited from the runtime-context/read-model contract
+- deterministic preservation of the existing wait-readiness blocking-reason ordering inside the composed candidate object
+- explicit confirmation that internal wait-candidate helpers do not widen public CLI payloads, manifest persistence, or lifecycle semantics
+
+## Internal Wait Target
+
+Must test:
+
+- wait-target derivation from an existing internal wait-candidate without introducing a second selector contract
+- successful projection of a minimal `{ attemptId, runtime, sessionId }` target from a waitable candidate
+- `undefined` results when wait blockers remain present or when the selected session identity is unknown
+- equivalent target derivation through both existing `attemptId` and `sessionId` selection paths upstream of the candidate
+- explicit confirmation that internal wait-target helpers do not widen public CLI payloads, manifest persistence, or lifecycle semantics
+
+## Internal Close Readiness
+
+Must test:
+
+- close-readiness derivation from an existing internal runtime-context
+- capability-aware close-readiness that may block when the selected runtime does not expose internal `sessionLifecycle` support
+- deterministic blocking-reason ordering when multiple close blockers are present
+- readiness success when the selected context is non-terminal, has a known session, and has no child attempts
+- close blockers for unsupported session lifecycle capability, terminal lifecycle state, unknown session identity, and present child attempts
+- readiness booleans such as `alreadyFinal`, `wouldAffectDescendants`, and `sessionLifecycleSupported`
+- capability-aware semantics remain local to close-readiness after shared lifecycle-disposition extraction
+- explicit confirmation that internal close-readiness helpers do not imply actual close support, public selectors, manifest persistence, or mutable lifecycle state
+
+## Internal Close Candidate
+
+Must test:
+
+- close-candidate derivation from an existing read model plus selector without introducing a second selector contract
+- successful composition of an existing internal runtime-context and internal close-readiness object
+- `undefined` results for selector misses without creating partial candidate objects
+- loud failures for invalid selectors inherited from the runtime-context/read-model contract
+- deterministic preservation of the existing close-readiness blocking-reason ordering inside the composed candidate object
+- explicit confirmation that internal close-candidate helpers do not widen public CLI payloads, manifest persistence, or actual close semantics
+
+## Internal Close Target
+
+Must test:
+
+- close-target derivation from an existing internal close-candidate without introducing a second selector contract
+- successful projection of a minimal `{ attemptId, runtime, sessionId }` target from a closable candidate
+- `undefined` results when close blockers remain present or when the selected session identity is unknown
+- equivalent target derivation through both existing `attemptId` and `sessionId` selection paths upstream of the candidate
+- explicit confirmation that internal close-target helpers do not widen public CLI payloads, manifest persistence, or actual close semantics
+
+## Verification Layer
+
+Must test:
+
+- required-check evaluation
+- pass/fail aggregation
+- selection tie-breaking helpers
+- incomplete verification payload handling
+
+## Phase-Based Minimums
+
+### Phase 0: Docs and Specs
+
+- example validation
+- Markdown link checks
+
+### Phase 1: Core Scaffold
+
+- config tests
+- manifest tests
+- example contract tests
+- machine-readable CLI contract tests for implemented commands
+
+### Phase 2: Worktree Lifecycle
+
+- naming tests
+- lifecycle tests
+- cleanup safety tests once cleanup is implemented
+- cleanup contract tests for manifest retention
+- list contract tests for cleaned entries and invalid-manifest failures
+
+### Phase 3: Adapter Layer
+
+- capability mapping tests
+- adapter catalog and resolver tests
+- command rendering contract tests
+- structured degradation tests
+- bounded `codex-cli` detect and internal execution tests
+- executable probing contract tests for the bounded `codex-cli` helper
+- canonical parser tests driven by JSONL fixtures
+- internal execution observation-summary derivation tests for the bounded `codex-cli` path
+- internal session-tree/control-plane derivation and indexing tests
+- execution-linkage tests where `codex-cli` consumes attempt lineage and emits internal session snapshots without widening public contracts
+- internal runtime-state record and index tests layered on top of bounded execution results without widening public contracts
+- internal runtime-state read-model tests layered on top of derived records without introducing a mutable registry or lifecycle manager
+- internal runtime-context tests layered on top of the internal read model without introducing wait/close semantics or mutable state
+- internal lifecycle-disposition tests layered on top of internal runtime-context without introducing adapter capability checks, public selectors, persistence, or lifecycle truth
+- internal spawn-readiness tests layered on top of internal runtime-context and runtime-state views without introducing actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
+- internal wait-readiness tests layered on top of internal runtime-context without introducing actual wait support, close support, or public selectors
+- internal wait-candidate tests layered on top of the internal read model, runtime-context, and wait-readiness helpers without introducing actual wait support, close support, public selectors, or mutable lifecycle state
+- internal wait-target tests layered on top of internal wait-candidate helpers without introducing actual wait support, close support, public selectors, or mutable lifecycle state
+- internal close-readiness, close-candidate, and close-target tests layered on top of existing runtime-context helpers without introducing actual close support, public selectors, manifest-backed lifecycle state, or mutable lifecycle state
+- parser boundary tests for bracket-prefixed log noise and malformed bracket-prefixed JSON-looking lines
+- env-gated `codex-cli` smoke scaffolding, when available, as a non-default compatibility probe
+
+Session-lifecycle integration tests, public execution CLI tests, and broader multi-runtime smoke coverage belong to a later Phase 3 or Phase 4 window once execution contracts expand beyond the current limited `codex-cli` slice.
+Parent-attempt graph validation, delegated-runtime lifecycle tests, and wait/close semantics also belong to that later phase rather than this thin provenance slice.
+Manifest-backed execution observation persistence also belongs to that later phase rather than the current bounded internal execution slice.
+Manifest-backed session-tree persistence and public spawn/wait/close/resume behavior also belong to that later phase rather than the current internal control-plane slice.
+Manifest-backed runtime-state persistence and any mutable execution-session registry also belong to that later phase rather than the current derived internal runtime-state slice.
+Public selectors, public query commands, and any wait/close-oriented runtime-state consumer also belong to that later phase rather than the current internal read-model slice.
+Public runtime-context selectors, public wait/close-oriented context consumers, and any mutable runtime-context store also belong to that later phase rather than the current internal runtime-context slice.
+Actual wait commands, close commands, public wait-readiness selectors, and any mutable wait-readiness store also belong to that later phase rather than the current internal wait-readiness slice.
+Public wait-candidate selectors, public wait-candidate stores, and any contract that treats internal wait-candidates as lifecycle truth also belong to that later phase rather than the current internal wait-candidate slice.
+Public wait-target selectors, public wait-target stores, and any contract that treats internal wait-targets as lifecycle truth also belong to that later phase rather than the current internal wait-target slice.
+Public close-oriented selectors, public close-oriented stores, and any actual close command or contract that treats internal close-readiness, close-candidate, or close-target output as lifecycle truth also belong to that later phase rather than the current internal close-oriented helper slice.
+Git archival and checkpoint discipline belongs to maintainer workflow guidance rather than the current public runtime-state, CLI, or manifest contract; tests in this phase should not treat commit-backed checkpoints as an implemented product surface while the repository still lacks a usable `HEAD`, even though maintainers should start recording each completed thin slice or debugging milestone with non-destructive Git history once a usable baseline exists.
+
+### Phase 4: Verification and Selection
+
+- verification aggregation tests
+- selection logic tests
+- failure-mode tests
+
+## Definition Of Done For Future Coding Tasks
+
+A future implementation task should not be considered complete unless:
+
+- relevant unit tests were added or updated
+- relevant contract tests still pass
+- docs were updated if the public surface changed
+- no ignored local files leaked into tracked output

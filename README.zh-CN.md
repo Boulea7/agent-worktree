@@ -1,0 +1,84 @@
+# agent-worktree
+
+默认语言：简体中文 | [English](README.md) | [繁體中文](README.zh-TW.md) | [日本語](README.ja.md)
+
+`agent-worktree` 是一个以文档和规格先行为起点、现已进入早期实现阶段的开源项目，目标是把编码代理的高质量工作流沉淀成一个 `git worktree` 原生的编排层。
+
+## 项目定位
+
+它不是要替代 `Claude Code`、`Codex CLI`、`Gemini CLI` 或 `OpenCode`，而是为这些工具以及其他同类 CLI 提供一套更清晰的：
+
+- 隔离执行方式
+- 质量验证方式
+- 结果选择方式
+- 会话交接方式
+
+## 设计原则
+
+- `Worktree-native`：把隔离工作树作为核心调度原语
+- `Verification-first`：优先相信可执行验证，而不是模型自信
+- `Adaptive`：简单任务尽量轻量，复杂任务再提升并行和评估强度
+- `Tool-friendly`：优先兼容多种热门编码代理工具
+- `Docs-first`：先把公开契约写清，再开始代码实现
+
+## 一等支持目标
+
+- Claude Code
+- Codex CLI
+- Gemini CLI
+- OpenCode
+
+实验兼容目标：
+
+- OpenClaw
+- 其他可适配的编码代理 CLI
+
+## 当前阶段
+
+当前仓库已进入“早期实现”阶段，当前重点包括：
+
+- Node/TypeScript 核心脚手架
+- config 与 runtime manifest 契约
+- 机器可读 CLI 行为
+- 极薄的 worktree lifecycle 切片
+
+更复杂的 runtime adapter、verification ranking 和高级编排能力仍然延后。
+
+## 重要文档
+
+- [README.md](README.md)
+- [SPEC.md](SPEC.md)
+- [AGENTS.md](AGENTS.md)
+- [docs/index.md](docs/index.md)
+- [docs/compat/tooling-matrix.md](docs/compat/tooling-matrix.md)
+- [docs/research/vision-synthesis.md](docs/research/vision-synthesis.md)
+
+## 公共与私有文档
+
+公共仓库只保留：
+
+- 脱敏后的共享规则
+- 兼容文档
+- 规格文档
+- RFC / ADR / 路线图
+
+本地忽略内容保留：
+
+- 原始调研
+- 会话转录
+- 机器相关配置
+- 当前窗口交接记录
+
+当前显眼但不入 Git 的交接文件是：
+
+- `PROJECT_STATUS.local.md`
+
+## 长期方向
+
+项目最终希望既能服务复杂的高价值代码任务，也能服务较简单但仍然追求质量的任务。
+
+换句话说，未来它不应该只有“重型并行搜索”一种模式，而应该支持：
+
+- 轻量单路高质量模式
+- 多路隔离探索模式
+- 更复杂的阶段性评估与结果融合模式

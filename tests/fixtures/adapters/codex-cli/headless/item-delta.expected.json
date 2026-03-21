@@ -1,0 +1,24 @@
+{
+  "events": [
+    {
+      "kind": "message_delta",
+      "rawType": "item.delta",
+      "payload": {
+        "type": "item.delta",
+        "delta": {
+          "text": "o"
+        }
+      },
+      "index": 0
+    },
+    {
+      "kind": "run_completed",
+      "rawType": "turn.completed",
+      "payload": {
+        "type": "turn.completed",
+        "status": "ok"
+      },
+      "index": 1
+    }
+  ]
+}

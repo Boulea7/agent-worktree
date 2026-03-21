@@ -1,0 +1,4 @@
+{"type":"message_delta","delta":{"text":"o"}}
+{"type":"weird.event","foo":"bar"}
+{"type":"message_completed","message":{"text":"ok"}}
+{"type":"run_completed","status":"ok"}

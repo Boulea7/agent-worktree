@@ -1,0 +1,30 @@
+{
+  "events": [
+    {
+      "kind": "unknown",
+      "rawType": "non_json_output",
+      "payload": {
+        "line": "MCP issues detected. Run codex mcp for details."
+      },
+      "index": 0
+    },
+    {
+      "kind": "message_completed",
+      "rawType": "item.completed",
+      "payload": {
+        "id": "item_0",
+        "type": "agent_message",
+        "text": "ok"
+      },
+      "index": 1
+    },
+    {
+      "kind": "run_completed",
+      "rawType": "turn.completed",
+      "payload": {
+        "type": "turn.completed"
+      },
+      "index": 2
+    }
+  ]
+}
