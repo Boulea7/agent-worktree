@@ -13,7 +13,7 @@ This file is the canonical, committed instruction source for repository-aware co
 ## Current Phase
 
 This repository is in an early implementation phase.
-The current workspace still has no usable Git `HEAD`, so maintainer workflows and documentation must not assume `git rev-parse HEAD` succeeds yet.
+This repository now has a usable Git `HEAD` baseline, so maintainer workflows should prefer non-destructive worktree isolation and commit-backed checkpoints for each completed thin slice.
 
 Agents working in this repository should prioritize:
 
@@ -42,6 +42,8 @@ The current thin Phase 3 foundation also includes:
 - a minimal internal runtime-context layer that may derive a single-consumer execution-session context from the runtime-state read model without becoming lifecycle control, persistence, or runtime truth
 - a minimal internal lifecycle-disposition layer that may derive shared terminal/session-known/descendant-impact facts from runtime-context without becoming lifecycle truth
 - a minimal internal spawn-readiness layer that may derive guardrail-aware delegated-child preflight blockers from runtime-context plus runtime-state views without becoming actual spawn support, public selectors, or lifecycle truth
+- a minimal internal spawn-candidate layer that may compose an existing execution-session context plus spawn-readiness into a single-consumer internal object without becoming actual spawn support, public selectors, or lifecycle truth
+- a minimal internal spawn-target layer that may project a minimal internal spawn-oriented target from an existing spawn-candidate without becoming actual spawn support, public selectors, or lifecycle truth
 - a minimal internal wait-readiness layer that may derive wait preconditions and blocking reasons from runtime-context without becoming actual wait support, close support, public selectors, or lifecycle truth
 - a minimal internal wait-candidate layer that may combine runtime-context and wait-readiness into a single derived object for future internal wait-oriented consumers without becoming actual wait support, close support, public selectors, or lifecycle truth
 - a minimal internal wait-target layer that may derive a future internal wait-oriented target from an existing wait-candidate without becoming actual wait support, close support, public selectors, or lifecycle truth
@@ -63,6 +65,8 @@ The current internal runtime-state read model, when present, must remain query-o
 The current internal runtime-context layer, when present, must remain derived, non-persistent, non-manifest-backed, and non-public: it may prepare a single execution-session context for future internal wait/close-oriented consumers, but it must not become wait/close/attach/resume support, a mutable registry or manager, or a source of lifecycle truth.
 The current internal lifecycle-disposition layer, when present, must remain derived, non-persistent, non-manifest-backed, and non-public: it may centralize shared terminal/session-known/descendant-impact facts for sibling wait-readiness and close-readiness helpers, but it must not resolve adapter capability, validate parent graphs, generate blocker vocabularies, become a mutable registry or manager, write into manifests, or become a source of lifecycle truth.
 The current internal spawn-readiness layer, when present, must remain derived, non-persistent, non-manifest-backed, and non-public: it may combine existing runtime-context facts, parent/child lineage visibility, and optional guardrails into delegated-child preflight blockers, but it must not become actual spawn support, public selectors, manifest-backed guardrail truth, or a mutable lifecycle manager.
+The current internal spawn-candidate layer, when present, must remain derived, non-persistent, non-manifest-backed, and non-public: it may compose an existing execution-session context plus spawn-readiness into a single-consumer internal object for future spawn-oriented consumers, but it must not become actual spawn support, public selectors, manifest-backed guardrail truth, a mutable lifecycle manager, or a source of lifecycle truth.
+The current internal spawn-target layer, when present, must remain derived, non-persistent, non-manifest-backed, and non-public: it may project a minimal internal spawn-oriented target from an existing spawn-candidate, but it must not become actual spawn support, public selectors, manifest-backed guardrail truth, a mutable lifecycle manager, or a source of child-lineage decisions.
 The current internal wait-readiness layer, when present, must remain derived, non-persistent, non-manifest-backed, and non-public: it may prepare internal wait preconditions or blocking reasons for future wait-oriented consumers, but it must not become actual wait support, close support, public selectors, or a mutable lifecycle manager.
 The current internal wait-candidate layer, when present, must remain derived, non-persistent, non-manifest-backed, and non-public: it may compose an existing execution-session context plus wait-readiness into a single-consumer internal object for future wait-oriented consumers, but it must not become actual wait support, close support, public selectors, a mutable lifecycle manager, or a source of lifecycle truth.
 The current internal wait-target layer, when present, must remain derived, non-persistent, non-manifest-backed, and non-public: it may project a minimal future internal wait-oriented target from an existing wait-candidate, but it must not become actual wait support, close support, public selectors, a mutable lifecycle manager, or a source of lifecycle truth.
@@ -122,5 +126,4 @@ The current implementation boundary should stay narrow:
 
 Use public RFCs and ADRs for durable decisions.
 Use the local handoff file for session continuity and short-lived operational notes.
-Once this repository has a usable Git commit baseline, future implementation windows should actively use non-destructive Git commits and branches as archival checkpoints for each completed thin slice or debugging milestone.
-Until then, maintainers must not assume commit-backed checkpoints, commit-derived worktree fan-out, or other `HEAD`-dependent flows are available in this workspace.
+This repository now has a usable Git commit baseline, so implementation windows should actively use non-destructive Git commits, branches, and worktrees as archival checkpoints for each completed thin slice or debugging milestone.

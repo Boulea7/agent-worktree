@@ -211,6 +211,29 @@ Must test:
 - deterministic blocking-reason ordering for lifecycle, session-known, lineage-depth, depth-limit, and child-limit blockers
 - explicit confirmation that internal spawn-readiness helpers do not imply actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
 
+## Internal Spawn Candidate
+
+Must test:
+
+- spawn-candidate derivation from an existing read model plus selector without introducing a second selector contract
+- successful composition of an existing internal runtime-context and internal spawn-readiness object
+- `undefined` results for selector misses without creating partial candidate objects
+- loud failures for invalid selectors inherited from the runtime-context/read-model contract
+- unresolved-parent handling that remains neutral unless existing spawn-readiness blockers already apply
+- deterministic preservation of the existing spawn-readiness blocking-reason ordering inside the composed candidate object
+- explicit confirmation that internal spawn-candidate helpers do not widen public CLI payloads, manifest persistence, or lifecycle semantics
+
+## Internal Spawn Target
+
+Must test:
+
+- spawn-target derivation from an existing internal spawn-candidate without introducing a second selector contract
+- successful projection of a minimal `{ attemptId, runtime, sessionId }` target from a spawnable candidate
+- `undefined` results when spawn blockers remain present or when the selected session identity is unknown
+- equivalent target derivation through both existing `attemptId` and `sessionId` selection paths upstream of the candidate
+- explicit confirmation that internal spawn-target helpers do not decide child lineage, child attempt identifiers, child branches, child worktrees, or other actual spawn semantics
+- explicit confirmation that internal spawn-target helpers do not widen public CLI payloads, manifest persistence, or lifecycle semantics
+
 ## Internal Wait Readiness
 
 Must test:
@@ -325,6 +348,8 @@ Must test:
 - internal runtime-context tests layered on top of the internal read model without introducing wait/close semantics or mutable state
 - internal lifecycle-disposition tests layered on top of internal runtime-context without introducing adapter capability checks, public selectors, persistence, or lifecycle truth
 - internal spawn-readiness tests layered on top of internal runtime-context and runtime-state views without introducing actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
+- internal spawn-candidate tests layered on top of the internal read model, runtime-context, and spawn-readiness helpers without introducing actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
+- internal spawn-target tests layered on top of internal spawn-candidate helpers without introducing actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
 - internal wait-readiness tests layered on top of internal runtime-context without introducing actual wait support, close support, or public selectors
 - internal wait-candidate tests layered on top of the internal read model, runtime-context, and wait-readiness helpers without introducing actual wait support, close support, public selectors, or mutable lifecycle state
 - internal wait-target tests layered on top of internal wait-candidate helpers without introducing actual wait support, close support, public selectors, or mutable lifecycle state
@@ -339,6 +364,8 @@ Manifest-backed session-tree persistence and public spawn/wait/close/resume beha
 Manifest-backed runtime-state persistence and any mutable execution-session registry also belong to that later phase rather than the current derived internal runtime-state slice.
 Public selectors, public query commands, and any wait/close-oriented runtime-state consumer also belong to that later phase rather than the current internal read-model slice.
 Public runtime-context selectors, public wait/close-oriented context consumers, and any mutable runtime-context store also belong to that later phase rather than the current internal runtime-context slice.
+Public spawn-candidate selectors, public spawn-candidate stores, and any contract that treats internal spawn-candidates as lifecycle truth also belong to that later phase rather than the current internal spawn-candidate slice.
+Public spawn-target selectors, public spawn-target stores, and any contract that treats internal spawn-targets as lifecycle truth also belong to that later phase rather than the current internal spawn-target slice.
 Actual wait commands, close commands, public wait-readiness selectors, and any mutable wait-readiness store also belong to that later phase rather than the current internal wait-readiness slice.
 Public wait-candidate selectors, public wait-candidate stores, and any contract that treats internal wait-candidates as lifecycle truth also belong to that later phase rather than the current internal wait-candidate slice.
 Public wait-target selectors, public wait-target stores, and any contract that treats internal wait-targets as lifecycle truth also belong to that later phase rather than the current internal wait-target slice.
