@@ -63,6 +63,7 @@ Additional bounded internal details:
 - a separate internal lifecycle-disposition helper layer may derive shared terminal/session-known/descendant-impact facts from runtime-context for future internal wait/close-oriented consumers
 - a separate internal spawn-oriented helper chain may derive readiness, candidate, target, request, or child-lineage preparation metadata from runtime-context, runtime-state views, and inherited guardrails
 - a separate internal wait-readiness helper layer may derive wait preconditions or blocking reasons from runtime-context for future internal wait-oriented consumers
+- a separate internal wait-target or wait-request helper layer may derive minimal internal wait-oriented target or request metadata above that control-plane vocabulary for future internal consumers
 - that observation summary is adapter-internal only: it is not a public CLI payload contract, not manifest-backed state, and not a session-lifecycle API
 - the same restriction applies to any derived internal session snapshot: it is not a public CLI payload, not manifest-backed state, and not attach/resume/wait/close support
 - the same restriction applies to any derived execution-session record or index: it is not a public CLI payload, not manifest-backed state, and not lifecycle support
@@ -70,6 +71,7 @@ Additional bounded internal details:
 - the same restriction applies to any derived execution-session context: it is internal-only, non-persistent, non-manifest-backed metadata and does not imply public selectors or lifecycle support
 - the same restriction applies to any derived lifecycle-disposition or spawn-oriented metadata: it is internal-only, derived, non-persistent, non-manifest-backed metadata and does not imply actual spawn support, public selectors, child planning, or lifecycle truth
 - the same restriction applies to any derived wait-readiness metadata: it is internal-only, non-persistent, non-manifest-backed preflight state and does not imply actual wait support, close support, or public selectors
+- the same restriction applies to any derived wait-target or wait-request metadata: it is internal-only, non-persistent, non-manifest-backed metadata and does not imply actual wait support, polling, timeout scheduling, or a public session-lifecycle API
 
 Explicitly not implemented:
 

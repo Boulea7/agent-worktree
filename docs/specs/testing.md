@@ -299,6 +299,19 @@ Must test:
 - equivalent target derivation through both existing `attemptId` and `sessionId` selection paths upstream of the candidate
 - explicit confirmation that internal wait-target helpers do not widen public CLI payloads, manifest persistence, or lifecycle semantics
 
+## Internal Wait Request
+
+Must test:
+
+- wait-request derivation from an existing internal wait-target without introducing a second selector contract
+- successful projection of a minimal `{ attemptId, runtime, sessionId }` request from a valid wait target
+- optional `timeoutMs` carry-through when the caller supplies a valid positive integer
+- omission of `timeoutMs` when it is not provided explicitly
+- loud failures for invalid `timeoutMs` inputs such as non-integer, non-finite, `0`, or negative values
+- helper immutability for the supplied wait-target input
+- explicit confirmation that internal wait-request helpers do not re-run readiness, do not reintroduce selectors or views, do not seed manifests, and do not widen public CLI payloads, manifest persistence, or lifecycle semantics
+- explicit confirmation that internal wait-request helpers do not introduce polling, timeout scheduling, settle policy, child policy, close coupling, or lifecycle truth
+
 ## Internal Close Readiness
 
 Must test:
@@ -390,6 +403,7 @@ Must test:
 - internal wait-readiness tests layered on top of internal runtime-context without introducing actual wait support, close support, or public selectors
 - internal wait-candidate tests layered on top of the internal read model, runtime-context, and wait-readiness helpers without introducing actual wait support, close support, public selectors, or mutable lifecycle state
 - internal wait-target tests layered on top of internal wait-candidate helpers without introducing actual wait support, close support, public selectors, or mutable lifecycle state
+- internal wait-request tests layered on top of internal wait-target helpers without introducing actual wait support, polling, timeout scheduling, public selectors, manifest-backed state, or mutable lifecycle state
 - internal close-readiness, close-candidate, and close-target tests layered on top of existing runtime-context helpers without introducing actual close support, public selectors, manifest-backed lifecycle state, or mutable lifecycle state
 - parser boundary tests for bracket-prefixed log noise and malformed bracket-prefixed JSON-looking lines
 - env-gated `codex-cli` smoke scaffolding, when available, as a non-default compatibility probe
@@ -408,8 +422,9 @@ Public spawn-lineage selectors, public spawn-lineage stores, and any contract th
 Actual wait commands, close commands, public wait-readiness selectors, and any mutable wait-readiness store also belong to that later phase rather than the current internal wait-readiness slice.
 Public wait-candidate selectors, public wait-candidate stores, and any contract that treats internal wait-candidates as lifecycle truth also belong to that later phase rather than the current internal wait-candidate slice.
 Public wait-target selectors, public wait-target stores, and any contract that treats internal wait-targets as lifecycle truth also belong to that later phase rather than the current internal wait-target slice.
+Public wait-request selectors, public wait-request stores, and any contract that treats internal wait-request output as lifecycle truth also belong to that later phase rather than the current internal wait-request slice.
 Public close-oriented selectors, public close-oriented stores, and any actual close command or contract that treats internal close-readiness, close-candidate, or close-target output as lifecycle truth also belong to that later phase rather than the current internal close-oriented helper slice.
-Git archival and checkpoint discipline belongs to maintainer workflow guidance rather than the current public runtime-state, CLI, or manifest contract; tests in this phase should not treat commit-backed checkpoints as an implemented product surface while the repository still lacks a usable `HEAD`, even though maintainers should start recording each completed thin slice or debugging milestone with non-destructive Git history once a usable baseline exists.
+Git archival and checkpoint discipline belongs to maintainer workflow guidance rather than the current public runtime-state, CLI, or manifest contract; tests in this phase should not treat commit-backed checkpoints as an implemented product surface now that the repository has a usable `HEAD`, even though maintainers should continue recording each completed thin slice or debugging milestone with non-destructive Git history once a usable baseline exists.
 
 ### Phase 4: Verification and Selection
 
