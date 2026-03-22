@@ -27,6 +27,8 @@ export { deriveExecutionSessionCloseRequest } from "./runtime-state-close-reques
 export { deriveExecutionSessionCloseRequestedEvent } from "./runtime-state-close-requested-event.js";
 export { deriveExecutionSessionCloseTarget } from "./runtime-state-close-target.js";
 export { deriveExecutionSessionWaitCandidate } from "./runtime-state-wait-candidate.js";
+export { consumeExecutionSessionWait } from "./runtime-state-wait-consume.js";
+export { consumeExecutionSessionWaitBatch } from "./runtime-state-wait-consume-batch.js";
 export { deriveExecutionSessionWaitConsumer } from "./runtime-state-wait-consumer.js";
 export { deriveExecutionSessionWaitConsumerReadiness } from "./runtime-state-wait-consumer-readiness.js";
 export { deriveExecutionSessionWaitReadiness } from "./runtime-state-readiness.js";
@@ -100,6 +102,11 @@ export {
   type ExecutionSessionWaitConsumerInput,
   type ExecutionSessionWaitConsumerReadiness,
   type ExecutionSessionWaitConsumerReadinessInput,
+  type ExecutionSessionWaitConsume,
+  type ExecutionSessionWaitConsumeBatch,
+  type ExecutionSessionWaitConsumeBatchInput,
+  type ExecutionSessionWaitConsumeInput,
+  type ExecutionSessionWaitInvoker,
   type ExecutionSessionWaitRequest,
   type ExecutionSessionWaitRequestInput,
   type ExecutionSessionWaitReadiness,

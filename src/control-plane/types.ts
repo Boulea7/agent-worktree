@@ -272,6 +272,30 @@ export interface ExecutionSessionWaitConsumer {
   request: ExecutionSessionWaitRequest;
 }
 
+export interface ExecutionSessionWaitInvoker {
+  (request: ExecutionSessionWaitRequest): void | Promise<void>;
+}
+
+export interface ExecutionSessionWaitConsumeInput {
+  consumer: ExecutionSessionWaitConsumer;
+  invokeWait: ExecutionSessionWaitInvoker;
+}
+
+export interface ExecutionSessionWaitConsume {
+  invoked: boolean;
+  readiness: ExecutionSessionWaitConsumerReadiness;
+  request: ExecutionSessionWaitRequest;
+}
+
+export interface ExecutionSessionWaitConsumeBatchInput {
+  consumers: readonly ExecutionSessionWaitConsumer[];
+  invokeWait: ExecutionSessionWaitInvoker;
+}
+
+export interface ExecutionSessionWaitConsumeBatch {
+  results: ExecutionSessionWaitConsume[];
+}
+
 export interface ExecutionSessionCloseReadinessInput {
   context: ExecutionSessionContext;
   resolveSessionLifecycleCapability?: SessionLifecycleCapabilityResolver;
