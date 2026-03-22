@@ -396,6 +396,19 @@ Must test:
 - explicit confirmation that internal close-recorded-event helpers do not introduce actual close support, close-consumer preflight, adapter-driven close results, or public close success truth
 - explicit confirmation that shared lifecycle-state derivation continues to treat `close_requested` as a marker and `close_recorded` as the close-side event that maps to `closed`
 
+## Internal Close Consumer Preflight
+
+Must test:
+
+- close-consumer-readiness derivation from an existing internal close-request without introducing a second selector contract
+- explicit capability-aware allow behavior when `resolveSessionLifecycleCapability` reports support
+- default blocked behavior for shipped runtimes whose adapter descriptor still marks `sessionLifecycle` as unsupported
+- blocked behavior for unknown runtimes when capability lookup fails or resolves to unsupported
+- stable blocking-reason vocabulary limited to `session_lifecycle_unsupported`
+- helper immutability for the supplied close-request input
+- close-consumer composition that returns the original close-request plus capability-aware readiness
+- explicit confirmation that internal close-consumer helpers do not reintroduce selectors, views, contexts, candidates, targets, requested-event or recorded-event inputs, readiness recomputation, adapter invocation, event subscription, manifest seeds, or lifecycle truth
+
 ## Verification Layer
 
 Must test:
@@ -459,6 +472,7 @@ Must test:
 - internal close-request tests layered on top of internal close-target helpers without introducing actual close support, close-consumer preflight, public selectors, manifest-backed state, or mutable lifecycle state
 - internal close-requested-event tests layered on top of internal close-request helpers without introducing actual close support, close-consumer preflight, public selectors, manifest-backed state, or mutable lifecycle state
 - internal close-recorded-event tests layered on top of internal close-requested-event helpers without introducing actual close support, close-consumer preflight, adapter-driven close results, public selectors, manifest-backed state, or mutable lifecycle state
+- internal close-consumer-preflight tests layered on top of internal close-request helpers without introducing actual close support, adapter invocation, event subscription, public selectors, manifest-backed state, or mutable lifecycle state
 - parser boundary tests for bracket-prefixed log noise and malformed bracket-prefixed JSON-looking lines
 - env-gated `codex-cli` smoke scaffolding, when available, as a non-default compatibility probe
 
@@ -478,7 +492,7 @@ Public wait-candidate selectors, public wait-candidate stores, and any contract 
 Public wait-target selectors, public wait-target stores, and any contract that treats internal wait-targets as lifecycle truth also belong to that later phase rather than the current internal wait-target slice.
 Public wait-request selectors, public wait-request stores, actual wait consumers, and any contract that treats internal wait-request output as lifecycle truth also belong to that later phase rather than the current internal wait-request slice.
 Public wait-consumer selectors, public wait-consumer stores, and any contract that treats internal wait-consumer output as lifecycle truth also belong to that later phase rather than the current internal wait-consumer-preflight slice.
-Public close-oriented selectors, public close-oriented stores, any close-consumer preflight, and any actual close command or contract that treats internal close-readiness, close-candidate, close-target, close-request, close-requested-event, or close-recorded-event output as lifecycle truth also belong to that later phase rather than the current internal close-oriented helper slice.
+Public close-oriented selectors, public close-oriented stores, any close-consumer preflight, and any actual close command or contract that treats internal close-readiness, close-candidate, close-target, close-request, close-requested-event, close-recorded-event, or close-consumer output as lifecycle truth also belong to that later phase rather than the current internal close-oriented helper slice.
 Git archival and checkpoint discipline belongs to maintainer workflow guidance rather than the current public runtime-state, CLI, or manifest contract; tests in this phase should not treat commit-backed checkpoints as an implemented product surface now that the repository has a usable `HEAD`, even though maintainers should continue recording each completed thin slice or debugging milestone with non-destructive Git history once a usable baseline exists.
 
 ### Phase 4: Verification and Selection
