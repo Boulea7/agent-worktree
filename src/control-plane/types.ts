@@ -339,6 +339,21 @@ export interface ExecutionSessionCloseConsumer {
   request: ExecutionSessionCloseRequest;
 }
 
+export interface ExecutionSessionCloseInvoker {
+  (request: ExecutionSessionCloseRequest): void | Promise<void>;
+}
+
+export interface ExecutionSessionCloseConsumeInput {
+  consumer: ExecutionSessionCloseConsumer;
+  invokeClose: ExecutionSessionCloseInvoker;
+}
+
+export interface ExecutionSessionCloseConsume {
+  invoked: boolean;
+  readiness: ExecutionSessionCloseConsumerReadiness;
+  request: ExecutionSessionCloseRequest;
+}
+
 export interface ExecutionSessionCloseRequestedEventInput {
   request: ExecutionSessionCloseRequest;
 }
