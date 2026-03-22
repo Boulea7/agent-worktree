@@ -8,6 +8,7 @@ import {
   deriveSessionSnapshot
 } from "../control-plane/derive.js";
 import { deriveCodexExecutionObservation } from "./codex-cli-observation.js";
+import { resolveCodexCliEnvironment } from "./codex-cli-env.js";
 import {
   runSubprocess,
   type SubprocessFailure,
@@ -25,6 +26,7 @@ const detectTimeoutMs = 5_000;
 
 export interface CodexExecutionOptions {
   parseEventStream?: (output: string) => CanonicalAdapterEvent[];
+  resolveEnvironment?: () => Promise<NodeJS.ProcessEnv | undefined>;
   runner?: SubprocessRunner;
 }
 
@@ -76,8 +78,16 @@ export async function executeCodexHeadless(
           executable
         };
   const parseEventStream = options.parseEventStream ?? parseCodexCliJsonl;
+  const resolveEnvironment =
+    options.resolveEnvironment ??
+    (options.runCommand === undefined && options.runner === undefined
+      ? resolveCodexCliEnvironment
+      : undefined);
+  const resolvedEnv =
+    resolveEnvironment === undefined ? undefined : await resolveEnvironment();
   const invocation = {
     ...(executableCommand.cwd === undefined ? {} : { cwd: executableCommand.cwd }),
+    ...(resolvedEnv === undefined ? {} : { env: resolvedEnv }),
     ...(input.timeoutMs === undefined ? {} : { timeoutMs: input.timeoutMs }),
     ...(input.abortSignal === undefined
       ? {}
