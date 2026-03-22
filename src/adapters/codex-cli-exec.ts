@@ -30,6 +30,24 @@ export interface CodexExecutionOptions {
   runner?: SubprocessRunner;
 }
 
+export function normalizeCodexCliProfile(
+  profile: string | undefined
+): string | undefined {
+  if (profile === undefined) {
+    return undefined;
+  }
+
+  const normalizedProfile = profile.trim();
+
+  if (normalizedProfile.length === 0) {
+    throw new ValidationError(
+      "codex-cli profile must not be blank when provided."
+    );
+  }
+
+  return normalizedProfile;
+}
+
 export async function detectCodexCli(
   runner: SubprocessRunner = runSubprocess
 ): Promise<boolean> {
@@ -56,6 +74,8 @@ export async function executeCodexHeadless(
   if (input.attempt !== undefined) {
     deriveSessionNodeRef(input.attempt);
   }
+
+  validateExplicitCodexProfile(input);
 
   const command = withEphemeralFlag(withHeadlessPrompt(options.command, input.prompt));
 
@@ -303,4 +323,23 @@ function withHeadlessPrompt(
       promptIncluded: true
     }
   };
+}
+
+function validateExplicitCodexProfile(input: HeadlessExecutionInput): void {
+  if (!("profile" in input)) {
+    return;
+  }
+
+  const explicitProfile = (input as HeadlessExecutionInput & { profile?: unknown })
+    .profile;
+
+  if (explicitProfile === undefined) {
+    return;
+  }
+
+  if (typeof explicitProfile !== "string") {
+    throw new ValidationError("codex-cli profile must be a string when provided.");
+  }
+
+  normalizeCodexCliProfile(explicitProfile);
 }
