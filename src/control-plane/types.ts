@@ -302,6 +302,16 @@ export interface ExecutionSessionCloseTarget {
   sessionId: string;
 }
 
+export interface ExecutionSessionCloseRequestInput {
+  target: ExecutionSessionCloseTarget;
+}
+
+export interface ExecutionSessionCloseRequest {
+  attemptId: string;
+  runtime: string;
+  sessionId: string;
+}
+
 export interface ExecutionSessionSpawnReadinessInput {
   context: ExecutionSessionContext;
   view: ExecutionSessionView;
