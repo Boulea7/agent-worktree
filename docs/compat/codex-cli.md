@@ -39,6 +39,7 @@ Implemented now:
 - real detection for the `codex exec --json` path
 - machine-checkable command rendering
 - bounded internal execution through `codex exec --json`
+- bounded internal profile-aware execution passthrough for explicit Codex `--profile` selection
 - minimal canonical event parsing for the headless JSONL output
 - internal execution observation summaries derived from canonical events
 - structured degradation for unsupported capabilities
@@ -49,6 +50,9 @@ Additional bounded internal details:
 - execution-time probing may scan `PATH` candidates to find a `codex` binary that actually supports `exec --json`
 - the default subprocess runner may therefore execute a different resolved binary than shell `command -v codex`
 - `renderCommand()` still renders `codex`; probing does not widen the public render contract
+- bounded internal render and execution paths may pass an explicit profile name through `--profile`, but that profile selection remains internal-only, non-persistent, non-manifest-backed, and non-public
+- that same restriction applies to any profile-aware execution metadata: it is not provider management, not a public CLI flag, not a public selector surface, and not lifecycle truth
+- the default subprocess runner may still derive a best-effort relay-compatible env overlay from local Codex config, auth, or shell-export state, but custom runners do not silently inherit that overlay unless an internal caller explicitly supplies a replacement environment resolver
 - obvious non-JSON prelude lines, including bracket-prefixed log noise such as `[warn] ...`, may normalize to `unknown`
 - malformed JSON-looking records, including malformed bracket-prefixed array-like lines, still fail loudly
 - `executeHeadless()` may return an internal observation summary such as thread identifier, final turn status, last agent message, usage, and error counts derived from canonical events
@@ -56,12 +60,15 @@ Additional bounded internal details:
 - a separate internal helper layer may derive execution-session records or indexes from attempt lineage, bounded execution observation, and optional internal session snapshots
 - a separate internal read-model helper layer may build selector-driven or parent/child execution-session views from those derived records
 - a separate internal runtime-context helper layer may derive single-consumer execution-session contexts from the internal runtime-state read model for future internal wait/close-oriented consumers
+- a separate internal lifecycle-disposition helper layer may derive shared terminal/session-known/descendant-impact facts from runtime-context for future internal wait/close-oriented consumers
+- a separate internal spawn-oriented helper chain may derive readiness, candidate, target, request, or child-lineage preparation metadata from runtime-context, runtime-state views, and inherited guardrails
 - a separate internal wait-readiness helper layer may derive wait preconditions or blocking reasons from runtime-context for future internal wait-oriented consumers
 - that observation summary is adapter-internal only: it is not a public CLI payload contract, not manifest-backed state, and not a session-lifecycle API
 - the same restriction applies to any derived internal session snapshot: it is not a public CLI payload, not manifest-backed state, and not attach/resume/wait/close support
 - the same restriction applies to any derived execution-session record or index: it is not a public CLI payload, not manifest-backed state, and not lifecycle support
 - the same restriction applies to any derived execution-session read model: it is query-only internal metadata, not a mutable registry, public selector surface, or lifecycle manager
 - the same restriction applies to any derived execution-session context: it is internal-only, non-persistent, non-manifest-backed metadata and does not imply public selectors or lifecycle support
+- the same restriction applies to any derived lifecycle-disposition or spawn-oriented metadata: it is internal-only, derived, non-persistent, non-manifest-backed metadata and does not imply actual spawn support, public selectors, child planning, or lifecycle truth
 - the same restriction applies to any derived wait-readiness metadata: it is internal-only, non-persistent, non-manifest-backed preflight state and does not imply actual wait support, close support, or public selectors
 
 Explicitly not implemented:

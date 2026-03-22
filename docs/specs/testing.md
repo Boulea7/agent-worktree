@@ -144,11 +144,12 @@ Must test:
 The earliest Phase 3 slice was static.
 In the current limited `codex-cli` execution sub-slice, tests SHOULD focus on resolver behavior, machine-checkable rendered commands, a bounded internal execution contract, minimal parser behavior, and structured degradation payloads.
 That includes executable probing contract tests for the default subprocess runner, explicit confirmation that injected runners do not silently inherit the default `PATH` scan policy, and fixture-driven parser tests for bracket-prefixed log noise versus malformed JSON-looking lines.
+If a thin internal `codex-cli` profile-aware execution path is added, tests SHOULD verify explicit `--profile` passthrough, loud rejection for blank or whitespace-only profiles, prompt-last and `--ephemeral` ordering preservation, omitted-profile compatibility with existing command shapes, unchanged default-runner relay-compatible env-overlay behavior, unchanged custom-runner behavior unless an explicit internal environment resolver is supplied, and explicit confirmation that profile metadata does not widen public CLI payloads, runtime manifests, or lifecycle truth.
 If a thin internal execution observation summary is layered on top of canonical events, tests SHOULD verify its derivation from existing canonical events rather than treating it as a separate persistence or CLI contract.
 If a bounded execution path starts consuming attempt lineage to emit internal control-plane snapshots, tests SHOULD verify that invalid lineage is rejected before subprocess launch, that derived snapshots remain execution-result-only metadata, and that omitted lineage does not create synthetic control-plane output.
 If a separate internal runtime-state layer is added on top of execution results, tests SHOULD verify that execution-session records remain derived, non-persistent, and non-public, that omitted lineage does not create synthetic runtime-state records, and that deterministic indexes fail loudly on duplicate keys instead of merging mutable state.
 If a read-only query/view layer is added on top of internal runtime-state, tests SHOULD verify selector validation, lookup-by-attempt and lookup-by-session behavior, parent/child traversal, and explicit separation from mutable registry or lifecycle-manager semantics.
-Environment injection, general session lifecycle tests, MCP execution tests, and cross-runtime execution parity SHOULD wait for a later phase.
+Broad cross-runtime environment injection, general session lifecycle tests, MCP execution tests, and cross-runtime execution parity SHOULD wait for a later phase.
 
 ## Internal Control Plane
 
@@ -371,6 +372,7 @@ Must test:
 - structured degradation tests
 - bounded `codex-cli` detect and internal execution tests
 - executable probing contract tests for the bounded `codex-cli` helper
+- internal `codex-cli` profile-aware execution tests that lock explicit profile passthrough, blank-profile rejection, prompt ordering, default-runner env-overlay stability, custom-runner env behavior, and non-leakage into public CLI or manifest contracts
 - canonical parser tests driven by JSONL fixtures
 - internal execution observation-summary derivation tests for the bounded `codex-cli` path
 - internal session-tree/control-plane derivation and indexing tests
