@@ -310,3 +310,15 @@ export interface ExecutionSessionSpawnRequest {
   parentSessionId: string;
   sourceKind: ExecutionSessionSpawnRequestSourceKind;
 }
+
+export interface ExecutionSessionSpawnLineageInput {
+  childAttemptId: string;
+  request: ExecutionSessionSpawnRequest;
+}
+
+export interface ExecutionSessionSpawnLineage {
+  attemptId: string;
+  guardrails?: SessionGuardrails;
+  parentAttemptId: string;
+  sourceKind: ExecutionSessionSpawnRequestSourceKind;
+}
