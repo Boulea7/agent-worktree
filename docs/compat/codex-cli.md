@@ -78,6 +78,8 @@ Explicitly not implemented:
 - interactive session attach or stop behavior
 - general session lifecycle management
 - public execution commands in `agent-worktree`
+- public `--profile` flags or public provider-selection semantics in `agent-worktree`
+- provider, auth, or config-management writers for local Codex settings
 - manifest-backed execution persistence
 - session-tree control semantics such as wait, close, or delegated-child lifecycle
 
