@@ -130,7 +130,7 @@ describe("resolveCodexCliEnvironment", () => {
     });
   });
 
-  it("should prefer explicit shell env over auth fallback for the active provider env_key", async () => {
+  it("should prefer active-provider auth fallback over a stale shell token", async () => {
     const homeDir = await createTempHome();
     await mkdir(path.join(homeDir, ".codex"), { recursive: true });
     await writeFile(
@@ -158,7 +158,43 @@ describe("resolveCodexCliEnvironment", () => {
           OPENAI_API_KEY: "already-present"
         }
       })
-    ).resolves.toBeUndefined();
+    ).resolves.toEqual({
+      PATH: "/usr/bin:/bin",
+      OPENAI_API_KEY: "auth-token"
+    });
+  });
+
+  it("should resolve env_key from a quoted active provider table name", async () => {
+    const homeDir = await createTempHome();
+    await mkdir(path.join(homeDir, ".codex"), { recursive: true });
+    await writeFile(
+      path.join(homeDir, ".codex", "config.toml"),
+      [
+        'model_provider = "my.provider"',
+        "",
+        '[model_providers."my.provider"]',
+        'env_key = "OPENAI_API_KEY"',
+        ""
+      ].join("\n"),
+      "utf8"
+    );
+    await writeFile(
+      path.join(homeDir, ".codex", "auth.json"),
+      JSON.stringify({ OPENAI_API_KEY: "quoted-auth-token" }, null, 2),
+      "utf8"
+    );
+
+    await expect(
+      resolveCodexCliEnvironment({
+        homeDir,
+        baseEnv: {
+          PATH: "/usr/bin:/bin"
+        }
+      })
+    ).resolves.toEqual({
+      PATH: "/usr/bin:/bin",
+      OPENAI_API_KEY: "quoted-auth-token"
+    });
   });
 });
 
