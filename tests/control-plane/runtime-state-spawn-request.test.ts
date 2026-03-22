@@ -276,10 +276,12 @@ describe("control-plane runtime-state spawn-request helpers", () => {
     expect(request).not.toHaveProperty("branch");
     expect(request).not.toHaveProperty("worktreePath");
     expect(request).not.toHaveProperty("childWorktreePath");
+    expect(request).not.toHaveProperty("childRuntime");
     expect(request).not.toHaveProperty("runtimeMode");
     expect(request).not.toHaveProperty("prompt");
     expect(request).not.toHaveProperty("task");
     expect(request).not.toHaveProperty("taskId");
+    expect(request).not.toHaveProperty("parentAttemptLineage");
   });
 });
 

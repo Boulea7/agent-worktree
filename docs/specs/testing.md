@@ -234,6 +234,21 @@ Must test:
 - explicit confirmation that internal spawn-target helpers do not decide child lineage, child attempt identifiers, child branches, child worktrees, or other actual spawn semantics
 - explicit confirmation that internal spawn-target helpers do not widen public CLI payloads, manifest persistence, or lifecycle semantics
 
+## Internal Spawn Request
+
+Must test:
+
+- spawn-request derivation from an existing internal spawn-candidate without introducing a second selector contract
+- successful projection of a minimal `{ parentAttemptId, parentRuntime, parentSessionId, sourceKind }` request from a spawnable candidate
+- valid `fork` and `delegated` source choices supplied explicitly by the caller
+- `undefined` results when spawn blockers remain present or when the selected session identity is unknown
+- optional inherited guardrail carry-through when the parent record exposes guardrails
+- omission of `inheritedGuardrails` when the parent record has none
+- loud failures for invalid `sourceKind` inputs such as `direct`, `resume`, or blank strings
+- helper immutability for the supplied spawn-candidate input
+- explicit confirmation that internal spawn-request helpers do not decide child attempt identifiers, child branches, child worktrees, child runtime mode, child prompts, delegated-runtime approvals, or other actual spawn semantics
+- explicit confirmation that internal spawn-request helpers do not widen public CLI payloads, manifest persistence, or lifecycle semantics
+
 ## Internal Wait Readiness
 
 Must test:
@@ -350,6 +365,7 @@ Must test:
 - internal spawn-readiness tests layered on top of internal runtime-context and runtime-state views without introducing actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
 - internal spawn-candidate tests layered on top of the internal read model, runtime-context, and spawn-readiness helpers without introducing actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
 - internal spawn-target tests layered on top of internal spawn-candidate helpers without introducing actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
+- internal spawn-request tests layered on top of internal spawn-candidate helpers without introducing actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
 - internal wait-readiness tests layered on top of internal runtime-context without introducing actual wait support, close support, or public selectors
 - internal wait-candidate tests layered on top of the internal read model, runtime-context, and wait-readiness helpers without introducing actual wait support, close support, public selectors, or mutable lifecycle state
 - internal wait-target tests layered on top of internal wait-candidate helpers without introducing actual wait support, close support, public selectors, or mutable lifecycle state
@@ -366,6 +382,7 @@ Public selectors, public query commands, and any wait/close-oriented runtime-sta
 Public runtime-context selectors, public wait/close-oriented context consumers, and any mutable runtime-context store also belong to that later phase rather than the current internal runtime-context slice.
 Public spawn-candidate selectors, public spawn-candidate stores, and any contract that treats internal spawn-candidates as lifecycle truth also belong to that later phase rather than the current internal spawn-candidate slice.
 Public spawn-target selectors, public spawn-target stores, and any contract that treats internal spawn-targets as lifecycle truth also belong to that later phase rather than the current internal spawn-target slice.
+Public spawn-request selectors, public spawn-request stores, and any contract that treats internal spawn-request output as lifecycle truth also belong to that later phase rather than the current internal spawn-request slice.
 Actual wait commands, close commands, public wait-readiness selectors, and any mutable wait-readiness store also belong to that later phase rather than the current internal wait-readiness slice.
 Public wait-candidate selectors, public wait-candidate stores, and any contract that treats internal wait-candidates as lifecycle truth also belong to that later phase rather than the current internal wait-candidate slice.
 Public wait-target selectors, public wait-target stores, and any contract that treats internal wait-targets as lifecycle truth also belong to that later phase rather than the current internal wait-target slice.
