@@ -365,7 +365,7 @@ Must test:
 - internal spawn-readiness tests layered on top of internal runtime-context and runtime-state views without introducing actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
 - internal spawn-candidate tests layered on top of the internal read model, runtime-context, and spawn-readiness helpers without introducing actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
 - internal spawn-target tests layered on top of internal spawn-candidate helpers without introducing actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
-- internal spawn-request tests layered on top of internal spawn-candidate helpers without introducing actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
+- internal spawn-request tests layered on top of internal spawn-candidate helpers without introducing actual spawn support, public selectors, manifest-backed guardrail truth, child-planning semantics, or mutable lifecycle state
 - internal wait-readiness tests layered on top of internal runtime-context without introducing actual wait support, close support, or public selectors
 - internal wait-candidate tests layered on top of the internal read model, runtime-context, and wait-readiness helpers without introducing actual wait support, close support, public selectors, or mutable lifecycle state
 - internal wait-target tests layered on top of internal wait-candidate helpers without introducing actual wait support, close support, public selectors, or mutable lifecycle state
