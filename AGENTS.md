@@ -35,6 +35,7 @@ The current thin Phase 3 foundation also includes:
 - render-only command contracts for the initial `codex-cli` reference adapter
 - structured degradation for unsupported adapter capabilities
 - a bounded internal `codex-cli` execution contract for detect, `codex exec --json`, minimal canonical event parsing, and an env-gated smoke scaffold
+- a bounded internal `codex-cli` relay-compatible execution-env helper that may derive subprocess env overlays from local Codex config, auth, or shell-export state without becoming a public provider-management contract
 - a minimal internal session-tree/control-plane foundation derived from attempt provenance and bounded execution observation, implemented as pure helpers only
 - a bounded internal execution-to-control-plane bridge for `codex-cli`, where supplied attempt lineage may derive an internal session snapshot in the execution result
 - a minimal internal runtime-state foundation that may derive execution-session records and indexes from lineage, observation, and optional internal session snapshots without persisting them
@@ -57,6 +58,7 @@ The current adapter layer only launches a bounded internal execution path for `c
 It does not provide interactive runtime control, attach or resume behavior, general session lifecycle management, MCP transport execution, manifest-backed execution persistence, or public spawn/wait/close semantics.
 Treat the current smoke coverage as an optional compatibility probe only: the narrower env-gated Vitest harness currently passes in this workspace, but it still remains non-default validation rather than a public reliability guarantee and may stay green even when a real `codex exec --json` success baseline is unavailable locally.
 Treat executable probing the same way: it is an internal `codex-cli` execution-helper detail used to locate a `codex` binary that really supports `exec --json`, not a generic runtime-resolution framework or a public adapter guarantee.
+Treat relay-compatible execution-env derivation the same way: it may best-effort derive subprocess env overlays from local Codex config, auth, or shell-export state so OpenAI-compatible relays remain usable for internal `codex exec --json` calls, but it must remain internal-only, non-persistent, non-public, and must not become a public provider switcher, a config-management surface, or a promise that direct shell sessions are repaired automatically.
 The bounded parser may preserve obvious non-JSON prelude lines, including bracket-prefixed log noise, as `unknown` events, but malformed JSON-looking records still remain loud failures.
 The current manifest layer may also record thin attempt provenance through `sourceKind` and an optional `parentAttemptId`. Treat those fields as additive audit metadata only; they do not imply delegated execution, fork/resume runtime support, or session-tree lifecycle behavior.
 The current internal control-plane layer may derive node references, lifecycle summaries, and parent/child indexes from provenance and observation, but those derived values are non-persistent and must not be written into `manifest.session` or exposed as public CLI contract.
