@@ -48,6 +48,10 @@ export const executionSessionSpawnBlockingReasons = [
   "depth_limit_reached",
   "child_limit_reached"
 ] as const;
+export const executionSessionSpawnRequestSourceKinds = [
+  "fork",
+  "delegated"
+] as const;
 
 export type SessionNodeKind = (typeof sessionNodeKinds)[number];
 export type SessionSourceKind = AttemptSourceKind;
@@ -62,6 +66,8 @@ export type ExecutionSessionCloseBlockingReason =
   (typeof executionSessionCloseBlockingReasons)[number];
 export type ExecutionSessionSpawnBlockingReason =
   (typeof executionSessionSpawnBlockingReasons)[number];
+export type ExecutionSessionSpawnRequestSourceKind =
+  (typeof executionSessionSpawnRequestSourceKinds)[number];
 
 export interface SessionLifecycleCapabilityResolver {
   (runtime: string): boolean;
@@ -290,4 +296,17 @@ export interface ExecutionSessionSpawnTarget {
   attemptId: string;
   runtime: string;
   sessionId: string;
+}
+
+export interface ExecutionSessionSpawnRequestInput {
+  candidate: ExecutionSessionSpawnCandidate;
+  sourceKind: ExecutionSessionSpawnRequestSourceKind;
+}
+
+export interface ExecutionSessionSpawnRequest {
+  inheritedGuardrails?: SessionGuardrails;
+  parentAttemptId: string;
+  parentRuntime: string;
+  parentSessionId: string;
+  sourceKind: ExecutionSessionSpawnRequestSourceKind;
 }

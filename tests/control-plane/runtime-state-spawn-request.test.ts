@@ -37,6 +37,13 @@ describe("control-plane runtime-state spawn-request helpers", () => {
       parentSessionId: "thr_active",
       sourceKind: "fork"
     });
+    expect(request).not.toHaveProperty("childAttemptId");
+    expect(request).not.toHaveProperty("branch");
+    expect(request).not.toHaveProperty("worktreePath");
+    expect(request).not.toHaveProperty("runtimeMode");
+    expect(request).not.toHaveProperty("prompt");
+    expect(request).not.toHaveProperty("task");
+    expect(request).not.toHaveProperty("taskId");
   });
 
   it("should derive a delegated spawn request from a spawnable candidate", () => {
@@ -152,14 +159,14 @@ describe("control-plane runtime-state spawn-request helpers", () => {
     const candidate = deriveExecutionSessionSpawnCandidate({
       view: buildExecutionSessionView([
         createRecord({
-          attemptId: "att_unguarded",
-          sessionId: "thr_unguarded",
+          attemptId: "att_active",
+          sessionId: "thr_active",
           sourceKind: "direct",
           lifecycleState: "active"
         })
       ]),
       selector: {
-        attemptId: "att_unguarded"
+        attemptId: "att_active"
       }
     });
     const request = deriveExecutionSessionSpawnRequest({
@@ -168,9 +175,9 @@ describe("control-plane runtime-state spawn-request helpers", () => {
     });
 
     expect(request).toEqual({
-      parentAttemptId: "att_unguarded",
+      parentAttemptId: "att_active",
       parentRuntime: "codex-cli",
-      parentSessionId: "thr_unguarded",
+      parentSessionId: "thr_active",
       sourceKind: "fork"
     });
     expect(request).not.toHaveProperty("inheritedGuardrails");
@@ -183,10 +190,7 @@ describe("control-plane runtime-state spawn-request helpers", () => {
           attemptId: "att_chain",
           sessionId: "thr_chain",
           sourceKind: "direct",
-          lifecycleState: "active",
-          guardrails: {
-            maxChildren: 4
-          }
+          lifecycleState: "active"
         })
       ]),
       selector: {
@@ -204,10 +208,7 @@ describe("control-plane runtime-state spawn-request helpers", () => {
       parentAttemptId: "att_chain",
       parentRuntime: "codex-cli",
       parentSessionId: "thr_chain",
-      sourceKind: "fork",
-      inheritedGuardrails: {
-        maxChildren: 4
-      }
+      sourceKind: "fork"
     });
     expect(candidate).toEqual(candidateSnapshot);
   });
@@ -227,24 +228,22 @@ describe("control-plane runtime-state spawn-request helpers", () => {
       }
     })!;
 
-    expect(() =>
-      deriveExecutionSessionSpawnRequest({
-        candidate,
-        sourceKind: "direct" as unknown as ExecutionSessionSpawnRequestSourceKind
-      })
-    ).toThrow(ValidationError);
-    expect(() =>
-      deriveExecutionSessionSpawnRequest({
-        candidate,
-        sourceKind: "resume" as unknown as ExecutionSessionSpawnRequestSourceKind
-      })
-    ).toThrow(/sourceKind/i);
-    expect(() =>
-      deriveExecutionSessionSpawnRequest({
-        candidate,
-        sourceKind: "   " as unknown as ExecutionSessionSpawnRequestSourceKind
-      })
-    ).toThrow(ValidationError);
+    for (const invalidSourceKind of ["direct", "resume", "   "]) {
+      expect(() =>
+        deriveExecutionSessionSpawnRequest({
+          candidate,
+          sourceKind:
+            invalidSourceKind as unknown as ExecutionSessionSpawnRequestSourceKind
+        })
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnRequest({
+          candidate,
+          sourceKind:
+            invalidSourceKind as unknown as ExecutionSessionSpawnRequestSourceKind
+        })
+      ).toThrow(/sourceKind/i);
+    }
   });
 
   it("should keep child planning details out of the derived request", () => {
@@ -281,7 +280,6 @@ describe("control-plane runtime-state spawn-request helpers", () => {
     expect(request).not.toHaveProperty("prompt");
     expect(request).not.toHaveProperty("task");
     expect(request).not.toHaveProperty("taskId");
-    expect(request).not.toHaveProperty("parentAttemptLineage");
   });
 });
 
