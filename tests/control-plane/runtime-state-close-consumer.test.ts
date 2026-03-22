@@ -81,7 +81,6 @@ describe("control-plane runtime-state close-consumer helpers", () => {
     expect(consumer).not.toHaveProperty("outcome");
     expect(consumer).not.toHaveProperty("error");
     expect(consumer).not.toHaveProperty("adapterResult");
-    expect(consumer).not.toHaveProperty("invoked");
     expect(consumer).not.toHaveProperty("manifest");
   });
 

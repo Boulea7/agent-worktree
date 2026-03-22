@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   consumeExecutionSessionClose,
-  type ExecutionSessionCloseConsumer
+  type ExecutionSessionCloseConsumer,
+  type ExecutionSessionCloseRequest
 } from "../../src/control-plane/index.js";
 
 describe("control-plane runtime-state close-consume helpers", () => {
@@ -143,6 +144,28 @@ describe("control-plane runtime-state close-consume helpers", () => {
       invoked: true
     });
     expect(consumer).toEqual(consumerSnapshot);
+  });
+
+  it("should surface invoker failures without wrapping them into consume metadata", async () => {
+    const expectedError = new Error("close failed");
+    const consumer = createCloseConsumer({
+      readiness: {
+        blockingReasons: [],
+        canConsumeClose: true,
+        hasBlockingReasons: false,
+        sessionLifecycleSupported: true
+      }
+    });
+
+    await expect(
+      consumeExecutionSessionClose({
+        consumer,
+        invokeClose: async (request: ExecutionSessionCloseRequest) => {
+          expect(request).toBe(consumer.request);
+          throw expectedError;
+        }
+      })
+    ).rejects.toThrow(expectedError);
   });
 });
 
