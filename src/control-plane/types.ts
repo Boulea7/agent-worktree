@@ -44,6 +44,9 @@ export const executionSessionCloseBlockingReasons = [
   "session_unknown",
   "child_attempts_present"
 ] as const;
+export const executionSessionCloseConsumerBlockingReasons = [
+  "session_lifecycle_unsupported"
+] as const;
 export const executionSessionSpawnBlockingReasons = [
   "lifecycle_terminal",
   "session_unknown",
@@ -69,6 +72,8 @@ export type ExecutionSessionWaitConsumerBlockingReason =
   (typeof executionSessionWaitConsumerBlockingReasons)[number];
 export type ExecutionSessionCloseBlockingReason =
   (typeof executionSessionCloseBlockingReasons)[number];
+export type ExecutionSessionCloseConsumerBlockingReason =
+  (typeof executionSessionCloseConsumerBlockingReasons)[number];
 export type ExecutionSessionSpawnBlockingReason =
   (typeof executionSessionSpawnBlockingReasons)[number];
 export type ExecutionSessionSpawnRequestSourceKind =
@@ -310,6 +315,28 @@ export interface ExecutionSessionCloseRequest {
   attemptId: string;
   runtime: string;
   sessionId: string;
+}
+
+export interface ExecutionSessionCloseConsumerReadinessInput {
+  request: ExecutionSessionCloseRequest;
+  resolveSessionLifecycleCapability?: SessionLifecycleCapabilityResolver;
+}
+
+export interface ExecutionSessionCloseConsumerReadiness {
+  blockingReasons: ExecutionSessionCloseConsumerBlockingReason[];
+  canConsumeClose: boolean;
+  hasBlockingReasons: boolean;
+  sessionLifecycleSupported: boolean;
+}
+
+export interface ExecutionSessionCloseConsumerInput {
+  request: ExecutionSessionCloseRequest;
+  resolveSessionLifecycleCapability?: SessionLifecycleCapabilityResolver;
+}
+
+export interface ExecutionSessionCloseConsumer {
+  readiness: ExecutionSessionCloseConsumerReadiness;
+  request: ExecutionSessionCloseRequest;
 }
 
 export interface ExecutionSessionCloseRequestedEventInput {

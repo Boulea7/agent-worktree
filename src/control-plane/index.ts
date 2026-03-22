@@ -17,6 +17,8 @@ export { deriveExecutionSessionSpawnLineage } from "./runtime-state-spawn-lineag
 export { deriveExecutionSessionSpawnRequest } from "./runtime-state-spawn-request.js";
 export { deriveExecutionSessionSpawnTarget } from "./runtime-state-spawn-target.js";
 export { deriveExecutionSessionCloseCandidate } from "./runtime-state-close-candidate.js";
+export { deriveExecutionSessionCloseConsumer } from "./runtime-state-close-consumer.js";
+export { deriveExecutionSessionCloseConsumerReadiness } from "./runtime-state-close-consumer-readiness.js";
 export { deriveExecutionSessionCloseReadiness } from "./runtime-state-close-readiness.js";
 export { deriveExecutionSessionCloseRecordedEvent } from "./runtime-state-close-recorded-event.js";
 export { deriveExecutionSessionCloseRequest } from "./runtime-state-close-request.js";
@@ -36,6 +38,7 @@ export {
 export {
   executionSessionContextSelectionKinds,
   executionSessionCloseBlockingReasons,
+  executionSessionCloseConsumerBlockingReasons,
   executionSessionRecordSources,
   executionSessionSpawnBlockingReasons,
   executionSessionSpawnRequestSourceKinds,
@@ -44,6 +47,11 @@ export {
   type ExecutionSessionCloseBlockingReason,
   type ExecutionSessionCloseCandidate,
   type ExecutionSessionCloseCandidateInput,
+  type ExecutionSessionCloseConsumer,
+  type ExecutionSessionCloseConsumerBlockingReason,
+  type ExecutionSessionCloseConsumerInput,
+  type ExecutionSessionCloseConsumerReadiness,
+  type ExecutionSessionCloseConsumerReadinessInput,
   type ExecutionSessionCloseRecordedEvent,
   type ExecutionSessionCloseRecordedEventInput,
   type ExecutionSessionCloseReadiness,
