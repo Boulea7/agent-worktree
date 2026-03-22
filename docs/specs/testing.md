@@ -42,6 +42,7 @@ Contract tests should validate:
 - generated compatibility files if generation is added later
 - default list visibility for cleaned attempts
 - additive provenance fields survive machine-readable create/list/cleanup flows
+- machine-readable CLI payloads do not leak internal spawn-requested or spawn-recorded marker metadata
 - machine-readable CLI payloads do not leak internal wait-consume or wait-consume-batch metadata
 - invalid manifests fail the command in machine-readable output
 - missing `manifest.json` files in attempt directories fail the command in machine-readable output
@@ -267,6 +268,26 @@ Must test:
 - helper immutability for the supplied spawn-request input
 - explicit confirmation that internal spawn-lineage helpers do not preserve parent runtime or parent session fields and do not widen public CLI payloads, manifest persistence, or lifecycle semantics
 - explicit confirmation that internal spawn-lineage helpers do not decide child branches, child worktrees, child runtime mode, prompt/task payloads, or delegated-runtime approvals
+
+## Internal Spawn Requested Event
+
+Must test:
+
+- spawn-requested-event derivation from an existing internal spawn-request without introducing a second selector contract
+- successful projection of a minimal `{ attemptId, runtime, sessionId, lifecycleEventKind: "spawn_requested" }` marker from the existing parent-session fields on spawn-request
+- helper immutability for the supplied spawn-request input
+- explicit confirmation that internal spawn-requested-event helpers do not reintroduce request, selector, view, context, readiness, child-lineage, child branch/worktree planning, manifest, or outcome data
+- explicit confirmation that internal spawn-requested-event helpers do not imply child creation, child lineage truth, terminal lifecycle truth, or actual spawn support
+
+## Internal Spawn Recorded Event
+
+Must test:
+
+- spawn-recorded-event derivation from an existing internal spawn-requested-event without introducing a second selector contract
+- successful projection of a minimal `{ attemptId, runtime, sessionId, lifecycleEventKind: "spawn_recorded" }` marker from an existing parent-session spawn-requested-event
+- helper immutability for the supplied spawn-requested-event input
+- explicit confirmation that internal spawn-recorded-event helpers do not reintroduce requestedEvent, request, selector, view, context, readiness, child-lineage, child branch/worktree planning, manifest, or outcome data
+- explicit confirmation that internal spawn-recorded-event helpers do not imply child creation, child lineage truth, terminal lifecycle truth, or actual spawn support
 
 ## Internal Wait Readiness
 
@@ -517,6 +538,8 @@ Must test:
 - internal spawn-target tests layered on top of internal spawn-candidate helpers without introducing actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
 - internal spawn-request tests layered on top of internal spawn-candidate helpers without introducing actual spawn support, public selectors, manifest-backed guardrail truth, child-planning semantics, or mutable lifecycle state
 - internal spawn-lineage tests layered on top of internal spawn-request helpers without introducing actual spawn support, manifest-backed lifecycle truth, public selectors, or child-planning semantics
+- internal spawn-requested-event tests layered on top of internal spawn-request helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, or terminal lifecycle truth
+- internal spawn-recorded-event tests layered on top of internal spawn-requested-event helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, or terminal lifecycle truth
 - lineage-aware spawn helper tests should continue to prove that ancestry/guardrail inputs affect only internal readiness, parent-session request shaping, and minimal child-lineage projection, never public spawn contracts or child-planning side effects
 - internal wait-readiness tests layered on top of internal runtime-context without introducing actual wait support, close support, or public selectors
 - internal wait-candidate tests layered on top of the internal read model, runtime-context, and wait-readiness helpers without introducing actual wait support, close support, public selectors, or mutable lifecycle state
@@ -546,6 +569,7 @@ Public spawn-candidate selectors, public spawn-candidate stores, and any contrac
 Public spawn-target selectors, public spawn-target stores, and any contract that treats internal spawn-targets as lifecycle truth also belong to that later phase rather than the current internal spawn-target slice.
 Public spawn-request selectors, public spawn-request stores, and any contract that treats internal spawn-request output as lifecycle truth also belong to that later phase rather than the current internal spawn-request slice.
 Public spawn-lineage selectors, public spawn-lineage stores, and any contract that treats internal spawn-lineage output as lifecycle truth, manifest truth, or real child-attempt planning also belong to that later phase rather than the current internal spawn-lineage slice.
+Public spawn-requested-event selectors, public spawn-requested-event stores, public spawn-recorded-event selectors, public spawn-recorded-event stores, and any contract that treats internal spawn-requested-event or spawn-recorded-event output as child-creation truth, lifecycle truth, manifest truth, or public spawn status also belong to that later phase rather than the current internal spawn-event slice.
 Actual wait commands, close commands, public wait-readiness selectors, and any mutable wait-readiness store also belong to that later phase rather than the current internal wait-readiness slice.
 Public wait-candidate selectors, public wait-candidate stores, and any contract that treats internal wait-candidates as lifecycle truth also belong to that later phase rather than the current internal wait-candidate slice.
 Public wait-target selectors, public wait-target stores, and any contract that treats internal wait-targets as lifecycle truth also belong to that later phase rather than the current internal wait-target slice.

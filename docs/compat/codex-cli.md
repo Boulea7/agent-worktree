@@ -62,6 +62,10 @@ Additional bounded internal details:
 - a separate internal runtime-context helper layer may derive single-consumer execution-session contexts from the internal runtime-state read model for future internal wait/close-oriented consumers
 - a separate internal lifecycle-disposition helper layer may derive shared terminal/session-known/descendant-impact facts from runtime-context for future internal wait/close-oriented consumers
 - a separate internal spawn-oriented helper chain may derive readiness, candidate, target, request, or child-lineage preparation metadata from runtime-context, runtime-state views, and inherited guardrails
+- a separate internal spawn-requested-event layer may derive a minimal parent-session `spawn_requested` marker above an existing spawn-request for future internal consumers without becoming actual spawn support
+- that same spawn-requested-event projection remains request-based internal metadata only: it does not reintroduce selector-driven spawn surfaces, child-lineage truth, child planning, or a public session-lifecycle API
+- a separate internal spawn-recorded-event layer may derive a second minimal parent-session `spawn_recorded` marker above an existing spawn-requested-event for future internal consumers without becoming actual spawn support
+- that same spawn-recorded-event projection remains requested-event-based internal metadata only: it does not reintroduce selector-driven spawn surfaces, child-lineage truth, child planning, terminal lifecycle truth, or a public session-lifecycle API
 - a separate internal wait-readiness helper layer may derive wait preconditions or blocking reasons from runtime-context for future internal wait-oriented consumers
 - a separate internal wait-target or wait-request helper layer may derive minimal internal wait-oriented target or request metadata above that control-plane vocabulary for future internal consumers
 - that same wait-request shaping remains target-based internal metadata only: it does not reintroduce selector-driven wait surfaces, readiness recomputation, or an actual wait consumer loop
@@ -88,6 +92,8 @@ Additional bounded internal details:
 - the same restriction applies to any derived execution-session read model: it is query-only internal metadata, not a mutable registry, public selector surface, or lifecycle manager
 - the same restriction applies to any derived execution-session context: it is internal-only, non-persistent, non-manifest-backed metadata and does not imply public selectors or lifecycle support
 - the same restriction applies to any derived lifecycle-disposition or spawn-oriented metadata: it is internal-only, derived, non-persistent, non-manifest-backed metadata and does not imply actual spawn support, public selectors, child planning, or lifecycle truth
+- the same restriction applies to any derived spawn-requested-event metadata: it is internal-only, non-persistent, non-manifest-backed lifecycle-marker metadata and does not imply actual spawn support, child creation truth, child lineage truth, or a public session-lifecycle API
+- the same restriction applies to any derived spawn-recorded-event metadata: it is internal-only, non-persistent, non-manifest-backed lifecycle-marker metadata and does not imply actual spawn support, child creation truth, child lineage truth, terminal lifecycle truth, or a public session-lifecycle API
 - the same restriction applies to any derived wait-readiness metadata: it is internal-only, non-persistent, non-manifest-backed preflight state and does not imply actual wait support, close support, or public selectors
 - the same restriction applies to any derived wait-target or wait-request metadata: it is internal-only, non-persistent, non-manifest-backed metadata and does not imply actual wait support, polling, timeout scheduling, or a public session-lifecycle API
 - the same restriction applies to any derived wait-consumer metadata: it is internal-only, non-persistent, non-manifest-backed capability-aware preflight state and does not imply actual wait support, polling, timeout scheduling, adapter-driven waiting, or a public session-lifecycle API
@@ -107,6 +113,7 @@ Explicitly not implemented:
 - interactive session attach or stop behavior
 - general session lifecycle management
 - public execution commands in `agent-worktree`
+- public spawn, spawn-requested-event, or spawn-recorded-event CLI surface in `agent-worktree`
 - public `--profile` flags or public provider-selection semantics in `agent-worktree`
 - public wait, wait-consume, or wait-consume-batch CLI surface in `agent-worktree`
 - provider, auth, or config-management writers for local Codex settings
