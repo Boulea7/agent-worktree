@@ -304,6 +304,7 @@ Must test:
 Must test:
 
 - wait-request derivation from an existing internal wait-target without introducing a second selector contract
+- target-based request shaping only, without reintroducing candidate-, selector-, or view-driven entry points
 - successful projection of a minimal `{ attemptId, runtime, sessionId }` request from a valid wait target
 - optional `timeoutMs` carry-through when the caller supplies a valid positive integer
 - omission of `timeoutMs` when it is not provided explicitly
@@ -422,7 +423,7 @@ Public spawn-lineage selectors, public spawn-lineage stores, and any contract th
 Actual wait commands, close commands, public wait-readiness selectors, and any mutable wait-readiness store also belong to that later phase rather than the current internal wait-readiness slice.
 Public wait-candidate selectors, public wait-candidate stores, and any contract that treats internal wait-candidates as lifecycle truth also belong to that later phase rather than the current internal wait-candidate slice.
 Public wait-target selectors, public wait-target stores, and any contract that treats internal wait-targets as lifecycle truth also belong to that later phase rather than the current internal wait-target slice.
-Public wait-request selectors, public wait-request stores, and any contract that treats internal wait-request output as lifecycle truth also belong to that later phase rather than the current internal wait-request slice.
+Public wait-request selectors, public wait-request stores, actual wait consumers, and any contract that treats internal wait-request output as lifecycle truth also belong to that later phase rather than the current internal wait-request slice.
 Public close-oriented selectors, public close-oriented stores, and any actual close command or contract that treats internal close-readiness, close-candidate, or close-target output as lifecycle truth also belong to that later phase rather than the current internal close-oriented helper slice.
 Git archival and checkpoint discipline belongs to maintainer workflow guidance rather than the current public runtime-state, CLI, or manifest contract; tests in this phase should not treat commit-backed checkpoints as an implemented product surface now that the repository has a usable `HEAD`, even though maintainers should continue recording each completed thin slice or debugging milestone with non-destructive Git history once a usable baseline exists.
 

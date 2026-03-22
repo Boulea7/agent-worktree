@@ -64,6 +64,7 @@ Additional bounded internal details:
 - a separate internal spawn-oriented helper chain may derive readiness, candidate, target, request, or child-lineage preparation metadata from runtime-context, runtime-state views, and inherited guardrails
 - a separate internal wait-readiness helper layer may derive wait preconditions or blocking reasons from runtime-context for future internal wait-oriented consumers
 - a separate internal wait-target or wait-request helper layer may derive minimal internal wait-oriented target or request metadata above that control-plane vocabulary for future internal consumers
+- that same wait-request shaping remains target-based internal metadata only: it does not reintroduce selector-driven wait surfaces, readiness recomputation, or an actual wait consumer loop
 - that observation summary is adapter-internal only: it is not a public CLI payload contract, not manifest-backed state, and not a session-lifecycle API
 - the same restriction applies to any derived internal session snapshot: it is not a public CLI payload, not manifest-backed state, and not attach/resume/wait/close support
 - the same restriction applies to any derived execution-session record or index: it is not a public CLI payload, not manifest-backed state, and not lifecycle support
