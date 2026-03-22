@@ -207,6 +207,7 @@ Must test:
 - child-limit blocking when `maxChildren` is present and the selected context already has the maximum allowed child attempts
 - depth-limit blocking when `maxDepth` is present and the next delegated child would exceed the resolved lineage depth budget
 - lineage-depth-unknown blocking when `maxDepth` is present and ancestry contains unresolved gaps
+- lineage-depth-unknown blocking when ancestry is cyclic or otherwise cannot be resolved into a stable parent chain
 - unresolved ancestry remains neutral when `maxDepth` is absent
 - deterministic blocking-reason ordering for lifecycle, session-known, lineage-depth, depth-limit, and child-limit blockers
 - explicit confirmation that internal spawn-readiness helpers do not imply actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
@@ -246,8 +247,24 @@ Must test:
 - omission of `inheritedGuardrails` when the parent record has none
 - loud failures for invalid `sourceKind` inputs such as `direct`, `resume`, or blank strings
 - helper immutability for the supplied spawn-candidate input
+- explicit confirmation that spawn-request output does not seed child attempt lineage, child worktree or branch planning, child runtime mode, or prompt/task payloads
 - explicit confirmation that internal spawn-request helpers do not decide child attempt identifiers, child branches, child worktrees, child runtime mode, child prompts, delegated-runtime approvals, or other actual spawn semantics
 - explicit confirmation that internal spawn-request helpers do not widen public CLI payloads, manifest persistence, or lifecycle semantics
+
+## Internal Spawn Lineage
+
+Must test:
+
+- spawn-lineage derivation from an existing internal spawn-request plus an explicit child attempt identifier without introducing a second parent-session selector contract
+- successful projection of a minimal `{ attemptId, parentAttemptId, sourceKind }` lineage object from a valid spawn request
+- normalized guardrail carry-through from inherited request guardrails into lineage `guardrails`
+- omission of lineage `guardrails` when the source request has no inherited guardrails
+- loud failures for blank child attempt identifiers
+- loud failures when the explicit child attempt identifier matches the parent attempt identifier
+- sourceKind carry-through from the supplied spawn-request without widening it into parent runtime/session truth or child-planning semantics
+- helper immutability for the supplied spawn-request input
+- explicit confirmation that internal spawn-lineage helpers do not preserve parent runtime or parent session fields and do not widen public CLI payloads, manifest persistence, or lifecycle semantics
+- explicit confirmation that internal spawn-lineage helpers do not decide child branches, child worktrees, child runtime mode, prompt/task payloads, or delegated-runtime approvals
 
 ## Internal Wait Readiness
 
@@ -366,6 +383,8 @@ Must test:
 - internal spawn-candidate tests layered on top of the internal read model, runtime-context, and spawn-readiness helpers without introducing actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
 - internal spawn-target tests layered on top of internal spawn-candidate helpers without introducing actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
 - internal spawn-request tests layered on top of internal spawn-candidate helpers without introducing actual spawn support, public selectors, manifest-backed guardrail truth, child-planning semantics, or mutable lifecycle state
+- internal spawn-lineage tests layered on top of internal spawn-request helpers without introducing actual spawn support, manifest-backed lifecycle truth, public selectors, or child-planning semantics
+- lineage-aware spawn helper tests should continue to prove that ancestry/guardrail inputs affect only internal readiness, parent-session request shaping, and minimal child-lineage projection, never public spawn contracts or child-planning side effects
 - internal wait-readiness tests layered on top of internal runtime-context without introducing actual wait support, close support, or public selectors
 - internal wait-candidate tests layered on top of the internal read model, runtime-context, and wait-readiness helpers without introducing actual wait support, close support, public selectors, or mutable lifecycle state
 - internal wait-target tests layered on top of internal wait-candidate helpers without introducing actual wait support, close support, public selectors, or mutable lifecycle state
@@ -383,6 +402,7 @@ Public runtime-context selectors, public wait/close-oriented context consumers, 
 Public spawn-candidate selectors, public spawn-candidate stores, and any contract that treats internal spawn-candidates as lifecycle truth also belong to that later phase rather than the current internal spawn-candidate slice.
 Public spawn-target selectors, public spawn-target stores, and any contract that treats internal spawn-targets as lifecycle truth also belong to that later phase rather than the current internal spawn-target slice.
 Public spawn-request selectors, public spawn-request stores, and any contract that treats internal spawn-request output as lifecycle truth also belong to that later phase rather than the current internal spawn-request slice.
+Public spawn-lineage selectors, public spawn-lineage stores, and any contract that treats internal spawn-lineage output as lifecycle truth, manifest truth, or real child-attempt planning also belong to that later phase rather than the current internal spawn-lineage slice.
 Actual wait commands, close commands, public wait-readiness selectors, and any mutable wait-readiness store also belong to that later phase rather than the current internal wait-readiness slice.
 Public wait-candidate selectors, public wait-candidate stores, and any contract that treats internal wait-candidates as lifecycle truth also belong to that later phase rather than the current internal wait-candidate slice.
 Public wait-target selectors, public wait-target stores, and any contract that treats internal wait-targets as lifecycle truth also belong to that later phase rather than the current internal wait-target slice.
