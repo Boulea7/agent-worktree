@@ -19,8 +19,10 @@ function assertNoInternalRuntimeMetadata(value: Record<string, unknown>): void {
   expect(value).not.toHaveProperty("controlPlane");
   expect(value).not.toHaveProperty("runtimeState");
   expect(value).not.toHaveProperty("closeCandidate");
+  expect(value).not.toHaveProperty("closeConsume");
   expect(value).not.toHaveProperty("closeConsumer");
   expect(value).not.toHaveProperty("closeConsumerReadiness");
+  expect(value).not.toHaveProperty("closeConsume");
   expect(value).not.toHaveProperty("closeRecordedEvent");
   expect(value).not.toHaveProperty("closeRequestedEvent");
   expect(value).not.toHaveProperty("closeRequest");

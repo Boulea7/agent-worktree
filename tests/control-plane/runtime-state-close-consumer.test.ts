@@ -70,6 +70,7 @@ describe("control-plane runtime-state close-consumer helpers", () => {
     expect(consumer).not.toHaveProperty("context");
     expect(consumer).not.toHaveProperty("candidate");
     expect(consumer).not.toHaveProperty("target");
+    expect(consumer).not.toHaveProperty("invoked");
     expect(consumer).not.toHaveProperty("closeRequestedEvent");
     expect(consumer).not.toHaveProperty("closeRecordedEvent");
     expect(consumer).not.toHaveProperty("force");
@@ -80,6 +81,7 @@ describe("control-plane runtime-state close-consumer helpers", () => {
     expect(consumer).not.toHaveProperty("outcome");
     expect(consumer).not.toHaveProperty("error");
     expect(consumer).not.toHaveProperty("adapterResult");
+    expect(consumer).not.toHaveProperty("invoked");
     expect(consumer).not.toHaveProperty("manifest");
   });
 
