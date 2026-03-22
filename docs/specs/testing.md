@@ -423,6 +423,19 @@ Must test:
 - helper immutability for the supplied close-consumer input
 - explicit confirmation that internal close-consume helpers do not reintroduce selectors, views, contexts, candidates, targets, readiness recomputation, capability recomputation, requested-event or recorded-event projection, manifest seeds, adapter results, polling metadata, or lifecycle truth
 
+## Internal Close Consume Batch
+
+Must test:
+
+- close-consume-batch derivation from an explicit ordered list of existing internal close-consumers plus an explicitly injected close invoker without introducing a second selector contract
+- empty consumer lists returning a minimal `{ results: [] }` batch shape
+- blocked entries remaining visible in order with `invoked: false`
+- supported entries invoking the injected close invoker in input order
+- explicit confirmation that blocked entries do not prevent later supported entries from being consumed
+- helper immutability for the supplied close-consumer list and each supplied close-consumer input
+- explicit confirmation that supported-entry invoker failures stop the batch immediately and do not execute later supported entries
+- explicit confirmation that internal close-consume-batch helpers do not reintroduce selectors, views, contexts, candidates, targets, readiness recomputation, capability recomputation, requested-event or recorded-event projection, manifest seeds, per-item error aggregation, summary metadata, or lifecycle truth
+
 ## Verification Layer
 
 Must test:
@@ -488,6 +501,7 @@ Must test:
 - internal close-recorded-event tests layered on top of internal close-requested-event helpers without introducing actual close support, close-consumer preflight, adapter-driven close results, public selectors, manifest-backed state, or mutable lifecycle state
 - internal close-consumer-preflight tests layered on top of internal close-request helpers without introducing actual close support, adapter invocation, event subscription, public selectors, manifest-backed state, or mutable lifecycle state
 - internal close-consume tests layered on top of internal close-consumer-preflight helpers without introducing actual close support, adapter lifecycle promises, public selectors, manifest-backed state, or mutable lifecycle state
+- internal close-consume-batch tests layered on top of internal close-consume helpers without introducing actual close support, partial-failure aggregation contracts, public selectors, manifest-backed state, or mutable lifecycle state
 - parser boundary tests for bracket-prefixed log noise and malformed bracket-prefixed JSON-looking lines
 - env-gated `codex-cli` smoke scaffolding, when available, as a non-default compatibility probe
 
@@ -507,7 +521,7 @@ Public wait-candidate selectors, public wait-candidate stores, and any contract 
 Public wait-target selectors, public wait-target stores, and any contract that treats internal wait-targets as lifecycle truth also belong to that later phase rather than the current internal wait-target slice.
 Public wait-request selectors, public wait-request stores, actual wait consumers, and any contract that treats internal wait-request output as lifecycle truth also belong to that later phase rather than the current internal wait-request slice.
 Public wait-consumer selectors, public wait-consumer stores, and any contract that treats internal wait-consumer output as lifecycle truth also belong to that later phase rather than the current internal wait-consumer-preflight slice.
-Public close-oriented selectors, public close-oriented stores, any close-consumer preflight, any close-consume path, and any actual close command or contract that treats internal close-readiness, close-candidate, close-target, close-request, close-requested-event, close-recorded-event, close-consumer, or close-consume output as lifecycle truth also belong to that later phase rather than the current internal close-oriented helper slice.
+Public close-oriented selectors, public close-oriented stores, any close-consumer preflight, any close-consume path, any close-consume-batch path, and any actual close command or contract that treats internal close-readiness, close-candidate, close-target, close-request, close-requested-event, close-recorded-event, close-consumer, close-consume, or close-consume-batch output as lifecycle truth also belong to that later phase rather than the current internal close-oriented helper slice.
 Git archival and checkpoint discipline belongs to maintainer workflow guidance rather than the current public runtime-state, CLI, or manifest contract; tests in this phase should not treat commit-backed checkpoints as an implemented product surface now that the repository has a usable `HEAD`, even though maintainers should continue recording each completed thin slice or debugging milestone with non-destructive Git history once a usable baseline exists.
 
 ### Phase 4: Verification and Selection

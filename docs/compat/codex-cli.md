@@ -76,6 +76,8 @@ Additional bounded internal details:
 - that same close-consumer preflight composition remains request-based internal metadata only: it does not reintroduce selector-driven close surfaces, close-readiness recomputation, adapter invocation, event subscription, or adapter-driven close success truth
 - a separate internal close-consume helper may consume an existing close-consumer object for future internal callers through an explicitly injected invoker without becoming actual close support
 - that same close-consume helper remains consumer-based internal metadata only: blocked results do not invoke the injected invoker, supported results may invoke it exactly once with the existing close-request, and it does not imply adapter-driven close success, sessionLifecycle support, event projection, or a public session-lifecycle API
+- a separate internal close-consume-batch helper may consume an explicit list of existing close-consumer objects for future internal callers by composing the single-consumer close-consume helper without becoming actual close support
+- that same close-consume-batch helper remains consumer-list-based internal metadata only: it preserves input order, continues past blocked entries, fails fast on the first injected invoker error from a supported entry, and does not imply partial-failure aggregation, adapter-driven close success, sessionLifecycle support, event projection, or a public session-lifecycle API
 - that observation summary is adapter-internal only: it is not a public CLI payload contract, not manifest-backed state, and not a session-lifecycle API
 - the same restriction applies to any derived internal session snapshot: it is not a public CLI payload, not manifest-backed state, and not attach/resume/wait/close support
 - the same restriction applies to any derived execution-session record or index: it is not a public CLI payload, not manifest-backed state, and not lifecycle support
@@ -90,6 +92,7 @@ Additional bounded internal details:
 - the same restriction applies to any derived close-recorded-event metadata: it is internal-only, non-persistent, non-manifest-backed lifecycle-marker metadata and does not imply actual close support, adapter-driven close success, close-consumer preflight, or a public session-lifecycle API
 - the same restriction applies to any derived close-consumer metadata: it is internal-only, non-persistent, non-manifest-backed capability-aware preflight metadata and does not imply actual close support, adapter-driven closing, event subscription, or a public session-lifecycle API
 - the same restriction applies to any derived close-consume metadata: it is internal-only, non-persistent, non-manifest-backed consume-path metadata and does not imply actual close support, adapter-driven close success, sessionLifecycle support, or a public session-lifecycle API
+- the same restriction applies to any derived close-consume-batch metadata: it is internal-only, non-persistent, non-manifest-backed batch consume-path metadata and does not imply actual close support, partial-failure aggregation support, adapter-driven close success, sessionLifecycle support, or a public session-lifecycle API
 
 Explicitly not implemented:
 
