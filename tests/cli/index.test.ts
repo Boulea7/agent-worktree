@@ -24,6 +24,7 @@ function assertNoInternalRuntimeMetadata(value: Record<string, unknown>): void {
   expect(value).not.toHaveProperty("closePreflight");
   expect(value).not.toHaveProperty("lifecycleDisposition");
   expect(value).not.toHaveProperty("spawnCandidate");
+  expect(value).not.toHaveProperty("spawnLineage");
   expect(value).not.toHaveProperty("spawnRequest");
   expect(value).not.toHaveProperty("spawnTarget");
   expect(value).not.toHaveProperty("waitCandidate");
