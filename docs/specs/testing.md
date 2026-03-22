@@ -313,6 +313,19 @@ Must test:
 - explicit confirmation that internal wait-request helpers do not re-run readiness, do not reintroduce selectors or views, do not seed manifests, and do not widen public CLI payloads, manifest persistence, or lifecycle semantics
 - explicit confirmation that internal wait-request helpers do not introduce polling, timeout scheduling, settle policy, child policy, close coupling, or lifecycle truth
 
+## Internal Wait Consumer Preflight
+
+Must test:
+
+- wait-consumer-readiness derivation from an existing internal wait-request without introducing a second selector contract
+- explicit capability-aware allow behavior when `resolveSessionLifecycleCapability` reports support
+- default blocked behavior for shipped runtimes whose adapter descriptor still marks `sessionLifecycle` as unsupported
+- blocked behavior for unknown runtimes when capability lookup fails or resolves to unsupported
+- stable blocking-reason vocabulary limited to `session_lifecycle_unsupported`
+- helper immutability for the supplied wait-request input
+- wait-consumer composition that returns the original wait-request plus capability-aware readiness
+- explicit confirmation that internal wait-consumer helpers do not reintroduce selectors, views, contexts, candidates, targets, readiness recomputation, polling, timeout scheduling, event subscription, adapter invocation, manifest seeds, or lifecycle truth
+
 ## Internal Close Readiness
 
 Must test:
@@ -405,6 +418,7 @@ Must test:
 - internal wait-candidate tests layered on top of the internal read model, runtime-context, and wait-readiness helpers without introducing actual wait support, close support, public selectors, or mutable lifecycle state
 - internal wait-target tests layered on top of internal wait-candidate helpers without introducing actual wait support, close support, public selectors, or mutable lifecycle state
 - internal wait-request tests layered on top of internal wait-target helpers without introducing actual wait support, polling, timeout scheduling, public selectors, manifest-backed state, or mutable lifecycle state
+- internal wait-consumer-preflight tests layered on top of internal wait-request helpers without introducing actual wait support, polling, timeout scheduling, event subscription, adapter invocation, public selectors, manifest-backed state, or mutable lifecycle state
 - internal close-readiness, close-candidate, and close-target tests layered on top of existing runtime-context helpers without introducing actual close support, public selectors, manifest-backed lifecycle state, or mutable lifecycle state
 - parser boundary tests for bracket-prefixed log noise and malformed bracket-prefixed JSON-looking lines
 - env-gated `codex-cli` smoke scaffolding, when available, as a non-default compatibility probe
@@ -424,6 +438,7 @@ Actual wait commands, close commands, public wait-readiness selectors, and any m
 Public wait-candidate selectors, public wait-candidate stores, and any contract that treats internal wait-candidates as lifecycle truth also belong to that later phase rather than the current internal wait-candidate slice.
 Public wait-target selectors, public wait-target stores, and any contract that treats internal wait-targets as lifecycle truth also belong to that later phase rather than the current internal wait-target slice.
 Public wait-request selectors, public wait-request stores, actual wait consumers, and any contract that treats internal wait-request output as lifecycle truth also belong to that later phase rather than the current internal wait-request slice.
+Public wait-consumer selectors, public wait-consumer stores, and any contract that treats internal wait-consumer output as lifecycle truth also belong to that later phase rather than the current internal wait-consumer-preflight slice.
 Public close-oriented selectors, public close-oriented stores, and any actual close command or contract that treats internal close-readiness, close-candidate, or close-target output as lifecycle truth also belong to that later phase rather than the current internal close-oriented helper slice.
 Git archival and checkpoint discipline belongs to maintainer workflow guidance rather than the current public runtime-state, CLI, or manifest contract; tests in this phase should not treat commit-backed checkpoints as an implemented product surface now that the repository has a usable `HEAD`, even though maintainers should continue recording each completed thin slice or debugging milestone with non-destructive Git history once a usable baseline exists.
 
