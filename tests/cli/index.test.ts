@@ -33,6 +33,7 @@ function assertNoInternalRuntimeMetadata(value: Record<string, unknown>): void {
   expect(value).not.toHaveProperty("waitReadiness");
   expect(value).not.toHaveProperty("spawnReadiness");
   expect(value).not.toHaveProperty("guardrails");
+  expect(value).not.toHaveProperty("profile");
 }
 
 describe("runCli", () => {
@@ -154,6 +155,23 @@ describe("runCli", () => {
     expect(exitCode).toBeGreaterThan(0);
     expect(stdout.output).toBe("");
     expect(stderr.output).toContain("unknown command");
+  });
+
+  it("should keep attempt create profile selection outside the public cli surface", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(
+      ["attempt", "create", "--profile", "project-managed"],
+      {
+        stdout,
+        stderr
+      }
+    );
+
+    expect(exitCode).toBeGreaterThan(0);
+    expect(stdout.output).toBe("");
+    expect(stderr.output).toContain("unknown option '--profile'");
   });
 
   it("should return a structured success envelope for attempt cleanup in json mode", async () => {
