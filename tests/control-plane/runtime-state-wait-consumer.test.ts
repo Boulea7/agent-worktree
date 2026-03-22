@@ -55,7 +55,7 @@ describe("control-plane runtime-state wait-consumer helpers", () => {
       request: createWaitRequest({
         timeoutMs: 250
       })
-    }) as Record<string, unknown>;
+    }) as unknown as Record<string, unknown>;
 
     expect(consumer).toEqual({
       request: {
