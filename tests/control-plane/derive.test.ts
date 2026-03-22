@@ -222,6 +222,50 @@ describe("control-plane derive helpers", () => {
     });
   });
 
+  it("should preserve close_recorded as the lifecycle marker that closes the session", () => {
+    const input = {
+      attemptId: "att_close_recorded",
+      runtime: "codex-cli",
+      observation: {
+        threadId: "thr_close_recorded",
+        runCompleted: false,
+        errorEventCount: 0,
+        lastAgentMessage: "close recorded"
+      },
+      lifecycleEventKind: "close_recorded" as const
+    };
+
+    const snapshot = deriveSessionSnapshot(input);
+
+    expect(snapshot).toEqual({
+      node: {
+        attemptId: "att_close_recorded",
+        nodeKind: "root",
+        sourceKind: "direct"
+      },
+      lifecycleState: "closed",
+      sessionRef: {
+        runtime: "codex-cli",
+        sessionId: "thr_close_recorded"
+      },
+      runCompleted: false,
+      errorEventCount: 0,
+      lastAgentMessage: "close recorded",
+      lastLifecycleEventKind: "close_recorded"
+    });
+    expect(input).toEqual({
+      attemptId: "att_close_recorded",
+      runtime: "codex-cli",
+      observation: {
+        threadId: "thr_close_recorded",
+        runCompleted: false,
+        errorEventCount: 0,
+        lastAgentMessage: "close recorded"
+      },
+      lifecycleEventKind: "close_recorded"
+    });
+  });
+
   it("should build a session-tree index without validating missing parents", () => {
     const snapshots = [
       deriveSessionSnapshot({
