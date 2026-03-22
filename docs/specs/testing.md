@@ -42,6 +42,7 @@ Contract tests should validate:
 - generated compatibility files if generation is added later
 - default list visibility for cleaned attempts
 - additive provenance fields survive machine-readable create/list/cleanup flows
+- machine-readable CLI payloads do not leak internal wait-consume or wait-consume-batch metadata
 - invalid manifests fail the command in machine-readable output
 - missing `manifest.json` files in attempt directories fail the command in machine-readable output
 - cleanup returns structured outcomes
