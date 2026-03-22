@@ -360,6 +360,18 @@ Must test:
 - equivalent target derivation through both existing `attemptId` and `sessionId` selection paths upstream of the candidate
 - explicit confirmation that internal close-target helpers do not widen public CLI payloads, manifest persistence, or actual close semantics
 
+## Internal Close Request
+
+Must test:
+
+- close-request derivation from an existing internal close-target without introducing a second selector contract
+- target-based request shaping only, without reintroducing candidate-, selector-, view-, or readiness-driven entry points
+- successful projection of a minimal `{ attemptId, runtime, sessionId }` request from a valid close target
+- loud failures for blank identifier inputs such as empty or whitespace-only `attemptId`, `runtime`, or `sessionId`
+- helper immutability for the supplied close-target input
+- explicit confirmation that internal close-request helpers do not re-run readiness, do not reintroduce selectors or views, do not seed manifests, and do not widen public CLI payloads, manifest persistence, or lifecycle semantics
+- explicit confirmation that internal close-request helpers do not introduce close-consumer preflight, actual close support, force or cascade semantics, settle policy, child policy, or lifecycle truth
+
 ## Verification Layer
 
 Must test:
@@ -420,6 +432,7 @@ Must test:
 - internal wait-request tests layered on top of internal wait-target helpers without introducing actual wait support, polling, timeout scheduling, public selectors, manifest-backed state, or mutable lifecycle state
 - internal wait-consumer-preflight tests layered on top of internal wait-request helpers without introducing actual wait support, polling, timeout scheduling, event subscription, adapter invocation, public selectors, manifest-backed state, or mutable lifecycle state
 - internal close-readiness, close-candidate, and close-target tests layered on top of existing runtime-context helpers without introducing actual close support, public selectors, manifest-backed lifecycle state, or mutable lifecycle state
+- internal close-request tests layered on top of internal close-target helpers without introducing actual close support, close-consumer preflight, public selectors, manifest-backed state, or mutable lifecycle state
 - parser boundary tests for bracket-prefixed log noise and malformed bracket-prefixed JSON-looking lines
 - env-gated `codex-cli` smoke scaffolding, when available, as a non-default compatibility probe
 
@@ -439,7 +452,7 @@ Public wait-candidate selectors, public wait-candidate stores, and any contract 
 Public wait-target selectors, public wait-target stores, and any contract that treats internal wait-targets as lifecycle truth also belong to that later phase rather than the current internal wait-target slice.
 Public wait-request selectors, public wait-request stores, actual wait consumers, and any contract that treats internal wait-request output as lifecycle truth also belong to that later phase rather than the current internal wait-request slice.
 Public wait-consumer selectors, public wait-consumer stores, and any contract that treats internal wait-consumer output as lifecycle truth also belong to that later phase rather than the current internal wait-consumer-preflight slice.
-Public close-oriented selectors, public close-oriented stores, and any actual close command or contract that treats internal close-readiness, close-candidate, or close-target output as lifecycle truth also belong to that later phase rather than the current internal close-oriented helper slice.
+Public close-oriented selectors, public close-oriented stores, any close-consumer preflight, and any actual close command or contract that treats internal close-readiness, close-candidate, close-target, or close-request output as lifecycle truth also belong to that later phase rather than the current internal close-oriented helper slice.
 Git archival and checkpoint discipline belongs to maintainer workflow guidance rather than the current public runtime-state, CLI, or manifest contract; tests in this phase should not treat commit-backed checkpoints as an implemented product surface now that the repository has a usable `HEAD`, even though maintainers should continue recording each completed thin slice or debugging milestone with non-destructive Git history once a usable baseline exists.
 
 ### Phase 4: Verification and Selection

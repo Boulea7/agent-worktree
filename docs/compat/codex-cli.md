@@ -66,6 +66,8 @@ Additional bounded internal details:
 - a separate internal wait-target or wait-request helper layer may derive minimal internal wait-oriented target or request metadata above that control-plane vocabulary for future internal consumers
 - that same wait-request shaping remains target-based internal metadata only: it does not reintroduce selector-driven wait surfaces, readiness recomputation, or an actual wait consumer loop
 - a separate internal wait-consumer preflight layer may derive capability-aware consumer readiness above an existing wait-request for future internal consumers without becoming actual wait support
+- a separate internal close-target or close-request helper layer may derive minimal internal close-oriented target or request metadata above that control-plane vocabulary for future internal consumers
+- that same close-request shaping remains target-based internal metadata only: it does not reintroduce selector-driven close surfaces, readiness or capability recomputation, or any close-consumer preflight or actual close loop
 - that observation summary is adapter-internal only: it is not a public CLI payload contract, not manifest-backed state, and not a session-lifecycle API
 - the same restriction applies to any derived internal session snapshot: it is not a public CLI payload, not manifest-backed state, and not attach/resume/wait/close support
 - the same restriction applies to any derived execution-session record or index: it is not a public CLI payload, not manifest-backed state, and not lifecycle support
@@ -75,6 +77,7 @@ Additional bounded internal details:
 - the same restriction applies to any derived wait-readiness metadata: it is internal-only, non-persistent, non-manifest-backed preflight state and does not imply actual wait support, close support, or public selectors
 - the same restriction applies to any derived wait-target or wait-request metadata: it is internal-only, non-persistent, non-manifest-backed metadata and does not imply actual wait support, polling, timeout scheduling, or a public session-lifecycle API
 - the same restriction applies to any derived wait-consumer metadata: it is internal-only, non-persistent, non-manifest-backed capability-aware preflight state and does not imply actual wait support, polling, timeout scheduling, adapter-driven waiting, or a public session-lifecycle API
+- the same restriction applies to any derived close-target or close-request metadata: it is internal-only, non-persistent, non-manifest-backed metadata and does not imply actual close support, close-consumer preflight, adapter-driven closing, or a public session-lifecycle API
 
 Explicitly not implemented:
 
