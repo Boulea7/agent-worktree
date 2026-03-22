@@ -47,7 +47,14 @@ describe("control-plane runtime-state wait-request helpers", () => {
   });
 
   it("should reject timeoutMs values that are not positive finite integers", () => {
-    for (const timeoutMs of [0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+    for (const timeoutMs of [
+      0,
+      -1,
+      1.5,
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+      Number.NEGATIVE_INFINITY
+    ]) {
       expect(() =>
         deriveExecutionSessionWaitRequest({
           target: createWaitTarget(),
