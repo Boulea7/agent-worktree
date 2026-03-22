@@ -71,6 +71,7 @@ describe("control-plane runtime-state wait-consumer helpers", () => {
         sessionLifecycleSupported: false
       }
     });
+    expect(consumer).not.toHaveProperty("invoked");
     expect(consumer).not.toHaveProperty("selector");
     expect(consumer).not.toHaveProperty("view");
     expect(consumer).not.toHaveProperty("context");
