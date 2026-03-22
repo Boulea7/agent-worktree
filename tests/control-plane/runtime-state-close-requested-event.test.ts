@@ -39,7 +39,7 @@ describe("control-plane runtime-state close-requested-event helpers", () => {
   it("should keep request, selector, state, and policy data out of the derived event", () => {
     const event = deriveExecutionSessionCloseRequestedEvent({
       request: createCloseRequest()
-    }) as Record<string, unknown>;
+    }) as unknown as Record<string, unknown>;
 
     expect(event).toEqual({
       attemptId: "att_active",
