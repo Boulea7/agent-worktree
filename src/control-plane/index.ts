@@ -14,7 +14,9 @@ export { deriveExecutionSessionLifecycleDisposition } from "./runtime-state-life
 export { deriveExecutionSessionSpawnCandidate } from "./runtime-state-spawn-candidate.js";
 export { deriveExecutionSessionSpawnReadiness } from "./runtime-state-spawn-readiness.js";
 export { deriveExecutionSessionSpawnLineage } from "./runtime-state-spawn-lineage.js";
+export { deriveExecutionSessionSpawnRecordedEvent } from "./runtime-state-spawn-recorded-event.js";
 export { deriveExecutionSessionSpawnRequest } from "./runtime-state-spawn-request.js";
+export { deriveExecutionSessionSpawnRequestedEvent } from "./runtime-state-spawn-requested-event.js";
 export { deriveExecutionSessionSpawnTarget } from "./runtime-state-spawn-target.js";
 export { deriveExecutionSessionCloseCandidate } from "./runtime-state-close-candidate.js";
 export { consumeExecutionSessionClose } from "./runtime-state-close-consume.js";
@@ -88,9 +90,13 @@ export {
   type ExecutionSessionSpawnLineageInput,
   type ExecutionSessionSpawnReadiness,
   type ExecutionSessionSpawnReadinessInput,
+  type ExecutionSessionSpawnRecordedEvent,
+  type ExecutionSessionSpawnRecordedEventInput,
   type ExecutionSessionSpawnRequest,
   type ExecutionSessionSpawnRequestInput,
   type ExecutionSessionSpawnRequestSourceKind,
+  type ExecutionSessionSpawnRequestedEvent,
+  type ExecutionSessionSpawnRequestedEventInput,
   type ExecutionSessionSpawnTarget,
   type ExecutionSessionSpawnTargetInput,
   type ExecutionSessionView,

@@ -457,6 +457,28 @@ export interface ExecutionSessionSpawnRequest {
   sourceKind: ExecutionSessionSpawnRequestSourceKind;
 }
 
+export interface ExecutionSessionSpawnRequestedEventInput {
+  request: ExecutionSessionSpawnRequest;
+}
+
+export interface ExecutionSessionSpawnRequestedEvent {
+  attemptId: string;
+  lifecycleEventKind: "spawn_requested";
+  runtime: string;
+  sessionId: string;
+}
+
+export interface ExecutionSessionSpawnRecordedEventInput {
+  requestedEvent: ExecutionSessionSpawnRequestedEvent;
+}
+
+export interface ExecutionSessionSpawnRecordedEvent {
+  attemptId: string;
+  lifecycleEventKind: "spawn_recorded";
+  runtime: string;
+  sessionId: string;
+}
+
 export interface ExecutionSessionSpawnLineageInput {
   childAttemptId: string;
   request: ExecutionSessionSpawnRequest;
