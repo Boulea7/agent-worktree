@@ -354,6 +354,15 @@ export interface ExecutionSessionCloseConsume {
   request: ExecutionSessionCloseRequest;
 }
 
+export interface ExecutionSessionCloseConsumeBatchInput {
+  consumers: readonly ExecutionSessionCloseConsumer[];
+  invokeClose: ExecutionSessionCloseInvoker;
+}
+
+export interface ExecutionSessionCloseConsumeBatch {
+  results: ExecutionSessionCloseConsume[];
+}
+
 export interface ExecutionSessionCloseRequestedEventInput {
   request: ExecutionSessionCloseRequest;
 }
