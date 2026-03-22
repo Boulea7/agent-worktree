@@ -20,6 +20,7 @@ async function readFixture(name: string): Promise<string> {
 afterEach(() => {
   vi.resetModules();
   vi.doUnmock("node:fs/promises");
+  vi.doUnmock("../../src/adapters/codex-cli-env.js");
   vi.doUnmock("../../src/adapters/headless.js");
   vi.unstubAllEnvs();
 });
@@ -566,6 +567,60 @@ describe("executeCodexHeadless", () => {
     ]);
   });
 
+  it("should inject relay-compatible env for the default runner without affecting the custom runner path", async () => {
+    vi.stubEnv("PATH", "/mock/real");
+    const stdout = await readFixture("success.observed.jsonl");
+    const runSubprocess = vi.fn(
+      async (executable: string, args: string[]) => {
+        if (args.at(1) === "--help") {
+          return {
+            exitCode: 0,
+            stdout: "Usage: codex exec\n      --json\n",
+            stderr: ""
+          };
+        }
+
+        return {
+          exitCode: 0,
+          stdout,
+          stderr: ""
+        };
+      }
+    );
+    const { executeCodexHeadless: executeWithDefaultRunner } =
+      await loadCodexExecModule({
+        accessImpl: createAccessMock(["/mock/real/codex"]),
+        runSubprocess,
+        resolveCodexCliEnvironment: vi.fn(async () => ({
+          PATH: "/usr/bin:/bin",
+          OPENAI_API_KEY: "relay-token"
+        }))
+      });
+    const adapter = new CodexCliAdapter(getAdapterDescriptor("codex-cli"));
+
+    await executeWithDefaultRunner(
+      { prompt: "Reply with ok", timeoutMs: 5_000 },
+      {
+        command: adapter.renderCommand({ prompt: "Reply with ok" })
+      }
+    );
+
+    expect(runSubprocess.mock.calls).toEqual([
+      ["/mock/real/codex", ["exec", "--help"], { timeoutMs: 5_000 }],
+      [
+        "/mock/real/codex",
+        ["exec", "--json", "--ephemeral", "Reply with ok"],
+        {
+          timeoutMs: 5_000,
+          env: {
+            PATH: "/usr/bin:/bin",
+            OPENAI_API_KEY: "relay-token"
+          }
+        }
+      ]
+    ]);
+  });
+
   it("should not duplicate an existing ephemeral flag", async () => {
     const runCommand = vi.fn(async () => ({
       exitCode: 0,
@@ -865,6 +920,7 @@ describe("executeCodexHeadless", () => {
 async function loadCodexExecModule(options: {
   accessImpl: typeof import("node:fs/promises").access;
   runSubprocess: typeof import("../../src/adapters/headless.js").runSubprocess;
+  resolveCodexCliEnvironment?: () => Promise<NodeJS.ProcessEnv | undefined>;
 }): Promise<typeof import("../../src/adapters/codex-cli-exec.js")> {
   vi.resetModules();
   vi.doMock("node:fs/promises", async () => {
@@ -887,6 +943,10 @@ async function loadCodexExecModule(options: {
       runSubprocess: options.runSubprocess
     };
   });
+  vi.doMock("../../src/adapters/codex-cli-env.js", async () => ({
+    resolveCodexCliEnvironment:
+      options.resolveCodexCliEnvironment ?? (async () => undefined)
+  }));
 
   return import("../../src/adapters/codex-cli-exec.js");
 }
