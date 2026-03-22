@@ -33,7 +33,7 @@ export async function resolveCodexCliEnvironment(
   );
   const envKey = resolveActiveProviderEnvKey(configText);
 
-  if (envKey !== undefined && !hasResolvedEnvValue(baseEnv, overlay, envKey)) {
+  if (envKey !== undefined && !overlay.has(envKey)) {
     const authText = await readOptionalTextFile(
       readTextFile,
       path.join(homeDir, ".codex", "auth.json")
@@ -93,7 +93,8 @@ function parseCodexEnv(content: string): Map<string, string | undefined> {
     const unsetMatch = trimmed.match(/^unset\s+([A-Za-z_][A-Za-z0-9_]*)$/u);
 
     if (unsetMatch) {
-      assignments.set(unsetMatch[1], undefined);
+      const key = unsetMatch[1]!;
+      assignments.set(key, undefined);
       continue;
     }
 
@@ -105,10 +106,12 @@ function parseCodexEnv(content: string): Map<string, string | undefined> {
       continue;
     }
 
-    const value = parseShellValue(exportMatch[2]);
+    const key = exportMatch[1]!;
+    const rawValue = exportMatch[2]!;
+    const value = parseShellValue(rawValue);
 
     if (value !== undefined) {
-      assignments.set(exportMatch[1], value);
+      assignments.set(key, value);
     }
   }
 
@@ -154,7 +157,10 @@ function resolveActiveProviderEnvKey(
 
   const providerBlock = readTomlTableBlock(
     configText,
-    `model_providers.${modelProvider}`
+    [
+      `model_providers.${modelProvider}`,
+      `model_providers.${quoteTomlKeySegment(modelProvider)}`
+    ]
   );
 
   if (providerBlock === undefined) {
@@ -191,9 +197,9 @@ function readRootTomlString(content: string, key: string): string | undefined {
 
 function readTomlTableBlock(
   content: string,
-  tableName: string
+  tableNames: string[]
 ): string | undefined {
-  const header = `[${tableName}]`;
+  const headers = new Set(tableNames.map((tableName) => `[${tableName}]`));
   const lines = content.split(/\r?\n/u);
   const blockLines: string[] = [];
   let inTargetBlock = false;
@@ -206,7 +212,7 @@ function readTomlTableBlock(
         break;
       }
 
-      inTargetBlock = trimmed === header;
+      inTargetBlock = headers.has(trimmed);
       continue;
     }
 
@@ -233,7 +239,9 @@ function readTomlString(content: string, key: string): string | undefined {
       continue;
     }
 
-    return match[1]
+    const value = match[1]!;
+
+    return value
       .replace(/\\n/gu, "\n")
       .replace(/\\r/gu, "\r")
       .replace(/\\t/gu, "\t")
@@ -248,18 +256,8 @@ function escapeForRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }
 
-function hasResolvedEnvValue(
-  baseEnv: NodeJS.ProcessEnv,
-  overlay: Map<string, string | undefined>,
-  key: string
-): boolean {
-  if (overlay.has(key)) {
-    const value = overlay.get(key);
-    return typeof value === "string" && value.trim().length > 0;
-  }
-
-  const value = baseEnv[key];
-  return typeof value === "string" && value.trim().length > 0;
+function quoteTomlKeySegment(value: string): string {
+  return `"${value.replace(/\\/gu, "\\\\").replace(/"/gu, '\\"')}"`;
 }
 
 function resolveAuthToken(
