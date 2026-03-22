@@ -21,6 +21,7 @@ export { deriveExecutionSessionCloseReadiness } from "./runtime-state-close-read
 export { deriveExecutionSessionCloseTarget } from "./runtime-state-close-target.js";
 export { deriveExecutionSessionWaitCandidate } from "./runtime-state-wait-candidate.js";
 export { deriveExecutionSessionWaitReadiness } from "./runtime-state-readiness.js";
+export { deriveExecutionSessionWaitRequest } from "./runtime-state-wait-request.js";
 export { deriveExecutionSessionWaitTarget } from "./runtime-state-wait-target.js";
 export {
   buildExecutionSessionView,
@@ -67,6 +68,8 @@ export {
   type ExecutionSessionWaitCandidate,
   type ExecutionSessionWaitCandidateInput,
   type ExecutionSessionWaitBlockingReason,
+  type ExecutionSessionWaitRequest,
+  type ExecutionSessionWaitRequestInput,
   type ExecutionSessionWaitReadiness,
   type ExecutionSessionWaitReadinessInput,
   type ExecutionSessionWaitTarget,

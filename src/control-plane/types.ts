@@ -228,6 +228,18 @@ export interface ExecutionSessionWaitTarget {
   sessionId: string;
 }
 
+export interface ExecutionSessionWaitRequestInput {
+  target: ExecutionSessionWaitTarget;
+  timeoutMs?: number;
+}
+
+export interface ExecutionSessionWaitRequest {
+  attemptId: string;
+  runtime: string;
+  sessionId: string;
+  timeoutMs?: number;
+}
+
 export interface ExecutionSessionCloseReadinessInput {
   context: ExecutionSessionContext;
   resolveSessionLifecycleCapability?: SessionLifecycleCapabilityResolver;
