@@ -96,6 +96,17 @@ describe("control-plane derive helpers", () => {
 
     expect(
       classifySessionLifecycleState({
+        lifecycleEventKind: "close_requested",
+        observation: {
+          threadId: "thr_demo",
+          runCompleted: false,
+          errorEventCount: 0
+        }
+      })
+    ).toBe("active");
+
+    expect(
+      classifySessionLifecycleState({
         lifecycleEventKind: "close_recorded",
         observation: {
           threadId: "thr_demo",
@@ -164,6 +175,50 @@ describe("control-plane derive helpers", () => {
         maxDepth: 3
       },
       lifecycleEventKind: "spawn_recorded"
+    });
+  });
+
+  it("should preserve close_requested as a recorded lifecycle marker without closing the session", () => {
+    const input = {
+      attemptId: "att_close_requested",
+      runtime: "codex-cli",
+      observation: {
+        threadId: "thr_close_requested",
+        runCompleted: false,
+        errorEventCount: 0,
+        lastAgentMessage: "pending close"
+      },
+      lifecycleEventKind: "close_requested" as const
+    };
+
+    const snapshot = deriveSessionSnapshot(input);
+
+    expect(snapshot).toEqual({
+      node: {
+        attemptId: "att_close_requested",
+        nodeKind: "root",
+        sourceKind: "direct"
+      },
+      lifecycleState: "active",
+      sessionRef: {
+        runtime: "codex-cli",
+        sessionId: "thr_close_requested"
+      },
+      runCompleted: false,
+      errorEventCount: 0,
+      lastAgentMessage: "pending close",
+      lastLifecycleEventKind: "close_requested"
+    });
+    expect(input).toEqual({
+      attemptId: "att_close_requested",
+      runtime: "codex-cli",
+      observation: {
+        threadId: "thr_close_requested",
+        runCompleted: false,
+        errorEventCount: 0,
+        lastAgentMessage: "pending close"
+      },
+      lifecycleEventKind: "close_requested"
     });
   });
 
