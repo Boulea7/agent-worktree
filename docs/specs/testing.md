@@ -326,6 +326,33 @@ Must test:
 - wait-consumer composition that returns the original wait-request plus capability-aware readiness
 - explicit confirmation that internal wait-consumer helpers do not reintroduce selectors, views, contexts, candidates, targets, readiness recomputation, polling, timeout scheduling, event subscription, adapter invocation, manifest seeds, or lifecycle truth
 
+## Internal Wait Consume
+
+Must test:
+
+- wait-consume derivation from an existing internal wait-consumer plus an explicitly injected wait invoker without introducing a second selector contract
+- blocked behavior when wait-consumer readiness reports `canConsumeWait: false`
+- explicit confirmation that blocked wait-consume results do not invoke the injected wait invoker
+- supported behavior when wait-consumer readiness reports `canConsumeWait: true`
+- explicit confirmation that supported wait-consume results invoke the injected wait invoker exactly once
+- explicit confirmation that the injected wait invoker receives exactly the original wait-request object
+- explicit confirmation that injected wait-invoker failures surface directly rather than being wrapped into wait-consume output metadata
+- helper immutability for the supplied wait-consumer input
+- explicit confirmation that internal wait-consume helpers do not reintroduce selectors, views, contexts, candidates, targets, readiness recomputation, capability recomputation, lifecycle projection, manifest seeds, polling metadata, scheduling metadata, public CLI payloads, or lifecycle truth
+
+## Internal Wait Consume Batch
+
+Must test:
+
+- wait-consume-batch derivation from an explicit ordered list of existing internal wait-consumers plus an explicitly injected wait invoker without introducing a second selector contract
+- empty consumer lists returning a minimal `{ results: [] }` batch shape
+- blocked entries remaining visible in order with `invoked: false`
+- supported entries invoking the injected wait invoker in input order
+- explicit confirmation that blocked entries do not prevent later supported entries from being consumed
+- helper immutability for the supplied wait-consumer list and each supplied wait-consumer input
+- explicit confirmation that supported-entry invoker failures stop the batch immediately and do not execute later supported entries
+- explicit confirmation that internal wait-consume-batch helpers do not reintroduce selectors, views, contexts, candidates, targets, readiness recomputation, capability recomputation, lifecycle projection, manifest seeds, polling metadata, scheduling metadata, per-item error aggregation, summary metadata, public CLI payloads, or lifecycle truth
+
 ## Internal Close Readiness
 
 Must test:
@@ -495,6 +522,8 @@ Must test:
 - internal wait-target tests layered on top of internal wait-candidate helpers without introducing actual wait support, close support, public selectors, or mutable lifecycle state
 - internal wait-request tests layered on top of internal wait-target helpers without introducing actual wait support, polling, timeout scheduling, public selectors, manifest-backed state, or mutable lifecycle state
 - internal wait-consumer-preflight tests layered on top of internal wait-request helpers without introducing actual wait support, polling, timeout scheduling, event subscription, adapter invocation, public selectors, manifest-backed state, or mutable lifecycle state
+- internal wait-consume tests layered on top of internal wait-consumer-preflight helpers without introducing actual wait support, polling loops, scheduling policy, public selectors, manifest-backed state, or mutable lifecycle state
+- internal wait-consume-batch tests layered on top of internal wait-consume helpers without introducing actual wait support, polling loops, scheduling policy, summary contracts, public selectors, manifest-backed state, or mutable lifecycle state
 - internal close-readiness, close-candidate, and close-target tests layered on top of existing runtime-context helpers without introducing actual close support, public selectors, manifest-backed lifecycle state, or mutable lifecycle state
 - internal close-request tests layered on top of internal close-target helpers without introducing actual close support, close-consumer preflight, public selectors, manifest-backed state, or mutable lifecycle state
 - internal close-requested-event tests layered on top of internal close-request helpers without introducing actual close support, close-consumer preflight, public selectors, manifest-backed state, or mutable lifecycle state
@@ -521,6 +550,7 @@ Public wait-candidate selectors, public wait-candidate stores, and any contract 
 Public wait-target selectors, public wait-target stores, and any contract that treats internal wait-targets as lifecycle truth also belong to that later phase rather than the current internal wait-target slice.
 Public wait-request selectors, public wait-request stores, actual wait consumers, and any contract that treats internal wait-request output as lifecycle truth also belong to that later phase rather than the current internal wait-request slice.
 Public wait-consumer selectors, public wait-consumer stores, and any contract that treats internal wait-consumer output as lifecycle truth also belong to that later phase rather than the current internal wait-consumer-preflight slice.
+Public wait-consume selectors, public wait-consume stores, public wait-consume-batch stores, public wait or wait-consume CLI surface, polling or timeout scheduling loops, and any contract that treats internal wait-consume or wait-consume-batch output as lifecycle truth also belong to that later phase rather than the current internal wait-consume slice.
 Public close-oriented selectors, public close-oriented stores, any close-consumer preflight, any close-consume path, any close-consume-batch path, and any actual close command or contract that treats internal close-readiness, close-candidate, close-target, close-request, close-requested-event, close-recorded-event, close-consumer, close-consume, or close-consume-batch output as lifecycle truth also belong to that later phase rather than the current internal close-oriented helper slice.
 Git archival and checkpoint discipline belongs to maintainer workflow guidance rather than the current public runtime-state, CLI, or manifest contract; tests in this phase should not treat commit-backed checkpoints as an implemented product surface now that the repository has a usable `HEAD`, even though maintainers should continue recording each completed thin slice or debugging milestone with non-destructive Git history once a usable baseline exists.
 

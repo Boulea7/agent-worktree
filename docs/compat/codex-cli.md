@@ -66,6 +66,10 @@ Additional bounded internal details:
 - a separate internal wait-target or wait-request helper layer may derive minimal internal wait-oriented target or request metadata above that control-plane vocabulary for future internal consumers
 - that same wait-request shaping remains target-based internal metadata only: it does not reintroduce selector-driven wait surfaces, readiness recomputation, or an actual wait consumer loop
 - a separate internal wait-consumer preflight layer may derive capability-aware consumer readiness above an existing wait-request for future internal consumers without becoming actual wait support
+- a separate internal wait-consume helper may consume an existing wait-consumer object for future internal callers through an explicitly injected invoker without becoming actual wait support
+- that same wait-consume helper remains consumer-based internal metadata only: blocked results do not invoke the injected invoker, supported results may invoke it exactly once with the existing wait-request, and it does not imply polling, timeout scheduling, adapter-driven wait success, sessionLifecycle support, event projection, or a public session-lifecycle API
+- a separate internal wait-consume-batch helper may consume an explicit list of existing wait-consumer objects for future internal callers by composing the single-consumer wait-consume helper without becoming actual wait support
+- that same wait-consume-batch helper remains consumer-list-based internal metadata only: it preserves input order, continues past blocked entries, fails fast on the first injected invoker error from a supported entry, and does not imply polling, timeout scheduling, summary-policy contracts, adapter-driven wait success, sessionLifecycle support, event projection, or a public session-lifecycle API
 - a separate internal close-target or close-request helper layer may derive minimal internal close-oriented target or request metadata above that control-plane vocabulary for future internal consumers
 - that same close-request shaping remains target-based internal metadata only: it does not reintroduce selector-driven close surfaces, readiness or capability recomputation, or any close-consumer preflight or actual close loop
 - a separate internal close-requested-event layer may derive a minimal internal `close_requested` lifecycle marker above an existing close-request for future internal consumers without becoming actual close support
@@ -87,6 +91,8 @@ Additional bounded internal details:
 - the same restriction applies to any derived wait-readiness metadata: it is internal-only, non-persistent, non-manifest-backed preflight state and does not imply actual wait support, close support, or public selectors
 - the same restriction applies to any derived wait-target or wait-request metadata: it is internal-only, non-persistent, non-manifest-backed metadata and does not imply actual wait support, polling, timeout scheduling, or a public session-lifecycle API
 - the same restriction applies to any derived wait-consumer metadata: it is internal-only, non-persistent, non-manifest-backed capability-aware preflight state and does not imply actual wait support, polling, timeout scheduling, adapter-driven waiting, or a public session-lifecycle API
+- the same restriction applies to any derived wait-consume metadata: it is internal-only, non-persistent, non-manifest-backed consume-path metadata and does not imply actual wait support, polling, timeout scheduling, adapter-driven wait success, sessionLifecycle support, or a public session-lifecycle API
+- the same restriction applies to any derived wait-consume-batch metadata: it is internal-only, non-persistent, non-manifest-backed batch consume-path metadata and does not imply actual wait support, polling, timeout scheduling, summary-policy contracts, adapter-driven wait success, sessionLifecycle support, or a public session-lifecycle API
 - the same restriction applies to any derived close-target or close-request metadata: it is internal-only, non-persistent, non-manifest-backed metadata and does not imply actual close support, close-consumer preflight, adapter-driven closing, or a public session-lifecycle API
 - the same restriction applies to any derived close-requested-event metadata: it is internal-only, non-persistent, non-manifest-backed lifecycle-marker metadata and does not imply actual close support, close success truth, close-consumer preflight, adapter-driven closing, or a public session-lifecycle API
 - the same restriction applies to any derived close-recorded-event metadata: it is internal-only, non-persistent, non-manifest-backed lifecycle-marker metadata and does not imply actual close support, adapter-driven close success, close-consumer preflight, or a public session-lifecycle API
@@ -102,6 +108,7 @@ Explicitly not implemented:
 - general session lifecycle management
 - public execution commands in `agent-worktree`
 - public `--profile` flags or public provider-selection semantics in `agent-worktree`
+- public wait, wait-consume, or wait-consume-batch CLI surface in `agent-worktree`
 - provider, auth, or config-management writers for local Codex settings
 - manifest-backed execution persistence
 - session-tree control semantics such as wait, close, or delegated-child lifecycle
