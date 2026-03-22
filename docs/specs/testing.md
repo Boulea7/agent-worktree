@@ -419,6 +419,7 @@ Must test:
 - supported behavior when close-consumer readiness reports `canConsumeClose: true`
 - explicit confirmation that supported close-consume results invoke the injected close invoker exactly once
 - explicit confirmation that the injected close invoker receives exactly the original close-request object
+- explicit confirmation that injected close-invoker failures surface directly rather than being wrapped into close-consume output metadata
 - helper immutability for the supplied close-consumer input
 - explicit confirmation that internal close-consume helpers do not reintroduce selectors, views, contexts, candidates, targets, readiness recomputation, capability recomputation, requested-event or recorded-event projection, manifest seeds, adapter results, polling metadata, or lifecycle truth
 
