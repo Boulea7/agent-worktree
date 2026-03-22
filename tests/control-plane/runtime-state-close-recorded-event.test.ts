@@ -39,7 +39,7 @@ describe("control-plane runtime-state close-recorded-event helpers", () => {
   it("should keep requested-event, selector, readiness, policy, manifest, and outcome data out of the derived close_recorded event", () => {
     const event = deriveExecutionSessionCloseRecordedEvent({
       requestedEvent: createCloseRequestedEvent()
-    }) as Record<string, unknown>;
+    }) as unknown as Record<string, unknown>;
 
     expect(event).toEqual({
       attemptId: "att_active",

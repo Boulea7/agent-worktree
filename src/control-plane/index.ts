@@ -18,6 +18,7 @@ export { deriveExecutionSessionSpawnRequest } from "./runtime-state-spawn-reques
 export { deriveExecutionSessionSpawnTarget } from "./runtime-state-spawn-target.js";
 export { deriveExecutionSessionCloseCandidate } from "./runtime-state-close-candidate.js";
 export { deriveExecutionSessionCloseReadiness } from "./runtime-state-close-readiness.js";
+export { deriveExecutionSessionCloseRecordedEvent } from "./runtime-state-close-recorded-event.js";
 export { deriveExecutionSessionCloseRequest } from "./runtime-state-close-request.js";
 export { deriveExecutionSessionCloseRequestedEvent } from "./runtime-state-close-requested-event.js";
 export { deriveExecutionSessionCloseTarget } from "./runtime-state-close-target.js";
@@ -43,6 +44,8 @@ export {
   type ExecutionSessionCloseBlockingReason,
   type ExecutionSessionCloseCandidate,
   type ExecutionSessionCloseCandidateInput,
+  type ExecutionSessionCloseRecordedEvent,
+  type ExecutionSessionCloseRecordedEventInput,
   type ExecutionSessionCloseReadiness,
   type ExecutionSessionCloseReadinessInput,
   type ExecutionSessionCloseRequest,
