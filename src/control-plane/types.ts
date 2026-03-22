@@ -312,6 +312,17 @@ export interface ExecutionSessionCloseRequest {
   sessionId: string;
 }
 
+export interface ExecutionSessionCloseRequestedEventInput {
+  request: ExecutionSessionCloseRequest;
+}
+
+export interface ExecutionSessionCloseRequestedEvent {
+  attemptId: string;
+  lifecycleEventKind: "close_requested";
+  runtime: string;
+  sessionId: string;
+}
+
 export interface ExecutionSessionSpawnReadinessInput {
   context: ExecutionSessionContext;
   view: ExecutionSessionView;
