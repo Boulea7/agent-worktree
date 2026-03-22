@@ -28,6 +28,7 @@ function assertNoInternalRuntimeMetadata(value: Record<string, unknown>): void {
   expect(value).not.toHaveProperty("spawnRequest");
   expect(value).not.toHaveProperty("spawnTarget");
   expect(value).not.toHaveProperty("waitCandidate");
+  expect(value).not.toHaveProperty("waitRequest");
   expect(value).not.toHaveProperty("waitTarget");
   expect(value).not.toHaveProperty("runtimeContext");
   expect(value).not.toHaveProperty("waitReadiness");
@@ -151,6 +152,17 @@ describe("runCli", () => {
     const stderr = new MemoryWriter();
 
     const exitCode = await runCli(["attempt", "spawn"], { stdout, stderr });
+
+    expect(exitCode).toBeGreaterThan(0);
+    expect(stdout.output).toBe("");
+    expect(stderr.output).toContain("unknown command");
+  });
+
+  it("should keep attempt wait outside the public cli surface", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["attempt", "wait"], { stdout, stderr });
 
     expect(exitCode).toBeGreaterThan(0);
     expect(stdout.output).toBe("");
