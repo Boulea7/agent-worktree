@@ -35,6 +35,9 @@ export const executionSessionWaitBlockingReasons = [
   "session_unknown",
   "child_attempts_present"
 ] as const;
+export const executionSessionWaitConsumerBlockingReasons = [
+  "session_lifecycle_unsupported"
+] as const;
 export const executionSessionCloseBlockingReasons = [
   "session_lifecycle_unsupported",
   "lifecycle_terminal",
@@ -62,6 +65,8 @@ export type ExecutionSessionRecordSource =
   (typeof executionSessionRecordSources)[number];
 export type ExecutionSessionWaitBlockingReason =
   (typeof executionSessionWaitBlockingReasons)[number];
+export type ExecutionSessionWaitConsumerBlockingReason =
+  (typeof executionSessionWaitConsumerBlockingReasons)[number];
 export type ExecutionSessionCloseBlockingReason =
   (typeof executionSessionCloseBlockingReasons)[number];
 export type ExecutionSessionSpawnBlockingReason =
@@ -238,6 +243,28 @@ export interface ExecutionSessionWaitRequest {
   runtime: string;
   sessionId: string;
   timeoutMs?: number;
+}
+
+export interface ExecutionSessionWaitConsumerReadinessInput {
+  request: ExecutionSessionWaitRequest;
+  resolveSessionLifecycleCapability?: SessionLifecycleCapabilityResolver;
+}
+
+export interface ExecutionSessionWaitConsumerReadiness {
+  blockingReasons: ExecutionSessionWaitConsumerBlockingReason[];
+  canConsumeWait: boolean;
+  hasBlockingReasons: boolean;
+  sessionLifecycleSupported: boolean;
+}
+
+export interface ExecutionSessionWaitConsumerInput {
+  request: ExecutionSessionWaitRequest;
+  resolveSessionLifecycleCapability?: SessionLifecycleCapabilityResolver;
+}
+
+export interface ExecutionSessionWaitConsumer {
+  readiness: ExecutionSessionWaitConsumerReadiness;
+  request: ExecutionSessionWaitRequest;
 }
 
 export interface ExecutionSessionCloseReadinessInput {

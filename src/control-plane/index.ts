@@ -20,6 +20,8 @@ export { deriveExecutionSessionCloseCandidate } from "./runtime-state-close-cand
 export { deriveExecutionSessionCloseReadiness } from "./runtime-state-close-readiness.js";
 export { deriveExecutionSessionCloseTarget } from "./runtime-state-close-target.js";
 export { deriveExecutionSessionWaitCandidate } from "./runtime-state-wait-candidate.js";
+export { deriveExecutionSessionWaitConsumer } from "./runtime-state-wait-consumer.js";
+export { deriveExecutionSessionWaitConsumerReadiness } from "./runtime-state-wait-consumer-readiness.js";
 export { deriveExecutionSessionWaitReadiness } from "./runtime-state-readiness.js";
 export { deriveExecutionSessionWaitRequest } from "./runtime-state-wait-request.js";
 export { deriveExecutionSessionWaitTarget } from "./runtime-state-wait-target.js";
@@ -35,6 +37,7 @@ export {
   executionSessionSpawnBlockingReasons,
   executionSessionSpawnRequestSourceKinds,
   executionSessionWaitBlockingReasons,
+  executionSessionWaitConsumerBlockingReasons,
   type ExecutionSessionCloseBlockingReason,
   type ExecutionSessionCloseCandidate,
   type ExecutionSessionCloseCandidateInput,
@@ -68,6 +71,11 @@ export {
   type ExecutionSessionWaitCandidate,
   type ExecutionSessionWaitCandidateInput,
   type ExecutionSessionWaitBlockingReason,
+  type ExecutionSessionWaitConsumer,
+  type ExecutionSessionWaitConsumerBlockingReason,
+  type ExecutionSessionWaitConsumerInput,
+  type ExecutionSessionWaitConsumerReadiness,
+  type ExecutionSessionWaitConsumerReadinessInput,
   type ExecutionSessionWaitRequest,
   type ExecutionSessionWaitRequestInput,
   type ExecutionSessionWaitReadiness,
