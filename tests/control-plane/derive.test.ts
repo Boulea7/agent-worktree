@@ -96,6 +96,28 @@ describe("control-plane derive helpers", () => {
 
     expect(
       classifySessionLifecycleState({
+        lifecycleEventKind: "spawn_requested",
+        observation: {
+          threadId: "thr_demo",
+          runCompleted: false,
+          errorEventCount: 0
+        }
+      })
+    ).toBe("active");
+
+    expect(
+      classifySessionLifecycleState({
+        lifecycleEventKind: "spawn_recorded",
+        observation: {
+          threadId: "thr_demo",
+          runCompleted: false,
+          errorEventCount: 0
+        }
+      })
+    ).toBe("active");
+
+    expect(
+      classifySessionLifecycleState({
         lifecycleEventKind: "close_requested",
         observation: {
           threadId: "thr_demo",
@@ -173,6 +195,94 @@ describe("control-plane derive helpers", () => {
       guardrails: {
         maxChildren: 2,
         maxDepth: 3
+      },
+      lifecycleEventKind: "spawn_recorded"
+    });
+  });
+
+  it("should preserve spawn_requested as a marker-only lifecycle event without closing the session", () => {
+    const input = {
+      attemptId: "att_spawn_requested",
+      runtime: "codex-cli",
+      observation: {
+        threadId: "thr_spawn_requested",
+        runCompleted: false,
+        errorEventCount: 0,
+        lastAgentMessage: "spawn requested"
+      },
+      lifecycleEventKind: "spawn_requested" as const
+    };
+
+    const snapshot = deriveSessionSnapshot(input);
+
+    expect(snapshot).toEqual({
+      node: {
+        attemptId: "att_spawn_requested",
+        nodeKind: "root",
+        sourceKind: "direct"
+      },
+      lifecycleState: "active",
+      sessionRef: {
+        runtime: "codex-cli",
+        sessionId: "thr_spawn_requested"
+      },
+      runCompleted: false,
+      errorEventCount: 0,
+      lastAgentMessage: "spawn requested",
+      lastLifecycleEventKind: "spawn_requested"
+    });
+    expect(input).toEqual({
+      attemptId: "att_spawn_requested",
+      runtime: "codex-cli",
+      observation: {
+        threadId: "thr_spawn_requested",
+        runCompleted: false,
+        errorEventCount: 0,
+        lastAgentMessage: "spawn requested"
+      },
+      lifecycleEventKind: "spawn_requested"
+    });
+  });
+
+  it("should preserve spawn_recorded as a marker-only lifecycle event without closing the session", () => {
+    const input = {
+      attemptId: "att_spawn_recorded",
+      runtime: "codex-cli",
+      observation: {
+        threadId: "thr_spawn_recorded",
+        runCompleted: false,
+        errorEventCount: 0,
+        lastAgentMessage: "spawn recorded"
+      },
+      lifecycleEventKind: "spawn_recorded" as const
+    };
+
+    const snapshot = deriveSessionSnapshot(input);
+
+    expect(snapshot).toEqual({
+      node: {
+        attemptId: "att_spawn_recorded",
+        nodeKind: "root",
+        sourceKind: "direct"
+      },
+      lifecycleState: "active",
+      sessionRef: {
+        runtime: "codex-cli",
+        sessionId: "thr_spawn_recorded"
+      },
+      runCompleted: false,
+      errorEventCount: 0,
+      lastAgentMessage: "spawn recorded",
+      lastLifecycleEventKind: "spawn_recorded"
+    });
+    expect(input).toEqual({
+      attemptId: "att_spawn_recorded",
+      runtime: "codex-cli",
+      observation: {
+        threadId: "thr_spawn_recorded",
+        runCompleted: false,
+        errorEventCount: 0,
+        lastAgentMessage: "spawn recorded"
       },
       lifecycleEventKind: "spawn_recorded"
     });
