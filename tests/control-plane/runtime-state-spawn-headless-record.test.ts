@@ -59,7 +59,11 @@ describe("control-plane runtime-state spawn-headless-record helpers", () => {
       };
     };
 
-    delete headlessExecute.headlessApply.headlessInput.attempt;
+    delete (
+      headlessExecute.headlessApply.headlessInput as {
+        attempt?: unknown;
+      }
+    ).attempt;
 
     expect(() =>
       deriveExecutionSessionSpawnHeadlessRecord({

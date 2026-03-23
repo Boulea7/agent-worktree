@@ -632,3 +632,20 @@ export interface ExecutionSessionSpawnHeadlessExecuteBatchInput {
 export interface ExecutionSessionSpawnHeadlessExecuteBatch {
   results: ExecutionSessionSpawnHeadlessExecute[];
 }
+
+export interface ExecutionSessionSpawnHeadlessRecordInput {
+  headlessExecute: ExecutionSessionSpawnHeadlessExecute;
+}
+
+export interface ExecutionSessionSpawnHeadlessRecord {
+  headlessExecute: ExecutionSessionSpawnHeadlessExecute;
+  record: ExecutionSessionRecord;
+}
+
+export interface ExecutionSessionSpawnHeadlessRecordBatchInput {
+  items: readonly ExecutionSessionSpawnHeadlessExecute[];
+}
+
+export interface ExecutionSessionSpawnHeadlessRecordBatch {
+  results: ExecutionSessionSpawnHeadlessRecord[];
+}

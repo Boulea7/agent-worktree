@@ -92,7 +92,11 @@ describe("control-plane runtime-state spawn-headless-record-batch helpers", () =
       };
     };
 
-    delete invalidItem.headlessApply.headlessInput.attempt;
+    delete (
+      invalidItem.headlessApply.headlessInput as {
+        attempt?: unknown;
+      }
+    ).attempt;
 
     const untouchedItem = {
       get headlessApply(): never {
