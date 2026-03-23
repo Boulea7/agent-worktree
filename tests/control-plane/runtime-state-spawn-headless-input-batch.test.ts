@@ -116,7 +116,7 @@ describe("control-plane runtime-state spawn-headless-input-batch helpers", () =>
     const itemsSnapshot = JSON.parse(JSON.stringify(items));
     const result = deriveExecutionSessionSpawnHeadlessInputBatch({
       items
-    }) as Record<string, unknown>;
+    }) as unknown as Record<string, unknown>;
 
     expect(result).toEqual({
       results: [
