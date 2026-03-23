@@ -10,6 +10,13 @@
 .env
 .env.*
 !.env.example
+**/api_key*
+**/secret*
+credentials*
+*.pem
+*.key
+*.p12
+*.pfx
 
 # Local MCP wiring
 .mcp.json
