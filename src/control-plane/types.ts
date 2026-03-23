@@ -532,3 +532,23 @@ export interface ExecutionSessionSpawnEffectsBatchInput {
 export interface ExecutionSessionSpawnEffectsBatch {
   results: ExecutionSessionSpawnEffects[];
 }
+
+export interface ExecutionSessionSpawnApplyInput {
+  childAttemptId: string;
+  invokeSpawn: ExecutionSessionSpawnInvoker;
+  request: ExecutionSessionSpawnRequest;
+}
+
+export interface ExecutionSessionSpawnApply {
+  consume: ExecutionSessionSpawnConsume;
+  effects: ExecutionSessionSpawnEffects;
+}
+
+export interface ExecutionSessionSpawnApplyBatchInput {
+  items: readonly ExecutionSessionSpawnEffectsInput[];
+  invokeSpawn: ExecutionSessionSpawnInvoker;
+}
+
+export interface ExecutionSessionSpawnApplyBatch {
+  results: ExecutionSessionSpawnApply[];
+}
