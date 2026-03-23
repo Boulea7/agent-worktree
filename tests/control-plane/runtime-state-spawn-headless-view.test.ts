@@ -37,11 +37,15 @@ describe("control-plane runtime-state spawn-headless-view helpers", () => {
     expect(result).not.toHaveProperty("results");
     expect(result).not.toHaveProperty("selector");
     expect(result).not.toHaveProperty("context");
+    expect(result).not.toHaveProperty("headlessView");
+    expect(result).not.toHaveProperty("headlessViewBatch");
     expect(result).not.toHaveProperty("readiness");
     expect(result).not.toHaveProperty("runtimeState");
     expect(result).not.toHaveProperty("headlessRecordBatch");
     expect(result).not.toHaveProperty("spawnHeadlessView");
     expect(result).not.toHaveProperty("spawnHeadlessViewBatch");
+    expect(result).not.toHaveProperty("spawnHeadlessContext");
+    expect(result).not.toHaveProperty("spawnHeadlessContextBatch");
     expect(headlessRecord).toEqual(headlessRecordSnapshot);
   });
 
