@@ -12,6 +12,8 @@ export {
 export { deriveExecutionSessionContext } from "./runtime-state-context.js";
 export { deriveExecutionSessionLifecycleDisposition } from "./runtime-state-lifecycle-disposition.js";
 export { deriveExecutionSessionSpawnCandidate } from "./runtime-state-spawn-candidate.js";
+export { consumeExecutionSessionSpawn } from "./runtime-state-spawn-consume.js";
+export { consumeExecutionSessionSpawnBatch } from "./runtime-state-spawn-consume-batch.js";
 export { deriveExecutionSessionSpawnReadiness } from "./runtime-state-spawn-readiness.js";
 export { deriveExecutionSessionSpawnLineage } from "./runtime-state-spawn-lineage.js";
 export { deriveExecutionSessionSpawnRecordedEvent } from "./runtime-state-spawn-recorded-event.js";
@@ -86,6 +88,11 @@ export {
   type ExecutionSessionSpawnBlockingReason,
   type ExecutionSessionSpawnCandidate,
   type ExecutionSessionSpawnCandidateInput,
+  type ExecutionSessionSpawnConsume,
+  type ExecutionSessionSpawnConsumeBatch,
+  type ExecutionSessionSpawnConsumeBatchInput,
+  type ExecutionSessionSpawnConsumeInput,
+  type ExecutionSessionSpawnInvoker,
   type ExecutionSessionSpawnLineage,
   type ExecutionSessionSpawnLineageInput,
   type ExecutionSessionSpawnReadiness,

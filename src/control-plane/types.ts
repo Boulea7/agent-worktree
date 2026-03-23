@@ -457,6 +457,29 @@ export interface ExecutionSessionSpawnRequest {
   sourceKind: ExecutionSessionSpawnRequestSourceKind;
 }
 
+export interface ExecutionSessionSpawnInvoker {
+  (request: ExecutionSessionSpawnRequest): void | Promise<void>;
+}
+
+export interface ExecutionSessionSpawnConsumeInput {
+  invokeSpawn: ExecutionSessionSpawnInvoker;
+  request: ExecutionSessionSpawnRequest;
+}
+
+export interface ExecutionSessionSpawnConsume {
+  invoked: true;
+  request: ExecutionSessionSpawnRequest;
+}
+
+export interface ExecutionSessionSpawnConsumeBatchInput {
+  invokeSpawn: ExecutionSessionSpawnInvoker;
+  requests: readonly ExecutionSessionSpawnRequest[];
+}
+
+export interface ExecutionSessionSpawnConsumeBatch {
+  results: ExecutionSessionSpawnConsume[];
+}
+
 export interface ExecutionSessionSpawnRequestedEventInput {
   request: ExecutionSessionSpawnRequest;
 }
