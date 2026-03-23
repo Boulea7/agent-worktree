@@ -452,29 +452,30 @@ Must test:
 - explicit confirmation that internal spawn-headless-record-batch helpers do not reintroduce selector, view, context, readiness, index, manifest, branch/worktree planning, or public outcome truth
 - explicit confirmation that internal spawn-headless-record-batch helpers remain internal-only, non-public, non-manifest-backed, not lifecycle truth, and not delegated runtime support
 
-## Internal Spawn Headless View
+## Internal Spawn Headless Context
 
 Must test:
 
-- spawn-headless-view derivation from an existing internal spawn-headless-record result without introducing a second selector contract
-- composition of the existing spawn-headless-record result plus the generic `buildExecutionSessionView(...)` helper only
-- helper immutability for the supplied spawn-headless-record input
-- underlying view-derivation failures surface directly without wrapper errors or summary-policy output
-- explicit confirmation that internal spawn-headless-view helpers do not reintroduce selector, context, readiness, manifest, branch/worktree planning, or public outcome truth
-- explicit confirmation that internal spawn-headless-view helpers remain internal-only, non-public, non-manifest-backed, not lifecycle truth, and not delegated runtime support
+- spawn-headless-context derivation from an existing internal spawn-headless-view result plus an internal attempt-based selector derived from the existing headless record without introducing a public selector contract
+- composition of the existing spawn-headless-view result plus the generic `deriveExecutionSessionContext(...)` helper only
+- helper immutability for the supplied spawn-headless-view input
+- underlying selector-validation or context-derivation failures surface directly without wrapper errors or summary-policy output
+- explicit confirmation that internal spawn-headless-context helpers do not reintroduce selector surfaces beyond the generic helper, view rebuilding, readiness, manifest, branch/worktree planning, or public outcome truth
+- explicit confirmation that internal spawn-headless-context helpers remain internal-only, non-public, non-manifest-backed, not child-creation truth, not runtime truth, not terminal lifecycle truth, and not delegated runtime support
 
-## Internal Spawn Headless View Batch
+## Internal Spawn Headless Context Batch
 
 Must test:
 
-- spawn-headless-view-batch derivation from an existing internal spawn-headless-record-batch result without introducing a second selector contract
-- composition of the existing batch record output plus the generic `buildExecutionSessionView(...)` helper only
-- empty-input behavior that returns the existing batch object plus an empty view
-- preservation of child-ordering semantics already defined by `buildExecutionSessionView(...)`
-- helper immutability for the supplied spawn-headless-record-batch input
-- duplicate-key and invalid-parent failures surface directly without wrapper errors or summary-policy output
-- explicit confirmation that internal spawn-headless-view-batch helpers do not reintroduce selector, context, readiness, manifest, branch/worktree planning, or public outcome truth
-- explicit confirmation that internal spawn-headless-view-batch helpers remain internal-only, non-public, non-manifest-backed, not lifecycle truth, and not delegated runtime support
+- spawn-headless-context-batch derivation from an existing internal spawn-headless-view-batch result plus internally derived ordered attempt-based selectors without introducing a public selector contract
+- composition of the existing batch headless-view output plus the generic `deriveExecutionSessionContext(...)` helper only
+- reuse of the existing shared `headlessViewBatch.view` across the whole batch
+- empty-input behavior that returns the existing batch object plus an empty ordered context result list
+- preservation of input ordering semantics across the batch
+- helper immutability for the supplied spawn-headless-view-batch input
+- fail-fast behavior on the first selector-validation or context-derivation error without per-item summary output
+- explicit confirmation that internal spawn-headless-context-batch helpers do not reintroduce selector surfaces beyond the generic helper, view rebuilding, readiness, manifest, branch/worktree planning, or public outcome truth
+- explicit confirmation that internal spawn-headless-context-batch helpers remain internal-only, non-public, non-manifest-backed, not child-creation truth, not runtime truth, not terminal lifecycle truth, and not delegated runtime support
 
 ## Internal Wait Readiness
 
@@ -741,8 +742,8 @@ Must test:
 - internal spawn-headless-execute-batch tests layered on top of internal spawn-headless-execute helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, adapter-driven delegated-runtime truth, or summary-policy contracts
 - internal spawn-headless-record tests layered on top of internal spawn-headless-execute helpers plus generic execution-session record derivation without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, adapter-driven delegated-runtime truth, or summary-policy contracts
 - internal spawn-headless-record-batch tests layered on top of internal spawn-headless-record helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, adapter-driven delegated-runtime truth, or summary-policy contracts
-- internal spawn-headless-view tests layered on top of internal spawn-headless-record helpers plus generic execution-session view derivation without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, adapter-driven delegated-runtime truth, or summary-policy contracts
-- internal spawn-headless-view-batch tests layered on top of internal spawn-headless-record-batch helpers plus generic execution-session view derivation without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, adapter-driven delegated-runtime truth, or summary-policy contracts
+- internal spawn-headless-context tests layered on top of internal spawn-headless-view helpers plus generic execution-session context derivation without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, adapter-driven delegated-runtime truth, or summary-policy contracts
+- internal spawn-headless-context-batch tests layered on top of internal spawn-headless-view-batch helpers plus shared execution-session view reuse and generic execution-session context derivation without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, adapter-driven delegated-runtime truth, or summary-policy contracts
 - lineage-aware spawn helper tests should continue to prove that ancestry/guardrail inputs affect only internal readiness, parent-session request shaping, and minimal child-lineage projection, never public spawn contracts or child-planning side effects
 - internal wait-readiness tests layered on top of internal runtime-context without introducing actual wait support, close support, or public selectors
 - internal wait-candidate tests layered on top of the internal read model, runtime-context, and wait-readiness helpers without introducing actual wait support, close support, public selectors, or mutable lifecycle state
@@ -777,7 +778,7 @@ Public spawn-effects selectors, public spawn-effects stores, and any contract th
 Public spawn-consume selectors, public spawn-consume stores, public spawn-consume-batch selectors, public spawn-consume-batch stores, and any contract that treats internal spawn-consume or spawn-consume-batch output as child-creation truth, child-lineage truth, lifecycle truth, branch/worktree truth, adapter-driven spawn success truth, or a public session-lifecycle API also belong to that later phase rather than the current internal spawn-consume slice.
 Public spawn-apply selectors, public spawn-apply stores, public spawn-apply-batch selectors, public spawn-apply-batch stores, public spawn-effects/apply CLI surface, and any contract that treats internal spawn-apply or spawn-apply-batch output as child-creation truth, child-lineage truth, lifecycle truth, real spawn success truth, or a public session-lifecycle API also belong to that later phase rather than the current internal spawn-apply slice.
 Public spawn-headless-input selectors, public spawn-headless-input stores, public spawn-headless-input-batch selectors, public spawn-headless-input-batch stores, public spawn-headless-input CLI surface, and any contract that treats internal spawn-headless-input or spawn-headless-input-batch output as child-creation truth, child-runtime-execution truth, lifecycle truth, manifest truth, or a public session-lifecycle API also belong to that later phase rather than the current internal spawn-headless-input slice.
-Public spawn-headless-apply selectors, public spawn-headless-apply stores, public spawn-headless-apply-batch selectors, public spawn-headless-apply-batch stores, public spawn-headless-execute selectors, public spawn-headless-execute stores, public spawn-headless-execute-batch selectors, public spawn-headless-execute-batch stores, public spawn-headless-record selectors, public spawn-headless-record stores, public spawn-headless-record-batch selectors, public spawn-headless-record-batch stores, public spawn-headless-view selectors, public spawn-headless-view stores, public spawn-headless-view-batch selectors, public spawn-headless-view-batch stores, public spawn-headless-execute, spawn-headless-record, or spawn-headless-view CLI surface, and any contract that treats internal spawn-headless-apply, spawn-headless-apply-batch, spawn-headless-execute, spawn-headless-execute-batch, spawn-headless-record, spawn-headless-record-batch, spawn-headless-view, or spawn-headless-view-batch output as child-creation truth, child-runtime-execution truth, lifecycle truth, manifest truth, delegated-runtime truth, or a public session-lifecycle API also belong to that later phase rather than the current internal spawn-headless-apply plus spawn-headless-execute plus spawn-headless-record plus spawn-headless-view slice.
+Public spawn-headless-apply selectors, public spawn-headless-apply stores, public spawn-headless-apply-batch selectors, public spawn-headless-apply-batch stores, public spawn-headless-execute selectors, public spawn-headless-execute stores, public spawn-headless-execute-batch selectors, public spawn-headless-execute-batch stores, public spawn-headless-record selectors, public spawn-headless-record stores, public spawn-headless-record-batch selectors, public spawn-headless-record-batch stores, public spawn-headless-view selectors, public spawn-headless-view stores, public spawn-headless-view-batch selectors, public spawn-headless-view-batch stores, public spawn-headless-context selectors, public spawn-headless-context stores, public spawn-headless-context-batch selectors, public spawn-headless-context-batch stores, public spawn-headless-execute, spawn-headless-record, spawn-headless-view, or spawn-headless-context CLI surface, and any contract that treats internal spawn-headless-apply, spawn-headless-apply-batch, spawn-headless-execute, spawn-headless-execute-batch, spawn-headless-record, spawn-headless-record-batch, spawn-headless-view, spawn-headless-view-batch, spawn-headless-context, or spawn-headless-context-batch output as child-creation truth, child-runtime-execution truth, lifecycle truth, manifest truth, delegated-runtime truth, runtime truth, or a public session-lifecycle API also belong to that later phase rather than the current internal spawn-headless-apply plus spawn-headless-execute plus spawn-headless-record plus spawn-headless-view plus spawn-headless-context slice.
 Actual wait commands, close commands, public wait-readiness selectors, and any mutable wait-readiness store also belong to that later phase rather than the current internal wait-readiness slice.
 Public wait-candidate selectors, public wait-candidate stores, and any contract that treats internal wait-candidates as lifecycle truth also belong to that later phase rather than the current internal wait-candidate slice.
 Public wait-target selectors, public wait-target stores, and any contract that treats internal wait-targets as lifecycle truth also belong to that later phase rather than the current internal wait-target slice.
