@@ -373,7 +373,7 @@ describe("control-plane runtime-state spawn-headless-apply-batch helpers", () =>
               parentAttemptId: "att_parent_2",
               parentSessionId: "thr_parent_2"
             }),
-            get execution() {
+            get execution(): never {
               throw new Error("bridge failed");
             }
           },

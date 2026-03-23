@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  type HeadlessExecutionInput,
+  type HeadlessExecutionResult
+} from "../../src/adapters/types.js";
+import {
   executeExecutionSessionSpawnHeadless,
   type ExecutionSessionSpawnRequest
 } from "../../src/control-plane/index.js";
@@ -15,19 +19,19 @@ describe("control-plane runtime-state spawn-headless-execute helpers", () => {
       }
     });
     const invokeSpawn = vi.fn(async () => undefined);
-    let seenExecution: Record<string, unknown> | undefined;
+    let seenExecution: HeadlessExecutionInput | undefined;
     const executeHeadless = vi.fn(
-      async (input: Record<string, unknown>) => {
+      async (input: HeadlessExecutionInput) => {
         seenExecution = input;
 
-        return {
+        return createHeadlessExecutionResult({
           observation: {
             threadId: "thr_child_runtime",
             runCompleted: true,
             errorEventCount: 0,
             lastAgentMessage: "ok"
           }
-        };
+        });
       }
     );
 
@@ -98,14 +102,14 @@ describe("control-plane runtime-state spawn-headless-execute helpers", () => {
           }
         }
       },
-      executionResult: {
+      executionResult: createHeadlessExecutionResult({
         observation: {
           threadId: "thr_child_runtime",
           runCompleted: true,
           errorEventCount: 0,
           lastAgentMessage: "ok"
         }
-      }
+      })
     });
     expect(invokeSpawn).toHaveBeenCalledTimes(1);
     expect(invokeSpawn).toHaveBeenCalledWith(request);
@@ -147,13 +151,14 @@ describe("control-plane runtime-state spawn-headless-execute helpers", () => {
       request,
       execution,
       invokeSpawn: async () => undefined,
-      executeHeadless: async () => ({
+      executeHeadless: async () =>
+        createHeadlessExecutionResult({
         observation: {
           runCompleted: false,
           errorEventCount: 1,
           lastErrorMessage: "codex failed"
         }
-      })
+        })
     })) as unknown as Record<string, unknown>;
 
     expect(result).toEqual({
@@ -210,13 +215,13 @@ describe("control-plane runtime-state spawn-headless-execute helpers", () => {
           }
         }
       },
-      executionResult: {
+      executionResult: createHeadlessExecutionResult({
         observation: {
           runCompleted: false,
           errorEventCount: 1,
           lastErrorMessage: "codex failed"
         }
-      }
+      })
     });
     expect(result).not.toHaveProperty("apply");
     expect(result).not.toHaveProperty("headlessInput");
@@ -245,7 +250,8 @@ describe("control-plane runtime-state spawn-headless-execute helpers", () => {
         prompt: "Keep bridge metadata scoped"
       },
       invokeSpawn: async () => undefined,
-      executeHeadless: async () => ({
+      executeHeadless: async () =>
+        createHeadlessExecutionResult({
         observation: {
           threadId: "thr_child_runtime",
           runCompleted: true,
@@ -268,7 +274,7 @@ describe("control-plane runtime-state spawn-headless-execute helpers", () => {
             }
           }
         }
-      })
+        })
     })) as unknown as Record<string, unknown>;
 
     expect(result).not.toHaveProperty("controlPlane");
@@ -293,12 +299,14 @@ describe("control-plane runtime-state spawn-headless-execute helpers", () => {
 
   it("should surface invoker failures without invoking headless execution", async () => {
     const expectedError = new Error("spawn failed");
-    const executeHeadless = vi.fn(async () => ({
-      observation: {
-        runCompleted: true,
-        errorEventCount: 0
-      }
-    }));
+    const executeHeadless = vi.fn(async () =>
+      createHeadlessExecutionResult({
+        observation: {
+          runCompleted: true,
+          errorEventCount: 0
+        }
+      })
+    );
 
     await expect(
       executeExecutionSessionSpawnHeadless({
@@ -347,6 +355,34 @@ function createSpawnRequest(
     parentRuntime: "codex-cli",
     parentSessionId: "thr_parent",
     sourceKind: "fork",
+    ...overrides
+  };
+}
+
+function createHeadlessExecutionResult(
+  overrides: Partial<HeadlessExecutionResult> = {}
+): HeadlessExecutionResult {
+  return {
+    command: {
+      runtime: "codex-cli",
+      executable: "codex",
+      args: ["exec", "--json", "Reply with exactly: ok"],
+      metadata: {
+        executionMode: "headless_event_stream",
+        machineReadable: true,
+        promptIncluded: true,
+        resumeRequested: false,
+        safetyIntent: "workspace_write_with_approval"
+      }
+    },
+    events: [],
+    exitCode: 0,
+    observation: {
+      runCompleted: true,
+      errorEventCount: 0
+    },
+    stderr: "",
+    stdout: "",
     ...overrides
   };
 }

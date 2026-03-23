@@ -195,7 +195,7 @@ describe("control-plane runtime-state spawn-headless-apply helpers", () => {
         request: createSpawnRequest({
           sourceKind: "delegated"
         }),
-        get execution() {
+        get execution(): never {
           throw expectedError;
         },
         invokeSpawn

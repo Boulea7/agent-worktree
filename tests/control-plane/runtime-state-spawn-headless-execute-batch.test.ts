@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  type HeadlessExecutionInput,
+  type HeadlessExecutionResult
+} from "../../src/adapters/types.js";
+import {
   executeExecutionSessionSpawnHeadlessBatch,
   type ExecutionSessionSpawnRequest
 } from "../../src/control-plane/index.js";
@@ -8,12 +12,14 @@ import {
 describe("control-plane runtime-state spawn-headless-execute-batch helpers", () => {
   it("should return an empty batch result without invoking spawn or headless execution", async () => {
     const invokeSpawn = vi.fn(async () => undefined);
-    const executeHeadless = vi.fn(async () => ({
-      observation: {
-        runCompleted: true,
-        errorEventCount: 0
-      }
-    }));
+    const executeHeadless = vi.fn(async () =>
+      createHeadlessExecutionResult({
+        observation: {
+          runCompleted: true,
+          errorEventCount: 0
+        }
+      })
+    );
 
     await expect(
       executeExecutionSessionSpawnHeadlessBatch({
@@ -65,17 +71,22 @@ describe("control-plane runtime-state spawn-headless-execute-batch helpers", () 
         invokeSpawn: async (request: ExecutionSessionSpawnRequest) => {
           invokedSessionIds.push(request.parentSessionId);
         },
-        executeHeadless: async (input: Record<string, unknown>) => {
-          const attempt = input.attempt as Record<string, string>;
-          invokedAttemptIds.push(attempt.attemptId);
+        executeHeadless: async (input: HeadlessExecutionInput) => {
+          const attemptId = input.attempt?.attemptId;
 
-          return {
+          if (attemptId === undefined) {
+            throw new Error("missing attempt");
+          }
+
+          invokedAttemptIds.push(attemptId);
+
+          return createHeadlessExecutionResult({
             observation: {
-              threadId: `thr_${attempt.attemptId}`,
+              threadId: `thr_${attemptId}`,
               runCompleted: true,
               errorEventCount: 0
             }
-          };
+          });
         }
       })
     ).resolves.toEqual({
@@ -120,13 +131,13 @@ describe("control-plane runtime-state spawn-headless-execute-batch helpers", () 
               }
             }
           },
-          executionResult: {
+          executionResult: createHeadlessExecutionResult({
             observation: {
               threadId: "thr_att_child_1",
               runCompleted: true,
               errorEventCount: 0
             }
-          }
+          })
         },
         {
           headlessApply: {
@@ -180,13 +191,13 @@ describe("control-plane runtime-state spawn-headless-execute-batch helpers", () 
               }
             }
           },
-          executionResult: {
+          executionResult: createHeadlessExecutionResult({
             observation: {
               threadId: "thr_att_child_2",
               runCompleted: true,
               errorEventCount: 0
             }
-          }
+          })
         }
       ]
     });
@@ -197,12 +208,14 @@ describe("control-plane runtime-state spawn-headless-execute-batch helpers", () 
   it("should fail fast on the first invoker error", async () => {
     const expectedError = new Error("spawn failed");
     const invokedSessionIds: string[] = [];
-    const executeHeadless = vi.fn(async () => ({
-      observation: {
-        runCompleted: true,
-        errorEventCount: 0
-      }
-    }));
+    const executeHeadless = vi.fn(async () =>
+      createHeadlessExecutionResult({
+        observation: {
+          runCompleted: true,
+          errorEventCount: 0
+        }
+      })
+    );
 
     await expect(
       executeExecutionSessionSpawnHeadlessBatch({
@@ -284,20 +297,25 @@ describe("control-plane runtime-state spawn-headless-execute-batch helpers", () 
         invokeSpawn: async (request: ExecutionSessionSpawnRequest) => {
           invokedSessionIds.push(request.parentSessionId);
         },
-        executeHeadless: async (input: Record<string, unknown>) => {
-          const attempt = input.attempt as Record<string, string>;
-          invokedAttemptIds.push(attempt.attemptId);
+        executeHeadless: async (input: HeadlessExecutionInput) => {
+          const attemptId = input.attempt?.attemptId;
 
-          if (attempt.attemptId === "att_child_2") {
+          if (attemptId === undefined) {
+            throw new Error("missing attempt");
+          }
+
+          invokedAttemptIds.push(attemptId);
+
+          if (attemptId === "att_child_2") {
             throw expectedError;
           }
 
-          return {
+          return createHeadlessExecutionResult({
             observation: {
               runCompleted: true,
               errorEventCount: 0
             }
-          };
+          });
         }
       })
     ).rejects.toThrow(expectedError);
@@ -339,12 +357,13 @@ describe("control-plane runtime-state spawn-headless-execute-batch helpers", () 
     const result = (await executeExecutionSessionSpawnHeadlessBatch({
       items,
       invokeSpawn: async () => undefined,
-      executeHeadless: async () => ({
+      executeHeadless: async () =>
+        createHeadlessExecutionResult({
         observation: {
           runCompleted: true,
           errorEventCount: 0
         }
-      })
+        })
     })) as unknown as Record<string, unknown>;
 
     expect(result).not.toHaveProperty("headlessApply");
@@ -371,6 +390,34 @@ function createSpawnRequest(
     parentRuntime: "codex-cli",
     parentSessionId: "thr_parent",
     sourceKind: "fork",
+    ...overrides
+  };
+}
+
+function createHeadlessExecutionResult(
+  overrides: Partial<HeadlessExecutionResult> = {}
+): HeadlessExecutionResult {
+  return {
+    command: {
+      runtime: "codex-cli",
+      executable: "codex",
+      args: ["exec", "--json", "Reply with exactly: ok"],
+      metadata: {
+        executionMode: "headless_event_stream",
+        machineReadable: true,
+        promptIncluded: true,
+        resumeRequested: false,
+        safetyIntent: "workspace_write_with_approval"
+      }
+    },
+    events: [],
+    exitCode: 0,
+    observation: {
+      runCompleted: true,
+      errorEventCount: 0
+    },
+    stderr: "",
+    stdout: "",
     ...overrides
   };
 }
