@@ -118,6 +118,17 @@ describe("control-plane runtime-state spawn-apply helpers", () => {
     expect(result).not.toHaveProperty("outcome");
     expect(result).not.toHaveProperty("spawnEffects");
     expect(result).not.toHaveProperty("spawnApply");
+    expect(result).not.toHaveProperty("spawnHeadlessApply");
+    expect(result).not.toHaveProperty("spawnHeadlessApplyBatch");
+    expect(result).not.toHaveProperty("spawnHeadlessExecute");
+    expect(result).not.toHaveProperty("spawnHeadlessExecuteBatch");
+    expect(result).not.toHaveProperty("headlessInput");
+    expect(result).not.toHaveProperty("execution");
+    expect(result).not.toHaveProperty("execute");
+    expect(result).not.toHaveProperty("stdout");
+    expect(result).not.toHaveProperty("stderr");
+    expect(result).not.toHaveProperty("exitCode");
+    expect(result).not.toHaveProperty("events");
     expect(result).not.toHaveProperty("spawnHeadlessInput");
     expect(result).not.toHaveProperty("spawnHeadlessInputBatch");
     expect(result).not.toHaveProperty("attempt");

@@ -95,6 +95,16 @@ describe("control-plane runtime-state spawn-headless-input helpers", () => {
     expect(result).not.toHaveProperty("env");
     expect(result).not.toHaveProperty("spawnEffects");
     expect(result).not.toHaveProperty("spawnApply");
+    expect(result).not.toHaveProperty("spawnHeadlessApply");
+    expect(result).not.toHaveProperty("spawnHeadlessApplyBatch");
+    expect(result).not.toHaveProperty("spawnHeadlessExecute");
+    expect(result).not.toHaveProperty("spawnHeadlessExecuteBatch");
+    expect(result).not.toHaveProperty("consume");
+    expect(result).not.toHaveProperty("apply");
+    expect(result).not.toHaveProperty("stdout");
+    expect(result).not.toHaveProperty("stderr");
+    expect(result).not.toHaveProperty("exitCode");
+    expect(result).not.toHaveProperty("events");
   });
 
   it("should not mutate the supplied effects or execution seed", () => {
