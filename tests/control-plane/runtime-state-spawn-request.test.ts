@@ -44,6 +44,7 @@ describe("control-plane runtime-state spawn-request helpers", () => {
     expect(request).not.toHaveProperty("prompt");
     expect(request).not.toHaveProperty("task");
     expect(request).not.toHaveProperty("taskId");
+    expect(request).not.toHaveProperty("invoked");
   });
 
   it("should derive a delegated spawn request from a spawnable candidate", () => {
@@ -282,6 +283,7 @@ describe("control-plane runtime-state spawn-request helpers", () => {
     expect(request).not.toHaveProperty("task");
     expect(request).not.toHaveProperty("taskId");
     expect(request).not.toHaveProperty("parentAttemptLineage");
+    expect(request).not.toHaveProperty("invoked");
   });
 });
 

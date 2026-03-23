@@ -32,6 +32,8 @@ function assertNoInternalRuntimeMetadata(value: Record<string, unknown>): void {
   expect(value).not.toHaveProperty("lifecycleDisposition");
   expect(value).not.toHaveProperty("spawnCandidate");
   expect(value).not.toHaveProperty("spawnLineage");
+  expect(value).not.toHaveProperty("spawnConsume");
+  expect(value).not.toHaveProperty("spawnConsumeBatch");
   expect(value).not.toHaveProperty("spawnRecordedEvent");
   expect(value).not.toHaveProperty("spawnRequest");
   expect(value).not.toHaveProperty("spawnRequestedEvent");
