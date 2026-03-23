@@ -80,6 +80,12 @@ describe("control-plane runtime-state spawn-headless-record-batch helpers", () =
     expect(result).not.toHaveProperty("count");
     expect(result).not.toHaveProperty("error");
     expect(result).not.toHaveProperty("errors");
+    expect(result).not.toHaveProperty("view");
+    expect(result).not.toHaveProperty("index");
+    expect(result).not.toHaveProperty("context");
+    expect(result).not.toHaveProperty("runtimeState");
+    expect(result).not.toHaveProperty("spawnHeadlessRecord");
+    expect(result).not.toHaveProperty("spawnHeadlessRecordBatch");
     expect(items).toEqual(itemsSnapshot);
   });
 
