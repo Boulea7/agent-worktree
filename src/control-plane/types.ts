@@ -703,3 +703,23 @@ export interface ExecutionSessionSpawnHeadlessWaitCandidateBatch {
   headlessContextBatch: ExecutionSessionSpawnHeadlessContextBatch;
   results: ExecutionSessionSpawnHeadlessWaitCandidate[];
 }
+
+export interface ExecutionSessionSpawnHeadlessCloseCandidateInput {
+  headlessContext: ExecutionSessionSpawnHeadlessContext;
+  resolveSessionLifecycleCapability?: SessionLifecycleCapabilityResolver;
+}
+
+export interface ExecutionSessionSpawnHeadlessCloseCandidate {
+  candidate: ExecutionSessionCloseCandidate;
+  headlessContext: ExecutionSessionSpawnHeadlessContext;
+}
+
+export interface ExecutionSessionSpawnHeadlessCloseCandidateBatchInput {
+  headlessContextBatch: ExecutionSessionSpawnHeadlessContextBatch;
+  resolveSessionLifecycleCapability?: SessionLifecycleCapabilityResolver;
+}
+
+export interface ExecutionSessionSpawnHeadlessCloseCandidateBatch {
+  headlessContextBatch: ExecutionSessionSpawnHeadlessContextBatch;
+  results: ExecutionSessionSpawnHeadlessCloseCandidate[];
+}
