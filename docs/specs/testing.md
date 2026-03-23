@@ -43,6 +43,7 @@ Contract tests should validate:
 - default list visibility for cleaned attempts
 - additive provenance fields survive machine-readable create/list/cleanup flows
 - machine-readable CLI payloads do not leak internal spawn-requested or spawn-recorded marker metadata
+- machine-readable CLI payloads do not leak internal `spawnConsume` or `spawnConsumeBatch` metadata
 - machine-readable CLI payloads do not leak internal wait-consume or wait-consume-batch metadata
 - invalid manifests fail the command in machine-readable output
 - missing `manifest.json` files in attempt directories fail the command in machine-readable output
@@ -288,6 +289,29 @@ Must test:
 - helper immutability for the supplied spawn-requested-event input
 - explicit confirmation that internal spawn-recorded-event helpers do not reintroduce requestedEvent, request, selector, view, context, readiness, child-lineage, child branch/worktree planning, manifest, or outcome data
 - explicit confirmation that internal spawn-recorded-event helpers do not imply child creation, child lineage truth, terminal lifecycle truth, or actual spawn support
+
+## Internal Spawn Consume
+
+Must test:
+
+- spawn-consume consumption from an existing internal spawn-request without introducing a second selector contract
+- invocation of the injected spawn invoker exactly once with the existing spawn-request
+- helper immutability for the supplied spawn-request input
+- injected invoker failures surface directly without synthetic success truth, lifecycle markers, or summary data
+- explicit confirmation that internal spawn-consume helpers do not reintroduce selector, view, context, readiness, child-lineage, child branch/worktree planning, manifest, or outcome truth
+- explicit confirmation that internal spawn-consume helpers do not imply child creation, child lineage truth, terminal lifecycle truth, branch/worktree creation, prompt planning, adapter-driven spawn success, or a public session-lifecycle API
+
+## Internal Spawn Consume Batch
+
+Must test:
+
+- spawn-consume-batch consumption from an explicit ordered list of existing internal spawn-request values without introducing a second selector contract
+- preservation of input order while sequentially composing the single-request spawn-consume helper
+- empty-input behavior that does not invoke the injected spawn invoker
+- fail-fast behavior on the first injected invoker error without partial-failure aggregation or summary-policy output
+- helper immutability for the supplied spawn-request list input
+- explicit confirmation that internal spawn-consume-batch helpers do not reintroduce selector, view, context, readiness, child-lineage, child branch/worktree planning, manifest, or outcome truth
+- explicit confirmation that internal spawn-consume-batch helpers do not imply child creation, child lineage truth, terminal lifecycle truth, branch/worktree creation, prompt planning, adapter-driven spawn success, or a public session-lifecycle API
 
 ## Internal Wait Readiness
 
@@ -540,6 +564,8 @@ Must test:
 - internal spawn-lineage tests layered on top of internal spawn-request helpers without introducing actual spawn support, manifest-backed lifecycle truth, public selectors, or child-planning semantics
 - internal spawn-requested-event tests layered on top of internal spawn-request helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, or terminal lifecycle truth
 - internal spawn-recorded-event tests layered on top of internal spawn-requested-event helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, or terminal lifecycle truth
+- internal spawn-consume tests layered on top of internal spawn-request helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, branch/worktree creation, prompt planning, or adapter-driven spawn success truth
+- internal spawn-consume-batch tests layered on top of internal spawn-consume helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, branch/worktree creation, prompt planning, adapter-driven spawn success truth, or summary-policy contracts
 - lineage-aware spawn helper tests should continue to prove that ancestry/guardrail inputs affect only internal readiness, parent-session request shaping, and minimal child-lineage projection, never public spawn contracts or child-planning side effects
 - internal wait-readiness tests layered on top of internal runtime-context without introducing actual wait support, close support, or public selectors
 - internal wait-candidate tests layered on top of the internal read model, runtime-context, and wait-readiness helpers without introducing actual wait support, close support, public selectors, or mutable lifecycle state
@@ -570,6 +596,7 @@ Public spawn-target selectors, public spawn-target stores, and any contract that
 Public spawn-request selectors, public spawn-request stores, and any contract that treats internal spawn-request output as lifecycle truth also belong to that later phase rather than the current internal spawn-request slice.
 Public spawn-lineage selectors, public spawn-lineage stores, and any contract that treats internal spawn-lineage output as lifecycle truth, manifest truth, or real child-attempt planning also belong to that later phase rather than the current internal spawn-lineage slice.
 Public spawn-requested-event selectors, public spawn-requested-event stores, public spawn-recorded-event selectors, public spawn-recorded-event stores, and any contract that treats internal spawn-requested-event or spawn-recorded-event output as child-creation truth, lifecycle truth, manifest truth, or public spawn status also belong to that later phase rather than the current internal spawn-event slice.
+Public spawn-consume selectors, public spawn-consume stores, public spawn-consume-batch selectors, public spawn-consume-batch stores, and any contract that treats internal spawn-consume or spawn-consume-batch output as child-creation truth, child-lineage truth, lifecycle truth, branch/worktree truth, adapter-driven spawn success truth, or a public session-lifecycle API also belong to that later phase rather than the current internal spawn-consume slice.
 Actual wait commands, close commands, public wait-readiness selectors, and any mutable wait-readiness store also belong to that later phase rather than the current internal wait-readiness slice.
 Public wait-candidate selectors, public wait-candidate stores, and any contract that treats internal wait-candidates as lifecycle truth also belong to that later phase rather than the current internal wait-candidate slice.
 Public wait-target selectors, public wait-target stores, and any contract that treats internal wait-targets as lifecycle truth also belong to that later phase rather than the current internal wait-target slice.
