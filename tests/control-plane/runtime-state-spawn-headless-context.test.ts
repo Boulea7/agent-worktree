@@ -55,11 +55,14 @@ describe("control-plane runtime-state spawn-headless-context helpers", () => {
     expect(result).not.toHaveProperty("view");
     expect(result).not.toHaveProperty("record");
     expect(result).not.toHaveProperty("selector");
+    expect(result).not.toHaveProperty("candidate");
     expect(result).not.toHaveProperty("readiness");
     expect(result).not.toHaveProperty("results");
     expect(result).not.toHaveProperty("headlessViewBatch");
     expect(result).not.toHaveProperty("spawnHeadlessContext");
     expect(result).not.toHaveProperty("spawnHeadlessContextBatch");
+    expect(result).not.toHaveProperty("spawnHeadlessWaitCandidate");
+    expect(result).not.toHaveProperty("spawnHeadlessWaitCandidateBatch");
   });
 
   it("should fail when the supplied headless view cannot select the headless record", () => {

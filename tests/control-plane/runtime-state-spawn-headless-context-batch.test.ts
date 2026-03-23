@@ -105,11 +105,16 @@ describe(
         hasResolvedParent: true,
         hasChildren: false
       });
+      expect(typedResult.results[0]).not.toHaveProperty("candidate");
+      expect(typedResult.results[1]).not.toHaveProperty("candidate");
+      expect(typedResult).not.toHaveProperty("candidate");
       expect(typedResult).not.toHaveProperty("headlessView");
       expect(typedResult).not.toHaveProperty("summary");
       expect(typedResult).not.toHaveProperty("count");
       expect(typedResult).not.toHaveProperty("error");
       expect(typedResult).not.toHaveProperty("errors");
+      expect(typedResult).not.toHaveProperty("spawnHeadlessWaitCandidate");
+      expect(typedResult).not.toHaveProperty("spawnHeadlessWaitCandidateBatch");
       expect(headlessViewBatch.headlessRecordBatch).toEqual(batchSnapshot);
     });
 
