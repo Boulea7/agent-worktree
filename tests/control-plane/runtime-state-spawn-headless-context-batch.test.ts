@@ -109,6 +109,7 @@ describe(
       expect(typedResult.results[1]).not.toHaveProperty("candidate");
       expect(typedResult).not.toHaveProperty("candidate");
       expect(typedResult).not.toHaveProperty("headlessView");
+      expect(typedResult).not.toHaveProperty("candidate");
       expect(typedResult).not.toHaveProperty("summary");
       expect(typedResult).not.toHaveProperty("count");
       expect(typedResult).not.toHaveProperty("error");

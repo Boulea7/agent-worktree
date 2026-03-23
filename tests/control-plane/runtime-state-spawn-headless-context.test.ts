@@ -57,6 +57,7 @@ describe("control-plane runtime-state spawn-headless-context helpers", () => {
     expect(result).not.toHaveProperty("selector");
     expect(result).not.toHaveProperty("candidate");
     expect(result).not.toHaveProperty("readiness");
+    expect(result).not.toHaveProperty("candidate");
     expect(result).not.toHaveProperty("results");
     expect(result).not.toHaveProperty("headlessViewBatch");
     expect(result).not.toHaveProperty("spawnHeadlessContext");
