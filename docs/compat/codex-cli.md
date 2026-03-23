@@ -90,6 +90,10 @@ Additional bounded internal details:
 - that same spawn-headless-execute helper remains consume-path internal metadata only: it may return bounded internal execution-consumption results, but it does not imply child creation, child-runtime truth, terminal lifecycle truth, delegated-runtime truth, or a public session-lifecycle API
 - a separate internal spawn-headless-execute-batch helper may compose an explicit ordered list of those same internal execution-consumption results by composing the single-request spawn-headless-execute helper without becoming actual delegated runtime support
 - that same spawn-headless-execute-batch helper remains request-list-based internal metadata only: it preserves input order, fails fast on the first execution error, and does not imply child creation, child-runtime truth, terminal lifecycle truth, delegated-runtime truth, or summary-policy contracts
+- a separate internal spawn-headless-record helper may derive a single execution-session record from an existing spawn-headless-execute payload by composing the generic execution-session record helper without becoming actual delegated runtime support
+- that same spawn-headless-record helper remains runtime-state internal metadata only: it may return bounded derived `ExecutionSessionRecord` metadata, but it does not imply child creation, child-runtime truth, terminal lifecycle truth, delegated-runtime truth, or a public session-lifecycle API
+- a separate internal spawn-headless-record-batch helper may compose an explicit ordered list of those same internal runtime-state derivations by composing the single-request spawn-headless-record helper without becoming actual delegated runtime support
+- that same spawn-headless-record-batch helper remains request-list-based internal metadata only: it preserves input order, fails fast on the first derivation error, and does not imply child creation, child-runtime truth, terminal lifecycle truth, delegated-runtime truth, or summary-policy contracts
 - a separate internal wait-readiness helper layer may derive wait preconditions or blocking reasons from runtime-context for future internal wait-oriented consumers
 - a separate internal wait-target or wait-request helper layer may derive minimal internal wait-oriented target or request metadata above that control-plane vocabulary for future internal consumers
 - that same wait-request shaping remains target-based internal metadata only: it does not reintroduce selector-driven wait surfaces, readiness recomputation, or an actual wait consumer loop
@@ -130,6 +134,8 @@ Additional bounded internal details:
 - the same restriction applies to any derived spawn-headless-apply-batch metadata: it is internal-only, non-persistent, non-manifest-backed batch bridge metadata and does not imply actual delegated runtime support, child creation truth, child-runtime execution truth, terminal lifecycle truth, real spawn success, or summary-policy contracts
 - the same restriction applies to any derived spawn-headless-execute metadata: it is internal-only, non-persistent, non-manifest-backed execution-consumption metadata and does not imply actual delegated runtime support, child creation truth, child-runtime execution truth, terminal lifecycle truth, or public lifecycle semantics
 - the same restriction applies to any derived spawn-headless-execute-batch metadata: it is internal-only, non-persistent, non-manifest-backed batch execution-consumption metadata and does not imply actual delegated runtime support, child creation truth, child-runtime execution truth, terminal lifecycle truth, or summary-policy contracts
+- the same restriction applies to any derived spawn-headless-record metadata: it is internal-only, non-persistent, non-manifest-backed runtime-state metadata and does not imply actual delegated runtime support, child creation truth, child-runtime execution truth, terminal lifecycle truth, or public lifecycle semantics
+- the same restriction applies to any derived spawn-headless-record-batch metadata: it is internal-only, non-persistent, non-manifest-backed batch runtime-state metadata and does not imply actual delegated runtime support, child creation truth, child-runtime execution truth, terminal lifecycle truth, or summary-policy contracts
 - the same restriction applies to any derived wait-readiness metadata: it is internal-only, non-persistent, non-manifest-backed preflight state and does not imply actual wait support, close support, or public selectors
 - the same restriction applies to any derived wait-target or wait-request metadata: it is internal-only, non-persistent, non-manifest-backed metadata and does not imply actual wait support, polling, timeout scheduling, or a public session-lifecycle API
 - the same restriction applies to any derived wait-consumer metadata: it is internal-only, non-persistent, non-manifest-backed capability-aware preflight state and does not imply actual wait support, polling, timeout scheduling, adapter-driven waiting, or a public session-lifecycle API
@@ -153,7 +159,7 @@ Explicitly not implemented:
 - public spawn-consume or spawn-consume-batch CLI surface in `agent-worktree`
 - public spawn-effects or spawn-apply CLI surface in `agent-worktree`
 - public spawn-headless-input CLI surface in `agent-worktree`
-- public spawn-headless-apply or spawn-headless-execute CLI surface in `agent-worktree`
+- public spawn-headless-apply, spawn-headless-execute, or spawn-headless-record CLI surface in `agent-worktree`
 - public `--profile` flags or public provider-selection semantics in `agent-worktree`
 - public wait, wait-consume, or wait-consume-batch CLI surface in `agent-worktree`
 - provider, auth, or config-management writers for local Codex settings
