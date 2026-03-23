@@ -46,6 +46,7 @@ describe(
           }
         ]
       });
+      const batchSnapshot = structuredClone(headlessContextBatch);
 
       const result = deriveExecutionSessionSpawnHeadlessCloseCandidateBatch({
         headlessContextBatch,
@@ -97,6 +98,7 @@ describe(
       expect(result).not.toHaveProperty("count");
       expect(result).not.toHaveProperty("error");
       expect(result).not.toHaveProperty("errors");
+      expect(headlessContextBatch).toEqual(batchSnapshot);
     });
 
     it("should fail fast when any item readiness derivation throws", () => {

@@ -19,6 +19,7 @@ describe(
         sessionId: "thr_child_close_candidate",
         sourceKind: "delegated"
       });
+      const inputSnapshot = structuredClone(headlessContext);
 
       const result = deriveExecutionSessionSpawnHeadlessCloseCandidate({
         headlessContext
@@ -47,6 +48,7 @@ describe(
       expect(result).not.toHaveProperty("headlessContextBatch");
       expect(result).not.toHaveProperty("target");
       expect(result).not.toHaveProperty("request");
+      expect(headlessContext).toEqual(inputSnapshot);
     });
 
     it("should pass an explicit session lifecycle resolver through to close readiness", () => {
