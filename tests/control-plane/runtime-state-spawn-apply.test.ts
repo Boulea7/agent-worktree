@@ -107,10 +107,15 @@ describe("control-plane runtime-state spawn-apply helpers", () => {
       }
     });
     expect(result).not.toHaveProperty("request");
+    expect(result).not.toHaveProperty("selector");
+    expect(result).not.toHaveProperty("view");
+    expect(result).not.toHaveProperty("context");
+    expect(result).not.toHaveProperty("readiness");
     expect(result).not.toHaveProperty("summary");
     expect(result).not.toHaveProperty("count");
     expect(result).not.toHaveProperty("error");
     expect(result).not.toHaveProperty("errors");
+    expect(result).not.toHaveProperty("outcome");
     expect(result).not.toHaveProperty("manifest");
     expect(result).not.toHaveProperty("branch");
     expect(result).not.toHaveProperty("worktreePath");
