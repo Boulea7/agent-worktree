@@ -128,6 +128,11 @@ function createHeadlessRecord(
     parentAttemptId?: string;
   }
 ): ExecutionSessionSpawnHeadlessRecord {
+  const requestSourceKind: "fork" | "delegated" =
+    overrides.sourceKind === "direct" ? "fork" : overrides.sourceKind;
+  const lineageSourceKind: "fork" | "delegated" =
+    overrides.sourceKind === "direct" ? "fork" : overrides.sourceKind;
+
   return {
     headlessExecute: {
       headlessApply: {
@@ -137,17 +142,15 @@ function createHeadlessRecord(
               parentAttemptId: overrides.parentAttemptId ?? "att_parent_view",
               parentRuntime: "codex-cli",
               parentSessionId: "thr_parent_view",
-              sourceKind: overrides.sourceKind === "direct" ? "fork" : overrides.sourceKind
+              sourceKind: requestSourceKind
             },
             invoked: true
           },
           effects: {
             lineage: {
               attemptId: overrides.attemptId,
-              sourceKind: overrides.sourceKind,
-              ...(overrides.parentAttemptId === undefined
-                ? {}
-                : { parentAttemptId: overrides.parentAttemptId })
+              sourceKind: lineageSourceKind,
+              parentAttemptId: overrides.parentAttemptId ?? "att_parent_view"
             },
             requestedEvent: {
               attemptId: overrides.parentAttemptId ?? "att_parent_view",
@@ -167,10 +170,8 @@ function createHeadlessRecord(
           prompt: "Reply with exactly: ok",
           attempt: {
             attemptId: overrides.attemptId,
-            sourceKind: overrides.sourceKind,
-            ...(overrides.parentAttemptId === undefined
-              ? {}
-              : { parentAttemptId: overrides.parentAttemptId })
+            sourceKind: lineageSourceKind,
+            parentAttemptId: overrides.parentAttemptId ?? "att_parent_view"
           }
         }
       },

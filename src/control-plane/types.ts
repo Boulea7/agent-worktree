@@ -649,3 +649,21 @@ export interface ExecutionSessionSpawnHeadlessRecordBatchInput {
 export interface ExecutionSessionSpawnHeadlessRecordBatch {
   results: ExecutionSessionSpawnHeadlessRecord[];
 }
+
+export interface ExecutionSessionSpawnHeadlessViewInput {
+  headlessRecord: ExecutionSessionSpawnHeadlessRecord;
+}
+
+export interface ExecutionSessionSpawnHeadlessView {
+  headlessRecord: ExecutionSessionSpawnHeadlessRecord;
+  view: ExecutionSessionView;
+}
+
+export interface ExecutionSessionSpawnHeadlessViewBatchInput {
+  headlessRecordBatch: ExecutionSessionSpawnHeadlessRecordBatch;
+}
+
+export interface ExecutionSessionSpawnHeadlessViewBatch {
+  headlessRecordBatch: ExecutionSessionSpawnHeadlessRecordBatch;
+  view: ExecutionSessionView;
+}

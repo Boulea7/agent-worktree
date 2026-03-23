@@ -71,7 +71,7 @@ function createHeadlessRecord(
     record?: Partial<ExecutionSessionSpawnHeadlessRecord["record"]>;
   } = {}
 ): ExecutionSessionSpawnHeadlessRecord {
-  const record = {
+  const record: ExecutionSessionSpawnHeadlessRecord["record"] = {
     attemptId: "att_child_view",
     runtime: "codex-cli",
     sourceKind: "delegated",
