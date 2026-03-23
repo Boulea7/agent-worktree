@@ -5,6 +5,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { getAdapterDescriptor } from "../../src/adapters/catalog.js";
 import { CodexCliAdapter } from "../../src/adapters/codex-cli.js";
 import {
+  deriveExecutionSessionSpawnEffects,
+  deriveExecutionSessionSpawnHeadlessInput
+} from "../../src/control-plane/index.js";
+import {
   detectCodexCli,
   executeCodexHeadless
 } from "../../src/adapters/codex-cli-exec.js";
@@ -447,6 +451,67 @@ describe("executeCodexHeadless", () => {
           runCompleted: false,
           errorEventCount: 1,
           lastErrorMessage: "codex failed"
+        }
+      }
+    });
+  });
+
+  it("should accept bridge-shaped spawn lineage as the headless execution attempt input", async () => {
+    const stdout = await readFixture("success.observed.jsonl");
+    const runCommand = vi.fn(async () => ({
+      exitCode: 0,
+      stdout,
+      stderr: ""
+    }));
+    const adapter = new CodexCliAdapter(getAdapterDescriptor("codex-cli"));
+    const input = deriveExecutionSessionSpawnHeadlessInput({
+      effects: deriveExecutionSessionSpawnEffects({
+        childAttemptId: "att_child_bridge",
+        request: {
+          parentAttemptId: "att_parent_bridge",
+          parentRuntime: "codex-cli",
+          parentSessionId: "thr_parent_bridge",
+          sourceKind: "delegated",
+          inheritedGuardrails: {
+            maxChildren: 2,
+            maxDepth: 3
+          }
+        }
+      }),
+      execution: {
+        prompt: "Reply with ok",
+        timeoutMs: 5_000
+      }
+    });
+
+    await expect(
+      executeCodexHeadless(input, {
+        command: adapter.renderCommand({ prompt: input.prompt }),
+        runCommand
+      })
+    ).resolves.toMatchObject({
+      observation: {
+        threadId: "thr_demo",
+        runCompleted: true,
+        lastAgentMessage: "ok",
+        errorEventCount: 0
+      },
+      controlPlane: {
+        sessionSnapshot: {
+          node: {
+            attemptId: "att_child_bridge",
+            nodeKind: "child",
+            sourceKind: "delegated",
+            parentAttemptId: "att_parent_bridge"
+          },
+          guardrails: {
+            maxChildren: 2,
+            maxDepth: 3
+          },
+          sessionRef: {
+            runtime: "codex-cli",
+            sessionId: "thr_demo"
+          }
         }
       }
     });

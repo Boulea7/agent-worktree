@@ -146,6 +146,9 @@ describe("control-plane runtime-state spawn-effects helpers", () => {
     expect(effects).not.toHaveProperty("readiness");
     expect(effects).not.toHaveProperty("consume");
     expect(effects).not.toHaveProperty("apply");
+    expect(effects).not.toHaveProperty("attempt");
+    expect(effects).not.toHaveProperty("spawnHeadlessInput");
+    expect(effects).not.toHaveProperty("spawnHeadlessInputBatch");
     expect(effects).not.toHaveProperty("manifest");
     expect(effects).not.toHaveProperty("parentAttemptId");
     expect(effects).not.toHaveProperty("parentRuntime");
@@ -157,6 +160,9 @@ describe("control-plane runtime-state spawn-effects helpers", () => {
     expect(effects).not.toHaveProperty("childWorktreePath");
     expect(effects).not.toHaveProperty("childRuntime");
     expect(effects).not.toHaveProperty("runtimeMode");
+    expect(effects).not.toHaveProperty("cwd");
+    expect(effects).not.toHaveProperty("timeoutMs");
+    expect(effects).not.toHaveProperty("abortSignal");
     expect(effects).not.toHaveProperty("prompt");
     expect(effects).not.toHaveProperty("task");
     expect(effects).not.toHaveProperty("taskId");
