@@ -513,3 +513,22 @@ export interface ExecutionSessionSpawnLineage {
   parentAttemptId: string;
   sourceKind: ExecutionSessionSpawnRequestSourceKind;
 }
+
+export interface ExecutionSessionSpawnEffectsInput {
+  childAttemptId: string;
+  request: ExecutionSessionSpawnRequest;
+}
+
+export interface ExecutionSessionSpawnEffects {
+  lineage: ExecutionSessionSpawnLineage;
+  requestedEvent: ExecutionSessionSpawnRequestedEvent;
+  recordedEvent: ExecutionSessionSpawnRecordedEvent;
+}
+
+export interface ExecutionSessionSpawnEffectsBatchInput {
+  items: readonly ExecutionSessionSpawnEffectsInput[];
+}
+
+export interface ExecutionSessionSpawnEffectsBatch {
+  results: ExecutionSessionSpawnEffects[];
+}
