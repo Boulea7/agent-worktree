@@ -20,6 +20,8 @@ export { deriveExecutionSessionSpawnEffects } from "./runtime-state-spawn-effect
 export { deriveExecutionSessionSpawnEffectsBatch } from "./runtime-state-spawn-effects-batch.js";
 export { deriveExecutionSessionSpawnHeadlessInput } from "./runtime-state-spawn-headless-input.js";
 export { deriveExecutionSessionSpawnHeadlessInputBatch } from "./runtime-state-spawn-headless-input-batch.js";
+export { applyExecutionSessionSpawnHeadlessInput } from "./runtime-state-spawn-headless-apply.js";
+export { applyExecutionSessionSpawnHeadlessInputBatch } from "./runtime-state-spawn-headless-apply-batch.js";
 export { deriveExecutionSessionSpawnReadiness } from "./runtime-state-spawn-readiness.js";
 export { deriveExecutionSessionSpawnLineage } from "./runtime-state-spawn-lineage.js";
 export { deriveExecutionSessionSpawnRecordedEvent } from "./runtime-state-spawn-recorded-event.js";
@@ -106,6 +108,11 @@ export {
   type ExecutionSessionSpawnEffectsBatch,
   type ExecutionSessionSpawnEffectsBatchInput,
   type ExecutionSessionSpawnEffectsInput,
+  type ExecutionSessionSpawnHeadlessApply,
+  type ExecutionSessionSpawnHeadlessApplyBatch,
+  type ExecutionSessionSpawnHeadlessApplyBatchInput,
+  type ExecutionSessionSpawnHeadlessApplyInput,
+  type ExecutionSessionSpawnHeadlessApplyItem,
   type ExecutionSessionSpawnHeadlessInput,
   type ExecutionSessionSpawnHeadlessInputBatch,
   type ExecutionSessionSpawnHeadlessInputBatchInput,

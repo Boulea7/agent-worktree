@@ -576,3 +576,30 @@ export interface ExecutionSessionSpawnHeadlessInputBatchInput {
 export interface ExecutionSessionSpawnHeadlessInputBatch {
   results: ExecutionSessionSpawnHeadlessInput[];
 }
+
+export interface ExecutionSessionSpawnHeadlessApplyInput {
+  childAttemptId: string;
+  execution: ExecutionSessionSpawnHeadlessInputSeed;
+  invokeSpawn: ExecutionSessionSpawnInvoker;
+  request: ExecutionSessionSpawnRequest;
+}
+
+export interface ExecutionSessionSpawnHeadlessApply {
+  apply: ExecutionSessionSpawnApply;
+  headlessInput: ExecutionSessionSpawnHeadlessInput;
+}
+
+export interface ExecutionSessionSpawnHeadlessApplyItem {
+  childAttemptId: string;
+  execution: ExecutionSessionSpawnHeadlessInputSeed;
+  request: ExecutionSessionSpawnRequest;
+}
+
+export interface ExecutionSessionSpawnHeadlessApplyBatchInput {
+  items: readonly ExecutionSessionSpawnHeadlessApplyItem[];
+  invokeSpawn: ExecutionSessionSpawnInvoker;
+}
+
+export interface ExecutionSessionSpawnHeadlessApplyBatch {
+  results: ExecutionSessionSpawnHeadlessApply[];
+}

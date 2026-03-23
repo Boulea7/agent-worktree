@@ -393,7 +393,7 @@ describe("control-plane runtime-state spawn-headless-apply-batch helpers", () =>
         }
       })
     ).rejects.toThrow("bridge failed");
-    expect(invokedSessionIds).toEqual(["thr_parent_1", "thr_parent_2"]);
+    expect(invokedSessionIds).toEqual(["thr_parent_1"]);
   });
 });
 
