@@ -362,6 +362,28 @@ Must test:
 - explicit confirmation that internal spawn-apply-batch helpers do not reintroduce selector, view, context, readiness, manifest, branch/worktree planning, or outcome truth
 - explicit confirmation that internal spawn-apply-batch helpers do not imply child creation, child lineage truth, terminal lifecycle truth, real spawn success, or a public session-lifecycle API
 
+## Internal Spawn Headless Input
+
+Must test:
+
+- spawn-headless-input derivation from existing internal spawn-effects metadata plus a minimal headless-execution seed without introducing a second selector contract
+- successful projection of `attempt` from `effects.lineage` only while whitelisting explicit execution fields such as `prompt`, `cwd`, `timeoutMs`, and `abortSignal`
+- explicit confirmation that dynamic or unexpected execution fields such as `attempt`, `effects`, `requestedEvent`, or `recordedEvent` are not preserved in the shaped output
+- helper immutability for the supplied spawn-effects metadata and execution seed inputs
+- explicit confirmation that internal spawn-headless-input helpers do not reintroduce selector, view, context, readiness, manifest, branch/worktree planning, runtime launch, or outcome truth
+- explicit confirmation that internal spawn-headless-input helpers do not imply child creation, child runtime execution, terminal lifecycle truth, real spawn success, or a public session-lifecycle API
+
+## Internal Spawn Headless Input Batch
+
+Must test:
+
+- spawn-headless-input-batch derivation from an explicit ordered list of existing spawn-effects metadata plus execution seeds without introducing a second selector contract
+- preservation of input order while sequentially composing the single-request spawn-headless-input helper
+- empty-input behavior that returns `{ results: [] }`
+- helper immutability for the supplied spawn-headless-input item list
+- explicit confirmation that internal spawn-headless-input-batch helpers do not reintroduce selector, view, context, readiness, manifest, branch/worktree planning, runtime launch, or outcome truth
+- explicit confirmation that internal spawn-headless-input-batch helpers do not imply child creation, child runtime execution, terminal lifecycle truth, real spawn success, or summary-policy contracts
+
 ## Internal Wait Readiness
 
 Must test:
@@ -619,6 +641,8 @@ Must test:
 - internal spawn-consume-batch tests layered on top of internal spawn-consume helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, branch/worktree creation, prompt planning, adapter-driven spawn success truth, or summary-policy contracts
 - internal spawn-apply tests layered on top of internal spawn-consume and spawn-effects helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, or adapter-driven spawn success truth
 - internal spawn-apply-batch tests layered on top of internal spawn-apply helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, adapter-driven spawn success truth, or summary-policy contracts
+- internal spawn-headless-input tests layered on top of internal spawn-effects helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime launch, or adapter-driven spawn success truth
+- internal spawn-headless-input-batch tests layered on top of internal spawn-headless-input helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime launch, adapter-driven spawn success truth, or summary-policy contracts
 - lineage-aware spawn helper tests should continue to prove that ancestry/guardrail inputs affect only internal readiness, parent-session request shaping, and minimal child-lineage projection, never public spawn contracts or child-planning side effects
 - internal wait-readiness tests layered on top of internal runtime-context without introducing actual wait support, close support, or public selectors
 - internal wait-candidate tests layered on top of the internal read model, runtime-context, and wait-readiness helpers without introducing actual wait support, close support, public selectors, or mutable lifecycle state
@@ -652,6 +676,7 @@ Public spawn-requested-event selectors, public spawn-requested-event stores, pub
 Public spawn-effects selectors, public spawn-effects stores, and any contract that treats internal spawn-effects output as child-creation truth, lifecycle truth, manifest truth, real runtime side effects, or public spawn status also belong to that later phase rather than the current internal spawn-effects slice.
 Public spawn-consume selectors, public spawn-consume stores, public spawn-consume-batch selectors, public spawn-consume-batch stores, and any contract that treats internal spawn-consume or spawn-consume-batch output as child-creation truth, child-lineage truth, lifecycle truth, branch/worktree truth, adapter-driven spawn success truth, or a public session-lifecycle API also belong to that later phase rather than the current internal spawn-consume slice.
 Public spawn-apply selectors, public spawn-apply stores, public spawn-apply-batch selectors, public spawn-apply-batch stores, public spawn-effects/apply CLI surface, and any contract that treats internal spawn-apply or spawn-apply-batch output as child-creation truth, child-lineage truth, lifecycle truth, real spawn success truth, or a public session-lifecycle API also belong to that later phase rather than the current internal spawn-apply slice.
+Public spawn-headless-input selectors, public spawn-headless-input stores, public spawn-headless-input-batch selectors, public spawn-headless-input-batch stores, public spawn-headless-input CLI surface, and any contract that treats internal spawn-headless-input or spawn-headless-input-batch output as child-creation truth, child-runtime-execution truth, lifecycle truth, manifest truth, or a public session-lifecycle API also belong to that later phase rather than the current internal spawn-headless-input slice.
 Actual wait commands, close commands, public wait-readiness selectors, and any mutable wait-readiness store also belong to that later phase rather than the current internal wait-readiness slice.
 Public wait-candidate selectors, public wait-candidate stores, and any contract that treats internal wait-candidates as lifecycle truth also belong to that later phase rather than the current internal wait-candidate slice.
 Public wait-target selectors, public wait-target stores, and any contract that treats internal wait-targets as lifecycle truth also belong to that later phase rather than the current internal wait-target slice.
