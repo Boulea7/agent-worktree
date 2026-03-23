@@ -685,3 +685,21 @@ export interface ExecutionSessionSpawnHeadlessContextBatch {
   headlessViewBatch: ExecutionSessionSpawnHeadlessViewBatch;
   results: ExecutionSessionSpawnHeadlessContext[];
 }
+
+export interface ExecutionSessionSpawnHeadlessWaitCandidateInput {
+  headlessContext: ExecutionSessionSpawnHeadlessContext;
+}
+
+export interface ExecutionSessionSpawnHeadlessWaitCandidate {
+  candidate: ExecutionSessionWaitCandidate;
+  headlessContext: ExecutionSessionSpawnHeadlessContext;
+}
+
+export interface ExecutionSessionSpawnHeadlessWaitCandidateBatchInput {
+  headlessContextBatch: ExecutionSessionSpawnHeadlessContextBatch;
+}
+
+export interface ExecutionSessionSpawnHeadlessWaitCandidateBatch {
+  headlessContextBatch: ExecutionSessionSpawnHeadlessContextBatch;
+  results: ExecutionSessionSpawnHeadlessWaitCandidate[];
+}
