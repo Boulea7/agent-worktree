@@ -260,8 +260,10 @@ function createHeadlessRecord(
       attemptId: overrides.attemptId,
       runtime: "codex-cli",
       sourceKind: overrides.sourceKind,
-      parentAttemptId: overrides.parentAttemptId,
-      sessionId: overrides.sessionId
+      sessionId: overrides.sessionId,
+      ...(overrides.parentAttemptId === undefined
+        ? {}
+        : { parentAttemptId: overrides.parentAttemptId })
     })
   };
 }
