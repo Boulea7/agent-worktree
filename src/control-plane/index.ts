@@ -18,6 +18,8 @@ export { applyExecutionSessionSpawn } from "./runtime-state-spawn-apply.js";
 export { applyExecutionSessionSpawnBatch } from "./runtime-state-spawn-apply-batch.js";
 export { deriveExecutionSessionSpawnEffects } from "./runtime-state-spawn-effects.js";
 export { deriveExecutionSessionSpawnEffectsBatch } from "./runtime-state-spawn-effects-batch.js";
+export { deriveExecutionSessionSpawnHeadlessInput } from "./runtime-state-spawn-headless-input.js";
+export { deriveExecutionSessionSpawnHeadlessInputBatch } from "./runtime-state-spawn-headless-input-batch.js";
 export { deriveExecutionSessionSpawnReadiness } from "./runtime-state-spawn-readiness.js";
 export { deriveExecutionSessionSpawnLineage } from "./runtime-state-spawn-lineage.js";
 export { deriveExecutionSessionSpawnRecordedEvent } from "./runtime-state-spawn-recorded-event.js";
@@ -104,6 +106,11 @@ export {
   type ExecutionSessionSpawnEffectsBatch,
   type ExecutionSessionSpawnEffectsBatchInput,
   type ExecutionSessionSpawnEffectsInput,
+  type ExecutionSessionSpawnHeadlessInput,
+  type ExecutionSessionSpawnHeadlessInputBatch,
+  type ExecutionSessionSpawnHeadlessInputBatchInput,
+  type ExecutionSessionSpawnHeadlessInputInput,
+  type ExecutionSessionSpawnHeadlessInputSeed,
   type ExecutionSessionSpawnInvoker,
   type ExecutionSessionSpawnLineage,
   type ExecutionSessionSpawnLineageInput,

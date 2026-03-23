@@ -1,4 +1,5 @@
 import type {
+  HeadlessExecutionInput,
   HeadlessExecutionAttemptLineage,
   HeadlessExecutionObservation,
   HeadlessExecutionObservationUsage,
@@ -551,4 +552,27 @@ export interface ExecutionSessionSpawnApplyBatchInput {
 
 export interface ExecutionSessionSpawnApplyBatch {
   results: ExecutionSessionSpawnApply[];
+}
+
+export type ExecutionSessionSpawnHeadlessInputSeed = Omit<
+  HeadlessExecutionInput,
+  "attempt"
+>;
+
+export interface ExecutionSessionSpawnHeadlessInputInput {
+  effects: ExecutionSessionSpawnEffects;
+  execution: ExecutionSessionSpawnHeadlessInputSeed;
+}
+
+export type ExecutionSessionSpawnHeadlessInput =
+  ExecutionSessionSpawnHeadlessInputSeed & {
+    attempt: HeadlessExecutionAttemptLineage;
+  };
+
+export interface ExecutionSessionSpawnHeadlessInputBatchInput {
+  items: readonly ExecutionSessionSpawnHeadlessInputInput[];
+}
+
+export interface ExecutionSessionSpawnHeadlessInputBatch {
+  results: ExecutionSessionSpawnHeadlessInput[];
 }
