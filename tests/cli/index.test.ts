@@ -44,6 +44,8 @@ function assertNoInternalRuntimeMetadata(value: Record<string, unknown>): void {
   expect(value).not.toHaveProperty("spawnHeadlessExecuteBatch");
   expect(value).not.toHaveProperty("spawnHeadlessRecord");
   expect(value).not.toHaveProperty("spawnHeadlessRecordBatch");
+  expect(value).not.toHaveProperty("spawnHeadlessView");
+  expect(value).not.toHaveProperty("spawnHeadlessViewBatch");
   expect(value).not.toHaveProperty("prompt");
   expect(value).not.toHaveProperty("cwd");
   expect(value).not.toHaveProperty("timeoutMs");
