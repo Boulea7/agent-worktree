@@ -160,6 +160,18 @@ describe("control-plane runtime-state spawn-effects helpers", () => {
     expect(effects).not.toHaveProperty("prompt");
     expect(effects).not.toHaveProperty("task");
     expect(effects).not.toHaveProperty("taskId");
+    expect(
+      (effects as { requestedEvent: Record<string, unknown> }).requestedEvent
+    ).not.toHaveProperty("guardrails");
+    expect(
+      (effects as { requestedEvent: Record<string, unknown> }).requestedEvent
+    ).not.toHaveProperty("childAttemptId");
+    expect(
+      (effects as { recordedEvent: Record<string, unknown> }).recordedEvent
+    ).not.toHaveProperty("guardrails");
+    expect(
+      (effects as { recordedEvent: Record<string, unknown> }).recordedEvent
+    ).not.toHaveProperty("childAttemptId");
     expect(request).toEqual(requestSnapshot);
   });
 

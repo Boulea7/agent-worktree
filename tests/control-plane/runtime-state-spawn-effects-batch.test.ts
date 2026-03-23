@@ -168,6 +168,10 @@ describe("control-plane runtime-state spawn-effects-batch helpers", () => {
     expect(result).not.toHaveProperty("errors");
     expect(result).not.toHaveProperty("apply");
     expect(result).not.toHaveProperty("consume");
+    expect(result).not.toHaveProperty("request");
+    expect(result).not.toHaveProperty("requestedEvent");
+    expect(result).not.toHaveProperty("recordedEvent");
+    expect(result).not.toHaveProperty("lineage");
     expect(items).toEqual(itemsSnapshot);
   });
 

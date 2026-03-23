@@ -116,6 +116,11 @@ describe("control-plane runtime-state spawn-apply helpers", () => {
     expect(result).not.toHaveProperty("error");
     expect(result).not.toHaveProperty("errors");
     expect(result).not.toHaveProperty("outcome");
+    expect(result).not.toHaveProperty("spawnEffects");
+    expect(result).not.toHaveProperty("spawnApply");
+    expect(result).not.toHaveProperty("requestedEvent");
+    expect(result).not.toHaveProperty("recordedEvent");
+    expect(result).not.toHaveProperty("lineage");
     expect(result).not.toHaveProperty("manifest");
     expect(result).not.toHaveProperty("branch");
     expect(result).not.toHaveProperty("worktreePath");
@@ -155,6 +160,23 @@ describe("control-plane runtime-state spawn-apply helpers", () => {
       })
     ).rejects.toThrow(ValidationError);
     expect(invokeSpawn).toHaveBeenCalledTimes(1);
+  });
+
+  it("should pass the original request reference into the consume step", async () => {
+    const request = createSpawnRequest({
+      sourceKind: "delegated"
+    });
+    let seenRequest: ExecutionSessionSpawnRequest | undefined;
+
+    await applyExecutionSessionSpawn({
+      childAttemptId: "att_child_reference",
+      request,
+      invokeSpawn: async (suppliedRequest: ExecutionSessionSpawnRequest) => {
+        seenRequest = suppliedRequest;
+      }
+    });
+
+    expect(seenRequest).toBe(request);
   });
 });
 

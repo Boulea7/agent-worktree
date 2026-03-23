@@ -267,6 +267,8 @@ describe("control-plane runtime-state spawn-apply-batch helpers", () => {
     expect(result).not.toHaveProperty("error");
     expect(result).not.toHaveProperty("errors");
     expect(result).not.toHaveProperty("request");
+    expect(result).not.toHaveProperty("spawnApply");
+    expect(result).not.toHaveProperty("spawnEffects");
     expect(result).not.toHaveProperty("manifest");
     expect(items).toEqual(itemsSnapshot);
   });
