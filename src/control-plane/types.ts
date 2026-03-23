@@ -603,3 +603,32 @@ export interface ExecutionSessionSpawnHeadlessApplyBatchInput {
 export interface ExecutionSessionSpawnHeadlessApplyBatch {
   results: ExecutionSessionSpawnHeadlessApply[];
 }
+
+export interface ExecutionSessionSpawnHeadlessExecutionInvoker {
+  (
+    input: HeadlessExecutionInput
+  ): Promise<HeadlessExecutionResult> | HeadlessExecutionResult;
+}
+
+export interface ExecutionSessionSpawnHeadlessExecuteInput {
+  childAttemptId: string;
+  executeHeadless: ExecutionSessionSpawnHeadlessExecutionInvoker;
+  execution: ExecutionSessionSpawnHeadlessInputSeed;
+  invokeSpawn: ExecutionSessionSpawnInvoker;
+  request: ExecutionSessionSpawnRequest;
+}
+
+export interface ExecutionSessionSpawnHeadlessExecute {
+  executionResult: HeadlessExecutionResult;
+  headlessApply: ExecutionSessionSpawnHeadlessApply;
+}
+
+export interface ExecutionSessionSpawnHeadlessExecuteBatchInput {
+  executeHeadless: ExecutionSessionSpawnHeadlessExecutionInvoker;
+  invokeSpawn: ExecutionSessionSpawnInvoker;
+  items: readonly ExecutionSessionSpawnHeadlessApplyItem[];
+}
+
+export interface ExecutionSessionSpawnHeadlessExecuteBatch {
+  results: ExecutionSessionSpawnHeadlessExecute[];
+}
