@@ -219,7 +219,9 @@ function createHeadlessRecord(
       attemptId: overrides.attemptId,
       runtime: "codex-cli",
       sourceKind: overrides.sourceKind,
-      lifecycleState: overrides.lifecycleState,
+      ...(overrides.lifecycleState === undefined
+        ? {}
+        : { lifecycleState: overrides.lifecycleState }),
       ...(overrides.sessionId === undefined
         ? {}
         : { sessionId: overrides.sessionId }),
