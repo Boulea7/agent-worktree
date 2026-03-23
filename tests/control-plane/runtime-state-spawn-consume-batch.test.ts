@@ -138,6 +138,12 @@ describe("control-plane runtime-state spawn-consume-batch helpers", () => {
     expect(batchResult).not.toHaveProperty("spawnLineage");
     expect(batchResult).not.toHaveProperty("spawnRequestedEvent");
     expect(batchResult).not.toHaveProperty("spawnRecordedEvent");
+    expect(batchResult).not.toHaveProperty("spawnEffects");
+    expect(batchResult).not.toHaveProperty("spawnEffectsBatch");
+    expect(batchResult).not.toHaveProperty("spawnApply");
+    expect(batchResult).not.toHaveProperty("spawnApplyBatch");
+    expect(batchResult).not.toHaveProperty("effects");
+    expect(batchResult).not.toHaveProperty("apply");
     expect(batchResult).not.toHaveProperty("lifecycleState");
     expect(batchResult).not.toHaveProperty("lifecycleEventKind");
     expect(batchResult).not.toHaveProperty("outcome");

@@ -59,6 +59,10 @@ describe("control-plane runtime-state spawn-consume helpers", () => {
     expect(result).not.toHaveProperty("spawnLineage");
     expect(result).not.toHaveProperty("spawnRequestedEvent");
     expect(result).not.toHaveProperty("spawnRecordedEvent");
+    expect(result).not.toHaveProperty("spawnEffects");
+    expect(result).not.toHaveProperty("spawnApply");
+    expect(result).not.toHaveProperty("effects");
+    expect(result).not.toHaveProperty("apply");
     expect(result).not.toHaveProperty("lifecycleState");
     expect(result).not.toHaveProperty("lifecycleEventKind");
     expect(result).not.toHaveProperty("outcome");
