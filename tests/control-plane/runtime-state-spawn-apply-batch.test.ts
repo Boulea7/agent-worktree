@@ -165,6 +165,112 @@ describe("control-plane runtime-state spawn-apply-batch helpers", () => {
     expect(invokedSessionIds).toEqual(["thr_parent_1", "thr_parent_2"]);
   });
 
+  it("should keep the batch result minimal and leave inputs untouched", async () => {
+    const items = [
+      {
+        childAttemptId: "att_child_1",
+        request: createSpawnRequest({
+          parentAttemptId: "att_parent_1",
+          parentSessionId: "thr_parent_1"
+        })
+      },
+      {
+        childAttemptId: "att_child_2",
+        request: createSpawnRequest({
+          parentAttemptId: "att_parent_2",
+          parentSessionId: "thr_parent_2",
+          sourceKind: "delegated",
+          inheritedGuardrails: {
+            maxChildren: 2,
+            maxDepth: 3
+          }
+        })
+      }
+    ];
+    const itemsSnapshot = JSON.parse(JSON.stringify(items));
+    const result = (await applyExecutionSessionSpawnBatch({
+      items,
+      invokeSpawn: async () => undefined
+    })) as unknown as Record<string, unknown>;
+
+    expect(result).toEqual({
+      results: [
+        {
+          consume: {
+            request: createSpawnRequest({
+              parentAttemptId: "att_parent_1",
+              parentSessionId: "thr_parent_1"
+            }),
+            invoked: true
+          },
+          effects: {
+            lineage: {
+              attemptId: "att_child_1",
+              parentAttemptId: "att_parent_1",
+              sourceKind: "fork"
+            },
+            requestedEvent: {
+              attemptId: "att_parent_1",
+              runtime: "codex-cli",
+              sessionId: "thr_parent_1",
+              lifecycleEventKind: "spawn_requested"
+            },
+            recordedEvent: {
+              attemptId: "att_parent_1",
+              runtime: "codex-cli",
+              sessionId: "thr_parent_1",
+              lifecycleEventKind: "spawn_recorded"
+            }
+          }
+        },
+        {
+          consume: {
+            request: createSpawnRequest({
+              parentAttemptId: "att_parent_2",
+              parentSessionId: "thr_parent_2",
+              sourceKind: "delegated",
+              inheritedGuardrails: {
+                maxChildren: 2,
+                maxDepth: 3
+              }
+            }),
+            invoked: true
+          },
+          effects: {
+            lineage: {
+              attemptId: "att_child_2",
+              parentAttemptId: "att_parent_2",
+              sourceKind: "delegated",
+              guardrails: {
+                maxChildren: 2,
+                maxDepth: 3
+              }
+            },
+            requestedEvent: {
+              attemptId: "att_parent_2",
+              runtime: "codex-cli",
+              sessionId: "thr_parent_2",
+              lifecycleEventKind: "spawn_requested"
+            },
+            recordedEvent: {
+              attemptId: "att_parent_2",
+              runtime: "codex-cli",
+              sessionId: "thr_parent_2",
+              lifecycleEventKind: "spawn_recorded"
+            }
+          }
+        }
+      ]
+    });
+    expect(result).not.toHaveProperty("summary");
+    expect(result).not.toHaveProperty("count");
+    expect(result).not.toHaveProperty("error");
+    expect(result).not.toHaveProperty("errors");
+    expect(result).not.toHaveProperty("request");
+    expect(result).not.toHaveProperty("manifest");
+    expect(items).toEqual(itemsSnapshot);
+  });
+
   it("should stop later items when effects fail after consume succeeds", async () => {
     const invokedSessionIds: string[] = [];
 
