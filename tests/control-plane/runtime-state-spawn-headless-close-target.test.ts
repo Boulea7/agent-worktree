@@ -45,6 +45,7 @@ describe(
       expect(result).not.toHaveProperty("consume");
       expect(result).not.toHaveProperty("results");
       expect(result).not.toHaveProperty("headlessCloseCandidateBatch");
+      expect(result).not.toHaveProperty("closeTarget");
       expect(headlessCloseCandidate).toEqual(inputSnapshot);
     });
 
@@ -62,6 +63,7 @@ describe(
 
       expect(result.headlessCloseCandidate).toBe(headlessCloseCandidate);
       expect(result).not.toHaveProperty("target");
+      expect(result).not.toHaveProperty("closeTarget");
     });
 
     it("should preserve an unknown-session headless close candidate while omitting target output", () => {
@@ -78,6 +80,7 @@ describe(
 
       expect(result.headlessCloseCandidate).toBe(headlessCloseCandidate);
       expect(result).not.toHaveProperty("target");
+      expect(result).not.toHaveProperty("closeTarget");
     });
   }
 );
