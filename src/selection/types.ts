@@ -137,3 +137,12 @@ export interface AttemptPromotionDecisionSummary {
   canPromote: boolean;
   hasBlockingReasons: boolean;
 }
+
+export interface AttemptPromotionTarget {
+  targetBasis: "promotion_decision_summary";
+  taskId: string | undefined;
+  attemptId: string;
+  runtime: string;
+  status: AttemptStatus;
+  sourceKind: AttemptSourceKind | undefined;
+}

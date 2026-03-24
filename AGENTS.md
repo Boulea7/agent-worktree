@@ -48,11 +48,12 @@ The current thin Phase 5 internal verification and selection slice now includes:
 - a pure internal promotion/handoff report-ready consumer layer that derives stable, grouped report projections from existing promotion audit summaries without widening into public promotion, handoff, report, or persistence surfaces
 - a pure internal promotion/handoff explanation-ready consumer layer that derives stable explanation summaries from existing promotion reports without widening into public promotion, handoff, report, explanation, or persistence surfaces
 - a pure internal promotion/handoff decision-ready consumer layer that derives stable promotion blockers and promote-ready conclusions from existing promotion explanation summaries without widening into public promotion, handoff, report, explanation, or persistence surfaces
+- a pure internal promotion-oriented target consumer layer that derives stable minimal promotion targets from existing promotion decision summaries without widening into public promotion, handoff, report, explanation, decision, target, or persistence surfaces
 - a pure internal deterministic tie-break helper layered on top of that derived verification summary for future selection work only
 - a pure internal selection helper layer that derives stable per-attempt candidates and best-first multi-attempt selection results directly from `AttemptManifest`
 - a verification-summary-only selection policy that remains deterministic, rejects mixed-task selection loudly, and does not widen into public ranking, promotion, or merge surfaces
 
-That Phase 5 foundation remains internal-only. It does not introduce a public verification CLI, a public ranking surface, a public selection CLI, a public artifact-summary surface, a public promotion, handoff, report, explanation, or decision surface, manifest-backed derived verification, selection, artifact-summary, promotion-candidate, promotion-result, promotion-audit-summary, promotion-report, promotion-explanation, or promotion-decision state, or any wider lifecycle promise.
+That Phase 5 foundation remains internal-only. It does not introduce a public verification CLI, a public ranking surface, a public selection CLI, a public artifact-summary surface, a public promotion, handoff, report, explanation, decision, or target surface, manifest-backed derived verification, selection, artifact-summary, promotion-candidate, promotion-result, promotion-audit-summary, promotion-report, promotion-explanation, promotion-decision, or promotion-target state, or any wider lifecycle promise.
 
 The current thin Phase 3 foundation also includes:
 
@@ -121,6 +122,7 @@ Current local docs and handoff focus:
 - keep the new promotion/handoff aggregation layer constrained to existing promotion-candidate inputs only, with comparator-only ordering and no new artifact-aware ranking policy
 - keep the new promotion/handoff explanation-ready layer constrained to existing promotion-report inputs only, with deterministic projection-only semantics and no new selection or promotion policy
 - keep the new promotion/handoff decision-ready layer constrained to existing promotion-explanation inputs only, with blocker-only internal decision semantics and no new promotion or handoff policy
+- keep the new promotion-target layer constrained to existing promotion-decision inputs only, with deterministic target projection semantics and no new promotion, handoff, or persistence policy
 - keep future follow-up slices focused on higher internal promotion/handoff consumers above promotion-decision summaries rather than widening public verify/select/promote/merge or lifecycle surfaces
 
 Cleanup is expected to keep manifests as audit records, target a single `attemptId`, and fail loudly on invalid manifests or unsafe path conditions.
