@@ -205,6 +205,11 @@ Exit criteria:
 - at least one Tier 1 tool works end to end
 - other Tier 1 tools have explicit and accurate support boundaries
 
+Current closeout status:
+
+- the current baseline satisfies these exit criteria through `doctor`, `compat probe`, and the bounded public `compat smoke codex-cli` path
+- the next implementation window should move to Phase 5 selection or verification work rather than widening public lifecycle or execution surfaces
+
 ## Phase 5: Verification and Selection
 
 Objective:

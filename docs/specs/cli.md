@@ -1,10 +1,36 @@
 # CLI Contract
 
-This document describes the intended public CLI surface for a future `agent-worktree` command.
+This document describes the experimental public CLI surface for `agent-worktree`.
 
 ## Scope
 
-This is a contract draft, not an implemented command set.
+This is an experimental contract with partial implementation.
+
+Implemented now:
+
+- `doctor`
+- `compat list`
+- `compat show`
+- `compat probe`
+- `compat smoke`
+- `attempt create`
+- `attempt list`
+- `attempt cleanup`
+
+Present but still `NOT_IMPLEMENTED`:
+
+- `init`
+- `attempt attach`
+- `attempt stop`
+- `attempt checkpoint`
+- `attempt merge`
+
+Still intentionally outside the public surface:
+
+- `attempt spawn`
+- `attempt wait`
+- `attempt close`
+- public `--profile` flags for runtime selection
 
 ## Intended Command Tree
 
@@ -13,6 +39,8 @@ agent-worktree init
 agent-worktree doctor
 agent-worktree compat list
 agent-worktree compat show <tool>
+agent-worktree compat probe <tool>
+agent-worktree compat smoke <tool>
 
 agent-worktree attempt create
 agent-worktree attempt list
@@ -63,6 +91,172 @@ Failed command:
 ```
 
 Human-readable output may vary more rapidly.
+
+## Doctor Contract
+
+`agent-worktree doctor` is a read-only compatibility diagnostics command.
+
+It SHOULD report the currently implemented adapter truth, not the broader tool-level potential described in the tooling matrix.
+
+Machine-readable output SHOULD expose one record per runtime in catalog order:
+
+```json
+{
+  "ok": true,
+  "command": "doctor",
+  "data": {
+    "runtimes": [
+      {
+        "runtime": "codex-cli",
+        "supportTier": "tier1",
+        "guidanceFile": "AGENTS.md",
+        "projectConfig": ".codex/config.toml",
+        "note": "Most naturally aligned with root AGENTS.md.",
+        "capabilities": {
+          "machineReadableMode": "strong",
+          "resume": "unsupported",
+          "mcp": "unsupported",
+          "sessionLifecycle": "unsupported",
+          "eventStreamParsing": "partial"
+        },
+        "adapterStatus": "implemented",
+        "detected": true
+      }
+    ]
+  }
+}
+```
+
+The initial `adapterStatus` vocabulary is intentionally small:
+
+- `implemented`
+- `descriptor_only`
+
+The initial `detected` semantics are also intentionally small:
+
+- `true` or `false` for implemented runtimes
+- `null` for descriptor-only runtimes that are not probed
+
+`doctor` MUST remain read-only in this phase. It MUST NOT execute headless prompts, MUST NOT expose internal profile/env/session metadata, and MUST NOT widen into public runtime lifecycle control.
+
+## Compat Probe Contract
+
+`agent-worktree compat probe <tool>` is a read-only per-runtime compatibility probe command.
+
+It SHOULD report current adapter truth plus a bounded public probe result for exactly one runtime.
+
+Machine-readable output SHOULD expose one `probe` record:
+
+```json
+{
+  "ok": true,
+  "command": "compat.probe",
+  "data": {
+    "probe": {
+      "runtime": "codex-cli",
+      "supportTier": "tier1",
+      "guidanceFile": "AGENTS.md",
+      "projectConfig": ".codex/config.toml",
+      "note": "Most naturally aligned with root AGENTS.md.",
+      "capabilities": {
+        "machineReadableMode": "strong",
+        "resume": "unsupported",
+        "mcp": "unsupported",
+        "sessionLifecycle": "unsupported",
+        "eventStreamParsing": "partial"
+      },
+      "adapterStatus": "implemented",
+      "probeStatus": "supported",
+      "diagnosis": {
+        "code": "exec_json_supported",
+        "summary": "A local codex executable with `exec --json` support was confirmed."
+      }
+    }
+  }
+}
+```
+
+The initial `probeStatus` vocabulary is intentionally small:
+
+- `supported`
+- `unsupported`
+- `not_probed`
+- `error`
+
+The initial `diagnosis.code` vocabulary is also intentionally small:
+
+- `exec_json_supported`
+- `exec_json_unavailable`
+- `descriptor_only`
+- `probe_error`
+
+Descriptor-only runtimes SHOULD return a success envelope with `adapterStatus: "descriptor_only"`, `probeStatus: "not_probed"`, and `diagnosis.code: "descriptor_only"` rather than a command failure.
+Unknown runtimes MUST fail with a structured `NOT_FOUND` error envelope.
+
+`compat probe` MUST remain read-only in this phase. It MUST NOT execute headless prompts, MUST NOT expose resolved executable paths, env overlays, subprocess stdout/stderr, exit codes, raw events, observation summaries, internal profile metadata, or any control-plane/session/runtime-state details, and MUST NOT widen into public runtime lifecycle control.
+
+## Compat Smoke Contract
+
+`agent-worktree compat smoke <tool>` is a read-only per-runtime compatibility smoke command.
+
+It SHOULD report a bounded live compatibility result for exactly one runtime while remaining a compatibility surface rather than a general execution command.
+
+Machine-readable output SHOULD expose one `smoke` record:
+
+```json
+{
+  "ok": true,
+  "command": "compat.smoke",
+  "data": {
+    "smoke": {
+      "runtime": "codex-cli",
+      "supportTier": "tier1",
+      "guidanceFile": "AGENTS.md",
+      "projectConfig": ".codex/config.toml",
+      "note": "Most naturally aligned with root AGENTS.md.",
+      "capabilities": {
+        "machineReadableMode": "strong",
+        "resume": "unsupported",
+        "mcp": "unsupported",
+        "sessionLifecycle": "unsupported",
+        "eventStreamParsing": "partial"
+      },
+      "adapterStatus": "implemented",
+      "smokeStatus": "passed",
+      "diagnosis": {
+        "code": "smoke_passed",
+        "summary": "The bounded codex-cli smoke path completed the public compatibility checks."
+      }
+    }
+  }
+}
+```
+
+The initial `smokeStatus` vocabulary is intentionally small:
+
+- `passed`
+- `failed`
+- `skipped`
+- `not_supported`
+- `error`
+
+The initial `diagnosis.code` vocabulary is also intentionally small:
+
+- `smoke_passed`
+- `gate_disabled`
+- `descriptor_only`
+- `detect_unavailable`
+- `execution_failed`
+- `unexpected_error`
+
+Current phase rules:
+
+- `codex-cli` is the only runtime that MAY attempt bounded public live smoke
+- descriptor-only runtimes SHOULD return a success envelope with `smokeStatus: "not_supported"` and `diagnosis.code: "descriptor_only"`
+- when `RUN_CODEX_SMOKE` is not enabled, `codex-cli` SHOULD return a success envelope with `smokeStatus: "skipped"` and `diagnosis.code: "gate_disabled"`
+- unknown runtimes MUST fail with a structured `NOT_FOUND` error envelope
+
+`compat smoke` MUST remain read-only in this phase. It MUST NOT accept a public prompt, MUST NOT expose resolved executable paths, env overlays, subprocess stdout/stderr, exit codes, raw events, observation summaries, internal profile metadata, or any control-plane/session/runtime-state details, and MUST NOT widen into public runtime lifecycle control.
 
 ## Attempt Create Contract
 

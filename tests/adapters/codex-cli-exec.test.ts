@@ -9,8 +9,12 @@ import {
   deriveExecutionSessionSpawnHeadlessInput
 } from "../../src/control-plane/index.js";
 import {
+  codexCliCompatibilitySmokePrompt,
+  codexCliCompatibilitySmokeTimeoutMs,
   detectCodexCli,
-  executeCodexHeadless
+  executeCodexHeadless,
+  probeCodexCliCompatibility,
+  smokeCodexCliCompatibility
 } from "../../src/adapters/codex-cli-exec.js";
 import { RuntimeError, ValidationError } from "../../src/core/errors.js";
 
@@ -177,6 +181,205 @@ describe("detectCodexCli", () => {
         timeoutMs: 5_000
       })
     );
+  });
+});
+
+describe("probeCodexCliCompatibility", () => {
+  it("should report supported when exec json compatibility is confirmed", async () => {
+    const runCommand = vi.fn(async () => ({
+      exitCode: 0,
+      stdout: "Usage: codex exec\n      --json\n",
+      stderr: ""
+    }));
+
+    await expect(probeCodexCliCompatibility(runCommand)).resolves.toEqual({
+      supported: true,
+      diagnosisCode: "exec_json_supported",
+      summary: "A local codex executable with `exec --json` support was confirmed."
+    });
+  });
+
+  it("should report unsupported when exec json compatibility is not confirmed", async () => {
+    const runCommand = vi.fn(async () => ({
+      exitCode: 0,
+      stdout: "Usage: codex exec\n",
+      stderr: ""
+    }));
+
+    await expect(probeCodexCliCompatibility(runCommand)).resolves.toEqual({
+      supported: false,
+      diagnosisCode: "exec_json_unavailable",
+      summary: "No local codex executable with `exec --json` support was confirmed."
+    });
+  });
+});
+
+describe("smokeCodexCliCompatibility", () => {
+  it("should skip smoke runs when the gate is disabled", async () => {
+    const detectImpl = vi.fn(async () => true);
+    const executeHeadlessImpl = vi.fn();
+
+    await expect(
+      smokeCodexCliCompatibility({
+        env: {
+          RUN_CODEX_SMOKE: "0"
+        },
+        detectImpl,
+        executeHeadlessImpl
+      })
+    ).resolves.toEqual({
+      smokeStatus: "skipped",
+      diagnosisCode: "gate_disabled",
+      summary: "Compatibility smoke is skipped unless `RUN_CODEX_SMOKE=1` is set."
+    });
+    expect(detectImpl).not.toHaveBeenCalled();
+    expect(executeHeadlessImpl).not.toHaveBeenCalled();
+  });
+
+  it("should fail when detection is unavailable after the gate is enabled", async () => {
+    const detectImpl = vi.fn(async () => false);
+
+    await expect(
+      smokeCodexCliCompatibility({
+        env: {
+          RUN_CODEX_SMOKE: "1"
+        },
+        detectImpl
+      })
+    ).resolves.toEqual({
+      smokeStatus: "failed",
+      diagnosisCode: "detect_unavailable",
+      summary:
+        "No local codex executable with `exec --json` support was confirmed before smoke execution."
+    });
+    expect(detectImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("should report passed when the bounded smoke checks succeed", async () => {
+    const detectImpl = vi.fn(async () => true);
+    const executeHeadlessImpl = vi.fn(async (_input, options) => ({
+      command: {
+        ...options.command,
+        executable: "codex",
+        args: ["exec", "--json", "--ephemeral", codexCliCompatibilitySmokePrompt]
+      },
+      exitCode: 0,
+      stdout: "ok",
+      stderr: "",
+      events: [],
+      observation: {
+        runCompleted: true,
+        errorEventCount: 0
+      }
+    }));
+
+    await expect(
+      smokeCodexCliCompatibility({
+        env: {
+          RUN_CODEX_SMOKE: "1"
+        },
+        cwd: "/tmp/codex-smoke",
+        detectImpl,
+        executeHeadlessImpl
+      })
+    ).resolves.toEqual({
+      smokeStatus: "passed",
+      diagnosisCode: "smoke_passed",
+      summary:
+        "The bounded codex-cli smoke path completed the public compatibility checks."
+    });
+    expect(executeHeadlessImpl).toHaveBeenCalledWith(
+      {
+        cwd: "/tmp/codex-smoke",
+        prompt: codexCliCompatibilitySmokePrompt,
+        timeoutMs: codexCliCompatibilitySmokeTimeoutMs
+      },
+      expect.objectContaining({
+        command: expect.objectContaining({
+          executable: "codex",
+          cwd: "/tmp/codex-smoke",
+          args: ["exec", "--json"]
+        })
+      })
+    );
+  });
+
+  it("should report failed when the bounded smoke checks are not satisfied", async () => {
+    const detectImpl = vi.fn(async () => true);
+    const executeHeadlessImpl = vi.fn(async (_input, options) => ({
+      command: {
+        ...options.command,
+        executable: "node",
+        args: ["exec", "--json", codexCliCompatibilitySmokePrompt]
+      },
+      exitCode: 0,
+      stdout: "",
+      stderr: "",
+      events: [],
+      observation: {
+        runCompleted: true,
+        errorEventCount: 0
+      }
+    }));
+
+    await expect(
+      smokeCodexCliCompatibility({
+        env: {
+          RUN_CODEX_SMOKE: "1"
+        },
+        detectImpl,
+        executeHeadlessImpl
+      })
+    ).resolves.toEqual({
+      smokeStatus: "failed",
+      diagnosisCode: "execution_failed",
+      summary:
+        "The bounded codex-cli smoke path did not satisfy the public compatibility checks."
+    });
+  });
+
+  it("should map bounded execution failures to execution_failed", async () => {
+    const detectImpl = vi.fn(async () => true);
+    const executeHeadlessImpl = vi.fn(async () => {
+      throw new RuntimeError("boom");
+    });
+
+    await expect(
+      smokeCodexCliCompatibility({
+        env: {
+          RUN_CODEX_SMOKE: "1"
+        },
+        detectImpl,
+        executeHeadlessImpl
+      })
+    ).resolves.toEqual({
+      smokeStatus: "failed",
+      diagnosisCode: "execution_failed",
+      summary:
+        "The bounded codex-cli smoke path did not satisfy the public compatibility checks."
+    });
+  });
+
+  it("should map unexpected errors to a bounded public error state", async () => {
+    const detectImpl = vi.fn(async () => true);
+    const executeHeadlessImpl = vi.fn(async () => {
+      throw new Error("unexpected");
+    });
+
+    await expect(
+      smokeCodexCliCompatibility({
+        env: {
+          RUN_CODEX_SMOKE: "1"
+        },
+        detectImpl,
+        executeHeadlessImpl
+      })
+    ).resolves.toEqual({
+      smokeStatus: "error",
+      diagnosisCode: "unexpected_error",
+      summary:
+        "The bounded codex-cli smoke path did not complete successfully."
+    });
   });
 });
 

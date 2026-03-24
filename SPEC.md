@@ -27,6 +27,7 @@ The key words `MUST`, `SHOULD`, `MAY`, and `MUST NOT` are used in their normal R
 - [docs/specs/runtime-manifest.md](docs/specs/runtime-manifest.md)
 - [docs/specs/cli.md](docs/specs/cli.md)
 - [docs/specs/examples.md](docs/specs/examples.md)
+- [docs/specs/testing.md](docs/specs/testing.md)
 
 ## Canonical Public Surfaces
 
@@ -36,6 +37,7 @@ The current intended public surfaces are:
 - runtime manifest
 - machine-readable CLI behavior
 - compatibility tier definitions
+- read-only compatibility diagnostics, probing, and smoke verification
 
 ## Source Discipline
 

@@ -36,7 +36,7 @@ All surfaces in this repository are currently `experimental`.
 
 ## What We Intend To Stabilize First
 
-When implementation begins, the likely order of stabilization is:
+Now that implementation has begun, the likely order of stabilization is:
 
 1. config file shape
 2. runtime manifest shape

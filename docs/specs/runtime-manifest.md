@@ -9,7 +9,7 @@ The runtime manifest is the durable record of an attempt launched by the orchest
 It exists so that:
 
 - other tools can inspect attempt state
-- later sessions can resume context safely
+- later sessions can inspect durable attempt history safely
 - validation outcomes remain auditable
 
 ## File Location
@@ -54,10 +54,6 @@ These are the minimum fields that early validators should require.
   "branch": "attempt/...",
   "repoRoot": "/abs/repo/root",
   "worktreePath": "/abs/path",
-  "session": {
-    "backend": "tmux",
-    "sessionId": "..."
-  },
   "status": "created",
   "verification": {
     "state": "pending",
@@ -74,6 +70,7 @@ These are the minimum fields that early validators should require.
 These fields are recommended once worktree lifecycle commands begin to land, but they are not required for the earliest manifest validators.
 `repoRoot` is an additive lifecycle field that records the canonical repository root for the attempt.
 Early consumers SHOULD tolerate its absence, and later producers SHOULD prefer populating it once the worktree lifecycle exists.
+Session-backed execution metadata remains intentionally non-manifest-backed in the current phase. Public manifests SHOULD NOT be read as attach/resume truth.
 
 ## Thin Attempt Provenance Fields
 

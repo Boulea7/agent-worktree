@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { getAdapterDescriptor } from "../../src/adapters/catalog.js";
 import { CodexCliAdapter } from "../../src/adapters/codex-cli.js";
+import { smokeCodexCliCompatibility } from "../../src/adapters/codex-cli-exec.js";
 import { RuntimeError } from "../../src/core/errors.js";
 
 const runSmoke = process.env.RUN_CODEX_SMOKE === "1";
@@ -51,10 +52,16 @@ describe("CodexCliAdapter smoke", () => {
         const result = await adapter.executeHeadless({
           cwd: process.cwd(),
           prompt,
-          attempt: {
-            attemptId: "att_smoke"
-          },
           timeoutMs: 60_000
+        });
+        const publicSmoke = await smokeCodexCliCompatibility({
+          env: {
+            ...process.env,
+            RUN_CODEX_SMOKE: "1"
+          },
+          cwd: process.cwd(),
+          detectImpl: async () => detected,
+          executeHeadlessImpl: async () => result
         });
 
         console.log(
@@ -63,13 +70,13 @@ describe("CodexCliAdapter smoke", () => {
               smoke: {
                 ...diagnostics,
                 detected,
+                publicSmoke,
                 executable: result.command.executable,
                 commandArgs: result.command.args,
                 exitCode: result.exitCode,
                 stdout: truncate(result.stdout),
                 stderr: truncate(result.stderr),
                 observation: result.observation,
-                controlPlane: result.controlPlane,
                 eventKinds: result.events.map((event) => event.kind),
                 eventCount: result.events.length
               }
@@ -87,6 +94,10 @@ describe("CodexCliAdapter smoke", () => {
         expect(result.command.executable).toMatch(
           /(^codex$|[\\/]codex(?:\.(?:exe|cmd|bat|com))?$)/iu
         );
+        expect(publicSmoke).toMatchObject({
+          smokeStatus: "passed",
+          diagnosisCode: "smoke_passed"
+        });
         expect(result.observation).toMatchObject({
           runCompleted: expect.any(Boolean),
           errorEventCount: expect.any(Number)
@@ -97,12 +108,25 @@ describe("CodexCliAdapter smoke", () => {
             result.events.length > 0
         ).toBe(true);
       } catch (error) {
+        const publicSmoke = await smokeCodexCliCompatibility({
+          env: {
+            ...process.env,
+            RUN_CODEX_SMOKE: "1"
+          },
+          cwd: process.cwd(),
+          detectImpl: async () => detected,
+          executeHeadlessImpl: async () => {
+            throw error;
+          }
+        });
+
         console.log(
           JSON.stringify(
             {
               smoke: {
                 ...diagnostics,
                 detected,
+                publicSmoke,
                 failure:
                   error instanceof RuntimeError
                     ? {
@@ -118,6 +142,7 @@ describe("CodexCliAdapter smoke", () => {
             2
           )
         );
+        expect(publicSmoke.smokeStatus).toBe("failed");
         throw error;
       }
     },

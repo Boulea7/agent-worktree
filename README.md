@@ -14,7 +14,7 @@
 
 <p align="center">
   <img alt="status" src="https://img.shields.io/badge/status-experimental-111111">
-  <img alt="phase" src="https://img.shields.io/badge/phase-core--scaffold-2f6feb">
+  <img alt="phase" src="https://img.shields.io/badge/phase-phase4%20compatibility%20baseline-2f6feb">
   <img alt="focus" src="https://img.shields.io/badge/focus-contracts%20%2B%20tests-1f883d">
 </p>
 
@@ -70,13 +70,18 @@ This repository is currently focused on:
 2. config and runtime-manifest contracts
 3. machine-readable CLI behavior
 4. thin worktree lifecycle commands
-5. a bounded internal `codex-cli` execution contract for the first Tier 1 runtime
-6. docs and implementation alignment
+5. public read-only compatibility diagnostics via `agent-worktree doctor`, `agent-worktree compat probe <tool>`, and `agent-worktree compat smoke <tool>`
+6. a bounded internal `codex-cli` execution contract for the first Tier 1 runtime
+7. docs and implementation alignment
 
-The current `codex-cli` path is still intentionally narrow. It now covers descriptor resolution, command rendering, real headless detection, a bounded internal execution contract around `codex exec --json`, minimal canonical event parsing, structured degradation, and an env-gated smoke scaffold.
+The repository now has a thin Phase 4 public compatibility baseline. `compat smoke codex-cli` is the first bounded public end-to-end compatibility proof for a Tier 1 runtime, while `doctor` and `compat probe` keep the remaining Tier 1 runtimes on explicit descriptor-only boundaries until broader execution-backed work exists.
 
-That does not mean full runtime orchestration exists. Other runtimes remain descriptor-only, and `resume`, MCP transport execution, session lifecycle management, public execution commands, and manifest-backed execution persistence remain intentionally deferred. The current reliability boundary is direct-shell verified; the Vitest smoke harness remains narrower and is not a default validation path.
-The current `codex-cli` executable probing policy is also intentionally internal: execution helpers may resolve a different `codex` binary than shell `command -v codex` when `PATH` contains shadow binaries, but that is not a public adapter contract. The bounded parser tolerates obvious non-JSON prelude lines, including bracket-prefixed log noise, while malformed JSON-looking records still fail loudly.
+The public baseline is still intentionally narrow. Today it includes `compat list`, `compat show`, `compat probe`, `compat smoke`, `doctor`, and the thin `attempt create` / `attempt list` / `attempt cleanup` lifecycle commands, all centered on machine-readable contracts.
+
+The internal baseline is wider than the public one. `codex-cli` now covers descriptor resolution, command rendering, real headless detection, a bounded internal execution contract around `codex exec --json`, minimal canonical event parsing, structured degradation, profile-aware internal passthrough, relay-compatible env overlays, and a deeper internal control-plane helper chain for runtime-state, spawn, wait, and close composition.
+
+That Phase 4 closeout does not mean full runtime orchestration exists. Other runtimes remain descriptor-only, and `resume`, MCP transport execution, session lifecycle management, public execution commands, public wait/close/spawn commands, and manifest-backed execution persistence remain intentionally deferred. The current public promise is compatibility-only: direct-shell verification and the env-gated Vitest smoke harness may support it locally, but the Vitest harness remains narrower and is not a default validation path.
+The current `codex-cli` executable probing policy is intentionally internal: execution helpers may resolve a different `codex` binary than shell `command -v codex` when `PATH` contains shadow binaries, but that is not a public adapter contract. The same is true for internal `--profile` passthrough and relay-compatible env overlays. The bounded parser tolerates obvious non-JSON prelude lines, including bracket-prefixed log noise, while malformed JSON-looking records still fail loudly.
 The current manifest contract also includes a thin lineage/source foundation for attempt provenance. Attempts may record `sourceKind` plus an optional `parentAttemptId`, but this remains audit metadata only: `attempt create` emits `sourceKind: "direct"` today, while delegated runtime behavior, fork/resume lifecycle semantics, and live session persistence remain deferred.
 
 ## Why This Matters
@@ -111,6 +116,7 @@ Most coding-agent workflows today live somewhere between:
 ## Near-Term Deliverables
 
 - Harden the current config, manifest, and CLI contracts
+- Keep the public compatibility diagnostics, probe, and smoke slices accurate and machine-readable
 - Expand the thin worktree lifecycle beyond create/list
 - Harden the bounded internal `codex-cli` execution contract without expanding it into a full runtime framework
 - Keep the `codex-cli` smoke scaffold env-gated and non-default while it remains a bounded compatibility probe
