@@ -704,6 +704,24 @@ export interface ExecutionSessionSpawnHeadlessWaitCandidateBatch {
   results: ExecutionSessionSpawnHeadlessWaitCandidate[];
 }
 
+export interface ExecutionSessionSpawnHeadlessWaitTargetInput {
+  headlessWaitCandidate: ExecutionSessionSpawnHeadlessWaitCandidate;
+}
+
+export interface ExecutionSessionSpawnHeadlessWaitTarget {
+  headlessWaitCandidate: ExecutionSessionSpawnHeadlessWaitCandidate;
+  target?: ExecutionSessionWaitTarget;
+}
+
+export interface ExecutionSessionSpawnHeadlessWaitTargetBatchInput {
+  headlessWaitCandidateBatch: ExecutionSessionSpawnHeadlessWaitCandidateBatch;
+}
+
+export interface ExecutionSessionSpawnHeadlessWaitTargetBatch {
+  headlessWaitCandidateBatch: ExecutionSessionSpawnHeadlessWaitCandidateBatch;
+  results: ExecutionSessionSpawnHeadlessWaitTarget[];
+}
+
 export interface ExecutionSessionSpawnHeadlessCloseCandidateInput {
   headlessContext: ExecutionSessionSpawnHeadlessContext;
   resolveSessionLifecycleCapability?: SessionLifecycleCapabilityResolver;
@@ -722,4 +740,22 @@ export interface ExecutionSessionSpawnHeadlessCloseCandidateBatchInput {
 export interface ExecutionSessionSpawnHeadlessCloseCandidateBatch {
   headlessContextBatch: ExecutionSessionSpawnHeadlessContextBatch;
   results: ExecutionSessionSpawnHeadlessCloseCandidate[];
+}
+
+export interface ExecutionSessionSpawnHeadlessCloseTargetInput {
+  headlessCloseCandidate: ExecutionSessionSpawnHeadlessCloseCandidate;
+}
+
+export interface ExecutionSessionSpawnHeadlessCloseTarget {
+  headlessCloseCandidate: ExecutionSessionSpawnHeadlessCloseCandidate;
+  target?: ExecutionSessionCloseTarget;
+}
+
+export interface ExecutionSessionSpawnHeadlessCloseTargetBatchInput {
+  headlessCloseCandidateBatch: ExecutionSessionSpawnHeadlessCloseCandidateBatch;
+}
+
+export interface ExecutionSessionSpawnHeadlessCloseTargetBatch {
+  headlessCloseCandidateBatch: ExecutionSessionSpawnHeadlessCloseCandidateBatch;
+  results: ExecutionSessionSpawnHeadlessCloseTarget[];
 }
