@@ -41,7 +41,10 @@
 - config 与 runtime manifest 契约
 - 机器可读 CLI 行为
 - 极薄的 worktree lifecycle 切片
+- 只读的兼容性诊断命令 `doctor`
 
+当前公开基线仍然很窄：`doctor`、`compat list/show`、以及 `attempt create/list/cleanup` 是主要 public surface。
+更深的 `codex-cli` execution、profile/env 透传、runtime-state、spawn/wait/close helper chain 目前仍属于 internal-only 实现，不应解读为公开生命周期能力。
 更复杂的 runtime adapter、verification ranking 和高级编排能力仍然延后。
 
 ## 重要文档

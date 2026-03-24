@@ -1,10 +1,34 @@
 # CLI Contract
 
-This document describes the intended public CLI surface for a future `agent-worktree` command.
+This document describes the experimental public CLI surface for `agent-worktree`.
 
 ## Scope
 
-This is a contract draft, not an implemented command set.
+This is an experimental contract with partial implementation.
+
+Implemented now:
+
+- `doctor`
+- `compat list`
+- `compat show`
+- `attempt create`
+- `attempt list`
+- `attempt cleanup`
+
+Present but still `NOT_IMPLEMENTED`:
+
+- `init`
+- `attempt attach`
+- `attempt stop`
+- `attempt checkpoint`
+- `attempt merge`
+
+Still intentionally outside the public surface:
+
+- `attempt spawn`
+- `attempt wait`
+- `attempt close`
+- public `--profile` flags for runtime selection
 
 ## Intended Command Tree
 
@@ -63,6 +87,53 @@ Failed command:
 ```
 
 Human-readable output may vary more rapidly.
+
+## Doctor Contract
+
+`agent-worktree doctor` is a read-only compatibility diagnostics command.
+
+It SHOULD report the currently implemented adapter truth, not the broader tool-level potential described in the tooling matrix.
+
+Machine-readable output SHOULD expose one record per runtime in catalog order:
+
+```json
+{
+  "ok": true,
+  "command": "doctor",
+  "data": {
+    "runtimes": [
+      {
+        "runtime": "codex-cli",
+        "supportTier": "tier1",
+        "guidanceFile": "AGENTS.md",
+        "projectConfig": ".codex/config.toml",
+        "note": "Most naturally aligned with root AGENTS.md.",
+        "capabilities": {
+          "machineReadableMode": "strong",
+          "resume": "unsupported",
+          "mcp": "unsupported",
+          "sessionLifecycle": "unsupported",
+          "eventStreamParsing": "partial"
+        },
+        "adapterStatus": "implemented",
+        "detected": true
+      }
+    ]
+  }
+}
+```
+
+The initial `adapterStatus` vocabulary is intentionally small:
+
+- `implemented`
+- `descriptor_only`
+
+The initial `detected` semantics are also intentionally small:
+
+- `true` or `false` for implemented runtimes
+- `null` for descriptor-only runtimes that are not probed
+
+`doctor` MUST remain read-only in this phase. It MUST NOT execute headless prompts, MUST NOT expose internal profile/env/session metadata, and MUST NOT widen into public runtime lifecycle control.
 
 ## Attempt Create Contract
 

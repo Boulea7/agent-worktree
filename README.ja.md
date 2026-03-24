@@ -41,7 +41,10 @@
 - config と runtime manifest の契約
 - 機械可読な CLI 振る舞い
 - ごく薄い worktree lifecycle スライス
+- 読み取り専用の互換性診断コマンド `doctor`
 
+現在の公開ベースラインはまだ狭く、主な public surface は `doctor`、`compat list/show`、`attempt create/list/cleanup` に限られます。
+より深い `codex-cli` execution、profile/env の受け渡し、runtime-state、spawn/wait/close helper chain は今も internal-only 実装であり、公開 lifecycle 機能として解釈すべきではありません。
 より高度な runtime adapter、verification ranking、複雑なオーケストレーション機能はまだ先送りです。
 
 ## 重要ドキュメント

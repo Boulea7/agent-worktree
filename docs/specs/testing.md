@@ -40,8 +40,10 @@ Contract tests should validate:
 - runtime-manifest shape
 - config examples
 - generated compatibility files if generation is added later
+- machine-readable compatibility diagnostics payloads for `doctor`
 - default list visibility for cleaned attempts
 - additive provenance fields survive machine-readable create/list/cleanup flows
+- machine-readable `doctor` payloads report `adapterStatus` and `detected` without leaking internal runtime metadata
 - machine-readable CLI payloads do not leak internal spawn-requested or spawn-recorded marker metadata
 - machine-readable CLI payloads do not leak internal `spawnConsume` or `spawnConsumeBatch` metadata
 - machine-readable CLI payloads do not leak internal `spawnHeadlessWaitCandidate` or `spawnHeadlessWaitCandidateBatch` metadata
@@ -870,7 +872,7 @@ Must test:
 - parser boundary tests for bracket-prefixed log noise and malformed bracket-prefixed JSON-looking lines
 - env-gated `codex-cli` smoke scaffolding, when available, as a non-default compatibility probe
 
-Session-lifecycle integration tests, public execution CLI tests, and broader multi-runtime smoke coverage belong to a later Phase 3 or Phase 4 window once execution contracts expand beyond the current limited `codex-cli` slice.
+Session-lifecycle integration tests, public execution CLI tests, and broader multi-runtime smoke coverage belong to a later Phase 3 or Phase 4 compatibility window once execution contracts expand beyond the current limited `codex-cli` slice.
 Parent-attempt graph validation, delegated-runtime lifecycle tests, and wait/close semantics also belong to that later phase rather than this thin provenance slice.
 Manifest-backed execution observation persistence also belongs to that later phase rather than the current bounded internal execution slice.
 Manifest-backed session-tree persistence and public spawn/wait/close/resume behavior also belong to that later phase rather than the current internal control-plane slice.
@@ -896,7 +898,14 @@ Public wait-consume selectors, public wait-consume stores, public wait-consume-b
 Public close-oriented selectors, public close-oriented stores, any close-consumer preflight, any close-consume path, any close-consume-batch path, and any actual close command or contract that treats internal close-readiness, close-candidate, close-target, close-request, close-requested-event, close-recorded-event, close-consumer, close-consume, or close-consume-batch output as lifecycle truth also belong to that later phase rather than the current internal close-oriented helper slice.
 Git archival and checkpoint discipline belongs to maintainer workflow guidance rather than the current public runtime-state, CLI, or manifest contract; tests in this phase should not treat commit-backed checkpoints as an implemented product surface now that the repository has a usable `HEAD`, even though maintainers should continue recording each completed thin slice or debugging milestone with non-destructive Git history once a usable baseline exists.
 
-### Phase 4: Verification and Selection
+### Phase 4: Tier 1 Compatibility Slice
+
+- machine-readable compatibility diagnostics tests for `doctor`
+- explicit public/non-public boundary tests for runtime diagnostics payloads
+- adapter detection tests that keep descriptor-only runtimes unprobed in public output
+- env-gated smoke scaffolding that remains non-default
+
+### Phase 5: Verification and Selection
 
 - verification aggregation tests
 - selection logic tests

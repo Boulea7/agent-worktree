@@ -3,7 +3,12 @@
 import { Command, CommanderError } from "commander";
 import { pathToFileURL } from "node:url";
 
-import { getCompatibilityDescriptor, listCompatibilityDescriptors } from "../compat/index.js";
+import {
+  buildCompatibilityDoctorData,
+  getCompatibilityDescriptor,
+  listCompatibilityDescriptors,
+  type CompatibilityDoctorData
+} from "../compat/index.js";
 import { NotImplementedError, ValidationError } from "../core/errors.js";
 import { cleanupAttempt, type CleanupAttemptResult } from "../worktree/cleanup.js";
 import { listAttempts } from "../worktree/list.js";
@@ -12,6 +17,7 @@ import { formatHumanError, type CliWriter, writeError, writeSuccess } from "./ou
 
 interface CliContext {
   cwd: string;
+  doctorImpl: () => Promise<CompatibilityDoctorData>;
   exitCode: number;
   stderr: CliWriter;
   stdout: CliWriter;
@@ -19,6 +25,7 @@ interface CliContext {
 
 export interface RunCliOptions {
   cwd?: string;
+  doctorImpl?: () => Promise<CompatibilityDoctorData>;
   stderr?: CliWriter;
   stdout?: CliWriter;
 }
@@ -67,8 +74,10 @@ export function buildCli(context: CliContext): Command {
     writeNotImplemented(context, "init", options.json === true);
   });
 
-  program.command("doctor").option("--json").action((options: JsonFlagOptions) => {
-    writeNotImplemented(context, "doctor", options.json === true);
+  program.command("doctor").option("--json").action(async (options: JsonFlagOptions) => {
+    await writeCommandResultAsync(context, "doctor", options.json === true, async () =>
+      context.doctorImpl()
+    );
   });
 
   const compat = program.command("compat");
@@ -215,6 +224,7 @@ export async function runCli(
 ): Promise<number> {
   const context: CliContext = {
     cwd: options.cwd ?? process.cwd(),
+    doctorImpl: options.doctorImpl ?? buildCompatibilityDoctorData,
     stdout: options.stdout ?? process.stdout,
     stderr: options.stderr ?? process.stderr,
     exitCode: 0
@@ -314,6 +324,19 @@ function formatHumanSuccess(command: string, data: unknown): string {
       }).tool;
       return `${tool.tool} (${tool.tier})\n${tool.note}\n`;
     }
+    case "doctor": {
+      const runtimes = (data as CompatibilityDoctorData).runtimes;
+      if (runtimes.length === 0) {
+        return "No runtime diagnostics available.\n";
+      }
+      return `${runtimes
+        .map((runtime) =>
+          `${runtime.runtime}: ${runtime.adapterStatus}, ${formatDetectionState(
+            runtime.detected
+          )}`
+        )
+        .join("\n")}\n`;
+    }
     case "attempt.list": {
       const attempts = (data as { attempts: Array<{ attemptId: string; status: string }> }).attempts;
       if (attempts.length === 0) {
@@ -346,6 +369,14 @@ function formatCleanupResult(result: CleanupAttemptResult): string {
     : "manifest retained";
 
   return `${result.cleanup.outcome} ${result.attempt.attemptId} (${details})`;
+}
+
+function formatDetectionState(detected: boolean | null): string {
+  if (detected === null) {
+    return "not probed";
+  }
+
+  return detected ? "detected" : "not detected";
 }
 
 if (

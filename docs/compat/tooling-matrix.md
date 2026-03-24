@@ -3,6 +3,7 @@
 This matrix reflects the current research synthesis, not implementation reality.
 
 The matrix describes tool-level potential, not the currently implemented `agent-worktree` adapter surface.
+For the current adapter truth, prefer `agent-worktree doctor --json` over this matrix.
 At the current repository boundary, only `codex-cli` has a concrete adapter, and even that adapter should be read as a bounded internal execution contract plus an env-gated smoke scaffold rather than full resume or MCP support.
 
 | Tool | Tier | Guidance file | Project config | Machine-readable mode | Resume | MCP | Distinguishing note |

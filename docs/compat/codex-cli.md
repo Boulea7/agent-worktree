@@ -34,6 +34,12 @@ Codex CLI is a natural baseline for:
 
 The current `codex-cli` adapter is intentionally limited.
 
+Current public compatibility truth:
+
+- `agent-worktree doctor` may report `codex-cli` as the only implemented runtime adapter
+- `doctor` may report whether bounded `codex-cli` detection succeeds locally
+- `doctor` does not expose profile selection, env overlays, execution observation, or any internal control-plane metadata
+
 Implemented now:
 
 - real detection for the `codex exec --json` path

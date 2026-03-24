@@ -154,6 +154,80 @@ describe("runCli", () => {
     expect(stderr.output).toBe("");
   });
 
+  it("should return doctor diagnostics as json without leaking internal metadata", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["doctor", "--json"], {
+      stdout,
+      stderr,
+      doctorImpl: async () => ({
+        runtimes: [
+          {
+            runtime: "codex-cli",
+            supportTier: "tier1",
+            guidanceFile: "AGENTS.md",
+            projectConfig: ".codex/config.toml",
+            note: "Concrete runtime.",
+            capabilities: {
+              machineReadableMode: "strong",
+              resume: "unsupported",
+              mcp: "unsupported",
+              sessionLifecycle: "unsupported",
+              eventStreamParsing: "partial"
+            },
+            adapterStatus: "implemented",
+            detected: true
+          },
+          {
+            runtime: "claude-code",
+            supportTier: "tier1",
+            guidanceFile: "CLAUDE.md",
+            projectConfig: ".claude/settings.json",
+            note: "Descriptor-only runtime.",
+            capabilities: {
+              machineReadableMode: "unsupported",
+              resume: "unsupported",
+              mcp: "unsupported",
+              sessionLifecycle: "unsupported",
+              eventStreamParsing: "unsupported"
+            },
+            adapterStatus: "descriptor_only",
+            detected: null
+          }
+        ]
+      })
+    });
+
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: true,
+      command: "doctor",
+      data: {
+        runtimes: [
+          {
+            runtime: "codex-cli",
+            adapterStatus: "implemented",
+            detected: true
+          },
+          {
+            runtime: "claude-code",
+            adapterStatus: "descriptor_only",
+            detected: null
+          }
+        ]
+      }
+    });
+    const payload = JSON.parse(stdout.output) as {
+      data: { runtimes: Array<Record<string, unknown>> };
+    };
+    assertNoInternalRuntimeMetadata(payload.data as Record<string, unknown>);
+    payload.data.runtimes.forEach((runtime) => {
+      assertNoInternalRuntimeMetadata(runtime);
+    });
+    expect(stderr.output).toBe("");
+  });
+
   it("should return a structured error for unknown compatibility targets", async () => {
     const stdout = new MemoryWriter();
     const stderr = new MemoryWriter();
