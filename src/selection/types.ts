@@ -2,7 +2,10 @@ import type {
   AttemptSourceKind,
   AttemptStatus
 } from "../manifest/types.js";
-import type { AttemptVerificationSummary } from "../verification/types.js";
+import type {
+  AttemptVerificationArtifactSummary,
+  AttemptVerificationSummary
+} from "../verification/types.js";
 
 export interface AttemptSelectionCandidate {
   attemptId: string;
@@ -20,5 +23,17 @@ export interface AttemptSelectionResult {
   selected: AttemptSelectionCandidate | undefined;
   comparableCandidateCount: number;
   selectionReadyCandidateCount: number;
+  recommendedForPromotion: boolean;
+}
+
+export interface AttemptPromotionCandidate {
+  promotionBasis: "verification_artifact_summary";
+  attemptId: string;
+  taskId: string;
+  runtime: string;
+  status: AttemptStatus;
+  sourceKind: AttemptSourceKind | undefined;
+  summary: AttemptVerificationSummary;
+  artifactSummary: AttemptVerificationArtifactSummary;
   recommendedForPromotion: boolean;
 }
