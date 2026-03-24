@@ -39,11 +39,13 @@ Current public compatibility truth:
 - `agent-worktree doctor` may report `codex-cli` as the only implemented runtime adapter
 - `doctor` may report whether bounded `codex-cli` detection succeeds locally
 - `agent-worktree compat probe codex-cli` may report a bounded public compatibility result for local `codex exec --json` support
-- `doctor` and `compat probe` do not expose executable resolution, profile selection, env overlays, execution observation, or any internal control-plane metadata
+- `agent-worktree compat smoke codex-cli` may report a bounded env-gated live smoke result for the fixed `codex exec --json` path
+- `doctor`, `compat probe`, and `compat smoke` do not expose executable resolution, profile selection, env overlays, execution observation, or any internal control-plane metadata
 
 Implemented now:
 
 - a public read-only `compat probe codex-cli` slice for bounded compatibility diagnostics
+- a public read-only `compat smoke codex-cli` slice for bounded env-gated live smoke
 - real detection for the `codex exec --json` path
 - machine-checkable command rendering
 - bounded internal execution through `codex exec --json`
@@ -206,6 +208,8 @@ Executable probing is an internal helper policy for the bounded `codex-cli` exec
 
 The public `compat probe codex-cli` command may depend on that internal helper policy, but only to emit a sanitized compatibility result.
 It must not expose the resolved executable path, PATH candidate order, or any raw subprocess details.
+The public `compat smoke codex-cli` command may depend on the same bounded execution foundation, but only to emit a sanitized env-gated live smoke result for a fixed prompt and timeout.
+It must not expose the fixed prompt text, resolved executable path, PATH candidate order, raw subprocess details, or internal observation metadata.
 
 The current implementation keeps a narrow distinction between shell-visible resolution and execution-time resolution.
 That is why a smoke run may report one path from `command -v codex` and a different path in `result.command.executable`.
@@ -216,6 +220,7 @@ This difference is expected when a same-name shadow binary appears earlier in `P
 `codex-cli` smoke coverage is intentionally optional at this stage.
 
 - smoke tests SHOULD be gated behind an environment variable such as `RUN_CODEX_SMOKE=1`
+- public `compat smoke codex-cli` SHOULD use that same gate and return a bounded `skipped` result rather than failing when the gate is disabled
 - smoke tests SHOULD confirm detection, bounded internal execution, and baseline parsing only
 - smoke output MAY include internal observation diagnostics for debugging, but those diagnostics remain non-contractual
 - smoke tests MUST NOT become the default validation path for the repository

@@ -902,10 +902,14 @@ Git archival and checkpoint discipline belongs to maintainer workflow guidance r
 
 - machine-readable compatibility diagnostics tests for `doctor`
 - machine-readable compatibility probe tests for `compat probe <tool>`
+- machine-readable compatibility smoke tests for `compat smoke <tool>`
 - explicit public/non-public boundary tests for runtime diagnostics payloads
 - explicit public/non-public boundary tests for runtime probe payloads
+- explicit public/non-public boundary tests for runtime smoke payloads
 - adapter detection tests that keep descriptor-only runtimes unprobed in public output
 - locked `probeStatus` and `diagnosis.code` vocabularies for public probe output
+- locked `smokeStatus` and `diagnosis.code` vocabularies for public smoke output
+- gate-disabled success-envelope coverage for env-gated public smoke
 - env-gated smoke scaffolding that remains non-default
 
 ### Phase 5: Verification and Selection

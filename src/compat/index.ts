@@ -20,6 +20,17 @@ export {
   type CompatibilityProbeRuntime,
   type CompatibilityProbeStatus
 } from "./probe.js";
+export {
+  buildCompatibilitySmokeData,
+  compatibilitySmokeDiagnosisCodes,
+  compatibilitySmokeStatuses,
+  type CompatibilitySmokeData,
+  type CompatibilitySmokeDiagnosis,
+  type CompatibilitySmokeDiagnosisCode,
+  type CompatibilitySmokeOptions,
+  type CompatibilitySmokeRuntime,
+  type CompatibilitySmokeStatus
+} from "./smoke.js";
 
 export function listCompatibilityDescriptors(): CapabilityDescriptor[] {
   return [...compatibilityCatalog];

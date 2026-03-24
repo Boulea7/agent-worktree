@@ -38,6 +38,50 @@ export interface CodexCliCompatibilityProbe {
   supported: boolean;
 }
 
+export const codexCliCompatibilitySmokeStatuses = [
+  "passed",
+  "failed",
+  "skipped",
+  "error"
+] as const;
+
+export type CodexCliCompatibilitySmokeStatus =
+  (typeof codexCliCompatibilitySmokeStatuses)[number];
+
+export const codexCliCompatibilitySmokeDiagnosisCodes = [
+  "smoke_passed",
+  "gate_disabled",
+  "detect_unavailable",
+  "execution_failed",
+  "unexpected_error"
+] as const;
+
+export type CodexCliCompatibilitySmokeDiagnosisCode =
+  (typeof codexCliCompatibilitySmokeDiagnosisCodes)[number];
+
+export interface CodexCliCompatibilitySmoke {
+  diagnosisCode: CodexCliCompatibilitySmokeDiagnosisCode;
+  smokeStatus: CodexCliCompatibilitySmokeStatus;
+  summary: string;
+}
+
+export interface CodexCliCompatibilitySmokeOptions extends CodexExecutionOptions {
+  cwd?: string;
+  detectImpl?: () => boolean | Promise<boolean>;
+  env?: NodeJS.ProcessEnv;
+  executeHeadlessImpl?: (
+    input: HeadlessExecutionInput,
+    options: CodexExecutionOptions & {
+      command: RenderedCommand;
+      runCommand?: SubprocessRunner;
+    }
+  ) => Promise<HeadlessExecutionResult>;
+  runCommand?: SubprocessRunner;
+}
+
+export const codexCliCompatibilitySmokePrompt = "Reply with exactly: ok";
+export const codexCliCompatibilitySmokeTimeoutMs = 60_000;
+
 export interface CodexExecutionOptions {
   parseEventStream?: (output: string) => CanonicalAdapterEvent[];
   resolveEnvironment?: () => Promise<NodeJS.ProcessEnv | undefined>;
@@ -90,6 +134,84 @@ export async function probeCodexCliCompatibility(
     diagnosisCode: "exec_json_supported",
     summary: "A local codex executable with `exec --json` support was confirmed."
   };
+}
+
+export async function smokeCodexCliCompatibility(
+  options: CodexCliCompatibilitySmokeOptions = {}
+): Promise<CodexCliCompatibilitySmoke> {
+  if (!isCodexCliSmokeEnabled(options.env ?? process.env)) {
+    return {
+      smokeStatus: "skipped",
+      diagnosisCode: "gate_disabled",
+      summary: "Compatibility smoke is skipped unless `RUN_CODEX_SMOKE=1` is set."
+    };
+  }
+
+  const runner = options.runCommand ?? options.runner ?? runSubprocess;
+  const detectImpl = options.detectImpl ?? (() => detectCodexCli(runner));
+  const executeHeadlessImpl =
+    options.executeHeadlessImpl ?? executeCodexHeadless;
+
+  if (!(await detectImpl())) {
+    return {
+      smokeStatus: "failed",
+      diagnosisCode: "detect_unavailable",
+      summary:
+        "No local codex executable with `exec --json` support was confirmed before smoke execution."
+    };
+  }
+
+  try {
+    const result = await executeHeadlessImpl(
+      {
+        cwd: options.cwd ?? process.cwd(),
+        prompt: codexCliCompatibilitySmokePrompt,
+        timeoutMs: codexCliCompatibilitySmokeTimeoutMs
+      },
+      {
+        command: createCodexCliSmokeCommand(options.cwd ?? process.cwd()),
+        ...(options.parseEventStream === undefined
+          ? {}
+          : { parseEventStream: options.parseEventStream }),
+        ...(options.resolveEnvironment === undefined
+          ? {}
+          : { resolveEnvironment: options.resolveEnvironment }),
+        runCommand: runner
+      }
+    );
+
+    if (!satisfiesCodexCliCompatibilitySmoke(result)) {
+      return {
+        smokeStatus: "failed",
+        diagnosisCode: "execution_failed",
+        summary:
+          "The bounded codex-cli smoke path did not satisfy the public compatibility checks."
+      };
+    }
+
+    return {
+      smokeStatus: "passed",
+      diagnosisCode: "smoke_passed",
+      summary:
+        "The bounded codex-cli smoke path completed the public compatibility checks."
+    };
+  } catch (error) {
+    if (error instanceof RuntimeError || error instanceof ValidationError) {
+      return {
+        smokeStatus: "failed",
+        diagnosisCode: "execution_failed",
+        summary:
+          "The bounded codex-cli smoke path did not satisfy the public compatibility checks."
+      };
+    }
+
+    return {
+      smokeStatus: "error",
+      diagnosisCode: "unexpected_error",
+      summary:
+        "The bounded codex-cli smoke path did not complete successfully."
+    };
+  }
 }
 
 export async function executeCodexHeadless(
@@ -290,6 +412,50 @@ function getExecutableSuffixes(command: string): string[] {
 
   const pathExt = process.env.PATHEXT ?? ".EXE;.CMD;.BAT;.COM";
   return pathExt.split(";").map((extension) => extension.toLowerCase());
+}
+
+function isCodexCliSmokeEnabled(env: NodeJS.ProcessEnv): boolean {
+  return env.RUN_CODEX_SMOKE === "1";
+}
+
+function createCodexCliSmokeCommand(cwd: string): RenderedCommand {
+  return {
+    runtime: "codex-cli",
+    executable: "codex",
+    cwd,
+    args: ["exec", "--json"],
+    metadata: {
+      executionMode: "headless_event_stream",
+      machineReadable: true,
+      promptIncluded: false,
+      resumeRequested: false,
+      safetyIntent: "workspace_write_with_approval"
+    }
+  };
+}
+
+function satisfiesCodexCliCompatibilitySmoke(
+  result: HeadlessExecutionResult
+): boolean {
+  return (
+    result.command.args.filter((arg) => arg === "--ephemeral").length === 1 &&
+    result.command.args.includes("--ephemeral") &&
+    result.command.args.at(-1) === codexCliCompatibilitySmokePrompt &&
+    /(^codex$|[\\/]codex(?:\.(?:exe|cmd|bat|com))?$)/iu.test(
+      result.command.executable
+    ) &&
+    typeof result.observation.runCompleted === "boolean" &&
+    typeof result.observation.errorEventCount === "number" &&
+    hasCodexCliSmokeEvidence(result)
+  );
+}
+
+function hasCodexCliSmokeEvidence(result: HeadlessExecutionResult): boolean {
+  return (
+    result.stdout.trim().length > 0 ||
+    result.stderr.trim().length > 0 ||
+    result.events.length > 0
+  );
 }
 
 function createHeadlessExecutionError(

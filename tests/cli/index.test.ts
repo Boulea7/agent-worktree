@@ -268,6 +268,212 @@ describe("runCli", () => {
     expect(stderr.output).toBe("");
   });
 
+  it("should return compat smoke for codex-cli as json without leaking smoke internals", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["compat", "smoke", "codex-cli", "--json"], {
+      stdout,
+      stderr,
+      compatSmokeImpl: async () => ({
+        smoke: {
+          runtime: "codex-cli",
+          supportTier: "tier1",
+          guidanceFile: "AGENTS.md",
+          projectConfig: ".codex/config.toml",
+          note: "Concrete runtime.",
+          capabilities: {
+            machineReadableMode: "strong",
+            resume: "unsupported",
+            mcp: "unsupported",
+            sessionLifecycle: "unsupported",
+            eventStreamParsing: "partial"
+          },
+          adapterStatus: "implemented",
+          smokeStatus: "passed",
+          diagnosis: {
+            code: "smoke_passed",
+            summary:
+              "The bounded codex-cli smoke path completed the public compatibility checks."
+          }
+        }
+      })
+    });
+
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: true,
+      command: "compat.smoke",
+      data: {
+        smoke: {
+          runtime: "codex-cli",
+          adapterStatus: "implemented",
+          smokeStatus: "passed",
+          diagnosis: {
+            code: "smoke_passed"
+          }
+        }
+      }
+    });
+    const payload = JSON.parse(stdout.output) as {
+      data: { smoke: Record<string, unknown> };
+    };
+    assertNoInternalRuntimeMetadata(payload.data as Record<string, unknown>);
+    assertNoInternalRuntimeMetadata(payload.data.smoke);
+    assertNoInternalRuntimeMetadata(
+      payload.data.smoke.diagnosis as Record<string, unknown>
+    );
+    expect(stderr.output).toBe("");
+  });
+
+  it("should return compat smoke for codex-cli as skipped when the gate is disabled", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["compat", "smoke", "codex-cli", "--json"], {
+      stdout,
+      stderr,
+      compatSmokeImpl: async () => ({
+        smoke: {
+          runtime: "codex-cli",
+          supportTier: "tier1",
+          guidanceFile: "AGENTS.md",
+          projectConfig: ".codex/config.toml",
+          note: "Concrete runtime.",
+          capabilities: {
+            machineReadableMode: "strong",
+            resume: "unsupported",
+            mcp: "unsupported",
+            sessionLifecycle: "unsupported",
+            eventStreamParsing: "partial"
+          },
+          adapterStatus: "implemented",
+          smokeStatus: "skipped",
+          diagnosis: {
+            code: "gate_disabled",
+            summary:
+              "Compatibility smoke is skipped unless `RUN_CODEX_SMOKE=1` is set."
+          }
+        }
+      })
+    });
+
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: true,
+      command: "compat.smoke",
+      data: {
+        smoke: {
+          runtime: "codex-cli",
+          smokeStatus: "skipped",
+          diagnosis: {
+            code: "gate_disabled"
+          }
+        }
+      }
+    });
+    expect(stderr.output).toBe("");
+  });
+
+  it("should return compat smoke for codex-cli as failed when the bounded checks fail", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["compat", "smoke", "codex-cli", "--json"], {
+      stdout,
+      stderr,
+      compatSmokeImpl: async () => ({
+        smoke: {
+          runtime: "codex-cli",
+          supportTier: "tier1",
+          guidanceFile: "AGENTS.md",
+          projectConfig: ".codex/config.toml",
+          note: "Concrete runtime.",
+          capabilities: {
+            machineReadableMode: "strong",
+            resume: "unsupported",
+            mcp: "unsupported",
+            sessionLifecycle: "unsupported",
+            eventStreamParsing: "partial"
+          },
+          adapterStatus: "implemented",
+          smokeStatus: "failed",
+          diagnosis: {
+            code: "execution_failed",
+            summary:
+              "The bounded codex-cli smoke path did not satisfy the public compatibility checks."
+          }
+        }
+      })
+    });
+
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: true,
+      command: "compat.smoke",
+      data: {
+        smoke: {
+          runtime: "codex-cli",
+          smokeStatus: "failed",
+          diagnosis: {
+            code: "execution_failed"
+          }
+        }
+      }
+    });
+    expect(stderr.output).toBe("");
+  });
+
+  it("should return compat smoke for descriptor-only runtimes as not_supported", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["compat", "smoke", "claude-code", "--json"], {
+      stdout,
+      stderr,
+      compatSmokeImpl: async () => ({
+        smoke: {
+          runtime: "claude-code",
+          supportTier: "tier1",
+          guidanceFile: "CLAUDE.md",
+          projectConfig: ".claude/settings.json",
+          note: "Descriptor-only runtime.",
+          capabilities: {
+            machineReadableMode: "unsupported",
+            resume: "unsupported",
+            mcp: "unsupported",
+            sessionLifecycle: "unsupported",
+            eventStreamParsing: "unsupported"
+          },
+          adapterStatus: "descriptor_only",
+          smokeStatus: "not_supported",
+          diagnosis: {
+            code: "descriptor_only",
+            summary:
+              "This runtime remains descriptor-only in the current phase and does not support public compatibility smoke."
+          }
+        }
+      })
+    });
+
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: true,
+      command: "compat.smoke",
+      data: {
+        smoke: {
+          runtime: "claude-code",
+          adapterStatus: "descriptor_only",
+          smokeStatus: "not_supported",
+          diagnosis: {
+            code: "descriptor_only"
+          }
+        }
+      }
+    });
+    expect(stderr.output).toBe("");
+  });
+
   it("should keep probe errors bounded to a success envelope with public error status", async () => {
     const stdout = new MemoryWriter();
     const stderr = new MemoryWriter();
@@ -424,6 +630,26 @@ describe("runCli", () => {
     expect(JSON.parse(stdout.output)).toMatchObject({
       ok: false,
       command: "compat.probe",
+      error: {
+        code: "NOT_FOUND"
+      }
+    });
+    expect(stderr.output).toBe("");
+  });
+
+  it("should return a structured error for unknown compatibility smoke targets", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["compat", "smoke", "missing-tool", "--json"], {
+      stdout,
+      stderr
+    });
+
+    expect(exitCode).toBe(1);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: false,
+      command: "compat.smoke",
       error: {
         code: "NOT_FOUND"
       }

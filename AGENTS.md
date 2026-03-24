@@ -32,6 +32,7 @@ The current thin public compatibility slice also includes:
 
 - read-only `doctor` diagnostics for adapter truth and local detection state
 - read-only `compat probe <tool>` diagnostics for bounded per-runtime compatibility results
+- read-only `compat smoke <tool>` diagnostics for bounded env-gated live compatibility results
 
 The current thin Phase 3 foundation also includes:
 
@@ -103,8 +104,9 @@ Cleanup is expected to keep manifests as audit records, target a single `attempt
 Do not assume advanced runtime orchestration exists yet.
 The current adapter layer only launches a bounded internal execution path for `codex-cli`.
 It does not provide interactive runtime control, attach or resume behavior, general session lifecycle management, MCP transport execution, manifest-backed execution persistence, or public spawn/spawn-consume/spawn-effects/spawn-apply/spawn-headless-input/spawn-headless-apply/spawn-headless-execute/spawn-headless-record/spawn-headless-view/spawn-headless-context/spawn-headless-wait-candidate/spawn-headless-wait-target/spawn-headless-close-candidate/spawn-headless-close-target/wait/close semantics.
-The public `doctor` and `compat probe` commands are compatibility diagnostics surfaces only: they may report adapter implementation status, local detection state, and bounded public probe results, but they must not expose internal profile/env/session/runtime-state/control-plane metadata or imply broader lifecycle support.
+The public `doctor`, `compat probe`, and `compat smoke` commands are compatibility diagnostics surfaces only: they may report adapter implementation status, local detection state, bounded public probe results, and bounded public live-smoke results, but they must not expose internal profile/env/session/runtime-state/control-plane metadata or imply broader lifecycle support.
 The public `compat probe codex-cli` surface remains intentionally narrow: it may report whether bounded local `codex exec --json` compatibility was confirmed, but it must not expose resolved executable paths, env overlays, subprocess output, canonical events, observation summaries, or any execution/session internals.
+The public `compat smoke codex-cli` surface remains intentionally narrow too: it may report an env-gated bounded live smoke result for the fixed `codex exec --json` path, but it must not widen into general public execution, prompt selection, raw subprocess diagnostics, or session lifecycle support.
 Treat the current smoke coverage as an optional compatibility probe only: the narrower env-gated Vitest harness currently passes in this workspace, but it still remains non-default validation rather than a public reliability guarantee and may stay green even when a real `codex exec --json` success baseline is unavailable locally.
 Treat executable probing the same way: it is an internal `codex-cli` execution-helper detail used to locate a `codex` binary that really supports `exec --json`, not a generic runtime-resolution framework or a public adapter guarantee.
 Treat internal `codex-cli` profile-aware execution the same way: it may best-effort pass an explicit profile name through bounded internal render or execution paths so future internal consumers can select an existing Codex profile, but it must remain internal-only, non-persistent, non-manifest-backed, non-public, and must not become provider management, a config-management surface, a public selector, or a public CLI contract.
