@@ -45,6 +45,7 @@ describe(
       expect(result).not.toHaveProperty("results");
       expect(result).not.toHaveProperty("headlessWaitCandidateBatch");
       expect(result).not.toHaveProperty("waitTarget");
+      expect(result).not.toHaveProperty("closeTarget");
       expect(headlessWaitCandidate).toEqual(inputSnapshot);
     });
 
@@ -62,6 +63,7 @@ describe(
       expect(result.headlessWaitCandidate).toBe(headlessWaitCandidate);
       expect(result).not.toHaveProperty("target");
       expect(result).not.toHaveProperty("waitTarget");
+      expect(result).not.toHaveProperty("closeTarget");
     });
 
     it("should preserve an unknown-session headless wait candidate while omitting target output", () => {
@@ -78,6 +80,7 @@ describe(
       expect(result.headlessWaitCandidate).toBe(headlessWaitCandidate);
       expect(result).not.toHaveProperty("target");
       expect(result).not.toHaveProperty("waitTarget");
+      expect(result).not.toHaveProperty("closeTarget");
     });
   }
 );

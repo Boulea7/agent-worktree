@@ -81,8 +81,10 @@ describe(
       expect(result.results[1]).not.toHaveProperty("target");
       expect(result.results[0]).not.toHaveProperty("headlessContext");
       expect(result.results[0]).not.toHaveProperty("candidate");
+      expect(result.results[0]).not.toHaveProperty("waitTarget");
       expect(result.results[1]).not.toHaveProperty("headlessContext");
       expect(result.results[1]).not.toHaveProperty("candidate");
+      expect(result.results[1]).not.toHaveProperty("waitTarget");
       expect(result).not.toHaveProperty("headlessWaitCandidate");
       expect(result).not.toHaveProperty("candidate");
       expect(result).not.toHaveProperty("headlessContext");
