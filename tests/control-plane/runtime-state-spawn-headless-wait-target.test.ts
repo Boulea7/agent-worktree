@@ -4,12 +4,12 @@ import {
   buildExecutionSessionView,
   deriveExecutionSessionSpawnHeadlessContext,
   deriveExecutionSessionSpawnHeadlessWaitCandidate,
-  deriveExecutionSessionSpawnHeadlessWaitTarget,
   deriveExecutionSessionWaitTarget,
   type ExecutionSessionRecord,
   type ExecutionSessionSpawnHeadlessRecord,
   type ExecutionSessionSpawnHeadlessView
 } from "../../src/control-plane/index.js";
+import { deriveExecutionSessionSpawnHeadlessWaitTarget } from "../../src/control-plane/runtime-state-spawn-headless-wait-target.js";
 
 describe(
   "control-plane runtime-state spawn-headless-wait-target helpers",

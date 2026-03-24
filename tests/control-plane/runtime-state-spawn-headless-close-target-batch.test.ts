@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import {
   buildExecutionSessionView,
   deriveExecutionSessionSpawnHeadlessCloseCandidate,
-  deriveExecutionSessionSpawnHeadlessCloseTargetBatch,
   deriveExecutionSessionSpawnHeadlessContext,
   deriveExecutionSessionSpawnHeadlessContextBatch,
   type ExecutionSessionRecord,
@@ -12,6 +11,7 @@ import {
   type ExecutionSessionSpawnHeadlessView,
   type ExecutionSessionSpawnHeadlessViewBatch
 } from "../../src/control-plane/index.js";
+import { deriveExecutionSessionSpawnHeadlessCloseTargetBatch } from "../../src/control-plane/runtime-state-spawn-headless-close-target-batch.js";
 
 describe(
   "control-plane runtime-state spawn-headless-close-target-batch helpers",
