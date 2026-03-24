@@ -44,11 +44,12 @@ The current thin Phase 5 internal verification and selection slice now includes:
 - a pure internal verification artifact-summary helper layer that derives stable, execution-backed, non-leaky artifact summaries from internal verification execution results without writing durable state
 - a pure internal promotion/handoff candidate helper layer that derives stable single-attempt promotion candidates from `AttemptManifest` plus existing verification artifact summaries without widening selection policy or writing durable state
 - a pure internal promotion/handoff aggregation helper layer that derives stable multi-attempt promotion results from existing promotion candidates without widening into public promotion, merge, or report surfaces
+- a pure internal promotion/handoff audit-summary helper layer that derives stable, audit-oriented summaries from existing promotion results without widening into public promotion, handoff, report, or persistence surfaces
 - a pure internal deterministic tie-break helper layered on top of that derived verification summary for future selection work only
 - a pure internal selection helper layer that derives stable per-attempt candidates and best-first multi-attempt selection results directly from `AttemptManifest`
 - a verification-summary-only selection policy that remains deterministic, rejects mixed-task selection loudly, and does not widen into public ranking, promotion, or merge surfaces
 
-That Phase 5 foundation remains internal-only. It does not introduce a public verification CLI, a public ranking surface, a public selection CLI, a public artifact-summary surface, a public promotion or handoff surface, a public promotion-result or report surface, manifest-backed derived verification, selection, artifact-summary, promotion-candidate, or promotion-result state, or any wider lifecycle promise.
+That Phase 5 foundation remains internal-only. It does not introduce a public verification CLI, a public ranking surface, a public selection CLI, a public artifact-summary surface, a public promotion or handoff surface, a public promotion-result, audit-summary, or report surface, manifest-backed derived verification, selection, artifact-summary, promotion-candidate, promotion-result, or promotion-audit-summary state, or any wider lifecycle promise.
 
 The current thin Phase 3 foundation also includes:
 

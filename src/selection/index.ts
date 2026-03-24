@@ -1,4 +1,7 @@
 export {
+  deriveAttemptPromotionAuditSummary
+} from "./promotion-audit.js";
+export {
   deriveAttemptPromotionCandidate
 } from "./promotion.js";
 export {
@@ -9,6 +12,8 @@ export {
   deriveAttemptSelectionResult
 } from "./derive.js";
 export type {
+  AttemptPromotionAuditCandidate,
+  AttemptPromotionAuditSummary,
   AttemptPromotionCandidate,
   AttemptPromotionResult,
   AttemptSelectionCandidate,

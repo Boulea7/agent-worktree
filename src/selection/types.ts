@@ -47,3 +47,26 @@ export interface AttemptPromotionResult {
   promotionReadyCandidateCount: number;
   recommendedForPromotion: boolean;
 }
+
+export interface AttemptPromotionAuditCandidate {
+  attemptId: string;
+  runtime: string;
+  status: AttemptStatus;
+  sourceKind: AttemptSourceKind | undefined;
+  summary: AttemptVerificationSummary;
+  recommendedForPromotion: boolean;
+  blockingRequiredCheckNames: string[];
+  failedOrErrorCheckNames: string[];
+  pendingCheckNames: string[];
+}
+
+export interface AttemptPromotionAuditSummary {
+  auditBasis: "promotion_result";
+  taskId: string | undefined;
+  selectedAttemptId: string | undefined;
+  candidateCount: number;
+  comparableCandidateCount: number;
+  promotionReadyCandidateCount: number;
+  recommendedForPromotion: boolean;
+  candidates: AttemptPromotionAuditCandidate[];
+}
