@@ -85,3 +85,35 @@ export interface AttemptPromotionReport {
   nonPromotionReadyCandidates: AttemptPromotionAuditCandidate[];
   pendingCandidates: AttemptPromotionAuditCandidate[];
 }
+
+export type AttemptPromotionExplanationCode =
+  | "selected"
+  | "promotion_ready"
+  | "required_checks_failed"
+  | "required_checks_pending"
+  | "verification_incomplete";
+
+export interface AttemptPromotionExplanationCandidate {
+  attemptId: string;
+  runtime: string;
+  status: AttemptStatus;
+  sourceKind: AttemptSourceKind | undefined;
+  isSelected: boolean;
+  recommendedForPromotion: boolean;
+  explanationCode: AttemptPromotionExplanationCode;
+  blockingRequiredCheckNames: string[];
+  failedOrErrorCheckNames: string[];
+  pendingCheckNames: string[];
+}
+
+export interface AttemptPromotionExplanationSummary {
+  explanationBasis: "promotion_report";
+  taskId: string | undefined;
+  selectedAttemptId: string | undefined;
+  candidateCount: number;
+  comparableCandidateCount: number;
+  promotionReadyCandidateCount: number;
+  recommendedForPromotion: boolean;
+  selected: AttemptPromotionExplanationCandidate | undefined;
+  candidates: AttemptPromotionExplanationCandidate[];
+}

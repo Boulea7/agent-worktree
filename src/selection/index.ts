@@ -2,6 +2,9 @@ export {
   deriveAttemptPromotionAuditSummary
 } from "./promotion-audit.js";
 export {
+  deriveAttemptPromotionExplanationSummary
+} from "./promotion-explanation.js";
+export {
   deriveAttemptPromotionReport
 } from "./promotion-report.js";
 export {
@@ -16,6 +19,9 @@ export {
 } from "./derive.js";
 export type {
   AttemptPromotionAuditCandidate,
+  AttemptPromotionExplanationCandidate,
+  AttemptPromotionExplanationCode,
+  AttemptPromotionExplanationSummary,
   AttemptPromotionReport,
   AttemptPromotionAuditSummary,
   AttemptPromotionCandidate,
