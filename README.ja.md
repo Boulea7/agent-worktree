@@ -43,8 +43,10 @@
 - ごく薄い worktree lifecycle スライス
 - 読み取り専用の互換性診断コマンド `doctor`、`compat probe <tool>`、`compat smoke <tool>`
 
+現在のリポジトリには、ごく薄い Phase 4 public compatibility baseline があります。`compat smoke codex-cli` は Tier 1 runtime に対する最初の bounded で public な end-to-end compatibility proof であり、`doctor` と `compat probe` は他の Tier 1 runtime を明示的な descriptor-only 境界に留めています。
+
 現在の公開ベースラインはまだ狭く、主な public surface は `doctor`、`compat list/show/probe/smoke`、`attempt create/list/cleanup` に限られます。
-より深い `codex-cli` execution、profile/env の受け渡し、runtime-state、spawn/wait/close helper chain は今も internal-only 実装であり、公開 lifecycle 機能として解釈すべきではありません。
+この P4 closeout は compatibility promise だけを意味し、general execution や lifecycle promise を意味しません。より深い `codex-cli` execution、profile/env の受け渡し、runtime-state、spawn/wait/close helper chain は今も internal-only 実装であり、公開 lifecycle 機能として解釈すべきではありません。
 より高度な runtime adapter、verification ranking、複雑なオーケストレーション機能はまだ先送りです。
 
 ## 重要ドキュメント

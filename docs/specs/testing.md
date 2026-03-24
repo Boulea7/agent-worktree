@@ -10,7 +10,7 @@ The goal is to make later coding sessions predictable enough that an automated c
 - deterministic checks outrank subjective confidence
 - unit tests cover silent logic regressions
 - integration tests cover workflow boundaries
-- Tier 1 compatibility should eventually have smoke coverage
+- Tier 1 compatibility should keep explicit smoke expectations, even when only one runtime currently has an implemented public smoke path
 
 ## Test Layers
 
@@ -68,22 +68,19 @@ Integration tests in the current phase should not require `attach`, `stop`, `che
 
 ### Tool Smoke Tests
 
-Once runtime execution is implemented, smoke coverage should exist for:
+In the current Phase 4 public compatibility baseline, only `codex-cli` has an implemented public smoke path.
+Other Tier 1 runtimes should keep explicit descriptor-only support boundaries until broader execution-backed slices land.
 
-- Claude Code
-- Codex CLI
-- Gemini CLI
-- OpenCode
-
-Smoke tests should verify:
+Current smoke tests should verify:
 
 - tool detection
-- headless execution path
+- bounded headless execution path
 - structured output parsing
 - guidance file loading
+- public/non-public boundary preservation
 
-Before real runtime execution exists, adapter-foundation work SHOULD rely on unit and contract tests rather than tool-launch smoke tests.
-In the current limited execution phase, `codex-cli` smoke coverage SHOULD remain an env-gated smoke scaffold and MUST NOT become part of the default repository test pass.
+In the current limited execution and compatibility phase, adapter-foundation work SHOULD still rely on unit and contract tests rather than tool-launch smoke tests as the primary validation path.
+`codex-cli` smoke coverage SHOULD remain an env-gated smoke scaffold and MUST NOT become part of the default repository test pass.
 The bounded internal execution contract MAY be re-verified through both direct-shell invocation and the narrower Vitest smoke harness when they pass locally, but that smoke coverage still remains a secondary compatibility probe rather than the primary repository validation path.
 The env-gated smoke scaffold SHOULD assert bounded detection, launch, and diagnostic capture rather than successful model completion; credential-dependent live-success baselines, such as real Codex execution that requires `OPENAI_API_KEY`, SHOULD be tracked separately and may drift by environment.
 
@@ -872,7 +869,7 @@ Must test:
 - parser boundary tests for bracket-prefixed log noise and malformed bracket-prefixed JSON-looking lines
 - env-gated `codex-cli` smoke scaffolding, when available, as a non-default compatibility probe
 
-Session-lifecycle integration tests, public execution CLI tests, and broader multi-runtime smoke coverage belong to a later Phase 3 or Phase 4 compatibility window once execution contracts expand beyond the current limited `codex-cli` slice.
+Session-lifecycle integration tests, public execution CLI tests, and broader multi-runtime smoke coverage belong to a later post-P4 execution-expansion phase once execution contracts expand beyond the current limited `codex-cli` slice.
 Parent-attempt graph validation, delegated-runtime lifecycle tests, and wait/close semantics also belong to that later phase rather than this thin provenance slice.
 Manifest-backed execution observation persistence also belongs to that later phase rather than the current bounded internal execution slice.
 Manifest-backed session-tree persistence and public spawn/wait/close/resume behavior also belong to that later phase rather than the current internal control-plane slice.
@@ -911,6 +908,8 @@ Git archival and checkpoint discipline belongs to maintainer workflow guidance r
 - locked `smokeStatus` and `diagnosis.code` vocabularies for public smoke output
 - gate-disabled success-envelope coverage for env-gated public smoke
 - env-gated smoke scaffolding that remains non-default
+
+The current public baseline satisfies this Phase 4 test slice through `doctor`, `compat probe`, `compat smoke`, and explicit descriptor-only boundary coverage.
 
 ### Phase 5: Verification and Selection
 

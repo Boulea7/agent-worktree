@@ -28,11 +28,13 @@ The currently implemented Phase 2 slice includes:
 - `attempt list`
 - safety-first `attempt cleanup`
 
-The current thin public compatibility slice also includes:
+The current thin Phase 4 public compatibility slice now includes:
 
 - read-only `doctor` diagnostics for adapter truth and local detection state
 - read-only `compat probe <tool>` diagnostics for bounded per-runtime compatibility results
 - read-only `compat smoke <tool>` diagnostics for bounded env-gated live compatibility results
+
+That public compatibility baseline now satisfies the current Phase 4 exit criteria: `codex-cli` has a bounded public end-to-end compatibility proof through `compat smoke`, while the other Tier 1 runtimes retain explicit descriptor-only support boundaries through `doctor` and `compat probe`. That remains a compatibility promise only; it does not imply general public execution or lifecycle support.
 
 The current thin Phase 3 foundation also includes:
 

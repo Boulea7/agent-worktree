@@ -40,6 +40,7 @@ Current public compatibility truth:
 - `doctor` may report whether bounded `codex-cli` detection succeeds locally
 - `agent-worktree compat probe codex-cli` may report a bounded public compatibility result for local `codex exec --json` support
 - `agent-worktree compat smoke codex-cli` may report a bounded env-gated live smoke result for the fixed `codex exec --json` path
+- that bounded public smoke path is the current Phase 4 closeout proof for the first Tier 1 end-to-end compatibility promise
 - `doctor`, `compat probe`, and `compat smoke` do not expose executable resolution, profile selection, env overlays, execution observation, or any internal control-plane metadata
 
 Implemented now:
@@ -227,3 +228,4 @@ This difference is expected when a same-name shadow binary appears earlier in `P
 - direct-shell invocation and the env-gated Vitest smoke harness were both re-verified successfully in this workspace on 2026-03-21
 - the Vitest smoke harness remains narrower and should still be treated as a bounded secondary probe rather than a public reliability guarantee
 - smoke output SHOULD help diagnose differences between shell-visible `codex` resolution and the final executed binary rather than assuming they are always identical
+- that bounded public smoke path is sufficient for the current Phase 4 compatibility closeout, but it remains a compatibility proof rather than a general execution or lifecycle promise

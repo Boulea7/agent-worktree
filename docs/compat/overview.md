@@ -10,12 +10,10 @@ That means:
 - one capability vocabulary
 - many outward adapters
 
-## Current Phase 3 Boundary
+## Current Phase 4 Compatibility Baseline
 
-The current Phase 3 implementation boundary is intentionally thin.
-
-The first slice landed as a static adapter foundation.
-A later Phase 3 sub-slice now extends only `codex-cli` into a bounded internal execution contract rather than full runtime support.
+The repository now sits on top of a thin Phase 2 worktree slice and a thin Phase 3 internal adapter foundation.
+The current public compatibility baseline is the Phase 4 closeout slice, and it is still intentionally thin.
 
 The currently implemented boundary is expected to cover:
 
@@ -31,6 +29,11 @@ The currently implemented boundary is expected to cover:
 - minimal canonical event parsing for the `codex-cli` headless path
 - internal execution observation summaries derived from canonical events
 - an env-gated smoke scaffold for narrow compatibility probing
+
+That baseline now satisfies the current Phase 4 exit criteria:
+
+- `compat smoke codex-cli` provides a bounded public end-to-end compatibility proof for one Tier 1 runtime
+- `doctor` and `compat probe` keep the remaining Tier 1 runtimes on explicit and accurate descriptor-only support boundaries
 
 Within that boundary, executable probing remains internal to the `codex-cli` execution helper.
 It may resolve a different executable than shell `command -v codex` when `PATH` contains same-name shadow binaries, but that behavior is not part of the public adapter surface and must not be generalized into a runtime-wide command-resolution framework.
@@ -62,7 +65,7 @@ It is still not expected to cover:
 - manifest-backed execution persistence
 - internal observation summaries promoted into manifest-backed lifecycle state
 
-Compatibility docs in this phase still describe mapping and support boundaries first. The new `compat smoke codex-cli` surface is a bounded env-gated live proof rather than a general execution promise, and the Vitest smoke harness remains narrower and is not the repository's default validation path.
+Compatibility docs in this phase still describe mapping and support boundaries first. The `compat smoke codex-cli` surface is a bounded env-gated live proof rather than a general execution promise, and the Vitest smoke harness remains narrower and is not the repository's default validation path.
 
 ## Support Tiers
 
@@ -79,6 +82,8 @@ Tier 1 means the repository should maintain:
 
 - explicit compatibility docs
 - public mapping rules
+- explicit support-boundary reporting
+- at least one bounded public end-to-end compatibility proof for an implemented Tier 1 runtime in the current baseline
 - future smoke-test expectations
 
 ### Experimental
@@ -105,8 +110,8 @@ The future implementation should normalize:
 - machine-readable output
 - MCP and extension capabilities
 
-In the current thin Phase 3 slice, only the static contract layer is expected to be normalized.
-The only implemented execution backend is the bounded internal `codex-cli` path.
+In the current Phase 4 baseline, the normalized public layer is still intentionally narrow.
+The only implemented execution-backed compatibility path is the bounded public `compat smoke codex-cli` surface, backed by the bounded internal `codex-cli` path.
 Runtime lifecycle behavior, cross-runtime parity, and broader execution surfaces remain future work even when a runtime has a documented adapter descriptor.
 
 ## Canonical Shared Guidance
