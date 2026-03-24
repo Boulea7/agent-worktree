@@ -36,12 +36,14 @@ The current thin Phase 4 public compatibility slice now includes:
 
 That public compatibility baseline now satisfies the current Phase 4 exit criteria: `codex-cli` has a bounded public end-to-end compatibility proof through `compat smoke`, while the other Tier 1 runtimes retain explicit descriptor-only support boundaries through `doctor` and `compat probe`. That remains a compatibility promise only; it does not imply general public execution or lifecycle support.
 
-The current thin Phase 5 internal verification slice now includes:
+The current thin Phase 5 internal verification and selection slice now includes:
 
 - a pure internal verification aggregation helper derived from the existing loose `manifest.verification` payload
 - a pure internal deterministic tie-break helper layered on top of that derived verification summary for future selection work only
+- a pure internal selection helper layer that derives stable per-attempt candidates and best-first multi-attempt selection results directly from `AttemptManifest`
+- a verification-summary-only selection policy that remains deterministic, rejects mixed-task selection loudly, and does not widen into public ranking, promotion, or merge surfaces
 
-That Phase 5 foundation remains internal-only. It does not introduce a public verification CLI, a public ranking surface, a verification runner, manifest-backed derived verification state, or any wider lifecycle promise.
+That Phase 5 foundation remains internal-only. It does not introduce a public verification CLI, a public ranking surface, a public selection CLI, a verification runner, manifest-backed derived verification or selection state, or any wider lifecycle promise.
 
 The current thin Phase 3 foundation also includes:
 
@@ -102,11 +104,10 @@ The current thin Phase 3 foundation also includes:
 
 Current local docs and handoff focus:
 
-- keep the bounded internal `spawn-headless-wait-candidate` / `spawn-headless-wait-candidate-batch` bridge above existing `spawn-headless-context` metadata and generic `deriveExecutionSessionWaitReadiness(...)`
-- keep the bounded internal `spawn-headless-wait-target` / `spawn-headless-wait-target-batch` bridge above existing `spawn-headless-wait-candidate` metadata and generic `deriveExecutionSessionWaitTarget(...)`
-- keep the bounded internal `spawn-headless-close-candidate` / `spawn-headless-close-candidate-batch` bridge above existing `spawn-headless-context` metadata and generic `deriveExecutionSessionCloseReadiness(...)`
-- keep the bounded internal `spawn-headless-close-target` / `spawn-headless-close-target-batch` bridge above existing `spawn-headless-close-candidate` metadata and generic `deriveExecutionSessionCloseTarget(...)`
-- keep all handoff targets internal-only, non-public, non-persistent, non-manifest-backed, and above existing headless bridge metadata only; the wait-candidate bridge must not call the generic selector-driven `deriveExecutionSessionWaitCandidate(...)`, the wait-target bridge must not widen into wait-request/consumer/consume helpers, the close-candidate bridge must not widen into close-target/request/event/consumer/consume helpers, the close-target bridge must not widen into close-request/event/consumer/consume helpers, and all batch helpers must preserve input order, fail fast, and expose no per-item summary contract
+- keep the new internal selection layer above existing `src/verification/*` helpers only
+- keep selection derivation pure, deterministic, non-persistent, non-manifest-backed, and internal-only
+- keep selection policy fixed to verification-summary-only ordering with loud mixed-task rejection
+- keep future follow-up slices focused on internal verification execution or later promotion plumbing rather than widening public selection, merge, or lifecycle surfaces
 
 Cleanup is expected to keep manifests as audit records, target a single `attemptId`, and fail loudly on invalid manifests or unsafe path conditions.
 
