@@ -10,6 +10,13 @@
 .env
 .env.*
 !.env.example
+**/api_key*
+**/secret*
+credentials*
+*.pem
+*.key
+*.p12
+*.pfx
 
 # Local MCP wiring
 .mcp.json
@@ -33,6 +40,7 @@ __pycache__/
 *.pyc
 
 # Node
+/node_modules
 node_modules/
 dist/
 coverage/

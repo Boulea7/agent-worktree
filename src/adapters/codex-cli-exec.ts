@@ -8,6 +8,7 @@ import {
   deriveSessionSnapshot
 } from "../control-plane/derive.js";
 import { deriveCodexExecutionObservation } from "./codex-cli-observation.js";
+import { resolveCodexCliEnvironment } from "./codex-cli-env.js";
 import {
   runSubprocess,
   type SubprocessFailure,
@@ -25,7 +26,26 @@ const detectTimeoutMs = 5_000;
 
 export interface CodexExecutionOptions {
   parseEventStream?: (output: string) => CanonicalAdapterEvent[];
+  resolveEnvironment?: () => Promise<NodeJS.ProcessEnv | undefined>;
   runner?: SubprocessRunner;
+}
+
+export function normalizeCodexCliProfile(
+  profile: string | undefined
+): string | undefined {
+  if (profile === undefined) {
+    return undefined;
+  }
+
+  const normalizedProfile = profile.trim();
+
+  if (normalizedProfile.length === 0) {
+    throw new ValidationError(
+      "codex-cli profile must not be blank when provided."
+    );
+  }
+
+  return normalizedProfile;
 }
 
 export async function detectCodexCli(
@@ -55,6 +75,8 @@ export async function executeCodexHeadless(
     deriveSessionNodeRef(input.attempt);
   }
 
+  validateExplicitCodexProfile(input);
+
   const command = withEphemeralFlag(withHeadlessPrompt(options.command, input.prompt));
 
   if (command.metadata.executionMode !== "headless_event_stream") {
@@ -76,8 +98,16 @@ export async function executeCodexHeadless(
           executable
         };
   const parseEventStream = options.parseEventStream ?? parseCodexCliJsonl;
+  const resolveEnvironment =
+    options.resolveEnvironment ??
+    (options.runCommand === undefined && options.runner === undefined
+      ? resolveCodexCliEnvironment
+      : undefined);
+  const resolvedEnv =
+    resolveEnvironment === undefined ? undefined : await resolveEnvironment();
   const invocation = {
     ...(executableCommand.cwd === undefined ? {} : { cwd: executableCommand.cwd }),
+    ...(resolvedEnv === undefined ? {} : { env: resolvedEnv }),
     ...(input.timeoutMs === undefined ? {} : { timeoutMs: input.timeoutMs }),
     ...(input.abortSignal === undefined
       ? {}
@@ -293,4 +323,23 @@ function withHeadlessPrompt(
       promptIncluded: true
     }
   };
+}
+
+function validateExplicitCodexProfile(input: HeadlessExecutionInput): void {
+  if (!("profile" in input)) {
+    return;
+  }
+
+  const explicitProfile = (input as HeadlessExecutionInput & { profile?: unknown })
+    .profile;
+
+  if (explicitProfile === undefined) {
+    return;
+  }
+
+  if (typeof explicitProfile !== "string") {
+    throw new ValidationError("codex-cli profile must be a string when provided.");
+  }
+
+  normalizeCodexCliProfile(explicitProfile);
 }

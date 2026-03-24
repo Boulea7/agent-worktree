@@ -19,16 +19,70 @@ function assertNoInternalRuntimeMetadata(value: Record<string, unknown>): void {
   expect(value).not.toHaveProperty("controlPlane");
   expect(value).not.toHaveProperty("runtimeState");
   expect(value).not.toHaveProperty("closeCandidate");
+  expect(value).not.toHaveProperty("closeConsume");
+  expect(value).not.toHaveProperty("closeConsumeBatch");
+  expect(value).not.toHaveProperty("closeConsumer");
+  expect(value).not.toHaveProperty("closeConsumerReadiness");
+  expect(value).not.toHaveProperty("closeRecordedEvent");
+  expect(value).not.toHaveProperty("closeRequestedEvent");
+  expect(value).not.toHaveProperty("closeRequest");
   expect(value).not.toHaveProperty("closeReadiness");
   expect(value).not.toHaveProperty("closeTarget");
   expect(value).not.toHaveProperty("closePreflight");
   expect(value).not.toHaveProperty("lifecycleDisposition");
+  expect(value).not.toHaveProperty("spawnCandidate");
+  expect(value).not.toHaveProperty("spawnLineage");
+  expect(value).not.toHaveProperty("spawnConsume");
+  expect(value).not.toHaveProperty("spawnConsumeBatch");
+  expect(value).not.toHaveProperty("spawnEffects");
+  expect(value).not.toHaveProperty("spawnEffectsBatch");
+  expect(value).not.toHaveProperty("spawnApply");
+  expect(value).not.toHaveProperty("spawnApplyBatch");
+  expect(value).not.toHaveProperty("spawnHeadlessApply");
+  expect(value).not.toHaveProperty("spawnHeadlessApplyBatch");
+  expect(value).not.toHaveProperty("spawnHeadlessExecute");
+  expect(value).not.toHaveProperty("spawnHeadlessExecuteBatch");
+  expect(value).not.toHaveProperty("spawnHeadlessRecord");
+  expect(value).not.toHaveProperty("spawnHeadlessRecordBatch");
+  expect(value).not.toHaveProperty("spawnHeadlessView");
+  expect(value).not.toHaveProperty("spawnHeadlessViewBatch");
+  expect(value).not.toHaveProperty("spawnHeadlessContext");
+  expect(value).not.toHaveProperty("spawnHeadlessContextBatch");
+  expect(value).not.toHaveProperty("spawnHeadlessWaitCandidate");
+  expect(value).not.toHaveProperty("spawnHeadlessWaitCandidateBatch");
+  expect(value).not.toHaveProperty("spawnHeadlessWaitTarget");
+  expect(value).not.toHaveProperty("spawnHeadlessWaitTargetBatch");
+  expect(value).not.toHaveProperty("spawnHeadlessCloseCandidate");
+  expect(value).not.toHaveProperty("spawnHeadlessCloseCandidateBatch");
+  expect(value).not.toHaveProperty("spawnHeadlessCloseTarget");
+  expect(value).not.toHaveProperty("spawnHeadlessCloseTargetBatch");
+  expect(value).not.toHaveProperty("prompt");
+  expect(value).not.toHaveProperty("cwd");
+  expect(value).not.toHaveProperty("timeoutMs");
+  expect(value).not.toHaveProperty("abortSignal");
+  expect(value).not.toHaveProperty("execution");
+  expect(value).not.toHaveProperty("stdout");
+  expect(value).not.toHaveProperty("stderr");
+  expect(value).not.toHaveProperty("exitCode");
+  expect(value).not.toHaveProperty("events");
+  expect(value).not.toHaveProperty("spawnHeadlessInput");
+  expect(value).not.toHaveProperty("spawnHeadlessInputBatch");
+  expect(value).not.toHaveProperty("spawnRecordedEvent");
+  expect(value).not.toHaveProperty("spawnRequest");
+  expect(value).not.toHaveProperty("spawnRequestedEvent");
+  expect(value).not.toHaveProperty("spawnTarget");
   expect(value).not.toHaveProperty("waitCandidate");
+  expect(value).not.toHaveProperty("waitConsume");
+  expect(value).not.toHaveProperty("waitConsumeBatch");
+  expect(value).not.toHaveProperty("waitConsumer");
+  expect(value).not.toHaveProperty("waitConsumerReadiness");
+  expect(value).not.toHaveProperty("waitRequest");
   expect(value).not.toHaveProperty("waitTarget");
   expect(value).not.toHaveProperty("runtimeContext");
   expect(value).not.toHaveProperty("waitReadiness");
   expect(value).not.toHaveProperty("spawnReadiness");
   expect(value).not.toHaveProperty("guardrails");
+  expect(value).not.toHaveProperty("profile");
 }
 
 describe("runCli", () => {
@@ -150,6 +204,34 @@ describe("runCli", () => {
     expect(exitCode).toBeGreaterThan(0);
     expect(stdout.output).toBe("");
     expect(stderr.output).toContain("unknown command");
+  });
+
+  it("should keep attempt wait outside the public cli surface", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["attempt", "wait"], { stdout, stderr });
+
+    expect(exitCode).toBeGreaterThan(0);
+    expect(stdout.output).toBe("");
+    expect(stderr.output).toContain("unknown command");
+  });
+
+  it("should keep attempt create profile selection outside the public cli surface", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(
+      ["attempt", "create", "--profile", "project-managed"],
+      {
+        stdout,
+        stderr
+      }
+    );
+
+    expect(exitCode).toBeGreaterThan(0);
+    expect(stdout.output).toBe("");
+    expect(stderr.output).toContain("unknown option '--profile'");
   });
 
   it("should return a structured success envelope for attempt cleanup in json mode", async () => {

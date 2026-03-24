@@ -1,0 +1,103 @@
+import { describe, expect, it } from "vitest";
+
+import { ValidationError } from "../../src/core/errors.js";
+import {
+  deriveExecutionSessionCloseRequest,
+  type ExecutionSessionCloseTarget
+} from "../../src/control-plane/index.js";
+
+describe("control-plane runtime-state close-request helpers", () => {
+  it("should derive a minimal close request from a valid close target", () => {
+    expect(
+      deriveExecutionSessionCloseRequest({
+        target: createCloseTarget()
+      })
+    ).toEqual({
+      attemptId: "att_active",
+      runtime: "codex-cli",
+      sessionId: "thr_active"
+    });
+  });
+
+  it("should reject blank identifiers on the provided close target", () => {
+    expect(() =>
+      deriveExecutionSessionCloseRequest({
+        target: createCloseTarget({
+          attemptId: "   "
+        })
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionCloseRequest({
+        target: createCloseTarget({
+          runtime: "   "
+        })
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionCloseRequest({
+        target: createCloseTarget({
+          sessionId: "   "
+        })
+      })
+    ).toThrow(ValidationError);
+  });
+
+  it("should derive the request without mutating the supplied close target", () => {
+    const target = createCloseTarget();
+    const targetSnapshot = JSON.parse(JSON.stringify(target));
+
+    expect(
+      deriveExecutionSessionCloseRequest({
+        target
+      })
+    ).toEqual({
+      attemptId: "att_active",
+      runtime: "codex-cli",
+      sessionId: "thr_active"
+    });
+    expect(target).toEqual(targetSnapshot);
+  });
+
+  it("should keep selector, readiness, lifecycle, and policy data out of the derived request", () => {
+    const request = deriveExecutionSessionCloseRequest({
+      target: createCloseTarget()
+    }) as ExecutionSessionCloseTarget & Record<string, unknown>;
+
+    expect(request).toEqual({
+      attemptId: "att_active",
+      runtime: "codex-cli",
+      sessionId: "thr_active"
+    });
+    expect(request).not.toHaveProperty("selector");
+    expect(request).not.toHaveProperty("view");
+    expect(request).not.toHaveProperty("context");
+    expect(request).not.toHaveProperty("readiness");
+    expect(request).not.toHaveProperty("closeCandidate");
+    expect(request).not.toHaveProperty("closeReadiness");
+    expect(request).not.toHaveProperty("closeTarget");
+    expect(request).not.toHaveProperty("waitRequest");
+    expect(request).not.toHaveProperty("waitConsumer");
+    expect(request).not.toHaveProperty("spawnRequest");
+    expect(request).not.toHaveProperty("spawnTarget");
+    expect(request).not.toHaveProperty("guardrails");
+    expect(request).not.toHaveProperty("profile");
+    expect(request).not.toHaveProperty("force");
+    expect(request).not.toHaveProperty("cascade");
+    expect(request).not.toHaveProperty("childPolicy");
+    expect(request).not.toHaveProperty("settlePolicy");
+    expect(request).not.toHaveProperty("manifest");
+    expect(request).not.toHaveProperty("lifecycleState");
+  });
+});
+
+function createCloseTarget(
+  overrides: Partial<ExecutionSessionCloseTarget> = {}
+): ExecutionSessionCloseTarget {
+  return {
+    attemptId: "att_active",
+    runtime: "codex-cli",
+    sessionId: "thr_active",
+    ...overrides
+  };
+}

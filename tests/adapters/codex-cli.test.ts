@@ -89,6 +89,36 @@ describe("CodexCliAdapter", () => {
     });
   });
 
+  it("should render a stable headless command structure with profile passthrough", () => {
+    const adapter = new CodexCliAdapter(getAdapterDescriptor("codex-cli"));
+
+    expect(
+      adapter.renderCommand({
+        cwd: "/tmp/codex-demo",
+        prompt: "Summarize the diff",
+        profile: "project-managed"
+      } as never)
+    ).toEqual({
+      runtime: "codex-cli",
+      executable: "codex",
+      args: [
+        "exec",
+        "--json",
+        "--profile",
+        "project-managed",
+        "Summarize the diff"
+      ],
+      cwd: "/tmp/codex-demo",
+      metadata: {
+        executionMode: "headless_event_stream",
+        safetyIntent: "workspace_write_with_approval",
+        machineReadable: true,
+        promptIncluded: true,
+        resumeRequested: false
+      }
+    });
+  });
+
   it("should render headless commands without prompt or cwd when omitted", () => {
     const adapter = new CodexCliAdapter(getAdapterDescriptor("codex-cli"));
 
@@ -129,6 +159,33 @@ describe("CodexCliAdapter", () => {
     });
   });
 
+  it("should render interactive commands with profile passthrough", () => {
+    const adapter = new CodexCliAdapter(getAdapterDescriptor("codex-cli"));
+
+    expect(
+      adapter.renderCommand({
+        executionMode: "interactive_terminal",
+        prompt: "Continue the current interactive session.",
+        profile: "project-managed"
+      } as never)
+    ).toEqual({
+      runtime: "codex-cli",
+      executable: "codex",
+      args: [
+        "--profile",
+        "project-managed",
+        "Continue the current interactive session."
+      ],
+      metadata: {
+        executionMode: "interactive_terminal",
+        safetyIntent: "workspace_write_with_approval",
+        machineReadable: false,
+        promptIncluded: true,
+        resumeRequested: false
+      }
+    });
+  });
+
   it("should render interactive commands without prompt when omitted", () => {
     const adapter = new CodexCliAdapter(getAdapterDescriptor("codex-cli"));
 
@@ -158,6 +215,17 @@ describe("CodexCliAdapter", () => {
         executionMode: "interactive_terminal",
         resumeSessionId: "sess_demo"
       })
+    ).toThrow(ValidationError);
+  });
+
+  it("should reject blank profiles during command rendering", () => {
+    const adapter = new CodexCliAdapter(getAdapterDescriptor("codex-cli"));
+
+    expect(() =>
+      adapter.renderCommand({
+        prompt: "Reply with ok",
+        profile: "   "
+      } as never)
     ).toThrow(ValidationError);
   });
 
@@ -284,5 +352,54 @@ describe("CodexCliAdapter", () => {
         prompt: "   "
       })
     ).rejects.toThrow(ValidationError);
+  });
+
+  it("should pass profile and explicit resolveEnvironment through adapter.executeHeadless", async () => {
+    const runner = vi.fn(async () => ({
+      exitCode: 0,
+      stdout: JSON.stringify({ type: "turn.completed" }),
+      stderr: ""
+    }));
+    const resolveEnvironment = vi.fn(async () => ({
+      PATH: "/usr/bin:/bin",
+      OPENAI_API_KEY: "relay-token"
+    }));
+    const adapter = new CodexCliAdapter(getAdapterDescriptor("codex-cli"), {
+      runner,
+      resolveEnvironment
+    } as never);
+
+    await expect(
+      adapter.executeHeadless({
+        cwd: "/tmp/codex-demo",
+        prompt: "Reply with ok",
+        profile: "project-managed"
+      } as never)
+    ).resolves.toMatchObject({
+      exitCode: 0,
+      observation: {
+        runCompleted: true
+      }
+    });
+
+    expect(resolveEnvironment).toHaveBeenCalledTimes(1);
+    expect(runner).toHaveBeenCalledWith(
+      "codex",
+      [
+        "exec",
+        "--json",
+        "--profile",
+        "project-managed",
+        "--ephemeral",
+        "Reply with ok"
+      ],
+      {
+        cwd: "/tmp/codex-demo",
+        env: {
+          PATH: "/usr/bin:/bin",
+          OPENAI_API_KEY: "relay-token"
+        }
+      }
+    );
   });
 });

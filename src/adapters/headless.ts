@@ -5,6 +5,7 @@ import { RuntimeError } from "../core/errors.js";
 export interface SubprocessInvocation {
   abortSignal?: AbortSignal;
   cwd?: string;
+  env?: NodeJS.ProcessEnv;
   timeoutMs?: number;
 }
 
@@ -137,6 +138,7 @@ export function createSubprocessRunner(
       try {
         child = spawnProcess(executable, args, {
           cwd: options.cwd,
+          env: options.env,
           signal: timeoutController.signal,
           stdio: ["ignore", "pipe", "pipe"]
         });

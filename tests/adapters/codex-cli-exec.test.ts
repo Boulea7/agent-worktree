@@ -5,6 +5,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { getAdapterDescriptor } from "../../src/adapters/catalog.js";
 import { CodexCliAdapter } from "../../src/adapters/codex-cli.js";
 import {
+  deriveExecutionSessionSpawnEffects,
+  deriveExecutionSessionSpawnHeadlessInput
+} from "../../src/control-plane/index.js";
+import {
   detectCodexCli,
   executeCodexHeadless
 } from "../../src/adapters/codex-cli-exec.js";
@@ -20,6 +24,7 @@ async function readFixture(name: string): Promise<string> {
 afterEach(() => {
   vi.resetModules();
   vi.doUnmock("node:fs/promises");
+  vi.doUnmock("../../src/adapters/codex-cli-env.js");
   vi.doUnmock("../../src/adapters/headless.js");
   vi.unstubAllEnvs();
 });
@@ -451,6 +456,67 @@ describe("executeCodexHeadless", () => {
     });
   });
 
+  it("should accept bridge-shaped spawn lineage as the headless execution attempt input", async () => {
+    const stdout = await readFixture("success.observed.jsonl");
+    const runCommand = vi.fn(async () => ({
+      exitCode: 0,
+      stdout,
+      stderr: ""
+    }));
+    const adapter = new CodexCliAdapter(getAdapterDescriptor("codex-cli"));
+    const input = deriveExecutionSessionSpawnHeadlessInput({
+      effects: deriveExecutionSessionSpawnEffects({
+        childAttemptId: "att_child_bridge",
+        request: {
+          parentAttemptId: "att_parent_bridge",
+          parentRuntime: "codex-cli",
+          parentSessionId: "thr_parent_bridge",
+          sourceKind: "delegated",
+          inheritedGuardrails: {
+            maxChildren: 2,
+            maxDepth: 3
+          }
+        }
+      }),
+      execution: {
+        prompt: "Reply with ok",
+        timeoutMs: 5_000
+      }
+    });
+
+    await expect(
+      executeCodexHeadless(input, {
+        command: adapter.renderCommand({ prompt: input.prompt }),
+        runCommand
+      })
+    ).resolves.toMatchObject({
+      observation: {
+        threadId: "thr_demo",
+        runCompleted: true,
+        lastAgentMessage: "ok",
+        errorEventCount: 0
+      },
+      controlPlane: {
+        sessionSnapshot: {
+          node: {
+            attemptId: "att_child_bridge",
+            nodeKind: "child",
+            sourceKind: "delegated",
+            parentAttemptId: "att_parent_bridge"
+          },
+          guardrails: {
+            maxChildren: 2,
+            maxDepth: 3
+          },
+          sessionRef: {
+            runtime: "codex-cli",
+            sessionId: "thr_demo"
+          }
+        }
+      }
+    });
+  });
+
   it("should not add control-plane output when attempt lineage is omitted", async () => {
     const runCommand = vi.fn(async () => ({
       exitCode: 0,
@@ -566,6 +632,128 @@ describe("executeCodexHeadless", () => {
     ]);
   });
 
+  it("should inject relay-compatible env for the default runner without affecting the custom runner path", async () => {
+    vi.stubEnv("PATH", "/mock/real");
+    const stdout = await readFixture("success.observed.jsonl");
+    const runSubprocess = vi.fn(
+      async (executable: string, args: string[]) => {
+        if (args.at(1) === "--help") {
+          return {
+            exitCode: 0,
+            stdout: "Usage: codex exec\n      --json\n",
+            stderr: ""
+          };
+        }
+
+        return {
+          exitCode: 0,
+          stdout,
+          stderr: ""
+        };
+      }
+    );
+    const { executeCodexHeadless: executeWithDefaultRunner } =
+      await loadCodexExecModule({
+        accessImpl: createAccessMock(["/mock/real/codex"]),
+        runSubprocess,
+        resolveCodexCliEnvironment: vi.fn(async () => ({
+          PATH: "/usr/bin:/bin",
+          OPENAI_API_KEY: "relay-token"
+        }))
+      });
+    const adapter = new CodexCliAdapter(getAdapterDescriptor("codex-cli"));
+
+    await executeWithDefaultRunner(
+      { prompt: "Reply with ok", timeoutMs: 5_000 },
+      {
+        command: adapter.renderCommand({ prompt: "Reply with ok" })
+      }
+    );
+
+    expect(runSubprocess.mock.calls).toEqual([
+      ["/mock/real/codex", ["exec", "--help"], { timeoutMs: 5_000 }],
+      [
+        "/mock/real/codex",
+        ["exec", "--json", "--ephemeral", "Reply with ok"],
+        {
+          timeoutMs: 5_000,
+          env: {
+            PATH: "/usr/bin:/bin",
+            OPENAI_API_KEY: "relay-token"
+          }
+        }
+      ]
+    ]);
+  });
+
+  it("should preserve profile ordering when the default runner injects relay-compatible env", async () => {
+    vi.stubEnv("PATH", "/mock/real");
+    const stdout = await readFixture("success.observed.jsonl");
+    const runSubprocess = vi.fn(
+      async (executable: string, args: string[]) => {
+        if (args.at(1) === "--help") {
+          return {
+            exitCode: 0,
+            stdout: "Usage: codex exec\n      --json\n",
+            stderr: ""
+          };
+        }
+
+        return {
+          exitCode: 0,
+          stdout,
+          stderr: ""
+        };
+      }
+    );
+    const { executeCodexHeadless: executeWithDefaultRunner } =
+      await loadCodexExecModule({
+        accessImpl: createAccessMock(["/mock/real/codex"]),
+        runSubprocess,
+        resolveCodexCliEnvironment: vi.fn(async () => ({
+          PATH: "/usr/bin:/bin",
+          OPENAI_API_KEY: "relay-token"
+        }))
+      });
+    const adapter = new CodexCliAdapter(getAdapterDescriptor("codex-cli"));
+
+    await executeWithDefaultRunner(
+      {
+        prompt: "Reply with ok",
+        profile: "project-managed",
+        timeoutMs: 5_000
+      } as never,
+      {
+        command: adapter.renderCommand({
+          prompt: "Reply with ok",
+          profile: "project-managed"
+        } as never)
+      }
+    );
+
+    expect(runSubprocess.mock.calls).toEqual([
+      ["/mock/real/codex", ["exec", "--help"], { timeoutMs: 5_000 }],
+      [
+        "/mock/real/codex",
+        [
+          "exec",
+          "--json",
+          "--profile",
+          "project-managed",
+          "--ephemeral",
+          "Reply with ok"
+        ],
+        {
+          timeoutMs: 5_000,
+          env: {
+            PATH: "/usr/bin:/bin",
+            OPENAI_API_KEY: "relay-token"
+          }
+        }
+      ]
+    ]);
+  });
+
   it("should not duplicate an existing ephemeral flag", async () => {
     const runCommand = vi.fn(async () => ({
       exitCode: 0,
@@ -626,6 +814,49 @@ describe("executeCodexHeadless", () => {
     );
   });
 
+  it("should append the prompt after profile and inject ephemeral before the prompt", async () => {
+    const runCommand = vi.fn(async () => ({
+      exitCode: 0,
+      stdout: JSON.stringify({ type: "turn.completed" }),
+      stderr: ""
+    }));
+
+    await executeCodexHeadless(
+      {
+        prompt: "Reply with ok",
+        profile: "project-managed"
+      } as never,
+      {
+        command: {
+          runtime: "codex-cli",
+          executable: "codex",
+          args: ["exec", "--json", "--profile", "project-managed"],
+          metadata: {
+            executionMode: "headless_event_stream",
+            safetyIntent: "workspace_write_with_approval",
+            machineReadable: true,
+            promptIncluded: false,
+            resumeRequested: false
+          }
+        },
+        runCommand
+      }
+    );
+
+    expect(runCommand).toHaveBeenCalledWith(
+      "codex",
+      [
+        "exec",
+        "--json",
+        "--profile",
+        "project-managed",
+        "--ephemeral",
+        "Reply with ok"
+      ],
+      {}
+    );
+  });
+
   it("should inject the ephemeral flag before prompts that look like flags", async () => {
     const runCommand = vi.fn(async () => ({
       exitCode: 0,
@@ -648,6 +879,92 @@ describe("executeCodexHeadless", () => {
       "codex",
       ["exec", "--json", "--ephemeral", "-reply"],
       {}
+    );
+  });
+
+  it("should preserve profile ordering when the prompt looks like a flag", async () => {
+    const runCommand = vi.fn(async () => ({
+      exitCode: 0,
+      stdout: JSON.stringify({ type: "turn.completed" }),
+      stderr: ""
+    }));
+    const adapter = new CodexCliAdapter(getAdapterDescriptor("codex-cli"));
+
+    await executeCodexHeadless(
+      {
+        prompt: "-reply",
+        profile: "project-managed"
+      } as never,
+      {
+        command: adapter.renderCommand({
+          prompt: "-reply",
+          profile: "project-managed"
+        } as never),
+        runCommand
+      }
+    );
+
+    expect(runCommand).toHaveBeenCalledWith(
+      "codex",
+      [
+        "exec",
+        "--json",
+        "--profile",
+        "project-managed",
+        "--ephemeral",
+        "-reply"
+      ],
+      {}
+    );
+  });
+
+  it("should allow explicit resolveEnvironment for custom runner paths", async () => {
+    const stdout = await readFixture("success.observed.jsonl");
+    const runCommand = vi.fn(async () => ({
+      exitCode: 0,
+      stdout,
+      stderr: ""
+    }));
+    const resolveEnvironment = vi.fn(async () => ({
+      PATH: "/usr/bin:/bin",
+      OPENAI_API_KEY: "relay-token"
+    }));
+    const adapter = new CodexCliAdapter(getAdapterDescriptor("codex-cli"));
+
+    await executeCodexHeadless(
+      {
+        prompt: "Reply with ok",
+        profile: "project-managed",
+        timeoutMs: 5_000
+      } as never,
+      {
+        command: adapter.renderCommand({
+          prompt: "Reply with ok",
+          profile: "project-managed"
+        } as never),
+        runCommand,
+        resolveEnvironment
+      }
+    );
+
+    expect(resolveEnvironment).toHaveBeenCalledTimes(1);
+    expect(runCommand).toHaveBeenCalledWith(
+      "codex",
+      [
+        "exec",
+        "--json",
+        "--profile",
+        "project-managed",
+        "--ephemeral",
+        "Reply with ok"
+      ],
+      {
+        timeoutMs: 5_000,
+        env: {
+          PATH: "/usr/bin:/bin",
+          OPENAI_API_KEY: "relay-token"
+        }
+      }
     );
   });
 
@@ -860,11 +1177,31 @@ describe("executeCodexHeadless", () => {
     ).rejects.toThrow(ValidationError);
     expect(runCommand).not.toHaveBeenCalled();
   });
+
+  it("should reject blank profiles before adapter.executeHeadless invokes the runner", async () => {
+    const runner = vi.fn(async () => ({
+        exitCode: 0,
+        stdout: JSON.stringify({ type: "turn.completed" }),
+        stderr: ""
+      }));
+    const adapter = new CodexCliAdapter(getAdapterDescriptor("codex-cli"), {
+      runner
+    });
+
+    await expect(
+      adapter.executeHeadless({
+        prompt: "Reply with ok",
+        profile: "   "
+      } as never)
+    ).rejects.toThrow(ValidationError);
+    expect(runner).not.toHaveBeenCalled();
+  });
 });
 
 async function loadCodexExecModule(options: {
   accessImpl: typeof import("node:fs/promises").access;
   runSubprocess: typeof import("../../src/adapters/headless.js").runSubprocess;
+  resolveCodexCliEnvironment?: () => Promise<NodeJS.ProcessEnv | undefined>;
 }): Promise<typeof import("../../src/adapters/codex-cli-exec.js")> {
   vi.resetModules();
   vi.doMock("node:fs/promises", async () => {
@@ -887,6 +1224,10 @@ async function loadCodexExecModule(options: {
       runSubprocess: options.runSubprocess
     };
   });
+  vi.doMock("../../src/adapters/codex-cli-env.js", async () => ({
+    resolveCodexCliEnvironment:
+      options.resolveCodexCliEnvironment ?? (async () => undefined)
+  }));
 
   return import("../../src/adapters/codex-cli-exec.js");
 }
