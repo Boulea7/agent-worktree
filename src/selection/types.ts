@@ -37,3 +37,13 @@ export interface AttemptPromotionCandidate {
   artifactSummary: AttemptVerificationArtifactSummary;
   recommendedForPromotion: boolean;
 }
+
+export interface AttemptPromotionResult {
+  promotionResultBasis: "promotion_candidate";
+  taskId: string | undefined;
+  candidates: AttemptPromotionCandidate[];
+  selected: AttemptPromotionCandidate | undefined;
+  comparableCandidateCount: number;
+  promotionReadyCandidateCount: number;
+  recommendedForPromotion: boolean;
+}
