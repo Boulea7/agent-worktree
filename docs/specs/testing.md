@@ -54,16 +54,15 @@ Contract tests should validate:
 
 Integration tests should validate:
 
-- attempt creation lifecycle
-- worktree lifecycle
-- session attach and stop behavior
-- checkpoint recording
-- merge and cleanup workflow
-- verification execution flow
+- implemented attempt create/list/cleanup lifecycle only
+- implemented worktree creation, listing, and cleanup flow only
 - local-only file boundaries
 - cleanup preserves the manifest record
 - cleanup preserves additive provenance metadata
 - invalid manifests fail loudly rather than being skipped
+- structured machine-readable cleanup outcomes
+
+Integration tests in the current phase should not require `attach`, `stop`, `checkpoint`, `merge`, or broader verification workflows before those public contracts exist.
 
 ### Tool Smoke Tests
 
