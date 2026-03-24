@@ -1,8 +1,11 @@
 export { compareAttemptVerificationCandidates } from "./compare.js";
+export { deriveAttemptVerificationArtifactSummary } from "./artifact-summary.js";
 export { deriveAttemptVerificationSummary } from "./derive.js";
 export { deriveAttemptVerificationPayload } from "./ingest.js";
 export { executeAttemptVerification } from "./execute.js";
 export {
+  type AttemptVerificationArtifactCheck,
+  type AttemptVerificationArtifactSummary,
   attemptVerificationCheckStatuses,
   attemptVerificationOverallOutcomes,
   attemptVerificationRequiredOutcomes,

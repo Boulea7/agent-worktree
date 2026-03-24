@@ -102,3 +102,21 @@ export interface AttemptVerificationExecutionResult {
   summary: AttemptVerificationSummary;
   verification: AttemptVerification;
 }
+
+export interface AttemptVerificationArtifactCheck {
+  name: string;
+  required: boolean;
+  status: AttemptVerificationCheckStatus;
+}
+
+export interface AttemptVerificationArtifactSummary {
+  summaryBasis: "verification_execution";
+  summary: AttemptVerificationSummary;
+  checks: AttemptVerificationArtifactCheck[];
+  blockingRequiredCheckNames: string[];
+  failedOrErrorCheckNames: string[];
+  pendingCheckNames: string[];
+  skippedCheckNames: string[];
+  passedCheckNames: string[];
+  recommendedForPromotion: boolean;
+}

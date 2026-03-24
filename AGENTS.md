@@ -41,11 +41,12 @@ The current thin Phase 5 internal verification and selection slice now includes:
 - a pure internal verification aggregation helper derived from the existing loose `manifest.verification` payload
 - a pure internal verification payload-ingestion helper that normalizes explicit internal check results into the existing loose `AttemptVerification` manifest-compatible shape
 - a bounded internal subprocess-backed verification execution helper that runs explicit deterministic checks through an injected runner and produces manifest-compatible verification payloads plus derived summaries without writing durable state
+- a pure internal verification artifact-summary helper layer that derives stable, execution-backed, non-leaky artifact summaries from internal verification execution results without writing durable state
 - a pure internal deterministic tie-break helper layered on top of that derived verification summary for future selection work only
 - a pure internal selection helper layer that derives stable per-attempt candidates and best-first multi-attempt selection results directly from `AttemptManifest`
 - a verification-summary-only selection policy that remains deterministic, rejects mixed-task selection loudly, and does not widen into public ranking, promotion, or merge surfaces
 
-That Phase 5 foundation remains internal-only. It does not introduce a public verification CLI, a public ranking surface, a public selection CLI, a public artifact-summary surface, manifest-backed derived verification or selection state, or any wider lifecycle promise.
+That Phase 5 foundation remains internal-only. It does not introduce a public verification CLI, a public ranking surface, a public selection CLI, a public artifact-summary surface, manifest-backed derived verification, selection, or artifact-summary state, or any wider lifecycle promise.
 
 The current thin Phase 3 foundation also includes:
 
@@ -108,8 +109,9 @@ Current local docs and handoff focus:
 
 - keep the new internal verification producer boundary inside `src/verification/*` only and above generic subprocess execution only
 - keep verification payload derivation and verification execution internal-only, deterministic, non-persistent, non-manifest-backed, and compatible with the existing loose `AttemptVerification` manifest shape
+- keep verification artifact summaries derived from execution results internal-only, deterministic, non-persistent, non-manifest-backed, and free of subprocess/session/runtime internals
 - keep selection policy fixed to verification-summary-only ordering with loud mixed-task rejection and no execution-aware ranking inputs
-- keep future follow-up slices focused on internal artifact summaries or higher-level verification orchestration rather than widening public verify/select/merge or lifecycle surfaces
+- keep future follow-up slices focused on internal promotion/handoff consumers above artifact summaries rather than widening public verify/select/merge or lifecycle surfaces
 
 Cleanup is expected to keep manifests as audit records, target a single `attemptId`, and fail loudly on invalid manifests or unsafe path conditions.
 
