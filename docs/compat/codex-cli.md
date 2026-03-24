@@ -38,10 +38,12 @@ Current public compatibility truth:
 
 - `agent-worktree doctor` may report `codex-cli` as the only implemented runtime adapter
 - `doctor` may report whether bounded `codex-cli` detection succeeds locally
-- `doctor` does not expose profile selection, env overlays, execution observation, or any internal control-plane metadata
+- `agent-worktree compat probe codex-cli` may report a bounded public compatibility result for local `codex exec --json` support
+- `doctor` and `compat probe` do not expose executable resolution, profile selection, env overlays, execution observation, or any internal control-plane metadata
 
 Implemented now:
 
+- a public read-only `compat probe codex-cli` slice for bounded compatibility diagnostics
 - real detection for the `codex exec --json` path
 - machine-checkable command rendering
 - bounded internal execution through `codex exec --json`
@@ -201,6 +203,9 @@ Executable probing is an internal helper policy for the bounded `codex-cli` exec
 - it is not a public adapter semantic
 - it is not a generic command-resolution layer for other runtimes
 - it does not change the `RenderedCommand` contract exposed by `renderCommand()`
+
+The public `compat probe codex-cli` command may depend on that internal helper policy, but only to emit a sanitized compatibility result.
+It must not expose the resolved executable path, PATH candidate order, or any raw subprocess details.
 
 The current implementation keeps a narrow distinction between shell-visible resolution and execution-time resolution.
 That is why a smoke run may report one path from `command -v codex` and a different path in `result.command.executable`.

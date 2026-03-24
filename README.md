@@ -70,11 +70,11 @@ This repository is currently focused on:
 2. config and runtime-manifest contracts
 3. machine-readable CLI behavior
 4. thin worktree lifecycle commands
-5. a public read-only compatibility diagnostics slice via `agent-worktree doctor`
+5. public read-only compatibility diagnostics via `agent-worktree doctor` and `agent-worktree compat probe <tool>`
 6. a bounded internal `codex-cli` execution contract for the first Tier 1 runtime
 7. docs and implementation alignment
 
-The public baseline is still intentionally narrow. Today it includes `compat list`, `compat show`, `doctor`, and the thin `attempt create` / `attempt list` / `attempt cleanup` lifecycle commands, all centered on machine-readable contracts.
+The public baseline is still intentionally narrow. Today it includes `compat list`, `compat show`, `compat probe`, `doctor`, and the thin `attempt create` / `attempt list` / `attempt cleanup` lifecycle commands, all centered on machine-readable contracts.
 
 The internal baseline is wider than the public one. `codex-cli` now covers descriptor resolution, command rendering, real headless detection, a bounded internal execution contract around `codex exec --json`, minimal canonical event parsing, structured degradation, profile-aware internal passthrough, relay-compatible env overlays, and a deeper internal control-plane helper chain for runtime-state, spawn, wait, and close composition.
 
@@ -114,7 +114,7 @@ Most coding-agent workflows today live somewhere between:
 ## Near-Term Deliverables
 
 - Harden the current config, manifest, and CLI contracts
-- Keep the public compatibility diagnostics slice accurate and machine-readable
+- Keep the public compatibility diagnostics and probe slices accurate and machine-readable
 - Expand the thin worktree lifecycle beyond create/list
 - Harden the bounded internal `codex-cli` execution contract without expanding it into a full runtime framework
 - Keep the `codex-cli` smoke scaffold env-gated and non-default while it remains a bounded compatibility probe

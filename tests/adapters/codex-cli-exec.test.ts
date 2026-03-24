@@ -10,7 +10,8 @@ import {
 } from "../../src/control-plane/index.js";
 import {
   detectCodexCli,
-  executeCodexHeadless
+  executeCodexHeadless,
+  probeCodexCliCompatibility
 } from "../../src/adapters/codex-cli-exec.js";
 import { RuntimeError, ValidationError } from "../../src/core/errors.js";
 
@@ -177,6 +178,36 @@ describe("detectCodexCli", () => {
         timeoutMs: 5_000
       })
     );
+  });
+});
+
+describe("probeCodexCliCompatibility", () => {
+  it("should report supported when exec json compatibility is confirmed", async () => {
+    const runCommand = vi.fn(async () => ({
+      exitCode: 0,
+      stdout: "Usage: codex exec\n      --json\n",
+      stderr: ""
+    }));
+
+    await expect(probeCodexCliCompatibility(runCommand)).resolves.toEqual({
+      supported: true,
+      diagnosisCode: "exec_json_supported",
+      summary: "A local codex executable with `exec --json` support was confirmed."
+    });
+  });
+
+  it("should report unsupported when exec json compatibility is not confirmed", async () => {
+    const runCommand = vi.fn(async () => ({
+      exitCode: 0,
+      stdout: "Usage: codex exec\n",
+      stderr: ""
+    }));
+
+    await expect(probeCodexCliCompatibility(runCommand)).resolves.toEqual({
+      supported: false,
+      diagnosisCode: "exec_json_unavailable",
+      summary: "No local codex executable with `exec --json` support was confirmed."
+    });
   });
 });
 

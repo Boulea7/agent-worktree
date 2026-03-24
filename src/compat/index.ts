@@ -9,6 +9,17 @@ export {
   type CompatibilityDoctorOptions,
   type CompatibilityDoctorRuntime
 } from "./doctor.js";
+export {
+  buildCompatibilityProbeData,
+  compatibilityProbeDiagnosisCodes,
+  compatibilityProbeStatuses,
+  type CompatibilityProbeData,
+  type CompatibilityProbeDiagnosis,
+  type CompatibilityProbeDiagnosisCode,
+  type CompatibilityProbeOptions,
+  type CompatibilityProbeRuntime,
+  type CompatibilityProbeStatus
+} from "./probe.js";
 
 export function listCompatibilityDescriptors(): CapabilityDescriptor[] {
   return [...compatibilityCatalog];

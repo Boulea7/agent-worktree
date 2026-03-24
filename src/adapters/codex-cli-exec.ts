@@ -24,6 +24,20 @@ import type {
 
 const detectTimeoutMs = 5_000;
 
+export const codexCliCompatibilityDiagnosisCodes = [
+  "exec_json_supported",
+  "exec_json_unavailable"
+] as const;
+
+export type CodexCliCompatibilityDiagnosisCode =
+  (typeof codexCliCompatibilityDiagnosisCodes)[number];
+
+export interface CodexCliCompatibilityProbe {
+  diagnosisCode: CodexCliCompatibilityDiagnosisCode;
+  summary: string;
+  supported: boolean;
+}
+
 export interface CodexExecutionOptions {
   parseEventStream?: (output: string) => CanonicalAdapterEvent[];
   resolveEnvironment?: () => Promise<NodeJS.ProcessEnv | undefined>;
@@ -56,6 +70,26 @@ export async function detectCodexCli(
   } catch {
     return false;
   }
+}
+
+export async function probeCodexCliCompatibility(
+  runner: SubprocessRunner = runSubprocess
+): Promise<CodexCliCompatibilityProbe> {
+  const executable = await resolveCodexExecutableForExecution(runner);
+
+  if (executable === null) {
+    return {
+      supported: false,
+      diagnosisCode: "exec_json_unavailable",
+      summary: "No local codex executable with `exec --json` support was confirmed."
+    };
+  }
+
+  return {
+    supported: true,
+    diagnosisCode: "exec_json_supported",
+    summary: "A local codex executable with `exec --json` support was confirmed."
+  };
 }
 
 export async function executeCodexHeadless(

@@ -37,6 +37,7 @@ The current intended public surfaces are:
 - runtime manifest
 - machine-readable CLI behavior
 - compatibility tier definitions
+- read-only compatibility diagnostics and probing
 
 ## Source Discipline
 

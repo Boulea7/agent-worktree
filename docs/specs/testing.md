@@ -901,8 +901,11 @@ Git archival and checkpoint discipline belongs to maintainer workflow guidance r
 ### Phase 4: Tier 1 Compatibility Slice
 
 - machine-readable compatibility diagnostics tests for `doctor`
+- machine-readable compatibility probe tests for `compat probe <tool>`
 - explicit public/non-public boundary tests for runtime diagnostics payloads
+- explicit public/non-public boundary tests for runtime probe payloads
 - adapter detection tests that keep descriptor-only runtimes unprobed in public output
+- locked `probeStatus` and `diagnosis.code` vocabularies for public probe output
 - env-gated smoke scaffolding that remains non-default
 
 ### Phase 5: Verification and Selection

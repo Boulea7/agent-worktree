@@ -11,6 +11,7 @@ Implemented now:
 - `doctor`
 - `compat list`
 - `compat show`
+- `compat probe`
 - `attempt create`
 - `attempt list`
 - `attempt cleanup`
@@ -37,6 +38,7 @@ agent-worktree init
 agent-worktree doctor
 agent-worktree compat list
 agent-worktree compat show <tool>
+agent-worktree compat probe <tool>
 
 agent-worktree attempt create
 agent-worktree attempt list
@@ -134,6 +136,62 @@ The initial `detected` semantics are also intentionally small:
 - `null` for descriptor-only runtimes that are not probed
 
 `doctor` MUST remain read-only in this phase. It MUST NOT execute headless prompts, MUST NOT expose internal profile/env/session metadata, and MUST NOT widen into public runtime lifecycle control.
+
+## Compat Probe Contract
+
+`agent-worktree compat probe <tool>` is a read-only per-runtime compatibility probe command.
+
+It SHOULD report current adapter truth plus a bounded public probe result for exactly one runtime.
+
+Machine-readable output SHOULD expose one `probe` record:
+
+```json
+{
+  "ok": true,
+  "command": "compat.probe",
+  "data": {
+    "probe": {
+      "runtime": "codex-cli",
+      "supportTier": "tier1",
+      "guidanceFile": "AGENTS.md",
+      "projectConfig": ".codex/config.toml",
+      "note": "Most naturally aligned with root AGENTS.md.",
+      "capabilities": {
+        "machineReadableMode": "strong",
+        "resume": "unsupported",
+        "mcp": "unsupported",
+        "sessionLifecycle": "unsupported",
+        "eventStreamParsing": "partial"
+      },
+      "adapterStatus": "implemented",
+      "probeStatus": "supported",
+      "diagnosis": {
+        "code": "exec_json_supported",
+        "summary": "A local codex executable with `exec --json` support was confirmed."
+      }
+    }
+  }
+}
+```
+
+The initial `probeStatus` vocabulary is intentionally small:
+
+- `supported`
+- `unsupported`
+- `not_probed`
+- `error`
+
+The initial `diagnosis.code` vocabulary is also intentionally small:
+
+- `exec_json_supported`
+- `exec_json_unavailable`
+- `descriptor_only`
+- `probe_error`
+
+Descriptor-only runtimes SHOULD return a success envelope with `adapterStatus: "descriptor_only"`, `probeStatus: "not_probed"`, and `diagnosis.code: "descriptor_only"` rather than a command failure.
+Unknown runtimes MUST fail with a structured `NOT_FOUND` error envelope.
+
+`compat probe` MUST remain read-only in this phase. It MUST NOT execute headless prompts, MUST NOT expose resolved executable paths, env overlays, subprocess stdout/stderr, exit codes, raw events, observation summaries, internal profile metadata, or any control-plane/session/runtime-state details, and MUST NOT widen into public runtime lifecycle control.
 
 ## Attempt Create Contract
 

@@ -5,9 +5,11 @@ import { pathToFileURL } from "node:url";
 
 import {
   buildCompatibilityDoctorData,
+  buildCompatibilityProbeData,
   getCompatibilityDescriptor,
   listCompatibilityDescriptors,
-  type CompatibilityDoctorData
+  type CompatibilityDoctorData,
+  type CompatibilityProbeData
 } from "../compat/index.js";
 import { NotImplementedError, ValidationError } from "../core/errors.js";
 import { cleanupAttempt, type CleanupAttemptResult } from "../worktree/cleanup.js";
@@ -16,6 +18,7 @@ import { createAttempt } from "../worktree/create.js";
 import { formatHumanError, type CliWriter, writeError, writeSuccess } from "./output.js";
 
 interface CliContext {
+  compatProbeImpl: (tool: string) => Promise<CompatibilityProbeData>;
   cwd: string;
   doctorImpl: () => Promise<CompatibilityDoctorData>;
   exitCode: number;
@@ -24,6 +27,7 @@ interface CliContext {
 }
 
 export interface RunCliOptions {
+  compatProbeImpl?: (tool: string) => Promise<CompatibilityProbeData>;
   cwd?: string;
   doctorImpl?: () => Promise<CompatibilityDoctorData>;
   stderr?: CliWriter;
@@ -96,6 +100,19 @@ export function buildCli(context: CliContext): Command {
       writeCommandResult(context, "compat.show", options.json === true, () => ({
         tool: getCompatibilityDescriptor(tool)
       }));
+    });
+
+  compat
+    .command("probe")
+    .argument("<tool>")
+    .option("--json")
+    .action(async (tool: string, options: JsonFlagOptions) => {
+      await writeCommandResultAsync(
+        context,
+        "compat.probe",
+        options.json === true,
+        async () => context.compatProbeImpl(tool)
+      );
     });
 
   const attempt = program.command("attempt");
@@ -223,6 +240,7 @@ export async function runCli(
   options: RunCliOptions = {}
 ): Promise<number> {
   const context: CliContext = {
+    compatProbeImpl: options.compatProbeImpl ?? buildCompatibilityProbeData,
     cwd: options.cwd ?? process.cwd(),
     doctorImpl: options.doctorImpl ?? buildCompatibilityDoctorData,
     stdout: options.stdout ?? process.stdout,
@@ -323,6 +341,10 @@ function formatHumanSuccess(command: string, data: unknown): string {
         tool: { tool: string; tier: string; note: string };
       }).tool;
       return `${tool.tool} (${tool.tier})\n${tool.note}\n`;
+    }
+    case "compat.probe": {
+      const probe = (data as CompatibilityProbeData).probe;
+      return `${probe.runtime}: ${probe.probeStatus} (${probe.adapterStatus}, ${probe.diagnosis.code})\n`;
     }
     case "doctor": {
       const runtimes = (data as CompatibilityDoctorData).runtimes;

@@ -18,6 +18,7 @@ class MemoryWriter {
 function assertNoInternalRuntimeMetadata(value: Record<string, unknown>): void {
   expect(value).not.toHaveProperty("controlPlane");
   expect(value).not.toHaveProperty("runtimeState");
+  expect(value).not.toHaveProperty("observation");
   expect(value).not.toHaveProperty("closeCandidate");
   expect(value).not.toHaveProperty("closeConsume");
   expect(value).not.toHaveProperty("closeConsumeBatch");
@@ -65,6 +66,11 @@ function assertNoInternalRuntimeMetadata(value: Record<string, unknown>): void {
   expect(value).not.toHaveProperty("stderr");
   expect(value).not.toHaveProperty("exitCode");
   expect(value).not.toHaveProperty("events");
+  expect(value).not.toHaveProperty("resolvedExecutable");
+  expect(value).not.toHaveProperty("pathCandidates");
+  expect(value).not.toHaveProperty("executable");
+  expect(value).not.toHaveProperty("args");
+  expect(value).not.toHaveProperty("env");
   expect(value).not.toHaveProperty("spawnHeadlessInput");
   expect(value).not.toHaveProperty("spawnHeadlessInputBatch");
   expect(value).not.toHaveProperty("spawnRecordedEvent");
@@ -148,6 +154,163 @@ describe("runCli", () => {
         tool: {
           tool: "codex-cli",
           tier: "tier1"
+        }
+      }
+    });
+    expect(stderr.output).toBe("");
+  });
+
+  it("should return compat probe for codex-cli as json without leaking probe internals", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["compat", "probe", "codex-cli", "--json"], {
+      stdout,
+      stderr,
+      compatProbeImpl: async () => ({
+        probe: {
+          runtime: "codex-cli",
+          supportTier: "tier1",
+          guidanceFile: "AGENTS.md",
+          projectConfig: ".codex/config.toml",
+          note: "Concrete runtime.",
+          capabilities: {
+            machineReadableMode: "strong",
+            resume: "unsupported",
+            mcp: "unsupported",
+            sessionLifecycle: "unsupported",
+            eventStreamParsing: "partial"
+          },
+          adapterStatus: "implemented",
+          probeStatus: "supported",
+          diagnosis: {
+            code: "exec_json_supported",
+            summary:
+              "A local codex executable with `exec --json` support was confirmed."
+          }
+        }
+      })
+    });
+
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: true,
+      command: "compat.probe",
+      data: {
+        probe: {
+          runtime: "codex-cli",
+          adapterStatus: "implemented",
+          probeStatus: "supported",
+          diagnosis: {
+            code: "exec_json_supported"
+          }
+        }
+      }
+    });
+    const payload = JSON.parse(stdout.output) as {
+      data: { probe: Record<string, unknown> };
+    };
+    assertNoInternalRuntimeMetadata(payload.data as Record<string, unknown>);
+    assertNoInternalRuntimeMetadata(payload.data.probe);
+    assertNoInternalRuntimeMetadata(
+      payload.data.probe.diagnosis as Record<string, unknown>
+    );
+    expect(stderr.output).toBe("");
+  });
+
+  it("should return compat probe for descriptor-only runtimes as not_probed", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["compat", "probe", "claude-code", "--json"], {
+      stdout,
+      stderr,
+      compatProbeImpl: async () => ({
+        probe: {
+          runtime: "claude-code",
+          supportTier: "tier1",
+          guidanceFile: "CLAUDE.md",
+          projectConfig: ".claude/settings.json",
+          note: "Descriptor-only runtime.",
+          capabilities: {
+            machineReadableMode: "unsupported",
+            resume: "unsupported",
+            mcp: "unsupported",
+            sessionLifecycle: "unsupported",
+            eventStreamParsing: "unsupported"
+          },
+          adapterStatus: "descriptor_only",
+          probeStatus: "not_probed",
+          diagnosis: {
+            code: "descriptor_only",
+            summary:
+              "This runtime remains descriptor-only in the current phase and is not runtime-probed."
+          }
+        }
+      })
+    });
+
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: true,
+      command: "compat.probe",
+      data: {
+        probe: {
+          runtime: "claude-code",
+          adapterStatus: "descriptor_only",
+          probeStatus: "not_probed",
+          diagnosis: {
+            code: "descriptor_only"
+          }
+        }
+      }
+    });
+    expect(stderr.output).toBe("");
+  });
+
+  it("should keep probe errors bounded to a success envelope with public error status", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["compat", "probe", "codex-cli", "--json"], {
+      stdout,
+      stderr,
+      compatProbeImpl: async () => ({
+        probe: {
+          runtime: "codex-cli",
+          supportTier: "tier1",
+          guidanceFile: "AGENTS.md",
+          projectConfig: ".codex/config.toml",
+          note: "Concrete runtime.",
+          capabilities: {
+            machineReadableMode: "strong",
+            resume: "unsupported",
+            mcp: "unsupported",
+            sessionLifecycle: "unsupported",
+            eventStreamParsing: "partial"
+          },
+          adapterStatus: "implemented",
+          probeStatus: "error",
+          diagnosis: {
+            code: "probe_error",
+            summary:
+              "The local codex-cli compatibility probe did not complete successfully."
+          }
+        }
+      })
+    });
+
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: true,
+      command: "compat.probe",
+      data: {
+        probe: {
+          runtime: "codex-cli",
+          probeStatus: "error",
+          diagnosis: {
+            code: "probe_error"
+          }
         }
       }
     });
@@ -241,6 +404,26 @@ describe("runCli", () => {
     expect(JSON.parse(stdout.output)).toMatchObject({
       ok: false,
       command: "compat.show",
+      error: {
+        code: "NOT_FOUND"
+      }
+    });
+    expect(stderr.output).toBe("");
+  });
+
+  it("should return a structured error for unknown compatibility probe targets", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["compat", "probe", "missing-tool", "--json"], {
+      stdout,
+      stderr
+    });
+
+    expect(exitCode).toBe(1);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: false,
+      command: "compat.probe",
       error: {
         code: "NOT_FOUND"
       }

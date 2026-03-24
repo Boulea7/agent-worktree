@@ -20,6 +20,7 @@ A later Phase 3 sub-slice now extends only `codex-cli` into a bounded internal e
 The currently implemented boundary is expected to cover:
 
 - a public read-only `doctor` slice for compatibility diagnostics
+- a public read-only `compat probe <tool>` slice for bounded per-runtime probing
 - adapter descriptors derived from the shared capability vocabulary
 - capability-first runtime resolution
 - machine-checkable command rendering contracts
@@ -32,6 +33,7 @@ The currently implemented boundary is expected to cover:
 
 Within that boundary, executable probing remains internal to the `codex-cli` execution helper.
 It may resolve a different executable than shell `command -v codex` when `PATH` contains same-name shadow binaries, but that behavior is not part of the public adapter surface and must not be generalized into a runtime-wide command-resolution framework.
+The public `compat probe codex-cli` surface may consume that internal policy only to emit a bounded public result such as `supported`, `unsupported`, or `error` plus a stable diagnosis code; it still must not expose executable paths or probing internals.
 The bounded parser also remains intentionally narrow: obvious non-JSON prelude lines, including bracket-prefixed log noise, may normalize to `unknown`, while malformed JSON-looking records still fail loudly.
 The same boundary now allows a thin internal observation layer on top of canonical events, but that observation is still diagnostic execution metadata rather than a public session or persistence protocol.
 The merged baseline also contains a deeper internal helper chain for runtime-state, runtime-context, spawn, wait, and close composition, but those helpers remain internal-only and are not a public lifecycle promise.
@@ -40,6 +42,7 @@ The first concrete reference path is intentionally narrow:
 
 - `codex-cli` has the only concrete adapter implementation, and that implementation remains limited to detection, command rendering, bounded internal execution, parsing, degradation, and optional smoke scaffolding
 - the public `doctor` command may report `codex-cli` as implemented and other runtimes as descriptor-only, but it MUST NOT imply that descriptor-only runtimes can execute inside `agent-worktree` today
+- the public `compat probe` command may report a bounded per-runtime compatibility result, but it MUST NOT expose execution/session internals or imply lifecycle support
 - any execution observation summaries remain internal to that bounded path and are not treated as a public compatibility promise
 - other runtimes remain descriptor-level compatibility targets until a later execution-backed phase
 
