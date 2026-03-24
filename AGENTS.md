@@ -36,6 +36,13 @@ The current thin Phase 4 public compatibility slice now includes:
 
 That public compatibility baseline now satisfies the current Phase 4 exit criteria: `codex-cli` has a bounded public end-to-end compatibility proof through `compat smoke`, while the other Tier 1 runtimes retain explicit descriptor-only support boundaries through `doctor` and `compat probe`. That remains a compatibility promise only; it does not imply general public execution or lifecycle support.
 
+The current thin Phase 5 internal verification slice now includes:
+
+- a pure internal verification aggregation helper derived from the existing loose `manifest.verification` payload
+- a pure internal deterministic tie-break helper layered on top of that derived verification summary for future selection work only
+
+That Phase 5 foundation remains internal-only. It does not introduce a public verification CLI, a public ranking surface, a verification runner, manifest-backed derived verification state, or any wider lifecycle promise.
+
 The current thin Phase 3 foundation also includes:
 
 - static adapter descriptors derived from the shared compatibility vocabulary
