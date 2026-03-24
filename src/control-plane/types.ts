@@ -723,3 +723,21 @@ export interface ExecutionSessionSpawnHeadlessCloseCandidateBatch {
   headlessContextBatch: ExecutionSessionSpawnHeadlessContextBatch;
   results: ExecutionSessionSpawnHeadlessCloseCandidate[];
 }
+
+export interface ExecutionSessionSpawnHeadlessCloseTargetInput {
+  headlessCloseCandidate: ExecutionSessionSpawnHeadlessCloseCandidate;
+}
+
+export interface ExecutionSessionSpawnHeadlessCloseTarget {
+  headlessCloseCandidate: ExecutionSessionSpawnHeadlessCloseCandidate;
+  target?: ExecutionSessionCloseTarget;
+}
+
+export interface ExecutionSessionSpawnHeadlessCloseTargetBatchInput {
+  headlessCloseCandidateBatch: ExecutionSessionSpawnHeadlessCloseCandidateBatch;
+}
+
+export interface ExecutionSessionSpawnHeadlessCloseTargetBatch {
+  headlessCloseCandidateBatch: ExecutionSessionSpawnHeadlessCloseCandidateBatch;
+  results: ExecutionSessionSpawnHeadlessCloseTarget[];
+}
