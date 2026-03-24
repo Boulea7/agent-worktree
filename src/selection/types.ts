@@ -70,3 +70,18 @@ export interface AttemptPromotionAuditSummary {
   recommendedForPromotion: boolean;
   candidates: AttemptPromotionAuditCandidate[];
 }
+
+export interface AttemptPromotionReport {
+  reportBasis: "promotion_audit_summary";
+  taskId: string | undefined;
+  selectedAttemptId: string | undefined;
+  candidateCount: number;
+  comparableCandidateCount: number;
+  promotionReadyCandidateCount: number;
+  recommendedForPromotion: boolean;
+  candidates: AttemptPromotionAuditCandidate[];
+  selected: AttemptPromotionAuditCandidate | undefined;
+  promotionReadyCandidates: AttemptPromotionAuditCandidate[];
+  nonPromotionReadyCandidates: AttemptPromotionAuditCandidate[];
+  pendingCandidates: AttemptPromotionAuditCandidate[];
+}
