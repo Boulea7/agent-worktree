@@ -117,3 +117,23 @@ export interface AttemptPromotionExplanationSummary {
   selected: AttemptPromotionExplanationCandidate | undefined;
   candidates: AttemptPromotionExplanationCandidate[];
 }
+
+export type AttemptPromotionDecisionBlockingReason =
+  | "no_candidates"
+  | "required_checks_failed"
+  | "required_checks_pending"
+  | "verification_incomplete";
+
+export interface AttemptPromotionDecisionSummary {
+  decisionBasis: "promotion_explanation_summary";
+  taskId: string | undefined;
+  selectedAttemptId: string | undefined;
+  candidateCount: number;
+  comparableCandidateCount: number;
+  promotionReadyCandidateCount: number;
+  recommendedForPromotion: boolean;
+  selected: AttemptPromotionExplanationCandidate | undefined;
+  blockingReasons: AttemptPromotionDecisionBlockingReason[];
+  canPromote: boolean;
+  hasBlockingReasons: boolean;
+}
