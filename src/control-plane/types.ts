@@ -704,6 +704,24 @@ export interface ExecutionSessionSpawnHeadlessWaitCandidateBatch {
   results: ExecutionSessionSpawnHeadlessWaitCandidate[];
 }
 
+export interface ExecutionSessionSpawnHeadlessWaitTargetInput {
+  headlessWaitCandidate: ExecutionSessionSpawnHeadlessWaitCandidate;
+}
+
+export interface ExecutionSessionSpawnHeadlessWaitTarget {
+  headlessWaitCandidate: ExecutionSessionSpawnHeadlessWaitCandidate;
+  target?: ExecutionSessionWaitTarget;
+}
+
+export interface ExecutionSessionSpawnHeadlessWaitTargetBatchInput {
+  headlessWaitCandidateBatch: ExecutionSessionSpawnHeadlessWaitCandidateBatch;
+}
+
+export interface ExecutionSessionSpawnHeadlessWaitTargetBatch {
+  headlessWaitCandidateBatch: ExecutionSessionSpawnHeadlessWaitCandidateBatch;
+  results: ExecutionSessionSpawnHeadlessWaitTarget[];
+}
+
 export interface ExecutionSessionSpawnHeadlessCloseCandidateInput {
   headlessContext: ExecutionSessionSpawnHeadlessContext;
   resolveSessionLifecycleCapability?: SessionLifecycleCapabilityResolver;
