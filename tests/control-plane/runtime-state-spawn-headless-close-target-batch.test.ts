@@ -193,9 +193,13 @@ function buildHeadlessViewBatch(
   const headlessRecords = candidates.map((candidate) =>
     createHeadlessRecord({
       attemptId: candidate.attemptId,
-      parentAttemptId: candidate.parentAttemptId,
-      sessionId: candidate.sessionId,
-      sourceKind: candidate.sourceKind
+      sourceKind: candidate.sourceKind,
+      ...(candidate.parentAttemptId === undefined
+        ? {}
+        : { parentAttemptId: candidate.parentAttemptId }),
+      ...(candidate.sessionId === undefined
+        ? {}
+        : { sessionId: candidate.sessionId })
     })
   );
 
@@ -219,9 +223,13 @@ function createHeadlessCloseCandidate(overrides: {
 }) {
   const headlessContext = createHeadlessContext({
     attemptId: overrides.attemptId,
-    parentAttemptId: overrides.parentAttemptId,
-    sessionId: overrides.sessionId,
-    sourceKind: overrides.sourceKind
+    sourceKind: overrides.sourceKind,
+    ...(overrides.parentAttemptId === undefined
+      ? {}
+      : { parentAttemptId: overrides.parentAttemptId }),
+    ...(overrides.sessionId === undefined
+      ? {}
+      : { sessionId: overrides.sessionId })
   });
 
   return deriveExecutionSessionSpawnHeadlessCloseCandidate({
@@ -250,9 +258,11 @@ function createHeadlessContext(overrides: {
   });
   const headlessRecord = createHeadlessRecord({
     attemptId: overrides.attemptId,
+    sourceKind: overrides.sourceKind,
     parentAttemptId,
-    sessionId: overrides.sessionId,
-    sourceKind: overrides.sourceKind
+    ...(overrides.sessionId === undefined
+      ? {}
+      : { sessionId: overrides.sessionId })
   });
   const headlessView = {
     headlessRecord,
