@@ -55,6 +55,7 @@ The current thin Phase 5 internal verification and selection slice now includes:
 - a pure internal handoff consume helper driven by an explicitly injected invoker that consumes existing handoff-consumer objects without widening into public promotion, handoff execution, polling, scheduling, or persistence surfaces
 - a pure internal handoff consume-batch helper driven by that same injected invoker that consumes ordered existing handoff-consumer objects without widening into public promotion, handoff execution, aggregation policy, scheduling, or persistence surfaces
 - a pure internal handoff apply helper driven by that same injected invoker that composes existing handoff-consumer derivation plus handoff-consume results from existing handoff requests without widening into public promotion, handoff execution, apply policy, scheduling, or persistence surfaces
+- a pure internal handoff apply-batch helper driven by that same injected invoker that composes ordered handoff-apply results from existing handoff requests without widening into public promotion, handoff execution, aggregation policy, scheduling, or persistence surfaces
 - a pure internal deterministic tie-break helper layered on top of that derived verification summary for future selection work only
 - a pure internal selection helper layer that derives stable per-attempt candidates and best-first multi-attempt selection results directly from `AttemptManifest`
 - a verification-summary-only selection policy that remains deterministic, rejects mixed-task selection loudly, and does not widen into public ranking, promotion, or merge surfaces
@@ -135,7 +136,8 @@ Current local docs and handoff focus:
 - keep the new handoff-consume layer constrained to existing handoff-consumer inputs only, with injected-boundary invocation semantics and no new promotion, handoff scheduling, or persistence policy
 - keep the new handoff-consume-batch layer constrained to existing handoff-consumer inputs only, with ordered fail-fast batch invocation semantics and no new promotion, handoff aggregation policy, or persistence policy
 - keep the new handoff-apply layer constrained to existing handoff-request inputs only, with consumer-plus-consume composition semantics and no new promotion, handoff apply policy, queueing, review, merge, or persistence policy
-- keep future follow-up slices focused on higher internal promotion/handoff apply helpers above handoff-apply outputs rather than widening public verify/select/promote/merge or lifecycle surfaces
+- keep the new handoff-apply-batch layer constrained to existing handoff-request inputs only, with ordered fail-fast apply composition semantics and no new promotion, handoff aggregation policy, queueing, review, merge, or persistence policy
+- keep future follow-up slices focused on higher internal promotion/handoff apply helpers above handoff-apply-batch outputs rather than widening public verify/select/promote/merge or lifecycle surfaces
 
 Cleanup is expected to keep manifests as audit records, target a single `attemptId`, and fail loudly on invalid manifests or unsafe path conditions.
 

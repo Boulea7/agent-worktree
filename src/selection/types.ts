@@ -216,3 +216,13 @@ export interface AttemptHandoffApply {
   consumer: AttemptHandoffConsumer;
   consume: AttemptHandoffConsume;
 }
+
+export interface AttemptHandoffApplyBatchInput {
+  requests: readonly AttemptHandoffRequest[];
+  invokeHandoff: AttemptHandoffInvoker;
+  resolveHandoffCapability?: AttemptHandoffCapabilityResolver;
+}
+
+export interface AttemptHandoffApplyBatch {
+  results: AttemptHandoffApply[];
+}
