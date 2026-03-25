@@ -50,6 +50,9 @@ export {
   deriveAttemptHandoffExplanationSummary
 } from "./handoff-explanation.js";
 export {
+  deriveAttemptHandoffDecisionSummary
+} from "./handoff-decision.js";
+export {
   deriveAttemptPromotionReport
 } from "./promotion-report.js";
 export {
@@ -84,6 +87,8 @@ export type {
   AttemptHandoffExplanationCode,
   AttemptHandoffExplanationEntry,
   AttemptHandoffExplanationSummary,
+  AttemptHandoffDecisionBlockingReason,
+  AttemptHandoffDecisionSummary,
   AttemptHandoffReportReady,
   AttemptHandoffReportReadyEntry,
   AttemptHandoffConsume,

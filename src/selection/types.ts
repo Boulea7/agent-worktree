@@ -299,3 +299,17 @@ export interface AttemptHandoffExplanationSummary {
   invokedResults: AttemptHandoffExplanationEntry[];
   blockedResults: AttemptHandoffExplanationEntry[];
 }
+
+export type AttemptHandoffDecisionBlockingReason =
+  | "no_results"
+  | "handoff_unsupported";
+
+export interface AttemptHandoffDecisionSummary {
+  decisionBasis: "handoff_explanation_summary";
+  resultCount: number;
+  invokedResultCount: number;
+  blockedResultCount: number;
+  blockingReasons: AttemptHandoffDecisionBlockingReason[];
+  canFinalizeHandoff: boolean;
+  hasBlockingReasons: boolean;
+}
