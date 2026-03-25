@@ -5,8 +5,8 @@ import type { AttemptManifest } from "../../src/manifest/types.js";
 import {
   deriveAttemptSelectionCandidate,
   deriveAttemptSelectionResult
-} from "../../src/selection/index.js";
-import { deriveAttemptVerificationSummary } from "../../src/verification/index.js";
+} from "../../src/selection/internal.js";
+import { deriveAttemptVerificationSummary } from "../../src/verification/internal.js";
 
 describe("selection helpers", () => {
   it("should derive a selection candidate directly from manifest metadata and verification summary", () => {

@@ -6,13 +6,13 @@ import {
   deriveAttemptVerificationArtifactSummary,
   deriveAttemptVerificationPayload,
   deriveAttemptVerificationSummary
-} from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
 import type {
   AttemptVerificationCheckStatus,
   AttemptVerificationExecutedCheck,
   AttemptVerificationExecutionResult,
   AttemptVerificationSummary
-} from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
 
 describe("verification artifact summary helpers", () => {
   it("should derive a stable artifact summary when all required checks pass", () => {

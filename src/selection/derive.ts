@@ -3,7 +3,7 @@ import type { AttemptManifest } from "../manifest/types.js";
 import {
   compareAttemptVerificationCandidates,
   deriveAttemptVerificationSummary
-} from "../verification/index.js";
+} from "../verification/internal.js";
 import type {
   AttemptSelectionCandidate,
   AttemptSelectionResult

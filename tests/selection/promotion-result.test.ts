@@ -8,23 +8,23 @@ import type {
 import {
   deriveAttemptPromotionCandidate,
   deriveAttemptPromotionResult
-} from "../../src/selection/index.js";
+} from "../../src/selection/internal.js";
 import {
   deriveAttemptVerificationArtifactSummary,
   deriveAttemptVerificationSummary
-} from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
 import type {
   AttemptVerificationArtifactSummary,
   AttemptVerificationCheckStatus,
   AttemptVerificationExecutedCheck,
   AttemptVerificationSummary
-} from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
 import type {
   AttemptPromotionCandidate
-} from "../../src/selection/index.js";
+} from "../../src/selection/internal.js";
 import type {
   AttemptVerificationExecutionResult
-} from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
 
 describe("selection promotion-result helpers", () => {
   it("should return a stable empty promotion result for an empty candidate list", () => {

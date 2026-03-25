@@ -17,17 +17,17 @@ import {
   deriveAttemptPromotionTarget,
   type AttemptHandoffTarget,
   type AttemptPromotionCandidate
-} from "../../src/selection/index.js";
+} from "../../src/selection/internal.js";
 import {
   deriveAttemptVerificationArtifactSummary,
   deriveAttemptVerificationSummary
-} from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
 import type {
   AttemptVerificationArtifactSummary,
   AttemptVerificationCheckStatus,
   AttemptVerificationExecutedCheck,
   AttemptVerificationExecutionResult
-} from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
 
 describe("selection handoff-target-apply helpers", () => {
   it("should return undefined when the supplied handoff target is undefined", async () => {

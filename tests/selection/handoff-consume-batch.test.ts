@@ -4,7 +4,7 @@ import {
   consumeAttemptHandoffBatch,
   type AttemptHandoffConsumer,
   type AttemptHandoffRequest
-} from "../../src/selection/index.js";
+} from "../../src/selection/internal.js";
 
 describe("selection handoff-consume-batch helpers", () => {
   it("should return an empty batch result for an empty consumer list", async () => {

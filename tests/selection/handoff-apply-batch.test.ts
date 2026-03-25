@@ -4,7 +4,7 @@ import { ValidationError } from "../../src/core/errors.js";
 import {
   applyAttemptHandoffBatch,
   type AttemptHandoffRequest
-} from "../../src/selection/index.js";
+} from "../../src/selection/internal.js";
 
 describe("selection handoff-apply-batch helpers", () => {
   it("should return an empty batch result for an empty request list", async () => {

@@ -4,11 +4,11 @@ import { ValidationError } from "../../src/core/errors.js";
 import {
   deriveAttemptVerificationPayload,
   deriveAttemptVerificationSummary
-} from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
 import type {
   AttemptVerificationCheckInput,
   AttemptVerificationPayloadInput
-} from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
 
 describe("verification payload ingestion helpers", () => {
   it("should derive a stable pending payload for empty input", () => {

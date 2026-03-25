@@ -7,7 +7,7 @@ import {
   compareAttemptVerificationCandidates,
   type AttemptVerificationCounts,
   type AttemptVerificationSummary
-} from "../verification/index.js";
+} from "../verification/internal.js";
 import type {
   AttemptPromotionCandidate,
   AttemptPromotionResult

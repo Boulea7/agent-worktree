@@ -3,13 +3,13 @@ import { describe, expect, it, vi } from "vitest";
 import { RuntimeError, ValidationError } from "../../src/core/errors.js";
 import {
   executeAttemptVerification
-} from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
 import type { AttemptManifest } from "../../src/manifest/types.js";
-import { deriveAttemptSelectionResult } from "../../src/selection/index.js";
+import { deriveAttemptSelectionResult } from "../../src/selection/internal.js";
 import type {
   AttemptVerificationCommandCheck,
   AttemptVerificationExecutionInput
-} from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
 import type { SubprocessRunner } from "../../src/adapters/headless.js";
 
 describe("verification execution helpers", () => {

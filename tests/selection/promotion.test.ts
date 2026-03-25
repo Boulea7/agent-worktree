@@ -5,17 +5,17 @@ import type {
   AttemptManifest,
   AttemptVerification
 } from "../../src/manifest/types.js";
-import { deriveAttemptPromotionCandidate } from "../../src/selection/index.js";
+import { deriveAttemptPromotionCandidate } from "../../src/selection/internal.js";
 import {
   deriveAttemptVerificationArtifactSummary,
   deriveAttemptVerificationSummary
-} from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
 import type {
   AttemptVerificationArtifactSummary,
   AttemptVerificationCheckStatus,
   AttemptVerificationExecutedCheck,
   AttemptVerificationExecutionResult
-} from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
 
 describe("selection promotion helpers", () => {
   it("should derive a stable promotion candidate from manifest metadata and artifact summary", () => {

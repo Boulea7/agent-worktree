@@ -9,7 +9,7 @@ import {
   type AttemptVerificationArtifactSummary,
   type AttemptVerificationCounts,
   type AttemptVerificationSummary
-} from "../verification/index.js";
+} from "../verification/internal.js";
 import type { AttemptPromotionCandidate } from "./types.js";
 
 const ATTEMPT_PROMOTION_BASIS = "verification_artifact_summary" as const;

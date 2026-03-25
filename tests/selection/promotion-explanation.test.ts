@@ -11,24 +11,24 @@ import {
   deriveAttemptPromotionExplanationSummary,
   deriveAttemptPromotionReport,
   deriveAttemptPromotionResult
-} from "../../src/selection/index.js";
+} from "../../src/selection/internal.js";
 import type {
   AttemptPromotionAuditSummary,
   AttemptPromotionCandidate,
   AttemptPromotionExplanationCandidate,
   AttemptPromotionReport
-} from "../../src/selection/index.js";
+} from "../../src/selection/internal.js";
 import {
   deriveAttemptVerificationArtifactSummary,
   deriveAttemptVerificationSummary
-} from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
 import type {
   AttemptVerificationArtifactSummary,
   AttemptVerificationCheckStatus,
   AttemptVerificationExecutedCheck,
   AttemptVerificationExecutionResult,
   AttemptVerificationSummary
-} from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
 
 describe("selection promotion-explanation helpers", () => {
   it("should return a stable empty explanation summary for an empty promotion report", () => {

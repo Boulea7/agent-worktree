@@ -8,11 +8,11 @@ import {
 import type {
   AttemptVerificationCounts,
   AttemptVerificationSummary
-} from "../verification/index.js";
+} from "../verification/internal.js";
 import {
   attemptVerificationOverallOutcomes,
   attemptVerificationRequiredOutcomes
-} from "../verification/index.js";
+} from "../verification/internal.js";
 import type {
   AttemptPromotionAuditCandidate,
   AttemptPromotionAuditSummary,

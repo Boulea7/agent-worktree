@@ -63,6 +63,7 @@ The current thin Phase 5 internal verification and selection slice now includes:
 - a pure internal handoff report-ready bridge layer that derives stable grouped handoff-ready projections from existing promotion target-apply-batch results without widening into public handoff, report, explanation, decision, persistence, queue, or lifecycle surfaces
 - a pure internal handoff explanation-ready consumer layer that derives stable code-only handoff explanation summaries from existing handoff report-ready results without widening into public handoff, report, explanation text, decision, persistence, queue, or lifecycle surfaces
 - a pure internal handoff decision-ready consumer layer that derives stable blocker-oriented handoff-finalization conclusions from existing handoff explanation summaries without widening into public handoff, report, explanation, decision payloads, persistence, queue, or lifecycle surfaces
+- a narrowed internal-only import boundary for Phase 5 verification and selection helpers, where repo-internal tests and helper consumers should prefer `src/verification/internal.ts`, `src/selection/internal.ts`, or concrete module paths instead of treating the default barrels as the canonical helper surface
 - a pure internal deterministic tie-break helper layered on top of that derived verification summary for future selection work only
 - a pure internal selection helper layer that derives stable per-attempt candidates and best-first multi-attempt selection results directly from `AttemptManifest`
 - a verification-summary-only selection policy that remains deterministic, rejects mixed-task selection loudly, and does not widen into public ranking, promotion, or merge surfaces
@@ -74,6 +75,8 @@ That promotion-target-apply-batch helper remains composition-only as well. It do
 That handoff report-ready bridge remains projection-only as well. It does not introduce public `attempt report`, durable report state, queue metadata, or any wider handoff lifecycle semantics.
 That handoff explanation-ready consumer remains code-only as well. It does not introduce freeform explanation text, a public explanation surface, durable explanation state, or any wider handoff lifecycle semantics.
 That handoff decision-ready consumer remains blocker-only as well. It does not introduce public decision payloads, merge or review policy, rollback semantics, durable decision state, or any wider handoff lifecycle semantics.
+Required verification checks that end in `skipped` now remain blocking for Phase 5 selection and promotion semantics; they must not be treated as satisfied gates.
+The default `src/selection/index.ts` and `src/verification/index.ts` barrels should stay narrower than the full internal helper chain; repo-internal code and tests should use the dedicated internal barrels or concrete module paths instead of re-expanding those default entry points into a de facto public helper surface.
 
 The current thin Phase 3 foundation also includes:
 

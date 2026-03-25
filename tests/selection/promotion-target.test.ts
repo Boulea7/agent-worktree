@@ -13,22 +13,22 @@ import {
   deriveAttemptPromotionReport,
   deriveAttemptPromotionResult,
   deriveAttemptPromotionTarget
-} from "../../src/selection/index.js";
+} from "../../src/selection/internal.js";
 import type {
   AttemptPromotionCandidate,
   AttemptPromotionDecisionSummary
-} from "../../src/selection/index.js";
+} from "../../src/selection/internal.js";
 import {
   deriveAttemptVerificationArtifactSummary,
   deriveAttemptVerificationSummary
-} from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
 import type {
   AttemptVerificationArtifactSummary,
   AttemptVerificationCheckStatus,
   AttemptVerificationExecutedCheck,
   AttemptVerificationExecutionResult,
   AttemptVerificationSummary
-} from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
 
 describe("selection promotion-target helpers", () => {
   it("should return undefined for a stable no-candidates decision summary", () => {

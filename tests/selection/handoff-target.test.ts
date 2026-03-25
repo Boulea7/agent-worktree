@@ -4,7 +4,7 @@ import { ValidationError } from "../../src/core/errors.js";
 import {
   deriveAttemptHandoffTarget,
   type AttemptPromotionTarget
-} from "../../src/selection/index.js";
+} from "../../src/selection/internal.js";
 
 describe("selection handoff-target helpers", () => {
   it("should return undefined when the supplied promotion target is undefined", () => {

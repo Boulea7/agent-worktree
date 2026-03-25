@@ -4,8 +4,8 @@ import type {
   AttemptVerificationCandidate,
   AttemptVerificationCounts,
   AttemptVerificationSummary
-} from "../../src/verification/index.js";
-import { compareAttemptVerificationCandidates } from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
+import { compareAttemptVerificationCandidates } from "../../src/verification/internal.js";
 
 describe("verification selection helpers", () => {
   it("should prefer a selection-ready candidate over a non-ready candidate", () => {

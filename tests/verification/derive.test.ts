@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { AttemptVerification } from "../../src/manifest/types.js";
-import { deriveAttemptVerificationSummary } from "../../src/verification/index.js";
+import { deriveAttemptVerificationSummary } from "../../src/verification/internal.js";
 
 describe("verification aggregation helpers", () => {
   it("should derive a stable pending summary for a fresh attempt payload", () => {

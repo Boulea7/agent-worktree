@@ -19,17 +19,17 @@ import {
   type AttemptHandoffConsumer,
   type AttemptHandoffRequest,
   type AttemptPromotionCandidate
-} from "../../src/selection/index.js";
+} from "../../src/selection/internal.js";
 import {
   deriveAttemptVerificationArtifactSummary,
   deriveAttemptVerificationSummary
-} from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
 import type {
   AttemptVerificationArtifactSummary,
   AttemptVerificationCheckStatus,
   AttemptVerificationExecutedCheck,
   AttemptVerificationExecutionResult
-} from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
 
 describe("selection handoff-consume helpers", () => {
   it("should invoke handoff exactly once for a supported handoff consumer", async () => {

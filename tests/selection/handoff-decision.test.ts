@@ -5,23 +5,23 @@ import type {
   AttemptManifest,
   AttemptVerification
 } from "../../src/manifest/types.js";
-import * as selection from "../../src/selection/index.js";
+import * as selection from "../../src/selection/internal.js";
 import type {
   AttemptHandoffConsumerReadiness,
   AttemptPromotionCandidate,
   AttemptPromotionTarget,
   AttemptPromotionTargetApply
-} from "../../src/selection/index.js";
+} from "../../src/selection/internal.js";
 import {
   deriveAttemptVerificationArtifactSummary,
   deriveAttemptVerificationSummary
-} from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
 import type {
   AttemptVerificationArtifactSummary,
   AttemptVerificationCheckStatus,
   AttemptVerificationExecutedCheck,
   AttemptVerificationExecutionResult
-} from "../../src/verification/index.js";
+} from "../../src/verification/internal.js";
 
 const deriveAttemptHandoffDecisionSummary = (
   selection as Partial<{
