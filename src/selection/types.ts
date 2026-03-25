@@ -268,3 +268,15 @@ export interface AttemptPromotionTargetApplyBatchInput {
 export interface AttemptPromotionTargetApplyBatch {
   results: AttemptPromotionTargetApply[];
 }
+
+export interface AttemptHandoffReportReadyEntry {
+  handoffTarget: AttemptHandoffTarget;
+  targetApply: AttemptHandoffTargetApply;
+}
+
+export interface AttemptHandoffReportReady {
+  reportBasis: "promotion_target_apply_batch";
+  results: AttemptHandoffReportReadyEntry[];
+  invokedResults: AttemptHandoffReportReadyEntry[];
+  blockedResults: AttemptHandoffReportReadyEntry[];
+}
