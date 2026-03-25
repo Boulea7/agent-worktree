@@ -59,6 +59,7 @@ The current thin Phase 5 internal verification and selection slice now includes:
 - a pure internal handoff target-apply helper driven by that same injected invoker that composes minimal handoff-request derivation plus handoff-apply results from existing handoff targets without widening into public promotion, handoff execution, apply policy, scheduling, or persistence surfaces
 - a pure internal handoff target-apply-batch helper driven by that same injected invoker that composes ordered handoff target-apply results from existing handoff targets without widening into public promotion, handoff execution, aggregation policy, scheduling, or persistence surfaces
 - a pure internal promotion target-apply helper driven by that same injected invoker that composes minimal handoff-target derivation plus handoff target-apply results from existing promotion targets without widening into public promotion, handoff execution, apply policy, scheduling, or persistence surfaces
+- a pure internal promotion target-apply-batch helper driven by that same injected invoker that composes ordered promotion target-apply results from existing promotion targets without widening into public promotion, handoff execution, aggregation policy, scheduling, or persistence surfaces
 - a pure internal deterministic tie-break helper layered on top of that derived verification summary for future selection work only
 - a pure internal selection helper layer that derives stable per-attempt candidates and best-first multi-attempt selection results directly from `AttemptManifest`
 - a verification-summary-only selection policy that remains deterministic, rejects mixed-task selection loudly, and does not widen into public ranking, promotion, or merge surfaces
@@ -66,6 +67,7 @@ The current thin Phase 5 internal verification and selection slice now includes:
 That Phase 5 foundation remains internal-only. It does not introduce a public verification CLI, a public ranking surface, a public selection CLI, a public artifact-summary surface, a public promotion, handoff, report, explanation, decision, target, or consumer surface, manifest-backed derived verification, selection, artifact-summary, promotion-candidate, promotion-result, promotion-audit-summary, promotion-report, promotion-explanation, promotion-decision, promotion-target, handoff-target, or handoff-request state, or any wider lifecycle promise.
 Those internal handoff apply helpers remain composition-only. They do not introduce public handoff apply, handoff apply-batch, handoff target-apply, handoff target-apply-batch, queue, or durable handoff state semantics.
 That promotion-target-apply helper remains composition-only as well. It does not introduce public promotion apply, public handoff apply, queue, review, merge, or durable promotion or handoff state semantics.
+That promotion-target-apply-batch helper remains composition-only as well. It does not introduce public promotion apply-batch, public handoff apply-batch, queue, review, merge, or durable promotion or handoff state semantics.
 
 The current thin Phase 3 foundation also includes:
 
@@ -144,7 +146,9 @@ Current local docs and handoff focus:
 - keep the new handoff-apply-batch layer constrained to existing handoff-request inputs only, with ordered fail-fast apply composition semantics and no new promotion, handoff aggregation policy, queueing, review, merge, or persistence policy
 - keep the new handoff-target-apply layer constrained to existing handoff-target inputs only, with request-plus-apply composition semantics and no new promotion metadata, handoff aggregation policy, queueing, review, merge, or persistence policy
 - keep the new handoff-target-apply-batch layer constrained to existing handoff-target inputs only, with ordered fail-fast target-plus-apply composition semantics and no new promotion metadata, handoff aggregation policy, queueing, review, merge, or persistence policy
-- keep future follow-up slices focused on higher internal promotion/handoff apply helpers above promotion-target-apply outputs rather than widening public verify/select/promote/merge or lifecycle surfaces
+- keep the new promotion-target-apply layer constrained to existing promotion-target inputs only, with handoff-target-plus-target-apply composition semantics and no new promotion decision/report metadata, aggregation policy, queueing, review, merge, or persistence policy
+- keep the new promotion-target-apply-batch layer constrained to existing promotion-target inputs only, with ordered fail-fast promotion-target-apply composition semantics and no new promotion decision/report metadata, partial summaries, queueing, review, merge, or persistence policy
+- keep future follow-up slices focused on higher internal promotion/handoff apply helpers above promotion-target-apply-batch outputs rather than widening public verify/select/promote/merge or lifecycle surfaces
 
 Cleanup is expected to keep manifests as audit records, target a single `attemptId`, and fail loudly on invalid manifests or unsafe path conditions.
 

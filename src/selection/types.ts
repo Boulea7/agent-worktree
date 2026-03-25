@@ -258,3 +258,13 @@ export interface AttemptPromotionTargetApply {
   handoffTarget: AttemptHandoffTarget;
   targetApply: AttemptHandoffTargetApply;
 }
+
+export interface AttemptPromotionTargetApplyBatchInput {
+  targets: readonly AttemptPromotionTarget[];
+  invokeHandoff: AttemptHandoffInvoker;
+  resolveHandoffCapability?: AttemptHandoffCapabilityResolver;
+}
+
+export interface AttemptPromotionTargetApplyBatch {
+  results: AttemptPromotionTargetApply[];
+}
