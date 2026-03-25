@@ -131,6 +131,47 @@ describe("verification artifact summary helpers", () => {
     ).toEqual(["lint", "unit", "smoke"]);
   });
 
+  it("should treat a required skipped check as a blocking required check", () => {
+    const result = createExecutionResult({
+      checks: [
+        createExecutedCheck({
+          name: "lint",
+          required: true,
+          status: "skipped"
+        }),
+        createExecutedCheck({
+          name: "docs",
+          required: false,
+          status: "passed",
+          exitCode: 0
+        })
+      ]
+    });
+
+    expect(deriveAttemptVerificationArtifactSummary(result)).toEqual({
+      summaryBasis: "verification_execution",
+      summary: deriveAttemptVerificationSummary(result.verification),
+      checks: [
+        {
+          name: "lint",
+          required: true,
+          status: "skipped"
+        },
+        {
+          name: "docs",
+          required: false,
+          status: "passed"
+        }
+      ],
+      blockingRequiredCheckNames: ["lint"],
+      failedOrErrorCheckNames: [],
+      pendingCheckNames: [],
+      skippedCheckNames: ["lint"],
+      passedCheckNames: ["docs"],
+      recommendedForPromotion: false
+    });
+  });
+
   it("should collect passed pending and skipped check names without sorting or deduping", () => {
     const result = createExecutionResult({
       checks: [

@@ -240,6 +240,69 @@ describe("verification execution helpers", () => {
     ).rejects.toThrow("boom");
   });
 
+  it("should fail loudly when the runner returns undefined instead of a subprocess result", async () => {
+    const runner = vi.fn<SubprocessRunner>(async () => {
+      return undefined as unknown as Awaited<ReturnType<SubprocessRunner>>;
+    });
+
+    await expect(
+      executeAttemptVerification({
+        checks: [
+          {
+            name: "lint",
+            executable: "npm",
+            args: ["run", "lint"]
+          }
+        ],
+        runner
+      })
+    ).rejects.toThrow(ValidationError);
+  });
+
+  it("should fail loudly when the runner returns a malformed subprocess result", async () => {
+    const malformedResults = [
+      "invalid",
+      {
+        stdout: "",
+        stderr: ""
+      },
+      {
+        exitCode: "0",
+        stdout: "",
+        stderr: ""
+      },
+      {
+        exitCode: 0,
+        stdout: 1,
+        stderr: ""
+      },
+      {
+        exitCode: 0,
+        stdout: "",
+        stderr: null
+      }
+    ] as unknown[];
+
+    for (const malformedResult of malformedResults) {
+      const runner = vi.fn<SubprocessRunner>(async () => {
+        return malformedResult as Awaited<ReturnType<SubprocessRunner>>;
+      });
+
+      await expect(
+        executeAttemptVerification({
+          checks: [
+            {
+              name: "lint",
+              executable: "npm",
+              args: ["run", "lint"]
+            }
+          ],
+          runner
+        })
+      ).rejects.toThrow(ValidationError);
+    }
+  });
+
   it("should validate check definitions before invoking the runner", async () => {
     const runner = vi.fn<SubprocessRunner>(async () => ({
       exitCode: 0,

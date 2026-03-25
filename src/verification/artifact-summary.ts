@@ -42,7 +42,8 @@ export function deriveAttemptVerificationArtifactSummary(
         check.required &&
         (check.status === "failed" ||
           check.status === "error" ||
-          check.status === "pending")
+          check.status === "pending" ||
+          check.status === "skipped")
     ),
     failedOrErrorCheckNames: collectCheckNames(
       checks,

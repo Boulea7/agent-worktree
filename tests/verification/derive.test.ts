@@ -156,6 +156,44 @@ describe("verification aggregation helpers", () => {
     });
   });
 
+  it("should fail the required outcome when a required check is skipped", () => {
+    expect(
+      deriveAttemptVerificationSummary({
+        state: "pending",
+        checks: [
+          {
+            name: "lint",
+            status: "skipped",
+            required: true
+          },
+          {
+            name: "docs",
+            status: "passed"
+          }
+        ]
+      })
+    ).toEqual({
+      sourceState: "pending",
+      overallOutcome: "passed",
+      requiredOutcome: "failed",
+      counts: {
+        total: 2,
+        valid: 2,
+        invalid: 0,
+        required: 1,
+        optional: 1,
+        passed: 1,
+        failed: 0,
+        pending: 0,
+        skipped: 1,
+        error: 0
+      },
+      hasInvalidChecks: false,
+      hasComparablePayload: true,
+      isSelectionReady: false
+    });
+  });
+
   it("should keep required checks satisfied when only optional checks fail", () => {
     expect(
       deriveAttemptVerificationSummary({

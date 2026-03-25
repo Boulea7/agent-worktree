@@ -29,12 +29,13 @@ export async function executeAttemptVerification(
         ...(check.env === undefined ? {} : { env: check.env }),
         ...(check.timeoutMs === undefined ? {} : { timeoutMs: check.timeoutMs })
       });
+      const normalizedResult = normalizeSubprocessResult(result);
 
       executedChecks.push({
         name: check.name,
         required: check.required,
-        status: result.exitCode === 0 ? "passed" : "failed",
-        exitCode: result.exitCode
+        status: normalizedResult.exitCode === 0 ? "passed" : "failed",
+        exitCode: normalizedResult.exitCode
       });
     } catch (error) {
       if (error instanceof RuntimeError) {
@@ -172,6 +173,46 @@ function normalizeTimeoutMs(value: unknown): number {
   }
 
   return value as number;
+}
+
+function normalizeSubprocessResult(value: unknown): {
+  exitCode: number;
+  stdout: string;
+  stderr: string;
+} {
+  if (!isRecord(value)) {
+    throw new ValidationError(
+      "Verification runner must return a subprocess result object."
+    );
+  }
+
+  if (!Number.isInteger(value.exitCode)) {
+    throw new ValidationError(
+      "Verification runner must return an integer exitCode."
+    );
+  }
+
+  if (typeof value.stdout !== "string") {
+    throw new ValidationError(
+      "Verification runner must return stdout as a string."
+    );
+  }
+
+  if (typeof value.stderr !== "string") {
+    throw new ValidationError(
+      "Verification runner must return stderr as a string."
+    );
+  }
+
+  const exitCode = value.exitCode as number;
+  const stdout = value.stdout as string;
+  const stderr = value.stderr as string;
+
+  return {
+    exitCode,
+    stdout,
+    stderr
+  };
 }
 
 function normalizeBoolean(value: unknown, label: string): boolean {
