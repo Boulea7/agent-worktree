@@ -247,3 +247,14 @@ export interface AttemptHandoffTargetApplyBatchInput {
 export interface AttemptHandoffTargetApplyBatch {
   results: AttemptHandoffTargetApply[];
 }
+
+export interface AttemptPromotionTargetApplyInput {
+  target: AttemptPromotionTarget | undefined;
+  invokeHandoff: AttemptHandoffInvoker;
+  resolveHandoffCapability?: AttemptHandoffCapabilityResolver;
+}
+
+export interface AttemptPromotionTargetApply {
+  handoffTarget: AttemptHandoffTarget;
+  targetApply: AttemptHandoffTargetApply;
+}
