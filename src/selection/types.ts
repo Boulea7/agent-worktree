@@ -146,3 +146,12 @@ export interface AttemptPromotionTarget {
   status: AttemptStatus;
   sourceKind: AttemptSourceKind | undefined;
 }
+
+export interface AttemptHandoffTarget {
+  handoffBasis: "promotion_target";
+  taskId: string | undefined;
+  attemptId: string;
+  runtime: string;
+  status: AttemptStatus;
+  sourceKind: AttemptSourceKind | undefined;
+}
