@@ -120,7 +120,7 @@ describe("selection promotion-target helpers", () => {
     expect(deriveAttemptPromotionTarget(summary)).toBeUndefined();
   });
 
-  it("should preserve a lightly-validated comparableCandidateCount without recomputing it", () => {
+  it("should fail loudly when a promotable summary reports zero comparable candidates", () => {
     const summary = {
       ...createPromotionDecisionSummary([
         createPromotionCandidate({
@@ -134,14 +134,9 @@ describe("selection promotion-target helpers", () => {
       comparableCandidateCount: 0
     };
 
-    expect(deriveAttemptPromotionTarget(summary)).toEqual({
-      targetBasis: "promotion_decision_summary",
-      taskId: "task_shared",
-      attemptId: "att_ready",
-      runtime: "codex-cli",
-      status: "created",
-      sourceKind: undefined
-    });
+    expect(() => deriveAttemptPromotionTarget(summary)).toThrow(
+      "Attempt promotion target requires summary.comparableCandidateCount to be at least 1 when summary.canPromote is true."
+    );
   });
 
   it("should fail loudly when summary.decisionBasis is invalid", () => {
@@ -371,6 +366,17 @@ describe("selection promotion-target helpers", () => {
       })
     ]);
 
+    expect(() =>
+      deriveAttemptPromotionTarget({
+        ...summary,
+        selected: {
+          ...summary.selected!,
+          hasComparablePayload: "invalid"
+        }
+      } as unknown as AttemptPromotionDecisionSummary)
+    ).toThrow(
+      "Attempt promotion target requires summary.selected.hasComparablePayload to be a boolean."
+    );
     expect(() =>
       deriveAttemptPromotionTarget({
         ...summary,

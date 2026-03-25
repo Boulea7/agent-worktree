@@ -185,6 +185,18 @@ function validatePromotionDecisionSummary(
       );
     }
 
+    if (summary.selected.hasComparablePayload !== true) {
+      throw new ValidationError(
+        "Attempt promotion target requires summary.selected.hasComparablePayload to be true when summary.canPromote is true."
+      );
+    }
+
+    if (summary.comparableCandidateCount < 1) {
+      throw new ValidationError(
+        "Attempt promotion target requires summary.comparableCandidateCount to be at least 1 when summary.canPromote is true."
+      );
+    }
+
     if (summary.recommendedForPromotion !== true) {
       throw new ValidationError(
         "Attempt promotion target requires summary.recommendedForPromotion to be true when summary.canPromote is true."
@@ -275,6 +287,11 @@ function validateSelectedCandidate(
   validateBoolean(
     candidate.recommendedForPromotion,
     "summary.selected.recommendedForPromotion"
+  );
+
+  validateBoolean(
+    candidate.hasComparablePayload,
+    "summary.selected.hasComparablePayload"
   );
 
   if (!validExplanationCodes.has(candidate.explanationCode)) {

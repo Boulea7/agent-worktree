@@ -44,7 +44,7 @@ export function deriveAttemptPromotionDecisionSummary(
     taskId: summary.taskId,
     selectedAttemptId: summary.selectedAttemptId,
     candidateCount: summary.candidates.length,
-    comparableCandidateCount: summary.comparableCandidateCount,
+    comparableCandidateCount: countComparableCandidates(summary.candidates),
     promotionReadyCandidateCount: countPromotionReadyCandidates(summary.candidates),
     recommendedForPromotion:
       summary.candidates[0]?.recommendedForPromotion ?? false,
@@ -150,6 +150,14 @@ function validatePromotionExplanationSummary(
       "Attempt promotion decision summary requires summary.recommendedForPromotion to match the selected explanation candidate."
     );
   }
+
+  const comparableCandidateCount = countComparableCandidates(summary.candidates);
+
+  if (summary.comparableCandidateCount !== comparableCandidateCount) {
+    throw new ValidationError(
+      "Attempt promotion decision summary requires summary.comparableCandidateCount to match the count derived from summary.candidates."
+    );
+  }
 }
 
 function validateComparableCandidateCount(
@@ -198,6 +206,12 @@ function validateExplanationCandidate(
     );
   }
 
+  if (typeof candidate.hasComparablePayload !== "boolean") {
+    throw new ValidationError(
+      "Attempt promotion decision summary requires candidate.hasComparablePayload to be a boolean."
+    );
+  }
+
   validateCheckNameList(
     candidate.blockingRequiredCheckNames,
     "candidate.blockingRequiredCheckNames"
@@ -222,12 +236,21 @@ function deriveBlockingReasons(
   }
 
   const blockingReasons: AttemptPromotionDecisionBlockingReason[] = [];
+  const hasRequiredFailure = selected.blockingRequiredCheckNames.some((name) =>
+    selected.failedOrErrorCheckNames.includes(name)
+  );
+  const hasRequiredPending = selected.blockingRequiredCheckNames.some((name) =>
+    selected.pendingCheckNames.includes(name)
+  );
 
-  if (selected.failedOrErrorCheckNames.length > 0) {
+  if (
+    hasRequiredFailure ||
+    (selected.blockingRequiredCheckNames.length > 0 && !hasRequiredPending)
+  ) {
     blockingReasons.push("required_checks_failed");
   }
 
-  if (selected.pendingCheckNames.length > 0) {
+  if (hasRequiredPending) {
     blockingReasons.push("required_checks_pending");
   }
 
@@ -245,6 +268,12 @@ function countPromotionReadyCandidates(
     .length;
 }
 
+function countComparableCandidates(
+  candidates: readonly AttemptPromotionExplanationCandidate[]
+): number {
+  return candidates.filter((candidate) => candidate.hasComparablePayload).length;
+}
+
 function explanationCandidatesEqual(
   left: AttemptPromotionExplanationCandidate | undefined,
   right: AttemptPromotionExplanationCandidate | undefined
@@ -258,6 +287,7 @@ function explanationCandidatesEqual(
     left.runtime === right.runtime &&
     left.status === right.status &&
     left.sourceKind === right.sourceKind &&
+    left.hasComparablePayload === right.hasComparablePayload &&
     left.isSelected === right.isSelected &&
     left.recommendedForPromotion === right.recommendedForPromotion &&
     left.explanationCode === right.explanationCode &&
@@ -281,6 +311,7 @@ function cloneExplanationCandidate(
     runtime: candidate.runtime,
     status: candidate.status,
     sourceKind: candidate.sourceKind,
+    hasComparablePayload: candidate.hasComparablePayload,
     isSelected: candidate.isSelected,
     recommendedForPromotion: candidate.recommendedForPromotion,
     explanationCode: candidate.explanationCode,

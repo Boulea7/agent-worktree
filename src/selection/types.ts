@@ -98,6 +98,7 @@ export interface AttemptPromotionExplanationCandidate {
   runtime: string;
   status: AttemptStatus;
   sourceKind: AttemptSourceKind | undefined;
+  hasComparablePayload: boolean;
   isSelected: boolean;
   recommendedForPromotion: boolean;
   explanationCode: AttemptPromotionExplanationCode;

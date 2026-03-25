@@ -80,6 +80,7 @@ describe("selection promotion-explanation helpers", () => {
         runtime: "codex-cli",
         status: "running",
         sourceKind: "delegated",
+        hasComparablePayload: true,
         isSelected: true,
         recommendedForPromotion: true,
         explanationCode: "selected",
@@ -93,6 +94,7 @@ describe("selection promotion-explanation helpers", () => {
           runtime: "codex-cli",
           status: "running",
           sourceKind: "delegated",
+          hasComparablePayload: true,
           isSelected: true,
           recommendedForPromotion: true,
           explanationCode: "selected",
@@ -215,6 +217,7 @@ describe("selection promotion-explanation helpers", () => {
       runtime: "codex-cli",
       status: "created",
       sourceKind: undefined,
+      hasComparablePayload: true,
       isSelected: false,
       recommendedForPromotion: false,
       explanationCode: "required_checks_failed",
@@ -280,7 +283,7 @@ describe("selection promotion-explanation helpers", () => {
     expect(pendingCandidate?.pendingCheckNames).toEqual(["lint"]);
   });
 
-  it("should derive required_checks_failed when only optional checks failed", () => {
+  it("should derive verification_incomplete when only optional checks failed", () => {
     const report = createPromotionReport([
       createPromotionCandidate({
         attemptId: "att_selected",
@@ -309,11 +312,11 @@ describe("selection promotion-explanation helpers", () => {
     expect(explanation.candidates[1]?.blockingRequiredCheckNames).toEqual([]);
     expect(explanation.candidates[1]?.failedOrErrorCheckNames).toEqual(["docs"]);
     expect(explanation.candidates[1]?.explanationCode).toBe(
-      "required_checks_failed"
+      "verification_incomplete"
     );
   });
 
-  it("should derive required_checks_pending when only optional checks are pending", () => {
+  it("should derive verification_incomplete when only optional checks are pending", () => {
     const report = createPromotionReport([
       createPromotionCandidate({
         attemptId: "att_selected",
@@ -342,7 +345,7 @@ describe("selection promotion-explanation helpers", () => {
     expect(explanation.candidates[1]?.blockingRequiredCheckNames).toEqual([]);
     expect(explanation.candidates[1]?.pendingCheckNames).toEqual(["docs"]);
     expect(explanation.candidates[1]?.explanationCode).toBe(
-      "required_checks_pending"
+      "verification_incomplete"
     );
   });
 

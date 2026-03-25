@@ -100,6 +100,36 @@ describe("selection promotion helpers", () => {
     ).toBe(artifactSummary.recommendedForPromotion);
   });
 
+  it("should block promotion when a required check is skipped", () => {
+    const verification = createVerification({
+      state: "passed",
+      checks: [
+        {
+          name: "lint",
+          required: true,
+          status: "skipped"
+        }
+      ]
+    });
+    const manifest = createManifest({
+      attemptId: "att_required_skipped",
+      verification
+    });
+    const artifactSummary = createArtifactSummary(verification);
+
+    expect(deriveAttemptPromotionCandidate(manifest, artifactSummary)).toEqual({
+      promotionBasis: "verification_artifact_summary",
+      attemptId: "att_required_skipped",
+      taskId: "task_shared",
+      runtime: "codex-cli",
+      status: "created",
+      sourceKind: undefined,
+      summary: deriveAttemptVerificationSummary(manifest.verification),
+      artifactSummary,
+      recommendedForPromotion: false
+    });
+  });
+
   it("should fail loudly when artifactSummary.summaryBasis is not verification_execution", () => {
     const verification = createVerification({
       state: "passed",

@@ -82,6 +82,7 @@ describe("selection promotion-decision helpers", () => {
         runtime: "codex-cli",
         status: "running",
         sourceKind: "delegated",
+        hasComparablePayload: true,
         isSelected: true,
         recommendedForPromotion: true,
         explanationCode: "selected",
@@ -187,7 +188,7 @@ describe("selection promotion-decision helpers", () => {
     expect(decision.blockingReasons).toEqual(["verification_incomplete"]);
   });
 
-  it("should preserve a lightly-validated comparableCandidateCount without recomputing it from explanation candidates", () => {
+  it("should fail loudly when comparableCandidateCount drifts from explanation candidates", () => {
     const summary = {
       ...createPromotionExplanationSummary([
         createPromotionCandidate({
@@ -207,9 +208,9 @@ describe("selection promotion-decision helpers", () => {
       comparableCandidateCount: 0
     };
 
-    const decision = deriveAttemptPromotionDecisionSummary(summary);
-
-    expect(decision.comparableCandidateCount).toBe(0);
+    expect(() => deriveAttemptPromotionDecisionSummary(summary)).toThrow(
+      "Attempt promotion decision summary requires summary.comparableCandidateCount to match the count derived from summary.candidates."
+    );
   });
 
   it("should fail loudly when summary.explanationBasis is invalid", () => {
@@ -244,6 +245,14 @@ describe("selection promotion-decision helpers", () => {
       })
     ).toThrow(
       "Attempt promotion decision summary requires summary.candidateCount to match summary.candidates.length."
+    );
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...summary,
+        comparableCandidateCount: 0,
+      })
+    ).toThrow(
+      "Attempt promotion decision summary requires summary.comparableCandidateCount to match the count derived from summary.candidates."
     );
     expect(() =>
       deriveAttemptPromotionDecisionSummary({
@@ -387,6 +396,19 @@ describe("selection promotion-decision helpers", () => {
       })
     ]);
 
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...summary,
+        candidates: [
+          {
+            ...summary.candidates[0]!,
+            hasComparablePayload: "invalid",
+          }
+        ]
+      } as unknown as AttemptPromotionExplanationSummary)
+    ).toThrow(
+      "Attempt promotion decision summary requires candidate.hasComparablePayload to be a boolean."
+    );
     expect(() =>
       deriveAttemptPromotionDecisionSummary({
         ...summary,

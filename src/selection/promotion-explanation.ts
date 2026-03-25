@@ -247,6 +247,7 @@ function deriveExplanationCandidate(
     runtime: candidate.runtime,
     status: candidate.status,
     sourceKind: candidate.sourceKind,
+    hasComparablePayload: candidate.summary.hasComparablePayload,
     isSelected,
     recommendedForPromotion: candidate.recommendedForPromotion,
     explanationCode: deriveExplanationCode(candidate, isSelected),
@@ -264,6 +265,7 @@ function cloneExplanationCandidate(
     runtime: candidate.runtime,
     status: candidate.status,
     sourceKind: candidate.sourceKind,
+    hasComparablePayload: candidate.hasComparablePayload,
     isSelected: candidate.isSelected,
     recommendedForPromotion: candidate.recommendedForPromotion,
     explanationCode: candidate.explanationCode,
@@ -285,18 +287,23 @@ function deriveExplanationCode(
     return "promotion_ready";
   }
 
-  if (
-    candidate.summary.requiredOutcome === "failed" ||
-    candidate.failedOrErrorCheckNames.length > 0
-  ) {
-    return "required_checks_failed";
-  }
+  if (candidate.blockingRequiredCheckNames.length > 0) {
+    const hasRequiredPending = candidate.blockingRequiredCheckNames.some((name) =>
+      candidate.pendingCheckNames.includes(name)
+    );
+    const hasRequiredFailure = candidate.blockingRequiredCheckNames.some((name) =>
+      candidate.failedOrErrorCheckNames.includes(name)
+    );
 
-  if (
-    candidate.summary.requiredOutcome === "pending" ||
-    candidate.pendingCheckNames.length > 0
-  ) {
-    return "required_checks_pending";
+    if (hasRequiredFailure || candidate.summary.requiredOutcome === "failed") {
+      return "required_checks_failed";
+    }
+
+    if (hasRequiredPending || candidate.summary.requiredOutcome === "pending") {
+      return "required_checks_pending";
+    }
+
+    return "required_checks_failed";
   }
 
   return "verification_incomplete";
