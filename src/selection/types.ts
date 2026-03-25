@@ -155,3 +155,11 @@ export interface AttemptHandoffTarget {
   status: AttemptStatus;
   sourceKind: AttemptSourceKind | undefined;
 }
+
+export interface AttemptHandoffRequest {
+  taskId: string | undefined;
+  attemptId: string;
+  runtime: string;
+  status: AttemptStatus;
+  sourceKind: AttemptSourceKind | undefined;
+}

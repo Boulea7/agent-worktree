@@ -14,6 +14,9 @@ export {
   deriveAttemptHandoffTarget
 } from "./handoff-target.js";
 export {
+  deriveAttemptHandoffRequest
+} from "./handoff-request.js";
+export {
   deriveAttemptPromotionReport
 } from "./promotion-report.js";
 export {
@@ -32,6 +35,7 @@ export type {
   AttemptPromotionDecisionSummary,
   AttemptPromotionExplanationCandidate,
   AttemptPromotionExplanationCode,
+  AttemptHandoffRequest,
   AttemptHandoffTarget,
   AttemptPromotionExplanationSummary,
   AttemptPromotionTarget,
