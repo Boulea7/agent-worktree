@@ -35,6 +35,9 @@ export {
   applyAttemptHandoffTarget
 } from "./handoff-target-apply.js";
 export {
+  applyAttemptHandoffTargetBatch
+} from "./handoff-target-apply-batch.js";
+export {
   deriveAttemptPromotionReport
 } from "./promotion-report.js";
 export {
@@ -59,6 +62,8 @@ export type {
   AttemptHandoffApplyBatchInput,
   AttemptHandoffApplyInput,
   AttemptHandoffTargetApply,
+  AttemptHandoffTargetApplyBatch,
+  AttemptHandoffTargetApplyBatchInput,
   AttemptHandoffTargetApplyInput,
   AttemptHandoffConsume,
   AttemptHandoffConsumeBatch,
