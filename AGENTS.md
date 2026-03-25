@@ -61,6 +61,7 @@ The current thin Phase 5 internal verification and selection slice now includes:
 - a pure internal promotion target-apply helper driven by that same injected invoker that composes minimal handoff-target derivation plus handoff target-apply results from existing promotion targets without widening into public promotion, handoff execution, apply policy, scheduling, or persistence surfaces
 - a pure internal promotion target-apply-batch helper driven by that same injected invoker that composes ordered promotion target-apply results from existing promotion targets without widening into public promotion, handoff execution, aggregation policy, scheduling, or persistence surfaces
 - a pure internal handoff report-ready bridge layer that derives stable grouped handoff-ready projections from existing promotion target-apply-batch results without widening into public handoff, report, explanation, decision, persistence, queue, or lifecycle surfaces
+- a pure internal handoff explanation-ready consumer layer that derives stable code-only handoff explanation summaries from existing handoff report-ready results without widening into public handoff, report, explanation text, decision, persistence, queue, or lifecycle surfaces
 - a pure internal deterministic tie-break helper layered on top of that derived verification summary for future selection work only
 - a pure internal selection helper layer that derives stable per-attempt candidates and best-first multi-attempt selection results directly from `AttemptManifest`
 - a verification-summary-only selection policy that remains deterministic, rejects mixed-task selection loudly, and does not widen into public ranking, promotion, or merge surfaces
@@ -70,6 +71,7 @@ Those internal handoff apply helpers remain composition-only. They do not introd
 That promotion-target-apply helper remains composition-only as well. It does not introduce public promotion apply, public handoff apply, queue, review, merge, or durable promotion or handoff state semantics.
 That promotion-target-apply-batch helper remains composition-only as well. It does not introduce public promotion apply-batch, public handoff apply-batch, queue, review, merge, or durable promotion or handoff state semantics.
 That handoff report-ready bridge remains projection-only as well. It does not introduce public `attempt report`, durable report state, queue metadata, or any wider handoff lifecycle semantics.
+That handoff explanation-ready consumer remains code-only as well. It does not introduce freeform explanation text, a public explanation surface, durable explanation state, or any wider handoff lifecycle semantics.
 
 The current thin Phase 3 foundation also includes:
 

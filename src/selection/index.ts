@@ -47,6 +47,9 @@ export {
   deriveAttemptHandoffReportReady
 } from "./handoff-report-ready.js";
 export {
+  deriveAttemptHandoffExplanationSummary
+} from "./handoff-explanation.js";
+export {
   deriveAttemptPromotionReport
 } from "./promotion-report.js";
 export {
@@ -78,6 +81,9 @@ export type {
   AttemptPromotionTargetApplyBatch,
   AttemptPromotionTargetApplyBatchInput,
   AttemptPromotionTargetApplyInput,
+  AttemptHandoffExplanationCode,
+  AttemptHandoffExplanationEntry,
+  AttemptHandoffExplanationSummary,
   AttemptHandoffReportReady,
   AttemptHandoffReportReadyEntry,
   AttemptHandoffConsume,

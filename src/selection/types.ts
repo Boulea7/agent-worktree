@@ -280,3 +280,22 @@ export interface AttemptHandoffReportReady {
   invokedResults: AttemptHandoffReportReadyEntry[];
   blockedResults: AttemptHandoffReportReadyEntry[];
 }
+
+export type AttemptHandoffExplanationCode =
+  | "handoff_invoked"
+  | "handoff_blocked_unsupported";
+
+export interface AttemptHandoffExplanationEntry {
+  handoffTarget: AttemptHandoffTarget;
+  targetApply: AttemptHandoffTargetApply;
+  explanationCode: AttemptHandoffExplanationCode;
+  invoked: boolean;
+  blockingReasons: AttemptHandoffConsumerBlockingReason[];
+}
+
+export interface AttemptHandoffExplanationSummary {
+  explanationBasis: "handoff_report_ready";
+  results: AttemptHandoffExplanationEntry[];
+  invokedResults: AttemptHandoffExplanationEntry[];
+  blockedResults: AttemptHandoffExplanationEntry[];
+}
