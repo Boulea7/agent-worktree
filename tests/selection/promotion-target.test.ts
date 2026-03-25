@@ -120,6 +120,48 @@ describe("selection promotion-target helpers", () => {
     expect(deriveAttemptPromotionTarget(summary)).toBeUndefined();
   });
 
+  it("should return undefined when a required check is skipped", () => {
+    const summary = createPromotionDecisionSummary([
+      createPromotionCandidate({
+        attemptId: "att_required_skipped",
+        verification: createVerification({
+          state: "failed",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "skipped"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(summary.blockingReasons).toEqual(["required_checks_failed"]);
+    expect(deriveAttemptPromotionTarget(summary)).toBeUndefined();
+  });
+
+  it("should return undefined when only optional checks failed", () => {
+    const summary = createPromotionDecisionSummary([
+      createPromotionCandidate({
+        attemptId: "att_optional_failed",
+        verification: createVerification({
+          state: "failed",
+          checks: [
+            {
+              name: "docs",
+              required: false,
+              status: "failed"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(summary.blockingReasons).toEqual(["verification_incomplete"]);
+    expect(deriveAttemptPromotionTarget(summary)).toBeUndefined();
+  });
+
   it("should fail loudly when a promotable summary reports zero comparable candidates", () => {
     const summary = {
       ...createPromotionDecisionSummary([

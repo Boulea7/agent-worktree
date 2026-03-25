@@ -92,6 +92,31 @@ describe("selection promotion-audit helpers", () => {
     });
   });
 
+  it("should preserve blocking required skipped checks without throwing", () => {
+    const candidate = createPromotionCandidate({
+      attemptId: "att_required_skipped",
+      verification: createVerification({
+        state: "failed",
+        checks: [
+          {
+            name: "lint",
+            required: true,
+            status: "skipped"
+          }
+        ]
+      })
+    });
+
+    const summary = deriveAttemptPromotionAuditSummary(
+      deriveAttemptPromotionResult([candidate])
+    );
+
+    expect(summary.candidates).toHaveLength(1);
+    expect(summary.candidates[0]?.blockingRequiredCheckNames).toEqual(["lint"]);
+    expect(summary.candidates[0]?.failedOrErrorCheckNames).toEqual([]);
+    expect(summary.candidates[0]?.pendingCheckNames).toEqual([]);
+  });
+
   it("should preserve promotion-result candidate order in the audit summary", () => {
     const result = deriveAttemptPromotionResult([
       createPromotionCandidate({

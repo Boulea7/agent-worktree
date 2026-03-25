@@ -177,7 +177,8 @@ function validateArtifactSummaryNameLists(
       check.required &&
       (check.status === "failed" ||
         check.status === "error" ||
-        check.status === "pending")
+        check.status === "pending" ||
+        check.status === "skipped")
   );
 
   if (

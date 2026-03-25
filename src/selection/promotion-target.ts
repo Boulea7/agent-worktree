@@ -333,12 +333,21 @@ function deriveBlockingReasons(
   }
 
   const blockingReasons: AttemptPromotionDecisionBlockingReason[] = [];
+  const hasRequiredFailure = selected.blockingRequiredCheckNames.some((name) =>
+    selected.failedOrErrorCheckNames.includes(name)
+  );
+  const hasRequiredPending = selected.blockingRequiredCheckNames.some((name) =>
+    selected.pendingCheckNames.includes(name)
+  );
 
-  if (selected.failedOrErrorCheckNames.length > 0) {
+  if (
+    hasRequiredFailure ||
+    (selected.blockingRequiredCheckNames.length > 0 && !hasRequiredPending)
+  ) {
     blockingReasons.push("required_checks_failed");
   }
 
-  if (selected.pendingCheckNames.length > 0) {
+  if (hasRequiredPending) {
     blockingReasons.push("required_checks_pending");
   }
 
