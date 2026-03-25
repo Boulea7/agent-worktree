@@ -181,3 +181,18 @@ export interface AttemptHandoffConsumer {
   request: AttemptHandoffRequest;
   readiness: AttemptHandoffConsumerReadiness;
 }
+
+export interface AttemptHandoffInvoker {
+  (request: AttemptHandoffRequest): void | Promise<void>;
+}
+
+export interface AttemptHandoffConsumeInput {
+  consumer: AttemptHandoffConsumer;
+  invokeHandoff: AttemptHandoffInvoker;
+}
+
+export interface AttemptHandoffConsume {
+  request: AttemptHandoffRequest;
+  readiness: AttemptHandoffConsumerReadiness;
+  invoked: boolean;
+}
