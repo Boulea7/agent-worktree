@@ -205,3 +205,14 @@ export interface AttemptHandoffConsumeBatchInput {
 export interface AttemptHandoffConsumeBatch {
   results: AttemptHandoffConsume[];
 }
+
+export interface AttemptHandoffApplyInput {
+  request: AttemptHandoffRequest | undefined;
+  invokeHandoff: AttemptHandoffInvoker;
+  resolveHandoffCapability?: AttemptHandoffCapabilityResolver;
+}
+
+export interface AttemptHandoffApply {
+  consumer: AttemptHandoffConsumer;
+  consume: AttemptHandoffConsume;
+}
