@@ -196,3 +196,12 @@ export interface AttemptHandoffConsume {
   readiness: AttemptHandoffConsumerReadiness;
   invoked: boolean;
 }
+
+export interface AttemptHandoffConsumeBatchInput {
+  consumers: readonly AttemptHandoffConsumer[];
+  invokeHandoff: AttemptHandoffInvoker;
+}
+
+export interface AttemptHandoffConsumeBatch {
+  results: AttemptHandoffConsume[];
+}
