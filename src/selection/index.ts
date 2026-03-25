@@ -17,6 +17,9 @@ export {
   deriveAttemptHandoffRequest
 } from "./handoff-request.js";
 export {
+  deriveAttemptHandoffConsumer
+} from "./handoff-consumer.js";
+export {
   deriveAttemptPromotionReport
 } from "./promotion-report.js";
 export {
@@ -35,6 +38,10 @@ export type {
   AttemptPromotionDecisionSummary,
   AttemptPromotionExplanationCandidate,
   AttemptPromotionExplanationCode,
+  AttemptHandoffCapabilityResolver,
+  AttemptHandoffConsumer,
+  AttemptHandoffConsumerBlockingReason,
+  AttemptHandoffConsumerReadiness,
   AttemptHandoffRequest,
   AttemptHandoffTarget,
   AttemptPromotionExplanationSummary,

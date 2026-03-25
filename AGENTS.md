@@ -51,6 +51,7 @@ The current thin Phase 5 internal verification and selection slice now includes:
 - a pure internal promotion-oriented target consumer layer that derives stable minimal promotion targets from existing promotion decision summaries without widening into public promotion, handoff, report, explanation, decision, target, or persistence surfaces
 - a pure internal handoff-oriented target consumer layer that derives stable minimal handoff targets from existing promotion targets without widening into public promotion, handoff, report, explanation, decision, target, or persistence surfaces
 - a pure internal handoff-oriented request layer that derives stable minimal handoff requests from existing handoff targets without widening into public promotion, handoff, report, explanation, decision, target, consumer, or persistence surfaces
+- a pure internal handoff-oriented consumer layer that derives stable minimal handoff consumers plus capability-aware consume readiness from existing handoff requests without widening into public promotion, handoff, report, explanation, decision, target, consumer execution, or persistence surfaces
 - a pure internal deterministic tie-break helper layered on top of that derived verification summary for future selection work only
 - a pure internal selection helper layer that derives stable per-attempt candidates and best-first multi-attempt selection results directly from `AttemptManifest`
 - a verification-summary-only selection policy that remains deterministic, rejects mixed-task selection loudly, and does not widen into public ranking, promotion, or merge surfaces
@@ -127,7 +128,8 @@ Current local docs and handoff focus:
 - keep the new promotion-target layer constrained to existing promotion-decision inputs only, with deterministic target projection semantics and no new promotion, handoff, or persistence policy
 - keep the new handoff-target layer constrained to existing promotion-target inputs only, with deterministic target projection semantics and no new promotion, handoff, or persistence policy
 - keep the new handoff-request layer constrained to existing handoff-target inputs only, with deterministic request projection semantics and no new promotion, handoff, or persistence policy
-- keep future follow-up slices focused on higher internal promotion/handoff consumers above handoff-request outputs rather than widening public verify/select/promote/merge or lifecycle surfaces
+- keep the new handoff-consumer layer constrained to existing handoff-request inputs only, with deterministic readiness projection semantics and no new promotion, handoff execution, or persistence policy
+- keep future follow-up slices focused on higher internal promotion/handoff consume helpers above handoff-consumer outputs rather than widening public verify/select/promote/merge or lifecycle surfaces
 
 Cleanup is expected to keep manifests as audit records, target a single `attemptId`, and fail loudly on invalid manifests or unsafe path conditions.
 

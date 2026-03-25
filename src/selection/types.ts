@@ -163,3 +163,21 @@ export interface AttemptHandoffRequest {
   status: AttemptStatus;
   sourceKind: AttemptSourceKind | undefined;
 }
+
+export type AttemptHandoffConsumerBlockingReason = "handoff_unsupported";
+
+export interface AttemptHandoffCapabilityResolver {
+  (runtime: string): boolean;
+}
+
+export interface AttemptHandoffConsumerReadiness {
+  blockingReasons: AttemptHandoffConsumerBlockingReason[];
+  canConsumeHandoff: boolean;
+  hasBlockingReasons: boolean;
+  handoffSupported: boolean;
+}
+
+export interface AttemptHandoffConsumer {
+  request: AttemptHandoffRequest;
+  readiness: AttemptHandoffConsumerReadiness;
+}
