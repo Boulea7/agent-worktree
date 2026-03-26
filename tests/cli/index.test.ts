@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type {
   CompatibilityDoctorData,
@@ -20,6 +20,37 @@ class MemoryWriter {
   public write(chunk: string): void {
     this.output += chunk;
   }
+}
+
+type CompatibilityIndexModule = typeof import("../../src/compat/index.js");
+
+async function loadCliModuleWithCompatCatalogOverrides(overrides: {
+  getCompatibilityDescriptor?: CompatibilityIndexModule["getCompatibilityDescriptor"];
+  listCompatibilityDescriptors?: CompatibilityIndexModule["listCompatibilityDescriptors"];
+}): Promise<typeof import("../../src/cli/index.js")> {
+  vi.resetModules();
+  vi.doMock("../../src/compat/index.js", async () => {
+    const actual = await vi.importActual<CompatibilityIndexModule>(
+      "../../src/compat/index.js"
+    );
+
+    return {
+      ...actual,
+      ...(overrides.listCompatibilityDescriptors === undefined
+        ? {}
+        : {
+            listCompatibilityDescriptors:
+              overrides.listCompatibilityDescriptors
+          }),
+      ...(overrides.getCompatibilityDescriptor === undefined
+        ? {}
+        : {
+            getCompatibilityDescriptor: overrides.getCompatibilityDescriptor
+          })
+    };
+  });
+
+  return import("../../src/cli/index.js");
 }
 
 function assertNoInternalRuntimeMetadata(value: Record<string, unknown>): void {
@@ -106,6 +137,8 @@ describe("runCli", () => {
   const tempDirectories: string[] = [];
 
   afterEach(async () => {
+    vi.doUnmock("../../src/compat/index.js");
+    vi.resetModules();
     await Promise.all(
       tempDirectories.map((directoryPath) =>
         rm(directoryPath, { recursive: true, force: true })
@@ -202,6 +235,200 @@ describe("runCli", () => {
         "tool"
       ].sort()
     );
+    expect(stderr.output).toBe("");
+  });
+
+  it("should serialize compat list json output through the public allow-list", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+    const { runCli: runMockedCli } =
+      await loadCliModuleWithCompatCatalogOverrides({
+        listCompatibilityDescriptors: () =>
+          [
+            {
+              tool: "codex-cli",
+              tier: "tier1",
+              guidanceFile: "AGENTS.md",
+              projectConfig: ".codex/config.toml",
+              machineReadableMode: "strong",
+              resume: "strong",
+              mcp: "strong",
+              note: "Catalog entry.",
+              hiddenField: "internal"
+            }
+          ] as never
+      });
+
+    const exitCode = await runMockedCli(["compat", "list", "--json"], {
+      stdout,
+      stderr
+    });
+
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: true,
+      command: "compat.list",
+      data: {
+        tools: [
+          {
+            tool: "codex-cli",
+            tier: "tier1",
+            guidanceFile: "AGENTS.md",
+            projectConfig: ".codex/config.toml",
+            machineReadableMode: "strong",
+            resume: "strong",
+            mcp: "strong",
+            note: "Catalog entry."
+          }
+        ]
+      }
+    });
+    const payload = JSON.parse(stdout.output) as {
+      data: { tools: Array<Record<string, unknown>> };
+    };
+    expect(payload.data.tools[0]).not.toHaveProperty("hiddenField");
+    expect(sortedKeys(payload.data.tools[0]!)).toEqual(
+      [
+        "guidanceFile",
+        "machineReadableMode",
+        "mcp",
+        "note",
+        "projectConfig",
+        "resume",
+        "tier",
+        "tool"
+      ].sort()
+    );
+    expect(stderr.output).toBe("");
+  });
+
+  it("should return a structured validation error when compat list json serialization fails", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+    const { runCli: runMockedCli } =
+      await loadCliModuleWithCompatCatalogOverrides({
+        listCompatibilityDescriptors: () =>
+          [
+            {
+              tool: "codex-cli",
+              tier: "tier1",
+              guidanceFile: "AGENTS.md",
+              projectConfig: ".codex/config.toml",
+              machineReadableMode: "future-mode",
+              resume: "strong",
+              mcp: "strong",
+              note: "Catalog entry."
+            }
+          ] as never
+      });
+
+    const exitCode = await runMockedCli(["compat", "list", "--json"], {
+      stdout,
+      stderr
+    });
+
+    expect(exitCode).toBe(1);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: false,
+      command: "compat.list",
+      error: {
+        code: "VALIDATION_ERROR"
+      }
+    });
+    expect(stderr.output).toBe("");
+  });
+
+  it("should serialize compat show json output through the public allow-list", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+    const { runCli: runMockedCli } =
+      await loadCliModuleWithCompatCatalogOverrides({
+        getCompatibilityDescriptor: () =>
+          ({
+            tool: "codex-cli",
+            tier: "tier1",
+            guidanceFile: "AGENTS.md",
+            projectConfig: ".codex/config.toml",
+            machineReadableMode: "strong",
+            resume: "strong",
+            mcp: "strong",
+            note: "Catalog entry.",
+            hiddenField: "internal"
+          }) as never
+      });
+
+    const exitCode = await runMockedCli(["compat", "show", "codex-cli", "--json"], {
+      stdout,
+      stderr
+    });
+
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: true,
+      command: "compat.show",
+      data: {
+        tool: {
+          tool: "codex-cli",
+          tier: "tier1",
+          guidanceFile: "AGENTS.md",
+          projectConfig: ".codex/config.toml",
+          machineReadableMode: "strong",
+          resume: "strong",
+          mcp: "strong",
+          note: "Catalog entry."
+        }
+      }
+    });
+    const payload = JSON.parse(stdout.output) as {
+      data: { tool: Record<string, unknown> };
+    };
+    expect(payload.data.tool).not.toHaveProperty("hiddenField");
+    expect(sortedKeys(payload.data.tool)).toEqual(
+      [
+        "guidanceFile",
+        "machineReadableMode",
+        "mcp",
+        "note",
+        "projectConfig",
+        "resume",
+        "tier",
+        "tool"
+      ].sort()
+    );
+    expect(stderr.output).toBe("");
+  });
+
+  it("should return a structured validation error when compat show json serialization fails", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+    const { runCli: runMockedCli } =
+      await loadCliModuleWithCompatCatalogOverrides({
+        getCompatibilityDescriptor: () =>
+          ({
+            tool: "codex-cli",
+            tier: "tier1",
+            guidanceFile: "AGENTS.md",
+            projectConfig: ".codex/config.toml",
+            machineReadableMode: "future-mode",
+            resume: "strong",
+            mcp: "strong",
+            note: "Catalog entry."
+          }) as never
+      });
+
+    const exitCode = await runMockedCli(["compat", "show", "codex-cli", "--json"], {
+      stdout,
+      stderr
+    });
+
+    expect(exitCode).toBe(1);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: false,
+      command: "compat.show",
+      error: {
+        code: "VALIDATION_ERROR"
+      }
+    });
     expect(stderr.output).toBe("");
   });
 
