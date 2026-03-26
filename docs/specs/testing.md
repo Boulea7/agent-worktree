@@ -74,7 +74,7 @@ Other Tier 1 runtimes should keep explicit descriptor-only support boundaries un
 Current smoke tests should verify:
 
 - tool detection
-- bounded headless execution path
+- bounded compatibility-probe execution scaffolding
 - structured output parsing
 - guidance file loading
 - public/non-public boundary preservation
@@ -911,10 +911,10 @@ Git archival and checkpoint discipline belongs to maintainer workflow guidance r
 
 The current public baseline satisfies this Phase 4 test slice through `doctor`, `compat probe`, `compat smoke`, and explicit descriptor-only boundary coverage.
 
-### Phase 5: Verification and Selection
+### Phase 5: Internal-Only Verification and Selection
 
-- verification aggregation tests
-- selection logic tests
+- internal-only verification aggregation tests
+- internal-only selection logic tests
 - failure-mode tests
 
 ## Definition Of Done For Future Coding Tasks

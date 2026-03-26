@@ -20,7 +20,7 @@
 
 ## Overview
 
-`agent-worktree` is a git-native orchestration project for running coding agents in isolated worktrees and selecting the best verified outcome.
+`agent-worktree` is a git-native orchestration project for running coding agents in isolated worktrees, with future internal verification and selection work layered on top of that foundation.
 
 The repository started as a documentation-first effort and has now entered an early implementation phase centered on contract clarity, tests, and a thin worktree lifecycle slice.
 
