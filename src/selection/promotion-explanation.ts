@@ -10,7 +10,7 @@ import {
   attemptVerificationRequiredOutcomes,
   type AttemptVerificationCounts,
   type AttemptVerificationSummary
-} from "../verification/internal.js";
+} from "../verification/types.js";
 import type {
   AttemptPromotionAuditCandidate,
   AttemptPromotionExplanationCandidate,

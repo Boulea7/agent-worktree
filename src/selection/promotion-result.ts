@@ -4,10 +4,12 @@ import {
   type AttemptStatus
 } from "../manifest/types.js";
 import {
-  compareAttemptVerificationCandidates,
-  type AttemptVerificationCounts,
-  type AttemptVerificationSummary
-} from "../verification/internal.js";
+  compareAttemptVerificationCandidates
+} from "../verification/compare.js";
+import type {
+  AttemptVerificationCounts,
+  AttemptVerificationSummary
+} from "../verification/types.js";
 import type {
   AttemptPromotionCandidate,
   AttemptPromotionResult
