@@ -1047,6 +1047,30 @@ describe("runCli", () => {
     expect(stderr.output).toBe("");
   });
 
+  it("should normalize unexpected compat probe failures to the shared runtime error envelope", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["compat", "probe", "codex-cli", "--json"], {
+      stdout,
+      stderr,
+      compatProbeImpl: async () => {
+        throw new Error("boom");
+      }
+    });
+
+    expect(exitCode).toBe(1);
+    expect(JSON.parse(stdout.output)).toEqual({
+      ok: false,
+      command: "compat.probe",
+      error: {
+        code: "RUNTIME_ERROR",
+        message: "boom"
+      }
+    });
+    expect(stderr.output).toBe("");
+  });
+
   it("should return doctor diagnostics as json without leaking internal metadata", async () => {
     const stdout = new MemoryWriter();
     const stderr = new MemoryWriter();
