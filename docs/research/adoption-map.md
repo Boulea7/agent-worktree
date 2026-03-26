@@ -9,6 +9,8 @@ This document maps important ideas into four buckets:
 
 The goal is to stop good ideas from being either lost or prematurely frozen.
 
+These bucket labels are research classifications, not roadmap stages.
+
 ## Adopted
 
 These ideas are already shaping the public direction of the repository:
@@ -19,6 +21,8 @@ These ideas are already shaping the public direction of the repository:
 | Verification-first selection | Highest-confidence selection primitive for coding work | `README.md`, `docs/concepts/mental-model.md`, `docs/research/mature-patterns.md` |
 | Adaptive orchestration depth | Needed to support both simple and complex tasks | `README.md`, `docs/concepts/mental-model.md`, `docs/architecture/orchestrator-model.md` |
 | Capability-first compatibility | Required for multi-tool friendliness | `docs/compat/*`, `docs/research/mature-patterns.md` |
+| Minimal runtime manifest | Already part of the current experimental public surface, even though its shape may still change | `SPEC.md`, `docs/specs/runtime-manifest.md` |
+| Minimal CLI contract | Already part of the current experimental public surface for machine-readable behavior | `SPEC.md`, `docs/specs/cli.md` |
 | Public/private doc split | Necessary for long-running AI-assisted development | `README.md`, `AGENTS.md`, `docs/maintainers/research-policy.md` |
 
 ## Planned
@@ -27,8 +31,6 @@ These ideas are strong enough to shape future implementation planning, but are n
 
 | Idea | Why planned | Likely future location |
 | --- | --- | --- |
-| Minimal runtime manifest | Durable state is needed before implementation scales | `docs/specs/runtime-manifest.md` |
-| Minimal CLI contract | Headless and machine-readable automation will matter early | `docs/specs/cli.md` |
 | Attempt conditions and additive status | Better than an oversized phase machine | future refinement of `runtime-manifest.md` |
 | Idempotent control operations | Important once orchestration becomes stateful | future RFC and CLI spec refinement |
 | Versioned long-running attempts | Likely needed for resume safety | future architecture RFC |
@@ -44,8 +46,11 @@ These ideas are worth preserving and revisiting, but not freezing:
 | Process supervision | Interesting, but less mature than outcome verification | `docs/research/future-research-tracks.md` |
 | Failure attribution and trajectory debugging | High potential, still immature | `docs/research/future-research-tracks.md` |
 | Heterogeneous multi-model routing | Promising, not stable enough for contracts | `docs/research/future-research-tracks.md` |
-| OpenClaw-style gateway orchestration | Valuable as influence, not core template | `docs/research/future-research-tracks.md`, `docs/compat/openclaw.md` |
+| Gateway-shaped control surfaces | Valuable as influence, not core template | `docs/research/future-research-tracks.md` |
 | Semantic synthesis across branches | Intriguing, but risky and underdefined | `docs/research/future-research-tracks.md` |
+| Intent-scoped capability expansion | Large tool surfaces may benefit from lightweight descriptors first and deferred expansion later | `docs/research/future-research-tracks.md` |
+| Execution isolation separate from policy authorization | Safe delegated execution likely needs a clearer boundary than a single “sandbox” concept, but the public contract is still unsettled | `docs/research/future-research-tracks.md` |
+| Extension definition separate from activation state | Large capability surfaces may stay easier to reason about when capability metadata and enablement are not coupled, but the exact shape is still open | `docs/research/future-research-tracks.md` |
 
 ## Do Not Spec Yet
 
