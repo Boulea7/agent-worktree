@@ -1,21 +1,82 @@
-import { describe, expectTypeOf, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
+import * as selection from "../../src/selection/index.js";
 import type {
-  AttemptPromotionAuditSummary,
-  AttemptPromotionDecisionSummary,
-  AttemptPromotionTarget,
+  AttemptSelectionCandidate,
   AttemptSelectionResult
 } from "../../src/selection/index.js";
 
 describe("selection index exports", () => {
-  it("should continue exporting the stable selection-facing types", () => {
+  it("should continue exporting only the narrow selection-facing types", () => {
     type SelectionIndexExports = {
+      candidate: AttemptSelectionCandidate;
       selection: AttemptSelectionResult;
-      audit: AttemptPromotionAuditSummary;
-      decision: AttemptPromotionDecisionSummary;
-      target: AttemptPromotionTarget;
     };
 
     expectTypeOf<SelectionIndexExports>().not.toBeAny();
   });
+
+  it("should keep the default barrel free of runtime exports", () => {
+    expect(Object.keys(selection)).toEqual([]);
+  });
 });
+
+// @ts-expect-error selection index must not export promotion audit types
+type SelectionIndexShouldNotExportPromotionAuditSummary = import("../../src/selection/index.js").AttemptPromotionAuditSummary;
+
+// @ts-expect-error selection index must not export promotion candidate types
+type SelectionIndexShouldNotExportPromotionCandidate = import("../../src/selection/index.js").AttemptPromotionCandidate;
+
+// @ts-expect-error selection index must not export promotion decision types
+type SelectionIndexShouldNotExportPromotionDecisionSummary = import("../../src/selection/index.js").AttemptPromotionDecisionSummary;
+
+// @ts-expect-error selection index must not export promotion targets
+type SelectionIndexShouldNotExportPromotionTarget = import("../../src/selection/index.js").AttemptPromotionTarget;
+
+// @ts-expect-error selection index must not export promotion reports
+type SelectionIndexShouldNotExportPromotionReport = import("../../src/selection/index.js").AttemptPromotionReport;
+
+// @ts-expect-error selection index must not export promotion result types
+type SelectionIndexShouldNotExportPromotionResult = import("../../src/selection/index.js").AttemptPromotionResult;
+
+// @ts-expect-error selection index must not export promotion explanation candidate types
+type SelectionIndexShouldNotExportPromotionExplanationCandidate = import("../../src/selection/index.js").AttemptPromotionExplanationCandidate;
+
+// @ts-expect-error selection index must not export promotion explanation summaries
+type SelectionIndexShouldNotExportPromotionExplanationSummary = import("../../src/selection/index.js").AttemptPromotionExplanationSummary;
+
+// @ts-expect-error selection index must not export handoff target types
+type SelectionIndexShouldNotExportHandoffTarget = import("../../src/selection/index.js").AttemptHandoffTarget;
+
+// @ts-expect-error selection index must not export handoff request types
+type SelectionIndexShouldNotExportHandoffRequest = import("../../src/selection/index.js").AttemptHandoffRequest;
+
+// @ts-expect-error selection index must not export handoff consumer types
+type SelectionIndexShouldNotExportHandoffConsumer = import("../../src/selection/index.js").AttemptHandoffConsumer;
+
+// @ts-expect-error selection index must not export handoff finalization target payloads
+type SelectionIndexShouldNotExportHandoffFinalizationTarget = import("../../src/selection/index.js").AttemptHandoffFinalizationTarget;
+
+// @ts-expect-error selection index must not export handoff finalization target summaries
+type SelectionIndexShouldNotExportHandoffFinalizationTargetSummary = import("../../src/selection/index.js").AttemptHandoffFinalizationTargetSummary;
+
+// @ts-expect-error selection index must not export handoff finalization request payloads
+type SelectionIndexShouldNotExportHandoffFinalizationRequest = import("../../src/selection/index.js").AttemptHandoffFinalizationRequest;
+
+// @ts-expect-error selection index must not export handoff finalization request summaries
+type SelectionIndexShouldNotExportHandoffFinalizationRequestSummary = import("../../src/selection/index.js").AttemptHandoffFinalizationRequestSummary;
+
+// @ts-expect-error selection index must not export promotion candidate helpers
+type SelectionIndexShouldNotExportDeriveAttemptPromotionCandidate = typeof import("../../src/selection/index.js").deriveAttemptPromotionCandidate;
+
+// @ts-expect-error selection index must not export handoff request helpers
+type SelectionIndexShouldNotExportDeriveAttemptHandoffRequest = typeof import("../../src/selection/index.js").deriveAttemptHandoffRequest;
+
+// @ts-expect-error selection index must not export handoff consumer helpers
+type SelectionIndexShouldNotExportDeriveAttemptHandoffConsumer = typeof import("../../src/selection/index.js").deriveAttemptHandoffConsumer;
+
+// @ts-expect-error selection index must not export handoff finalization target helpers
+type SelectionIndexShouldNotExportDeriveAttemptHandoffFinalizationTargetSummary = typeof import("../../src/selection/index.js").deriveAttemptHandoffFinalizationTargetSummary;
+
+// @ts-expect-error selection index must not export handoff finalization request helpers
+type SelectionIndexShouldNotExportDeriveAttemptHandoffFinalizationRequestSummary = typeof import("../../src/selection/index.js").deriveAttemptHandoffFinalizationRequestSummary;
