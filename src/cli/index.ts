@@ -17,6 +17,16 @@ import { NotImplementedError, ValidationError } from "../core/errors.js";
 import { cleanupAttempt, type CleanupAttemptResult } from "../worktree/cleanup.js";
 import { listAttempts } from "../worktree/list.js";
 import { createAttempt } from "../worktree/create.js";
+import {
+  serializeAttemptCleanupResult,
+  serializeAttemptCreateData,
+  serializeAttemptListData,
+  serializeCompatibilityDoctorData,
+  serializeCompatibilityListData,
+  serializeCompatibilityProbeData,
+  serializeCompatibilityShowData,
+  serializeCompatibilitySmokeData
+} from "./public-serialize.js";
 import { formatHumanError, type CliWriter, writeError, writeSuccess } from "./output.js";
 
 interface CliContext {
@@ -83,17 +93,27 @@ export function buildCli(context: CliContext): Command {
   });
 
   program.command("doctor").option("--json").action(async (options: JsonFlagOptions) => {
-    await writeCommandResultAsync(context, "doctor", options.json === true, async () =>
-      context.doctorImpl()
+    await writeCommandResultAsync(
+      context,
+      "doctor",
+      options.json === true,
+      async () => context.doctorImpl(),
+      serializeCompatibilityDoctorData
     );
   });
 
   const compat = program.command("compat");
 
   compat.command("list").option("--json").action((options: JsonFlagOptions) => {
-    writeCommandResult(context, "compat.list", options.json === true, () => ({
-      tools: listCompatibilityDescriptors()
-    }));
+    writeCommandResult(
+      context,
+      "compat.list",
+      options.json === true,
+      () => ({
+        tools: listCompatibilityDescriptors()
+      }),
+      serializeCompatibilityListData
+    );
   });
 
   compat
@@ -101,9 +121,15 @@ export function buildCli(context: CliContext): Command {
     .argument("<tool>")
     .option("--json")
     .action((tool: string, options: JsonFlagOptions) => {
-      writeCommandResult(context, "compat.show", options.json === true, () => ({
-        tool: getCompatibilityDescriptor(tool)
-      }));
+      writeCommandResult(
+        context,
+        "compat.show",
+        options.json === true,
+        () => ({
+          tool: getCompatibilityDescriptor(tool)
+        }),
+        serializeCompatibilityShowData
+      );
     });
 
   compat
@@ -115,7 +141,8 @@ export function buildCli(context: CliContext): Command {
         context,
         "compat.probe",
         options.json === true,
-        async () => context.compatProbeImpl(tool)
+        async () => context.compatProbeImpl(tool),
+        serializeCompatibilityProbeData
       );
     });
 
@@ -128,7 +155,8 @@ export function buildCli(context: CliContext): Command {
         context,
         "compat.smoke",
         options.json === true,
-        async () => context.compatSmokeImpl(tool)
+        async () => context.compatSmokeImpl(tool),
+        serializeCompatibilitySmokeData
       );
     });
 
@@ -150,7 +178,8 @@ export function buildCli(context: CliContext): Command {
         options.json === true,
         async () => ({
           attempts: await listAttempts(listOptions)
-        })
+        }),
+        serializeAttemptListData
       );
     });
 
@@ -181,7 +210,8 @@ export function buildCli(context: CliContext): Command {
               ? {}
               : { worktreeRoot: options.worktreeRoot })
           });
-        }
+        },
+        serializeAttemptCleanupResult
       );
     });
 
@@ -230,7 +260,8 @@ export function buildCli(context: CliContext): Command {
         options.json === true,
         async () => ({
           attempt: await createAttempt(createOptions)
-        })
+        }),
+        serializeAttemptCreateData
       );
     });
 
@@ -300,12 +331,17 @@ function writeCommandResult<TData>(
   context: CliContext,
   command: string,
   json: boolean,
-  getData: () => TData
+  getData: () => TData,
+  serializeData?: (data: TData) => unknown
 ): void {
   try {
     const data = getData();
     if (json) {
-      writeSuccess(context.stdout, command, data);
+      writeSuccess(
+        context.stdout,
+        command,
+        serializeData === undefined ? data : serializeData(data)
+      );
     } else {
       context.stdout.write(formatHumanSuccess(command, data));
     }
@@ -319,12 +355,17 @@ async function writeCommandResultAsync<TData>(
   context: CliContext,
   command: string,
   json: boolean,
-  getData: () => Promise<TData>
+  getData: () => Promise<TData>,
+  serializeData?: (data: TData) => unknown
 ): Promise<void> {
   try {
     const data = await getData();
     if (json) {
-      writeSuccess(context.stdout, command, data);
+      writeSuccess(
+        context.stdout,
+        command,
+        serializeData === undefined ? data : serializeData(data)
+      );
     } else {
       context.stdout.write(formatHumanSuccess(command, data));
     }
