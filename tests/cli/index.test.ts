@@ -335,6 +335,11 @@ describe("runCli", () => {
         code: "VALIDATION_ERROR"
       }
     });
+    const payload = JSON.parse(stdout.output) as {
+      error: { message: string };
+    };
+    expect(typeof payload.error.message).toBe("string");
+    expect(payload.error.message.trim().length).toBeGreaterThan(0);
     expect(stderr.output).toBe("");
   });
 
@@ -429,6 +434,11 @@ describe("runCli", () => {
         code: "VALIDATION_ERROR"
       }
     });
+    const payload = JSON.parse(stdout.output) as {
+      error: { message: string };
+    };
+    expect(typeof payload.error.message).toBe("string");
+    expect(payload.error.message.trim().length).toBeGreaterThan(0);
     expect(stderr.output).toBe("");
   });
 
