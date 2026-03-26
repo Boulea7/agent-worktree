@@ -1268,6 +1268,16 @@ describe("runCli", () => {
         code: "NOT_FOUND"
       }
     });
+    const payload = JSON.parse(stdout.output) as {
+      command: string;
+      error: Record<string, unknown>;
+      ok: boolean;
+    };
+    expect(sortedKeys(payload)).toEqual(["command", "error", "ok"]);
+    expect(sortedKeys(payload.error)).toEqual(["code", "message"]);
+    expect(payload.error.message).toBe(
+      "Unknown compatibility target: missing-tool."
+    );
     expect(stderr.output).toBe("");
   });
 
@@ -1604,6 +1614,16 @@ describe("runCli", () => {
         code: "NOT_IMPLEMENTED"
       }
     });
+    const payload = JSON.parse(stdout.output) as {
+      command: string;
+      error: Record<string, unknown>;
+      ok: boolean;
+    };
+    expect(sortedKeys(payload)).toEqual(["command", "error", "ok"]);
+    expect(sortedKeys(payload.error)).toEqual(["code", "message"]);
+    expect(payload.error.message).toBe(
+      "attempt.attach is not implemented in the current phase."
+    );
     expect(stderr.output).toBe("");
   });
 
@@ -1827,6 +1847,14 @@ describe("runCli", () => {
         code: "VALIDATION_ERROR"
       }
     });
+    const payload = JSON.parse(stdout.output) as {
+      command: string;
+      error: Record<string, unknown>;
+      ok: boolean;
+    };
+    expect(sortedKeys(payload)).toEqual(["command", "error", "ok"]);
+    expect(sortedKeys(payload.error)).toEqual(["code", "message"]);
+    expect(payload.error.message).toBe("attempt.create requires --task-id.");
     expect(stderr.output).toBe("");
   });
 
