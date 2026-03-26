@@ -5,11 +5,13 @@ import {
   type AttemptStatus
 } from "../manifest/types.js";
 import {
-  deriveAttemptVerificationSummary,
-  type AttemptVerificationArtifactSummary,
-  type AttemptVerificationCounts,
-  type AttemptVerificationSummary
-} from "../verification/internal.js";
+  deriveAttemptVerificationSummary
+} from "../verification/derive.js";
+import type {
+  AttemptVerificationArtifactSummary,
+  AttemptVerificationCounts,
+  AttemptVerificationSummary
+} from "../verification/types.js";
 import type { AttemptPromotionCandidate } from "./types.js";
 
 const ATTEMPT_PROMOTION_BASIS = "verification_artifact_summary" as const;

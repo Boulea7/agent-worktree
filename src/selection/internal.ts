@@ -53,6 +53,12 @@ export {
   deriveAttemptHandoffDecisionSummary
 } from "./handoff-decision.js";
 export {
+  deriveAttemptHandoffFinalizationTargetSummary
+} from "./handoff-finalization-target.js";
+export {
+  deriveAttemptHandoffFinalizationRequestSummary
+} from "./handoff-finalization-request.js";
+export {
   deriveAttemptPromotionReport
 } from "./promotion-report.js";
 export {
@@ -89,6 +95,10 @@ export type {
   AttemptHandoffExplanationSummary,
   AttemptHandoffDecisionBlockingReason,
   AttemptHandoffDecisionSummary,
+  AttemptHandoffFinalizationRequest,
+  AttemptHandoffFinalizationRequestSummary,
+  AttemptHandoffFinalizationTarget,
+  AttemptHandoffFinalizationTargetSummary,
   AttemptHandoffReportReady,
   AttemptHandoffReportReadyEntry,
   AttemptHandoffConsume,

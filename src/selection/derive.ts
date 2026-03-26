@@ -1,9 +1,9 @@
 import { ValidationError } from "../core/errors.js";
 import type { AttemptManifest } from "../manifest/types.js";
 import {
-  compareAttemptVerificationCandidates,
-  deriveAttemptVerificationSummary
-} from "../verification/internal.js";
+  compareAttemptVerificationCandidates
+} from "../verification/compare.js";
+import { deriveAttemptVerificationSummary } from "../verification/derive.js";
 import type {
   AttemptSelectionCandidate,
   AttemptSelectionResult

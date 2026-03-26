@@ -6,7 +6,7 @@ import {
   buildExecutionSessionView,
   deriveExecutionSessionRecord,
   deriveExecutionSessionContext
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 import type { ExecutionSessionRecord } from "../../src/control-plane/types.js";
 
 describe("control-plane runtime-state context helpers", () => {

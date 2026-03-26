@@ -5,7 +5,7 @@ import {
   deriveExecutionSessionSpawnHeadlessViewBatch,
   type ExecutionSessionSpawnHeadlessRecord,
   type ExecutionSessionSpawnHeadlessRecordBatch
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-headless-view-batch helpers", () => {
   it("should return an empty view for an empty headless-record batch", () => {

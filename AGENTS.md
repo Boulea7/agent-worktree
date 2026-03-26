@@ -33,6 +33,8 @@ The current thin Phase 4 public compatibility slice now includes:
 - read-only `doctor` diagnostics for adapter truth and local detection state
 - read-only `compat probe <tool>` diagnostics for bounded per-runtime compatibility results
 - read-only `compat smoke <tool>` diagnostics for bounded env-gated live compatibility results
+- explicit allow-list CLI JSON serializers for `doctor`, `compat list`, `compat show`, `compat probe`, `compat smoke`, `attempt create`, `attempt list`, and `attempt cleanup`, so additive internal DTO or manifest fields do not silently widen the public machine-readable contract
+- an explicit public cleanup-outcome vocabulary for `attempt cleanup --json`, so additive internal cleanup outcomes do not silently widen the public machine-readable contract
 
 That public compatibility baseline now satisfies the current Phase 4 exit criteria: `codex-cli` has a bounded public end-to-end compatibility proof through `compat smoke`, while the other Tier 1 runtimes retain explicit descriptor-only support boundaries through `doctor` and `compat probe`. That remains a compatibility promise only; it does not imply general public execution or lifecycle support.
 
@@ -63,7 +65,11 @@ The current thin Phase 5 internal verification and selection slice now includes:
 - a pure internal handoff report-ready bridge layer that derives stable grouped handoff-ready projections from existing promotion target-apply-batch results without widening into public handoff, report, explanation, decision, persistence, queue, or lifecycle surfaces
 - a pure internal handoff explanation-ready consumer layer that derives stable code-only handoff explanation summaries from existing handoff report-ready results without widening into public handoff, report, explanation text, decision, persistence, queue, or lifecycle surfaces
 - a pure internal handoff decision-ready consumer layer that derives stable blocker-oriented handoff-finalization conclusions from existing handoff explanation summaries without widening into public handoff, report, explanation, decision payloads, persistence, queue, or lifecycle surfaces
+- a pure internal handoff-finalization request-summary layer that derives stable minimal handoff-finalization requests from existing handoff-finalization targets without widening into public handoff, readiness, consumer, apply, queue, or persistence surfaces
 - a narrowed internal-only import boundary for Phase 5 verification and selection helpers, where repo-internal tests and helper consumers should prefer `src/verification/internal.ts`, `src/selection/internal.ts`, or concrete module paths instead of treating the default barrels as the canonical helper surface
+- concrete selection-side production consumers now prefer direct verification module imports such as `src/verification/compare.ts`, `src/verification/derive.ts`, and `src/verification/types.ts` over routing through `src/verification/internal.ts`
+- the default `src/control-plane/index.ts` barrel now has stronger repo-internal contract coverage through exact runtime export checks plus compile-time negative assertions for spawn/wait/close/headless symbols, while `src/control-plane/internal.ts` remains the wider internal-only staging surface
+- the default `src/selection/index.ts` and `src/verification/index.ts` barrels now also have stronger repo-internal contract coverage through exact runtime export checks and broader compile-time negative assertions for internal-only helpers and types
 - a pure internal deterministic tie-break helper layered on top of that derived verification summary for future selection work only
 - a pure internal selection helper layer that derives stable per-attempt candidates and best-first multi-attempt selection results directly from `AttemptManifest`
 - a verification-summary-only selection policy that remains deterministic, rejects mixed-task selection loudly, and does not widen into public ranking, promotion, or merge surfaces

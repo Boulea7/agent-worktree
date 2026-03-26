@@ -4,7 +4,14 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
+import type {
+  CompatibilityDoctorData,
+  CompatibilityProbeData,
+  CompatibilitySmokeData
+} from "../../src/compat/index.js";
 import { runCli } from "../../src/cli/index.js";
+import { readManifest, writeManifest } from "../../src/manifest/store.js";
+import { runGit } from "../../src/worktree/git.js";
 import { createTestRepository } from "../worktree/helpers.js";
 
 class MemoryWriter {
@@ -91,6 +98,10 @@ function assertNoInternalRuntimeMetadata(value: Record<string, unknown>): void {
   expect(value).not.toHaveProperty("profile");
 }
 
+function sortedKeys(value: Record<string, unknown>): string[] {
+  return Object.keys(value).sort();
+}
+
 describe("runCli", () => {
   const tempDirectories: string[] = [];
 
@@ -132,8 +143,27 @@ describe("runCli", () => {
     expect(exitCode).toBe(0);
     expect(JSON.parse(stdout.output)).toMatchObject({
       ok: true,
-      command: "compat.list"
+      command: "compat.list",
+      data: {
+        tools: expect.any(Array)
+      }
     });
+    const payload = JSON.parse(stdout.output) as {
+      data: { tools: Array<Record<string, unknown>> };
+    };
+    expect(sortedKeys(payload.data)).toEqual(["tools"]);
+    expect(sortedKeys(payload.data.tools[0]!)).toEqual(
+      [
+        "guidanceFile",
+        "machineReadableMode",
+        "mcp",
+        "note",
+        "projectConfig",
+        "resume",
+        "tier",
+        "tool"
+      ].sort()
+    );
     expect(stderr.output).toBe("");
   });
 
@@ -152,11 +182,26 @@ describe("runCli", () => {
       command: "compat.show",
       data: {
         tool: {
-          tool: "codex-cli",
-          tier: "tier1"
+          tool: "codex-cli"
         }
       }
     });
+    const payload = JSON.parse(stdout.output) as {
+      data: { tool: Record<string, unknown> };
+    };
+    expect(sortedKeys(payload.data)).toEqual(["tool"]);
+    expect(sortedKeys(payload.data.tool)).toEqual(
+      [
+        "guidanceFile",
+        "machineReadableMode",
+        "mcp",
+        "note",
+        "projectConfig",
+        "resume",
+        "tier",
+        "tool"
+      ].sort()
+    );
     expect(stderr.output).toBe("");
   });
 
@@ -167,7 +212,8 @@ describe("runCli", () => {
     const exitCode = await runCli(["compat", "probe", "codex-cli", "--json"], {
       stdout,
       stderr,
-      compatProbeImpl: async () => ({
+      compatProbeImpl: async () =>
+        ({
         probe: {
           runtime: "codex-cli",
           supportTier: "tier1",
@@ -179,17 +225,22 @@ describe("runCli", () => {
             resume: "unsupported",
             mcp: "unsupported",
             sessionLifecycle: "unsupported",
-            eventStreamParsing: "partial"
+            eventStreamParsing: "partial",
+            hiddenCapability: "internal"
           },
           adapterStatus: "implemented",
           probeStatus: "supported",
           diagnosis: {
             code: "exec_json_supported",
             summary:
-              "A local codex executable with `exec --json` support was confirmed."
+              "A local codex executable with `exec --json` support was confirmed.",
+            resolvedExecutable: "/Users/example/.bun/bin/codex"
+          },
+          runtimeState: {
+            sessionId: "thr_hidden"
           }
         }
-      })
+      }) as unknown as CompatibilityProbeData
     });
 
     expect(exitCode).toBe(0);
@@ -210,6 +261,34 @@ describe("runCli", () => {
     const payload = JSON.parse(stdout.output) as {
       data: { probe: Record<string, unknown> };
     };
+    expect(sortedKeys(payload.data)).toEqual(["probe"]);
+    expect(sortedKeys(payload.data.probe)).toEqual(
+      [
+        "adapterStatus",
+        "capabilities",
+        "diagnosis",
+        "guidanceFile",
+        "note",
+        "probeStatus",
+        "projectConfig",
+        "runtime",
+        "supportTier"
+      ].sort()
+    );
+    expect(
+      sortedKeys(payload.data.probe.capabilities as Record<string, unknown>)
+    ).toEqual(
+      [
+        "eventStreamParsing",
+        "machineReadableMode",
+        "mcp",
+        "resume",
+        "sessionLifecycle"
+      ].sort()
+    );
+    expect(
+      sortedKeys(payload.data.probe.diagnosis as Record<string, unknown>)
+    ).toEqual(["code", "summary"]);
     assertNoInternalRuntimeMetadata(payload.data as Record<string, unknown>);
     assertNoInternalRuntimeMetadata(payload.data.probe);
     assertNoInternalRuntimeMetadata(
@@ -268,15 +347,15 @@ describe("runCli", () => {
     expect(stderr.output).toBe("");
   });
 
-  it("should return compat smoke for codex-cli as json without leaking smoke internals", async () => {
+  it("should return compat probe for codex-cli as unsupported in json mode", async () => {
     const stdout = new MemoryWriter();
     const stderr = new MemoryWriter();
 
-    const exitCode = await runCli(["compat", "smoke", "codex-cli", "--json"], {
+    const exitCode = await runCli(["compat", "probe", "codex-cli", "--json"], {
       stdout,
       stderr,
-      compatSmokeImpl: async () => ({
-        smoke: {
+      compatProbeImpl: async () => ({
+        probe: {
           runtime: "codex-cli",
           supportTier: "tier1",
           guidanceFile: "AGENTS.md",
@@ -290,14 +369,72 @@ describe("runCli", () => {
             eventStreamParsing: "partial"
           },
           adapterStatus: "implemented",
+          probeStatus: "unsupported",
+          diagnosis: {
+            code: "exec_json_unavailable",
+            summary:
+              "No local codex executable with `exec --json` support was confirmed."
+          }
+        }
+      })
+    });
+
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: true,
+      command: "compat.probe",
+      data: {
+        probe: {
+          runtime: "codex-cli",
+          adapterStatus: "implemented",
+          probeStatus: "unsupported",
+          diagnosis: {
+            code: "exec_json_unavailable"
+          }
+        }
+      }
+    });
+    expect(stderr.output).toBe("");
+  });
+
+  it("should return compat smoke for codex-cli as json without leaking smoke internals", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["compat", "smoke", "codex-cli", "--json"], {
+      stdout,
+      stderr,
+      compatSmokeImpl: async () =>
+        ({
+        smoke: {
+          runtime: "codex-cli",
+          supportTier: "tier1",
+          guidanceFile: "AGENTS.md",
+          projectConfig: ".codex/config.toml",
+          note: "Concrete runtime.",
+          capabilities: {
+            machineReadableMode: "strong",
+            resume: "unsupported",
+            mcp: "unsupported",
+            sessionLifecycle: "unsupported",
+            eventStreamParsing: "partial",
+            hiddenCapability: "internal"
+          },
+          adapterStatus: "implemented",
           smokeStatus: "passed",
           diagnosis: {
             code: "smoke_passed",
             summary:
-              "The bounded codex-cli smoke path completed the public compatibility checks."
+              "The bounded codex-cli smoke path completed the public compatibility checks.",
+            runtimeState: {
+              sessionId: "thr_hidden"
+            }
+          },
+          env: {
+            OPENAI_API_KEY: "secret"
           }
         }
-      })
+      }) as unknown as CompatibilitySmokeData
     });
 
     expect(exitCode).toBe(0);
@@ -318,6 +455,34 @@ describe("runCli", () => {
     const payload = JSON.parse(stdout.output) as {
       data: { smoke: Record<string, unknown> };
     };
+    expect(sortedKeys(payload.data)).toEqual(["smoke"]);
+    expect(sortedKeys(payload.data.smoke)).toEqual(
+      [
+        "adapterStatus",
+        "capabilities",
+        "diagnosis",
+        "guidanceFile",
+        "note",
+        "projectConfig",
+        "runtime",
+        "smokeStatus",
+        "supportTier"
+      ].sort()
+    );
+    expect(
+      sortedKeys(payload.data.smoke.capabilities as Record<string, unknown>)
+    ).toEqual(
+      [
+        "eventStreamParsing",
+        "machineReadableMode",
+        "mcp",
+        "resume",
+        "sessionLifecycle"
+      ].sort()
+    );
+    expect(
+      sortedKeys(payload.data.smoke.diagnosis as Record<string, unknown>)
+    ).toEqual(["code", "summary"]);
     assertNoInternalRuntimeMetadata(payload.data as Record<string, unknown>);
     assertNoInternalRuntimeMetadata(payload.data.smoke);
     assertNoInternalRuntimeMetadata(
@@ -368,6 +533,92 @@ describe("runCli", () => {
           smokeStatus: "skipped",
           diagnosis: {
             code: "gate_disabled"
+          }
+        }
+      }
+    });
+    const payload = JSON.parse(stdout.output) as {
+      data: { smoke: Record<string, unknown> };
+    };
+    expect(sortedKeys(payload.data)).toEqual(["smoke"]);
+    expect(sortedKeys(payload.data.smoke)).toEqual(
+      [
+        "adapterStatus",
+        "capabilities",
+        "diagnosis",
+        "guidanceFile",
+        "note",
+        "projectConfig",
+        "runtime",
+        "smokeStatus",
+        "supportTier"
+      ].sort()
+    );
+    expect(
+      sortedKeys(payload.data.smoke.capabilities as Record<string, unknown>)
+    ).toEqual(
+      [
+        "eventStreamParsing",
+        "machineReadableMode",
+        "mcp",
+        "resume",
+        "sessionLifecycle"
+      ].sort()
+    );
+    expect(
+      sortedKeys(payload.data.smoke.diagnosis as Record<string, unknown>)
+    ).toEqual(["code", "summary"]);
+    assertNoInternalRuntimeMetadata(payload.data as Record<string, unknown>);
+    assertNoInternalRuntimeMetadata(payload.data.smoke);
+    assertNoInternalRuntimeMetadata(
+      payload.data.smoke.diagnosis as Record<string, unknown>
+    );
+    expect(stderr.output).toBe("");
+  });
+
+  it("should return compat smoke for codex-cli as an error in json mode", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["compat", "smoke", "codex-cli", "--json"], {
+      stdout,
+      stderr,
+      compatSmokeImpl: async () => ({
+        smoke: {
+          runtime: "codex-cli",
+          supportTier: "tier1",
+          guidanceFile: "AGENTS.md",
+          projectConfig: ".codex/config.toml",
+          note: "Concrete runtime.",
+          capabilities: {
+            machineReadableMode: "strong",
+            resume: "unsupported",
+            mcp: "unsupported",
+            sessionLifecycle: "unsupported",
+            eventStreamParsing: "partial"
+          },
+          adapterStatus: "implemented",
+          smokeStatus: "error",
+          diagnosis: {
+            code: "unexpected_error",
+            summary:
+              "The bounded codex-cli smoke path did not complete successfully."
+          }
+        }
+      })
+    });
+
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: true,
+      command: "compat.smoke",
+      data: {
+        smoke: {
+          runtime: "codex-cli",
+          adapterStatus: "implemented",
+          smokeStatus: "error",
+          diagnosis: {
+            code: "unexpected_error"
           }
         }
       }
@@ -520,6 +771,42 @@ describe("runCli", () => {
         }
       }
     });
+    const payload = JSON.parse(stdout.output) as {
+      data: { probe: Record<string, unknown> };
+    };
+    expect(sortedKeys(payload.data)).toEqual(["probe"]);
+    expect(sortedKeys(payload.data.probe)).toEqual(
+      [
+        "adapterStatus",
+        "capabilities",
+        "diagnosis",
+        "guidanceFile",
+        "note",
+        "probeStatus",
+        "projectConfig",
+        "runtime",
+        "supportTier"
+      ].sort()
+    );
+    expect(
+      sortedKeys(payload.data.probe.capabilities as Record<string, unknown>)
+    ).toEqual(
+      [
+        "eventStreamParsing",
+        "machineReadableMode",
+        "mcp",
+        "resume",
+        "sessionLifecycle"
+      ].sort()
+    );
+    expect(
+      sortedKeys(payload.data.probe.diagnosis as Record<string, unknown>)
+    ).toEqual(["code", "summary"]);
+    assertNoInternalRuntimeMetadata(payload.data as Record<string, unknown>);
+    assertNoInternalRuntimeMetadata(payload.data.probe);
+    assertNoInternalRuntimeMetadata(
+      payload.data.probe.diagnosis as Record<string, unknown>
+    );
     expect(stderr.output).toBe("");
   });
 
@@ -530,7 +817,8 @@ describe("runCli", () => {
     const exitCode = await runCli(["doctor", "--json"], {
       stdout,
       stderr,
-      doctorImpl: async () => ({
+      doctorImpl: async () =>
+        ({
         runtimes: [
           {
             runtime: "codex-cli",
@@ -543,10 +831,14 @@ describe("runCli", () => {
               resume: "unsupported",
               mcp: "unsupported",
               sessionLifecycle: "unsupported",
-              eventStreamParsing: "partial"
+              eventStreamParsing: "partial",
+              hiddenCapability: "internal"
             },
             adapterStatus: "implemented",
-            detected: true
+            detected: true,
+            controlPlane: {
+              sessionId: "thr_hidden"
+            }
           },
           {
             runtime: "claude-code",
@@ -559,13 +851,17 @@ describe("runCli", () => {
               resume: "unsupported",
               mcp: "unsupported",
               sessionLifecycle: "unsupported",
-              eventStreamParsing: "unsupported"
+              eventStreamParsing: "unsupported",
+              hiddenCapability: "internal"
             },
             adapterStatus: "descriptor_only",
-            detected: null
+            detected: null,
+            runtimeState: {
+              status: "internal"
+            }
           }
         ]
-      })
+      }) as unknown as CompatibilityDoctorData
     });
 
     expect(exitCode).toBe(0);
@@ -590,10 +886,107 @@ describe("runCli", () => {
     const payload = JSON.parse(stdout.output) as {
       data: { runtimes: Array<Record<string, unknown>> };
     };
+    expect(sortedKeys(payload.data)).toEqual(["runtimes"]);
     assertNoInternalRuntimeMetadata(payload.data as Record<string, unknown>);
     payload.data.runtimes.forEach((runtime) => {
+      expect(sortedKeys(runtime)).toEqual(
+        [
+          "adapterStatus",
+          "capabilities",
+          "detected",
+          "guidanceFile",
+          "note",
+          "projectConfig",
+          "runtime",
+          "supportTier"
+        ].sort()
+      );
+      expect(sortedKeys(runtime.capabilities as Record<string, unknown>)).toEqual(
+        [
+          "eventStreamParsing",
+          "machineReadableMode",
+          "mcp",
+          "resume",
+          "sessionLifecycle"
+        ].sort()
+      );
       assertNoInternalRuntimeMetadata(runtime);
     });
+    expect(stderr.output).toBe("");
+  });
+
+  it("should return doctor diagnostics with detected=false for implemented runtimes", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["doctor", "--json"], {
+      stdout,
+      stderr,
+      doctorImpl: async () => ({
+        runtimes: [
+          {
+            runtime: "codex-cli",
+            supportTier: "tier1",
+            guidanceFile: "AGENTS.md",
+            projectConfig: ".codex/config.toml",
+            note: "Concrete runtime.",
+            capabilities: {
+              machineReadableMode: "strong",
+              resume: "unsupported",
+              mcp: "unsupported",
+              sessionLifecycle: "unsupported",
+              eventStreamParsing: "partial"
+            },
+            adapterStatus: "implemented",
+            detected: false
+          }
+        ]
+      })
+    });
+
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: true,
+      command: "doctor",
+      data: {
+        runtimes: [
+          {
+            runtime: "codex-cli",
+            adapterStatus: "implemented",
+            detected: false
+          }
+        ]
+      }
+    });
+    const payload = JSON.parse(stdout.output) as {
+      data: { runtimes: Array<Record<string, unknown>> };
+    };
+    expect(sortedKeys(payload.data)).toEqual(["runtimes"]);
+    expect(sortedKeys(payload.data.runtimes[0]!)).toEqual(
+      [
+        "adapterStatus",
+        "capabilities",
+        "detected",
+        "guidanceFile",
+        "note",
+        "projectConfig",
+        "runtime",
+        "supportTier"
+      ].sort()
+    );
+    expect(
+      sortedKeys(payload.data.runtimes[0]!.capabilities as Record<string, unknown>)
+    ).toEqual(
+      [
+        "eventStreamParsing",
+        "machineReadableMode",
+        "mcp",
+        "resume",
+        "sessionLifecycle"
+      ].sort()
+    );
+    assertNoInternalRuntimeMetadata(payload.data as Record<string, unknown>);
+    assertNoInternalRuntimeMetadata(payload.data.runtimes[0]!);
     expect(stderr.output).toBe("");
   });
 
@@ -717,6 +1110,37 @@ describe("runCli", () => {
     expect(stderr.output).toContain("unknown option '--profile'");
   });
 
+  it("should keep attempt create provenance flags outside the public cli surface", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(
+      ["attempt", "create", "--source-kind", "fork", "--parent-attempt-id", "att_parent"],
+      {
+        stdout,
+        stderr
+      }
+    );
+
+    expect(exitCode).toBeGreaterThan(0);
+    expect(stdout.output).toBe("");
+    expect(stderr.output).toContain("unknown option '--source-kind'");
+  });
+
+  it("should keep positional attempt cleanup selectors outside the public cli surface", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["attempt", "cleanup", "att_positional", "--json"], {
+      stdout,
+      stderr
+    });
+
+    expect(exitCode).toBeGreaterThan(0);
+    expect(stdout.output).toBe("");
+    expect(stderr.output).toContain("too many arguments");
+  });
+
   it("should return a structured success envelope for attempt cleanup in json mode", async () => {
     const stdoutCreate = new MemoryWriter();
     const stderrCreate = new MemoryWriter();
@@ -790,6 +1214,26 @@ describe("runCli", () => {
     const cleanupPayload = JSON.parse(stdoutCleanup.output) as {
       data: Record<string, unknown>;
     };
+    expect(sortedKeys(cleanupPayload.data)).toEqual(["attempt", "cleanup"]);
+    expect(
+      sortedKeys(cleanupPayload.data.attempt as Record<string, unknown>)
+    ).toEqual(
+      [
+        "adapter",
+        "attemptId",
+        "branch",
+        "repoRoot",
+        "runtime",
+        "sourceKind",
+        "status",
+        "supportTier",
+        "taskId",
+        "worktreePath"
+      ].sort()
+    );
+    expect(
+      sortedKeys(cleanupPayload.data.cleanup as Record<string, unknown>)
+    ).toEqual(["outcome", "worktreeRemoved"]);
     assertNoInternalRuntimeMetadata(cleanupPayload.data);
     assertNoInternalRuntimeMetadata(
       cleanupPayload.data.attempt as Record<string, unknown>
@@ -1004,6 +1448,105 @@ describe("runCli", () => {
       }
     });
     expect(stderrSecondCleanup.output).toBe("");
+  }, 10000);
+
+  it("should return missing_worktree_converged for cleanup when the worktree is already gone safely", async () => {
+    const stdoutCreate = new MemoryWriter();
+    const stderrCreate = new MemoryWriter();
+    const stdoutCleanup = new MemoryWriter();
+    const stderrCleanup = new MemoryWriter();
+    const { repoRoot } = await createTestRepository();
+    tempDirectories.push(repoRoot);
+    const manifestRoot = await createTempDirectory("agent-worktree-cli-manifest-");
+    const worktreeRoot = await createTempDirectory("agent-worktree-cli-worktree-");
+
+    const createExitCode = await runCli(
+      [
+        "attempt",
+        "create",
+        "--task-id",
+        "Converged cleanup CLI",
+        "--repo-root",
+        repoRoot,
+        "--manifest-root",
+        manifestRoot,
+        "--worktree-root",
+        worktreeRoot,
+        "--json"
+      ],
+      {
+        stdout: stdoutCreate,
+        stderr: stderrCreate
+      }
+    );
+
+    expect(createExitCode).toBe(0);
+    const attemptId = JSON.parse(stdoutCreate.output).data.attempt.attemptId as string;
+    const manifest = await readManifest(attemptId, { rootDir: manifestRoot });
+
+    await runGit(["worktree", "remove", manifest.worktreePath!], {
+      cwd: repoRoot
+    });
+
+    const cleanupExitCode = await runCli(
+      [
+        "attempt",
+        "cleanup",
+        "--attempt-id",
+        attemptId,
+        "--manifest-root",
+        manifestRoot,
+        "--worktree-root",
+        worktreeRoot,
+        "--json"
+      ],
+      {
+        stdout: stdoutCleanup,
+        stderr: stderrCleanup
+      }
+    );
+
+    expect(cleanupExitCode).toBe(0);
+    expect(JSON.parse(stdoutCleanup.output)).toMatchObject({
+      ok: true,
+      command: "attempt.cleanup",
+      data: {
+        attempt: {
+          attemptId,
+          status: "cleaned",
+          sourceKind: "direct"
+        },
+        cleanup: {
+          outcome: "missing_worktree_converged",
+          worktreeRemoved: false
+        }
+      }
+    });
+    const cleanupPayload = JSON.parse(stdoutCleanup.output) as {
+      data: {
+        attempt: Record<string, unknown>;
+        cleanup: Record<string, unknown>;
+      };
+    };
+    expect(sortedKeys(cleanupPayload.data.attempt)).toEqual(
+      [
+        "adapter",
+        "attemptId",
+        "branch",
+        "repoRoot",
+        "runtime",
+        "sourceKind",
+        "status",
+        "supportTier",
+        "taskId",
+        "worktreePath"
+      ].sort()
+    );
+    expect(sortedKeys(cleanupPayload.data.cleanup)).toEqual([
+      "outcome",
+      "worktreeRemoved"
+    ]);
+    expect(stderrCleanup.output).toBe("");
   }, 10000);
 
   it("should return a structured validation error when create is missing --task-id", async () => {
@@ -1248,6 +1791,291 @@ describe("runCli", () => {
     expect(stderr.output).toBe("");
   });
 
+  it("should list attempts with opaque parentAttemptId provenance without requiring the parent manifest", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+    const { repoRoot } = await createTestRepository();
+    tempDirectories.push(repoRoot);
+    const manifestRoot = await createTempDirectory("agent-worktree-cli-manifest-");
+    const worktreeRoot = await createTempDirectory("agent-worktree-cli-worktree-");
+
+    const stdoutCreate = new MemoryWriter();
+    const stderrCreate = new MemoryWriter();
+    const createExitCode = await runCli(
+      [
+        "attempt",
+        "create",
+        "--task-id",
+        "Opaque parent list",
+        "--repo-root",
+        repoRoot,
+        "--manifest-root",
+        manifestRoot,
+        "--worktree-root",
+        worktreeRoot,
+        "--json"
+      ],
+      {
+        stdout: stdoutCreate,
+        stderr: stderrCreate
+      }
+    );
+
+    expect(createExitCode).toBe(0);
+    const createdAttemptId = JSON.parse(stdoutCreate.output).data.attempt
+      .attemptId as string;
+
+    const manifest = await readManifest(createdAttemptId, { rootDir: manifestRoot });
+    await writeManifest(
+      {
+        ...manifest,
+        sourceKind: "fork",
+        parentAttemptId: "att_missing_parent"
+      },
+      { rootDir: manifestRoot }
+    );
+
+    const exitCode = await runCli(
+      ["attempt", "list", "--manifest-root", manifestRoot, "--json"],
+      {
+        stdout,
+        stderr
+      }
+    );
+
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: true,
+      command: "attempt.list",
+      data: {
+        attempts: [
+          {
+            attemptId: createdAttemptId,
+            sourceKind: "fork",
+            parentAttemptId: "att_missing_parent"
+          }
+        ]
+      }
+    });
+    const listPayload = JSON.parse(stdout.output) as {
+      data: { attempts: Array<Record<string, unknown>> };
+    };
+    expect(sortedKeys(listPayload.data.attempts[0]!)).toEqual(
+      [
+        "adapter",
+        "attemptId",
+        "parentAttemptId",
+        "runtime",
+        "sourceKind",
+        "status",
+        "supportTier",
+        "taskId"
+      ].sort()
+    );
+    expect(stderr.output).toBe("");
+  }, 10000);
+
+  it("should clean attempts with opaque parentAttemptId provenance without requiring the parent manifest", async () => {
+    const stdoutCreate = new MemoryWriter();
+    const stderrCreate = new MemoryWriter();
+    const stdoutCleanup = new MemoryWriter();
+    const stderrCleanup = new MemoryWriter();
+    const { repoRoot } = await createTestRepository();
+    tempDirectories.push(repoRoot);
+    const manifestRoot = await createTempDirectory("agent-worktree-cli-manifest-");
+    const worktreeRoot = await createTempDirectory("agent-worktree-cli-worktree-");
+
+    const createExitCode = await runCli(
+      [
+        "attempt",
+        "create",
+        "--task-id",
+        "Opaque parent cleanup",
+        "--repo-root",
+        repoRoot,
+        "--manifest-root",
+        manifestRoot,
+        "--worktree-root",
+        worktreeRoot,
+        "--json"
+      ],
+      {
+        stdout: stdoutCreate,
+        stderr: stderrCreate
+      }
+    );
+
+    expect(createExitCode).toBe(0);
+    const attemptId = JSON.parse(stdoutCreate.output).data.attempt.attemptId as string;
+    const manifest = await readManifest(attemptId, { rootDir: manifestRoot });
+    await writeManifest(
+      {
+        ...manifest,
+        sourceKind: "delegated",
+        parentAttemptId: "att_missing_parent"
+      },
+      { rootDir: manifestRoot }
+    );
+
+    const cleanupExitCode = await runCli(
+      [
+        "attempt",
+        "cleanup",
+        "--attempt-id",
+        attemptId,
+        "--manifest-root",
+        manifestRoot,
+        "--worktree-root",
+        worktreeRoot,
+        "--json"
+      ],
+      {
+        stdout: stdoutCleanup,
+        stderr: stderrCleanup
+      }
+    );
+
+    expect(cleanupExitCode).toBe(0);
+    expect(JSON.parse(stdoutCleanup.output)).toMatchObject({
+      ok: true,
+      command: "attempt.cleanup",
+      data: {
+        attempt: {
+          attemptId,
+          status: "cleaned",
+          sourceKind: "delegated",
+          parentAttemptId: "att_missing_parent"
+        },
+        cleanup: {
+          outcome: "removed",
+          worktreeRemoved: true
+        }
+      }
+    });
+    expect(stderrCleanup.output).toBe("");
+  }, 10000);
+
+  it("should list legacy manifests that omit lineage metadata", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+    const manifestRoot = await createTempDirectory("agent-worktree-cli-manifest-");
+    const legacyAttemptDirectory = path.join(manifestRoot, "att_legacy_list");
+
+    await mkdir(legacyAttemptDirectory, { recursive: true });
+    await writeFile(
+      path.join(legacyAttemptDirectory, "manifest.json"),
+      JSON.stringify({
+        schemaVersion: "0.x",
+        attemptId: "att_legacy_list",
+        taskId: "task_legacy",
+        runtime: "codex-cli",
+        adapter: "subprocess",
+        status: "created",
+        verification: {
+          state: "pending",
+          checks: []
+        }
+      }),
+      "utf8"
+    );
+
+    const exitCode = await runCli(
+      ["attempt", "list", "--manifest-root", manifestRoot, "--json"],
+      {
+        stdout,
+        stderr
+      }
+    );
+
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: true,
+      command: "attempt.list",
+      data: {
+        attempts: [
+          {
+            attemptId: "att_legacy_list",
+            status: "created"
+          }
+        ]
+      }
+    });
+    expect(stderr.output).toBe("");
+  });
+
+  it("should clean legacy manifests that omit lineage metadata", async () => {
+    const stdoutCreate = new MemoryWriter();
+    const stderrCreate = new MemoryWriter();
+    const stdoutCleanup = new MemoryWriter();
+    const stderrCleanup = new MemoryWriter();
+    const { repoRoot } = await createTestRepository();
+    tempDirectories.push(repoRoot);
+    const manifestRoot = await createTempDirectory("agent-worktree-cli-manifest-");
+    const worktreeRoot = await createTempDirectory("agent-worktree-cli-worktree-");
+
+    const createExitCode = await runCli(
+      [
+        "attempt",
+        "create",
+        "--task-id",
+        "Legacy cleanup",
+        "--repo-root",
+        repoRoot,
+        "--manifest-root",
+        manifestRoot,
+        "--worktree-root",
+        worktreeRoot,
+        "--json"
+      ],
+      {
+        stdout: stdoutCreate,
+        stderr: stderrCreate
+      }
+    );
+
+    expect(createExitCode).toBe(0);
+    const attemptId = JSON.parse(stdoutCreate.output).data.attempt.attemptId as string;
+    const manifest = await readManifest(attemptId, { rootDir: manifestRoot });
+    const { sourceKind: _sourceKind, parentAttemptId: _parentAttemptId, ...legacyManifest } =
+      manifest;
+    await writeManifest(legacyManifest, { rootDir: manifestRoot });
+
+    const cleanupExitCode = await runCli(
+      [
+        "attempt",
+        "cleanup",
+        "--attempt-id",
+        attemptId,
+        "--manifest-root",
+        manifestRoot,
+        "--worktree-root",
+        worktreeRoot,
+        "--json"
+      ],
+      {
+        stdout: stdoutCleanup,
+        stderr: stderrCleanup
+      }
+    );
+
+    expect(cleanupExitCode).toBe(0);
+    expect(JSON.parse(stdoutCleanup.output)).toMatchObject({
+      ok: true,
+      command: "attempt.cleanup",
+      data: {
+        attempt: {
+          attemptId,
+          status: "cleaned"
+        },
+        cleanup: {
+          outcome: "removed",
+          worktreeRemoved: true
+        }
+      }
+    });
+    expect(stderrCleanup.output).toBe("");
+  }, 10000);
+
   it("should create an attempt and list it through the cli", async () => {
     const stdoutCreate = new MemoryWriter();
     const stderrCreate = new MemoryWriter();
@@ -1294,6 +2122,23 @@ describe("runCli", () => {
     expect(createPayload.data.attempt.status).toBe("created");
     expect(createPayload.data.attempt.sourceKind).toBe("direct");
     expect(createPayload.data.attempt.parentAttemptId).toBeUndefined();
+    expect(
+      sortedKeys(createPayload.data.attempt as Record<string, unknown>)
+    ).toEqual(
+      [
+        "adapter",
+        "attemptId",
+        "baseRef",
+        "branch",
+        "repoRoot",
+        "runtime",
+        "sourceKind",
+        "status",
+        "supportTier",
+        "taskId",
+        "worktreePath"
+      ].sort()
+    );
     assertNoInternalRuntimeMetadata(createPayload.data.attempt);
 
     const listExitCode = await runCli(
@@ -1321,6 +2166,18 @@ describe("runCli", () => {
     const listPayload = JSON.parse(stdoutList.output) as {
       data: { attempts: Array<Record<string, unknown>> };
     };
+    expect(sortedKeys(listPayload.data)).toEqual(["attempts"]);
+    expect(sortedKeys(listPayload.data.attempts[0]!)).toEqual(
+      [
+        "adapter",
+        "attemptId",
+        "runtime",
+        "sourceKind",
+        "status",
+        "supportTier",
+        "taskId"
+      ].sort()
+    );
     assertNoInternalRuntimeMetadata(listPayload.data.attempts[0]!);
   }, 10000);
 });

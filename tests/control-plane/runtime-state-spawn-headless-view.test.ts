@@ -4,7 +4,7 @@ import { ValidationError } from "../../src/core/errors.js";
 import {
   deriveExecutionSessionSpawnHeadlessView,
   type ExecutionSessionSpawnHeadlessRecord
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-headless-view helpers", () => {
   it("should build an execution session view from existing headless record metadata", () => {

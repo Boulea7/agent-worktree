@@ -60,6 +60,7 @@
 - [Triage](maintainers/triage.md)
 - [Development Phases](maintainers/development-phases.md)
 - [Automation Readiness](maintainers/automation-readiness.md)
+- [Future Super Agent Harness Planning (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/README.md)
 
 ## Decisions
 

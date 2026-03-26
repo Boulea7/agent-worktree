@@ -314,3 +314,39 @@ export interface AttemptHandoffDecisionSummary {
   canFinalizeHandoff: boolean;
   hasBlockingReasons: boolean;
 }
+
+export interface AttemptHandoffFinalizationTarget {
+  taskId: string | undefined;
+  attemptId: string;
+  runtime: string;
+  status: AttemptStatus;
+  sourceKind: AttemptSourceKind | undefined;
+}
+
+export interface AttemptHandoffFinalizationTargetSummary {
+  finalizationBasis: "handoff_decision_summary";
+  resultCount: number;
+  invokedResultCount: number;
+  blockedResultCount: number;
+  blockingReasons: AttemptHandoffDecisionBlockingReason[];
+  canFinalizeHandoff: boolean;
+  targets: AttemptHandoffFinalizationTarget[];
+}
+
+export interface AttemptHandoffFinalizationRequest {
+  taskId: string | undefined;
+  attemptId: string;
+  runtime: string;
+  status: AttemptStatus;
+  sourceKind: AttemptSourceKind | undefined;
+}
+
+export interface AttemptHandoffFinalizationRequestSummary {
+  requestBasis: "handoff_finalization_target_summary";
+  resultCount: number;
+  invokedResultCount: number;
+  blockedResultCount: number;
+  blockingReasons: AttemptHandoffDecisionBlockingReason[];
+  canFinalizeHandoff: boolean;
+  requests: AttemptHandoffFinalizationRequest[];
+}

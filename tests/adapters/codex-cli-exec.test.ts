@@ -7,7 +7,7 @@ import { CodexCliAdapter } from "../../src/adapters/codex-cli.js";
 import {
   deriveExecutionSessionSpawnEffects,
   deriveExecutionSessionSpawnHeadlessInput
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 import {
   codexCliCompatibilitySmokePrompt,
   codexCliCompatibilitySmokeTimeoutMs,

@@ -5,13 +5,13 @@ import {
   deriveExecutionSessionSpawnHeadlessCloseCandidate,
   deriveExecutionSessionSpawnHeadlessContext,
   deriveExecutionSessionSpawnHeadlessContextBatch,
+  deriveExecutionSessionSpawnHeadlessCloseTargetBatch,
   type ExecutionSessionRecord,
   type ExecutionSessionSpawnHeadlessCloseCandidateBatch,
   type ExecutionSessionSpawnHeadlessRecord,
   type ExecutionSessionSpawnHeadlessView,
   type ExecutionSessionSpawnHeadlessViewBatch
-} from "../../src/control-plane/index.js";
-import { deriveExecutionSessionSpawnHeadlessCloseTargetBatch } from "../../src/control-plane/runtime-state-spawn-headless-close-target-batch.js";
+} from "../../src/control-plane/internal.js";
 
 describe(
   "control-plane runtime-state spawn-headless-close-target-batch helpers",

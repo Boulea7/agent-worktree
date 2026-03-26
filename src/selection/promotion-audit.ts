@@ -1,13 +1,13 @@
 import { ValidationError } from "../core/errors.js";
 import { attemptSourceKinds } from "../manifest/types.js";
-import { attemptVerificationCheckStatuses } from "../verification/internal.js";
 import type {
   AttemptVerificationArtifactCheck,
-  AttemptVerificationCheckStatus,
   AttemptVerificationArtifactSummary,
+  AttemptVerificationCheckStatus,
   AttemptVerificationCounts,
   AttemptVerificationSummary
-} from "../verification/internal.js";
+} from "../verification/types.js";
+import { attemptVerificationCheckStatuses } from "../verification/types.js";
 import { deriveAttemptPromotionResult } from "./promotion-result.js";
 import type {
   AttemptPromotionAuditCandidate,

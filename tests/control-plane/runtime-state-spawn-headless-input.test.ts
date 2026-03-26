@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   deriveExecutionSessionSpawnHeadlessInput,
   type ExecutionSessionSpawnEffects
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-headless-input helpers", () => {
   it("should derive a minimal headless execution input from spawn effects", () => {

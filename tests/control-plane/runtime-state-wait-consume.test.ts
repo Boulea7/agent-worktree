@@ -4,7 +4,7 @@ import {
   consumeExecutionSessionWait,
   type ExecutionSessionWaitConsumer,
   type ExecutionSessionWaitRequest
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state wait-consume helpers", () => {
   it("should invoke wait exactly once for a supported wait consumer", async () => {

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   deriveExecutionSessionCloseConsumerReadiness,
   type ExecutionSessionCloseRequest
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state close-consumer-readiness helpers", () => {
   it("should allow a future close consumer when session lifecycle support is available", () => {

@@ -13,7 +13,7 @@ There are several ideas worth preserving because they could make `agent-worktree
 - semantic merge or synthesis of outputs across attempts
 - process or path supervision
 - heterogeneous multi-model collaboration
-- gateway or YAML-driven orchestration patterns inspired by broader agent platforms
+- gateway-shaped control surfaces inspired by broader systems
 - trace-first promotion and debugging loops
 
 They are exciting, but they are not yet stable enough for the public spec layer.
@@ -159,7 +159,7 @@ Safe documentation posture:
 
 Confidence: `Medium`.
 
-## 4. Process Supervision and Stage-Aware Scoring
+## 6. Process Supervision and Stage-Aware Scoring
 
 Idea:
 
@@ -183,7 +183,7 @@ Safe documentation posture:
 
 Confidence: `Medium-Low`.
 
-## 6. Heterogeneous Multi-Model Collaboration
+## 7. Heterogeneous Multi-Model Collaboration
 
 Idea:
 
@@ -208,11 +208,11 @@ Safe documentation posture:
 
 Confidence: `Medium`.
 
-## 7. Gateway or YAML-Orchestrated Systems
+## 8. Gateway-Shaped Control Surfaces
 
 Idea:
 
-- borrow some ideas from larger platforms such as OpenClaw around gateway layers, YAML-driven configuration, and skill orchestration
+- borrow some ideas from larger systems around gateway layers, control surfaces, and structured orchestration configuration without adopting a platform-first product shape
 
 Why it is promising:
 
@@ -226,12 +226,12 @@ Why it is not spec-ready:
 
 Safe documentation posture:
 
-- preserve it under future architecture or experimental compatibility docs
+- preserve it under future architecture or research docs
 - do not let it dominate the first public contracts
 
 Confidence: `Medium`.
 
-## 8. Skill-On-Demand and Intent-Scoped Context Loading
+## 9. Skill-On-Demand and Intent-Scoped Context Loading
 
 Idea:
 
@@ -254,7 +254,7 @@ Safe documentation posture:
 
 Confidence: `Medium`.
 
-## 9. Trace-First Promotion Gates
+## 10. Trace-First Promotion Gates
 
 Idea:
 
@@ -276,6 +276,85 @@ Safe documentation posture:
 
 - mention `candidate`, `promotion`, `non-regression`, and `trace-first gating` as future terms only
 - do not define lifecycle states or artifact formats around them
+
+Confidence: `Medium`.
+
+## 11. Intent-Scoped Capability Expansion
+
+Idea:
+
+- expose only lightweight capability descriptors by default
+- expand the full instruction, schema, or tool surface only when the current task or branch actually needs it
+
+Why it is promising:
+
+- reduces context bloat for large extension surfaces
+- fits the project's \"simple when possible, deeper when needed\" philosophy
+- may keep future adapter, verifier, or extension ecosystems understandable without overloading every run
+
+Why it is not spec-ready:
+
+- the project does not yet have a broad public extension surface to optimize
+- the trigger model for \"when to expand\" is still unsettled
+- easy to overspecify before the actual runtime bottlenecks are known
+
+Safe documentation posture:
+
+- keep it as a future research direction
+- describe it with soft terms such as `descriptor`, `deferred expansion`, and `intent-scoped loading`
+- avoid promising specific prompt behavior, caching policy, or registry semantics yet
+
+Confidence: `Medium-High`.
+
+## 12. Execution Isolation, Authorization, And Approval Separation
+
+Idea:
+
+- model execution environment isolation, policy authorization, and human approval as separate layers rather than one blended \"safety\" feature
+
+Why it is promising:
+
+- helps future delegated runtime work stay explicit about where safety checks actually happen
+- prevents policy gates from being confused with deterministic verification
+- creates a cleaner conceptual boundary for future runtime, adapter, and control-plane work
+
+Why it is not spec-ready:
+
+- current public surfaces still intentionally avoid public execution lifecycle promises
+- future runtimes may differ materially in which layers they can support
+- the project still needs more implementation evidence before freezing cross-runtime semantics
+
+Safe documentation posture:
+
+- keep it at the research layer for now
+- describe it as a boundary principle, not a finished architecture contract
+- avoid defining a public policy DSL, approval API, or runtime enforcement guarantee
+
+Confidence: `Medium-High`.
+
+## 13. Extension Definition Separate From Activation State
+
+Idea:
+
+- keep extension metadata and extension enablement as separate concerns rather than a single blended registration surface
+
+Why it is promising:
+
+- can keep large capability surfaces easier to reason about
+- aligns with descriptor-first compatibility thinking and deferred expansion patterns
+- may reduce accidental public-surface widening when future extension ecosystems grow
+
+Why it is not spec-ready:
+
+- the project does not yet have a broad public extension registry to stabilize
+- different runtimes may need materially different activation semantics
+- it is still too early to freeze enablement, discovery, and safety ingestion rules
+
+Safe documentation posture:
+
+- keep it at the research layer for now
+- describe it as a boundary principle, not a finished registry contract
+- avoid defining a public extension schema, activation API, or persistence model yet
 
 Confidence: `Medium`.
 

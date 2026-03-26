@@ -4,7 +4,7 @@ import { ValidationError } from "../../src/core/errors.js";
 import {
   deriveExecutionSessionCloseRequest,
   type ExecutionSessionCloseTarget
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state close-request helpers", () => {
   it("should derive a minimal close request from a valid close target", () => {

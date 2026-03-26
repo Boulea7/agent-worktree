@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   deriveExecutionSessionCloseConsumer,
   type ExecutionSessionCloseRequest
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state close-consumer helpers", () => {
   it("should compose a close consumer from a supported close request", () => {

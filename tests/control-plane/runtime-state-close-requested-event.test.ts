@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   deriveExecutionSessionCloseRequestedEvent,
   type ExecutionSessionCloseRequest
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state close-requested-event helpers", () => {
   it("should derive a minimal close_requested event from a valid close request", () => {

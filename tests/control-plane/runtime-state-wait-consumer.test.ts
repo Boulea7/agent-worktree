@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   deriveExecutionSessionWaitConsumer,
   type ExecutionSessionWaitRequest
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state wait-consumer helpers", () => {
   it("should compose a wait consumer from a supported wait request", () => {

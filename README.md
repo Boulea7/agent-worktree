@@ -74,11 +74,11 @@ This repository is currently focused on:
 6. a bounded internal `codex-cli` execution contract for the first Tier 1 runtime
 7. docs and implementation alignment
 
-The repository now has a thin Phase 4 public compatibility baseline. `compat smoke codex-cli` is the first bounded public end-to-end compatibility proof for a Tier 1 runtime, while `doctor` and `compat probe` keep the remaining Tier 1 runtimes on explicit descriptor-only boundaries until broader execution-backed work exists.
+The repository now has a thin Phase 4 public compatibility baseline. `compat smoke codex-cli` is the first bounded public compatibility smoke signal for a Tier 1 runtime, while `doctor` and `compat probe` keep the remaining Tier 1 runtimes on explicit descriptor-only boundaries until broader execution-backed work exists.
 
 The public baseline is still intentionally narrow. Today it includes `compat list`, `compat show`, `compat probe`, `compat smoke`, `doctor`, and the thin `attempt create` / `attempt list` / `attempt cleanup` lifecycle commands, all centered on machine-readable contracts.
 
-The internal baseline is wider than the public one. `codex-cli` now covers descriptor resolution, command rendering, real headless detection, a bounded internal execution contract around `codex exec --json`, minimal canonical event parsing, structured degradation, profile-aware internal passthrough, relay-compatible env overlays, and a deeper internal control-plane helper chain for runtime-state, spawn, wait, and close composition.
+The internal baseline is wider than the public one. `codex-cli` now covers descriptor resolution, command rendering, real headless detection, a bounded internal execution contract around `codex exec --json`, minimal canonical event parsing, structured degradation, profile-aware internal passthrough, relay-compatible env overlays, and deeper internal control-plane work around runtime-state and lifecycle-oriented composition.
 
 That Phase 4 closeout does not mean full runtime orchestration exists. Other runtimes remain descriptor-only, and `resume`, MCP transport execution, session lifecycle management, public execution commands, public wait/close/spawn commands, and manifest-backed execution persistence remain intentionally deferred. The current public promise is compatibility-only: direct-shell verification and the env-gated Vitest smoke harness may support it locally, but the Vitest harness remains narrower and is not a default validation path.
 The current `codex-cli` executable probing policy is intentionally internal: execution helpers may resolve a different `codex` binary than shell `command -v codex` when `PATH` contains shadow binaries, but that is not a public adapter contract. The same is true for internal `--profile` passthrough and relay-compatible env overlays. The bounded parser tolerates obvious non-JSON prelude lines, including bracket-prefixed log noise, while malformed JSON-looking records still fail loudly.
@@ -113,12 +113,12 @@ Most coding-agent workflows today live somewhere between:
 - Raw research notes, transcripts, local AI state, and session handoff logs stay local and ignored.
 - The root `PROJECT_STATUS.local.md` file is the visible local handoff log for future sessions and must not be committed.
 
-## Near-Term Deliverables
+## Near-Term Focus
 
-- Harden the current config, manifest, and CLI contracts
+- Continue hardening the current config, manifest, and CLI contracts
 - Keep the public compatibility diagnostics, probe, and smoke slices accurate and machine-readable
-- Expand the thin worktree lifecycle beyond create/list
-- Harden the bounded internal `codex-cli` execution contract without expanding it into a full runtime framework
+- Keep the current create/list/cleanup lifecycle baseline stable without widening public lifecycle surfaces
+- Continue hardening the bounded internal `codex-cli` execution contract without expanding it into a full runtime framework
 - Keep the `codex-cli` smoke scaffold env-gated and non-default while it remains a bounded compatibility probe
 - Keep docs, tests, and implementation boundaries aligned
 
