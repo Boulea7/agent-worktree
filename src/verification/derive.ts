@@ -62,6 +62,10 @@ export function deriveAttemptVerificationSummary(
         hasRequiredPending = true;
       }
     }
+
+    if (normalizedCheck.status === "skipped" && normalizedCheck.required) {
+      hasRequiredFailure = true;
+    }
   }
 
   const hasInvalidChecks = counts.invalid > 0;

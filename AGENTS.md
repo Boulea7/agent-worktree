@@ -36,12 +36,47 @@ The current thin Phase 4 public compatibility slice now includes:
 
 That public compatibility baseline now satisfies the current Phase 4 exit criteria: `codex-cli` has a bounded public end-to-end compatibility proof through `compat smoke`, while the other Tier 1 runtimes retain explicit descriptor-only support boundaries through `doctor` and `compat probe`. That remains a compatibility promise only; it does not imply general public execution or lifecycle support.
 
-The current thin Phase 5 internal verification slice now includes:
+The current thin Phase 5 internal verification and selection slice now includes:
 
 - a pure internal verification aggregation helper derived from the existing loose `manifest.verification` payload
+- a pure internal verification payload-ingestion helper that normalizes explicit internal check results into the existing loose `AttemptVerification` manifest-compatible shape
+- a bounded internal subprocess-backed verification execution helper that runs explicit deterministic checks through an injected runner and produces manifest-compatible verification payloads plus derived summaries without writing durable state
+- a pure internal verification artifact-summary helper layer that derives stable, execution-backed, non-leaky artifact summaries from internal verification execution results without writing durable state
+- a pure internal promotion/handoff candidate helper layer that derives stable single-attempt promotion candidates from `AttemptManifest` plus existing verification artifact summaries without widening selection policy or writing durable state
+- a pure internal promotion/handoff aggregation helper layer that derives stable multi-attempt promotion results from existing promotion candidates without widening into public promotion, merge, or report surfaces
+- a pure internal promotion/handoff audit-summary helper layer that derives stable, audit-oriented summaries from existing promotion results without widening into public promotion, handoff, report, or persistence surfaces
+- a pure internal promotion/handoff report-ready consumer layer that derives stable, grouped report projections from existing promotion audit summaries without widening into public promotion, handoff, report, or persistence surfaces
+- a pure internal promotion/handoff explanation-ready consumer layer that derives stable explanation summaries from existing promotion reports without widening into public promotion, handoff, report, explanation, or persistence surfaces
+- a pure internal promotion/handoff decision-ready consumer layer that derives stable promotion blockers and promote-ready conclusions from existing promotion explanation summaries without widening into public promotion, handoff, report, explanation, or persistence surfaces
+- a pure internal promotion-oriented target consumer layer that derives stable minimal promotion targets from existing promotion decision summaries without widening into public promotion, handoff, report, explanation, decision, target, or persistence surfaces
+- a pure internal handoff-oriented target consumer layer that derives stable minimal handoff targets from existing promotion targets without widening into public promotion, handoff, report, explanation, decision, target, or persistence surfaces
+- a pure internal handoff-oriented request layer that derives stable minimal handoff requests from existing handoff targets without widening into public promotion, handoff, report, explanation, decision, target, consumer, or persistence surfaces
+- a pure internal handoff-oriented consumer layer that derives stable minimal handoff consumers plus capability-aware consume readiness from existing handoff requests without widening into public promotion, handoff, report, explanation, decision, target, consumer execution, or persistence surfaces
+- a pure internal handoff consume helper driven by an explicitly injected invoker that consumes existing handoff-consumer objects without widening into public promotion, handoff execution, polling, scheduling, or persistence surfaces
+- a pure internal handoff consume-batch helper driven by that same injected invoker that consumes ordered existing handoff-consumer objects without widening into public promotion, handoff execution, aggregation policy, scheduling, or persistence surfaces
+- a pure internal handoff apply helper driven by that same injected invoker that composes existing handoff-consumer derivation plus handoff-consume results from existing handoff requests without widening into public promotion, handoff execution, apply policy, scheduling, or persistence surfaces
+- a pure internal handoff apply-batch helper driven by that same injected invoker that composes ordered handoff-apply results from existing handoff requests without widening into public promotion, handoff execution, aggregation policy, scheduling, or persistence surfaces
+- a pure internal handoff target-apply helper driven by that same injected invoker that composes minimal handoff-request derivation plus handoff-apply results from existing handoff targets without widening into public promotion, handoff execution, apply policy, scheduling, or persistence surfaces
+- a pure internal handoff target-apply-batch helper driven by that same injected invoker that composes ordered handoff target-apply results from existing handoff targets without widening into public promotion, handoff execution, aggregation policy, scheduling, or persistence surfaces
+- a pure internal promotion target-apply helper driven by that same injected invoker that composes minimal handoff-target derivation plus handoff target-apply results from existing promotion targets without widening into public promotion, handoff execution, apply policy, scheduling, or persistence surfaces
+- a pure internal promotion target-apply-batch helper driven by that same injected invoker that composes ordered promotion target-apply results from existing promotion targets without widening into public promotion, handoff execution, aggregation policy, scheduling, or persistence surfaces
+- a pure internal handoff report-ready bridge layer that derives stable grouped handoff-ready projections from existing promotion target-apply-batch results without widening into public handoff, report, explanation, decision, persistence, queue, or lifecycle surfaces
+- a pure internal handoff explanation-ready consumer layer that derives stable code-only handoff explanation summaries from existing handoff report-ready results without widening into public handoff, report, explanation text, decision, persistence, queue, or lifecycle surfaces
+- a pure internal handoff decision-ready consumer layer that derives stable blocker-oriented handoff-finalization conclusions from existing handoff explanation summaries without widening into public handoff, report, explanation, decision payloads, persistence, queue, or lifecycle surfaces
+- a narrowed internal-only import boundary for Phase 5 verification and selection helpers, where repo-internal tests and helper consumers should prefer `src/verification/internal.ts`, `src/selection/internal.ts`, or concrete module paths instead of treating the default barrels as the canonical helper surface
 - a pure internal deterministic tie-break helper layered on top of that derived verification summary for future selection work only
+- a pure internal selection helper layer that derives stable per-attempt candidates and best-first multi-attempt selection results directly from `AttemptManifest`
+- a verification-summary-only selection policy that remains deterministic, rejects mixed-task selection loudly, and does not widen into public ranking, promotion, or merge surfaces
 
-That Phase 5 foundation remains internal-only. It does not introduce a public verification CLI, a public ranking surface, a verification runner, manifest-backed derived verification state, or any wider lifecycle promise.
+That Phase 5 foundation remains internal-only. It does not introduce a public verification CLI, a public ranking surface, a public selection CLI, a public artifact-summary surface, a public promotion, handoff, report, explanation, decision, target, or consumer surface, manifest-backed derived verification, selection, artifact-summary, promotion-candidate, promotion-result, promotion-audit-summary, promotion-report, promotion-explanation, promotion-decision, promotion-target, handoff-target, or handoff-request state, or any wider lifecycle promise.
+Those internal handoff apply helpers remain composition-only. They do not introduce public handoff apply, handoff apply-batch, handoff target-apply, handoff target-apply-batch, queue, or durable handoff state semantics.
+That promotion-target-apply helper remains composition-only as well. It does not introduce public promotion apply, public handoff apply, queue, review, merge, or durable promotion or handoff state semantics.
+That promotion-target-apply-batch helper remains composition-only as well. It does not introduce public promotion apply-batch, public handoff apply-batch, queue, review, merge, or durable promotion or handoff state semantics.
+That handoff report-ready bridge remains projection-only as well. It does not introduce public `attempt report`, durable report state, queue metadata, or any wider handoff lifecycle semantics.
+That handoff explanation-ready consumer remains code-only as well. It does not introduce freeform explanation text, a public explanation surface, durable explanation state, or any wider handoff lifecycle semantics.
+That handoff decision-ready consumer remains blocker-only as well. It does not introduce public decision payloads, merge or review policy, rollback semantics, durable decision state, or any wider handoff lifecycle semantics.
+Required verification checks that end in `skipped` now remain blocking for Phase 5 selection and promotion semantics; they must not be treated as satisfied gates.
+The default `src/selection/index.ts` and `src/verification/index.ts` barrels should stay narrower than the full internal helper chain; repo-internal code and tests should use the dedicated internal barrels or concrete module paths instead of re-expanding those default entry points into a de facto public helper surface.
 
 The current thin Phase 3 foundation also includes:
 
@@ -102,11 +137,27 @@ The current thin Phase 3 foundation also includes:
 
 Current local docs and handoff focus:
 
-- keep the bounded internal `spawn-headless-wait-candidate` / `spawn-headless-wait-candidate-batch` bridge above existing `spawn-headless-context` metadata and generic `deriveExecutionSessionWaitReadiness(...)`
-- keep the bounded internal `spawn-headless-wait-target` / `spawn-headless-wait-target-batch` bridge above existing `spawn-headless-wait-candidate` metadata and generic `deriveExecutionSessionWaitTarget(...)`
-- keep the bounded internal `spawn-headless-close-candidate` / `spawn-headless-close-candidate-batch` bridge above existing `spawn-headless-context` metadata and generic `deriveExecutionSessionCloseReadiness(...)`
-- keep the bounded internal `spawn-headless-close-target` / `spawn-headless-close-target-batch` bridge above existing `spawn-headless-close-candidate` metadata and generic `deriveExecutionSessionCloseTarget(...)`
-- keep all handoff targets internal-only, non-public, non-persistent, non-manifest-backed, and above existing headless bridge metadata only; the wait-candidate bridge must not call the generic selector-driven `deriveExecutionSessionWaitCandidate(...)`, the wait-target bridge must not widen into wait-request/consumer/consume helpers, the close-candidate bridge must not widen into close-target/request/event/consumer/consume helpers, the close-target bridge must not widen into close-request/event/consumer/consume helpers, and all batch helpers must preserve input order, fail fast, and expose no per-item summary contract
+- keep the new internal verification producer boundary inside `src/verification/*` only and above generic subprocess execution only
+- keep verification payload derivation and verification execution internal-only, deterministic, non-persistent, non-manifest-backed, and compatible with the existing loose `AttemptVerification` manifest shape
+- keep verification artifact summaries derived from execution results internal-only, deterministic, non-persistent, non-manifest-backed, and free of subprocess/session/runtime internals
+- keep selection policy fixed to verification-summary-only ordering with loud mixed-task rejection and no execution-aware ranking inputs
+- keep the new promotion/handoff candidate layer constrained to single-attempt internal consumption above artifact summaries only
+- keep the new promotion/handoff aggregation layer constrained to existing promotion-candidate inputs only, with comparator-only ordering and no new artifact-aware ranking policy
+- keep the new promotion/handoff explanation-ready layer constrained to existing promotion-report inputs only, with deterministic projection-only semantics and no new selection or promotion policy
+- keep the new promotion/handoff decision-ready layer constrained to existing promotion-explanation inputs only, with blocker-only internal decision semantics and no new promotion or handoff policy
+- keep the new promotion-target layer constrained to existing promotion-decision inputs only, with deterministic target projection semantics and no new promotion, handoff, or persistence policy
+- keep the new handoff-target layer constrained to existing promotion-target inputs only, with deterministic target projection semantics and no new promotion, handoff, or persistence policy
+- keep the new handoff-request layer constrained to existing handoff-target inputs only, with deterministic request projection semantics and no new promotion, handoff, or persistence policy
+- keep the new handoff-consumer layer constrained to existing handoff-request inputs only, with deterministic readiness projection semantics and no new promotion, handoff execution, or persistence policy
+- keep the new handoff-consume layer constrained to existing handoff-consumer inputs only, with injected-boundary invocation semantics and no new promotion, handoff scheduling, or persistence policy
+- keep the new handoff-consume-batch layer constrained to existing handoff-consumer inputs only, with ordered fail-fast batch invocation semantics and no new promotion, handoff aggregation policy, or persistence policy
+- keep the new handoff-apply layer constrained to existing handoff-request inputs only, with consumer-plus-consume composition semantics and no new promotion, handoff apply policy, queueing, review, merge, or persistence policy
+- keep the new handoff-apply-batch layer constrained to existing handoff-request inputs only, with ordered fail-fast apply composition semantics and no new promotion, handoff aggregation policy, queueing, review, merge, or persistence policy
+- keep the new handoff-target-apply layer constrained to existing handoff-target inputs only, with request-plus-apply composition semantics and no new promotion metadata, handoff aggregation policy, queueing, review, merge, or persistence policy
+- keep the new handoff-target-apply-batch layer constrained to existing handoff-target inputs only, with ordered fail-fast target-plus-apply composition semantics and no new promotion metadata, handoff aggregation policy, queueing, review, merge, or persistence policy
+- keep the new promotion-target-apply layer constrained to existing promotion-target inputs only, with handoff-target-plus-target-apply composition semantics and no new promotion decision/report metadata, aggregation policy, queueing, review, merge, or persistence policy
+- keep the new promotion-target-apply-batch layer constrained to existing promotion-target inputs only, with ordered fail-fast promotion-target-apply composition semantics and no new promotion decision/report metadata, partial summaries, queueing, review, merge, or persistence policy
+- keep future follow-up slices focused on higher internal promotion/handoff apply helpers above promotion-target-apply-batch outputs rather than widening public verify/select/promote/merge or lifecycle surfaces
 
 Cleanup is expected to keep manifests as audit records, target a single `attemptId`, and fail loudly on invalid manifests or unsafe path conditions.
 

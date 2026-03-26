@@ -1,0 +1,543 @@
+import { describe, expect, it } from "vitest";
+
+import { ValidationError } from "../../src/core/errors.js";
+import type {
+  AttemptManifest,
+  AttemptVerification
+} from "../../src/manifest/types.js";
+import {
+  deriveAttemptPromotionCandidate,
+  deriveAttemptPromotionResult
+} from "../../src/selection/internal.js";
+import {
+  deriveAttemptVerificationArtifactSummary,
+  deriveAttemptVerificationSummary
+} from "../../src/verification/internal.js";
+import type {
+  AttemptVerificationArtifactSummary,
+  AttemptVerificationCheckStatus,
+  AttemptVerificationExecutedCheck,
+  AttemptVerificationSummary
+} from "../../src/verification/internal.js";
+import type {
+  AttemptPromotionCandidate
+} from "../../src/selection/internal.js";
+import type {
+  AttemptVerificationExecutionResult
+} from "../../src/verification/internal.js";
+
+describe("selection promotion-result helpers", () => {
+  it("should return a stable empty promotion result for an empty candidate list", () => {
+    expect(deriveAttemptPromotionResult([])).toEqual({
+      promotionResultBasis: "promotion_candidate",
+      taskId: undefined,
+      candidates: [],
+      selected: undefined,
+      comparableCandidateCount: 0,
+      promotionReadyCandidateCount: 0,
+      recommendedForPromotion: false
+    });
+  });
+
+  it("should derive a stable single-candidate promotion result", () => {
+    const candidate = createPromotionCandidate({
+      attemptId: "att_ready",
+      verification: createVerification({
+        state: "verified",
+        checks: []
+      })
+    });
+
+    expect(deriveAttemptPromotionResult([candidate])).toEqual({
+      promotionResultBasis: "promotion_candidate",
+      taskId: "task_shared",
+      candidates: [candidate],
+      selected: candidate,
+      comparableCandidateCount: 1,
+      promotionReadyCandidateCount: 1,
+      recommendedForPromotion: true
+    });
+  });
+
+  it("should sort candidates best-first using the existing verification comparator only", () => {
+    const candidates = [
+      createPromotionCandidate({
+        attemptId: "att_pending",
+        status: "failed",
+        runtime: "gemini-cli",
+        sourceKind: "delegated",
+        verification: createVerification({
+          state: "pending",
+          checks: []
+        })
+      }),
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        status: "created",
+        runtime: "codex-cli",
+        sourceKind: "direct",
+        verification: createVerification({
+          state: "verified",
+          checks: []
+        })
+      }),
+      createIncomparablePromotionCandidate({
+        attemptId: "att_incomplete",
+        status: "verified",
+        runtime: "opencode",
+        sourceKind: "fork"
+      })
+    ];
+
+    const result = deriveAttemptPromotionResult(candidates);
+
+    expect(result.candidates.map((candidate) => candidate.attemptId)).toEqual([
+      "att_ready",
+      "att_pending",
+      "att_incomplete"
+    ]);
+    expect(result.selected?.attemptId).toBe("att_ready");
+    expect(result.comparableCandidateCount).toBe(2);
+    expect(result.promotionReadyCandidateCount).toBe(1);
+    expect(result.recommendedForPromotion).toBe(true);
+  });
+
+  it("should ignore artifact-only differences when summaries are identical", () => {
+    const candidateA = createPromotionCandidate({
+      attemptId: "att_a",
+      verification: createVerification({
+        state: "passed",
+        checks: [
+          {
+            name: "lint",
+            required: true,
+            status: "passed"
+          }
+        ]
+      })
+    });
+    const candidateB = createPromotionCandidate({
+      attemptId: "att_b",
+      verification: createVerification({
+        state: "passed",
+        checks: [
+          {
+            name: "unit",
+            required: true,
+            status: "passed"
+          }
+        ]
+      })
+    });
+
+    const result = deriveAttemptPromotionResult([candidateB, candidateA]);
+
+    expect(result.candidates.map((candidate) => candidate.attemptId)).toEqual([
+      "att_a",
+      "att_b"
+    ]);
+    expect(result.selected?.attemptId).toBe("att_a");
+  });
+
+  it("should fail loudly when candidates from different taskIds are mixed", () => {
+    const candidates = [
+      createPromotionCandidate({
+        attemptId: "att_a",
+        taskId: "task_a"
+      }),
+      createPromotionCandidate({
+        attemptId: "att_b",
+        taskId: "task_b"
+      })
+    ];
+
+    expect(() => deriveAttemptPromotionResult(candidates)).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptPromotionResult(candidates)).toThrow(
+      "Attempt promotion result requires candidates from a single taskId."
+    );
+  });
+
+  it("should fail loudly when candidate.promotionBasis is invalid", () => {
+    const candidate = {
+      ...createPromotionCandidate({
+        attemptId: "att_invalid_basis"
+      }),
+      promotionBasis: "unexpected_basis"
+    } as unknown as AttemptPromotionCandidate;
+
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      'Attempt promotion result requires candidate.promotionBasis to be "verification_artifact_summary".'
+    );
+  });
+
+  it("should fail loudly when candidate.artifactSummary.summaryBasis is invalid", () => {
+    const candidate = {
+      ...createPromotionCandidate({
+        attemptId: "att_invalid_artifact_basis"
+      }),
+      artifactSummary: {
+        ...createPromotionCandidate({
+          attemptId: "att_shadow"
+        }).artifactSummary,
+        summaryBasis: "unexpected_basis"
+      }
+    } as unknown as AttemptPromotionCandidate;
+
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      'Attempt promotion result requires candidate.artifactSummary.summaryBasis to be "verification_execution".'
+    );
+  });
+
+  it("should fail loudly when candidate metadata is missing or invalid", () => {
+    const baseCandidate = createPromotionCandidate({
+      attemptId: "att_metadata"
+    });
+    const blankAttemptIdCandidate = {
+      ...baseCandidate,
+      attemptId: "   "
+    };
+    const blankRuntimeCandidate = {
+      ...baseCandidate,
+      runtime: "   "
+    };
+    const invalidStatusCandidate = {
+      ...baseCandidate,
+      status: "invalid"
+    } as unknown as AttemptPromotionCandidate;
+
+    expect(() =>
+      deriveAttemptPromotionResult([blankAttemptIdCandidate])
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionResult([blankAttemptIdCandidate])
+    ).toThrow(
+      "Attempt promotion result requires candidate.attemptId to be a non-empty string."
+    );
+    expect(() =>
+      deriveAttemptPromotionResult([blankRuntimeCandidate])
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionResult([blankRuntimeCandidate])
+    ).toThrow(
+      "Attempt promotion result requires candidate.runtime to be a non-empty string."
+    );
+    expect(() =>
+      deriveAttemptPromotionResult([invalidStatusCandidate])
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionResult([invalidStatusCandidate])
+    ).toThrow(
+      "Attempt promotion result requires candidate.status to use the existing attempt status vocabulary."
+    );
+  });
+
+  it("should fail loudly when candidate.summary does not match candidate.artifactSummary.summary", () => {
+    const baseCandidate = createPromotionCandidate({
+      attemptId: "att_summary_mismatch",
+      verification: createVerification({
+        state: "pending",
+        checks: [
+          {
+            name: "lint",
+            required: true,
+            status: "pending"
+          }
+        ]
+      })
+    });
+    const candidate = {
+      ...baseCandidate,
+      artifactSummary: {
+        ...baseCandidate.artifactSummary,
+        summary: {
+          ...baseCandidate.artifactSummary.summary,
+          sourceState: "passed"
+        }
+      }
+    };
+
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      "Attempt promotion result requires candidate.summary to match candidate.artifactSummary.summary."
+    );
+  });
+
+  it("should fail loudly when candidate.recommendedForPromotion does not match candidate.summary.isSelectionReady", () => {
+    const candidate = {
+      ...createPromotionCandidate({
+        attemptId: "att_summary_recommendation_mismatch"
+      }),
+      recommendedForPromotion: false
+    };
+
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      "Attempt promotion result requires candidate.recommendedForPromotion to match candidate.summary.isSelectionReady."
+    );
+  });
+
+  it("should fail loudly when candidate.recommendedForPromotion does not match candidate.artifactSummary.recommendedForPromotion", () => {
+    const baseCandidate = createPromotionCandidate({
+      attemptId: "att_artifact_recommendation_mismatch",
+      verification: createVerification({
+        state: "passed",
+        checks: [
+          {
+            name: "lint",
+            required: true,
+            status: "passed"
+          }
+        ]
+      })
+    });
+    const candidate = {
+      ...baseCandidate,
+      artifactSummary: {
+        ...baseCandidate.artifactSummary,
+        recommendedForPromotion: false
+      }
+    };
+
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      "Attempt promotion result requires candidate.recommendedForPromotion to match candidate.artifactSummary.recommendedForPromotion."
+    );
+  });
+
+  it("should not mutate candidates or the supplied candidate array", () => {
+    const firstCandidate = Object.freeze(
+      createPromotionCandidate({
+        attemptId: "att_z",
+        verification: createVerification({
+          state: "pending",
+          checks: []
+        })
+      })
+    );
+    const secondCandidate = Object.freeze(
+      createPromotionCandidate({
+        attemptId: "att_a",
+        verification: createVerification({
+          state: "verified",
+          checks: []
+        })
+      })
+    );
+    const candidates = [firstCandidate, secondCandidate];
+    const snapshot = structuredClone(candidates);
+
+    expect(() => deriveAttemptPromotionResult(candidates)).not.toThrow();
+    expect(candidates).toEqual(snapshot);
+    expect(candidates.map((candidate) => candidate.attemptId)).toEqual([
+      "att_z",
+      "att_a"
+    ]);
+  });
+
+  it("should not leak subprocess or runtime internals into the promotion result", () => {
+    const candidates = [
+      createPromotionCandidate({
+        attemptId: "att_non_leaky",
+        verification: createVerification({
+          state: "failed",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "failed"
+            }
+          ]
+        })
+      })
+    ];
+
+    const result = deriveAttemptPromotionResult(candidates);
+
+    expect(result).not.toHaveProperty("session");
+    expect(result).not.toHaveProperty("controlPlane");
+    expect(result).not.toHaveProperty("runtimeState");
+    expect(result.selected).toBeDefined();
+    expect(result.selected?.artifactSummary.checks[0]).not.toHaveProperty(
+      "exitCode"
+    );
+    expect(result.selected?.artifactSummary.checks[0]).not.toHaveProperty(
+      "failureKind"
+    );
+  });
+});
+
+function createPromotionCandidate(
+  overrides: Partial<AttemptManifest> & Pick<AttemptManifest, "attemptId"> & {
+    verification?: AttemptVerification;
+  }
+): AttemptPromotionCandidate {
+  const manifest = createManifest(overrides);
+  const artifactSummary = createArtifactSummary(manifest.verification);
+
+  return deriveAttemptPromotionCandidate(manifest, artifactSummary);
+}
+
+function createIncomparablePromotionCandidate(input: {
+  attemptId: string;
+  runtime: string;
+  status: AttemptManifest["status"];
+  sourceKind: AttemptManifest["sourceKind"];
+}): AttemptPromotionCandidate {
+  // This helper intentionally synthesizes an incomplete-but-consistent candidate
+  // so aggregation tests can lock comparator behavior for non-comparable inputs.
+  const summary: AttemptVerificationSummary = {
+    sourceState: "pending",
+    overallOutcome: "incomplete",
+    requiredOutcome: "incomplete",
+    counts: {
+      total: 1,
+      valid: 0,
+      invalid: 1,
+      required: 0,
+      optional: 0,
+      passed: 0,
+      failed: 0,
+      pending: 0,
+      skipped: 0,
+      error: 0
+    },
+    hasInvalidChecks: true,
+    hasComparablePayload: false,
+    isSelectionReady: false
+  };
+
+  return {
+    promotionBasis: "verification_artifact_summary",
+    attemptId: input.attemptId,
+    taskId: "task_shared",
+    runtime: input.runtime,
+    status: input.status,
+    sourceKind: input.sourceKind,
+    summary,
+    artifactSummary: {
+      summaryBasis: "verification_execution",
+      summary,
+      checks: [],
+      blockingRequiredCheckNames: [],
+      failedOrErrorCheckNames: [],
+      pendingCheckNames: [],
+      skippedCheckNames: [],
+      passedCheckNames: [],
+      recommendedForPromotion: false
+    },
+    recommendedForPromotion: false
+  };
+}
+
+function createManifest(
+  overrides: Partial<AttemptManifest> & Pick<AttemptManifest, "attemptId">
+): AttemptManifest {
+  const {
+    attemptId,
+    sourceKind,
+    status,
+    verification,
+    runtime,
+    taskId,
+    ...rest
+  } = overrides;
+
+  return {
+    adapter: "subprocess",
+    attemptId,
+    runtime: runtime ?? "codex-cli",
+    schemaVersion: "0.x",
+    ...(sourceKind === undefined ? {} : { sourceKind }),
+    status: status ?? "created",
+    taskId: taskId ?? "task_shared",
+    verification:
+      verification ?? {
+        state: "verified",
+        checks: []
+      },
+    ...rest
+  };
+}
+
+function createVerification(input: {
+  state: string;
+  checks: readonly {
+    name: string;
+    required?: boolean;
+    status: AttemptVerificationCheckStatus;
+  }[];
+}): AttemptVerification {
+  return {
+    state: input.state,
+    checks: input.checks.map((check) => ({
+      name: check.name,
+      required: check.required,
+      status: check.status
+    }))
+  };
+}
+
+function createArtifactSummary(
+  verification: AttemptVerification
+): AttemptVerificationArtifactSummary {
+  const result = createExecutionResult(verification);
+
+  return deriveAttemptVerificationArtifactSummary(result);
+}
+
+function createExecutionResult(
+  verification: AttemptVerification
+): AttemptVerificationExecutionResult {
+  const checks = verification.checks.map((check, index) =>
+    createExecutedCheckFromVerificationCheck(check, index)
+  );
+
+  return {
+    checks,
+    verification,
+    summary: deriveAttemptVerificationSummary(verification)
+  };
+}
+
+function createExecutedCheckFromVerificationCheck(
+  check: unknown,
+  index: number
+): AttemptVerificationExecutedCheck {
+  if (typeof check !== "object" || check === null || Array.isArray(check)) {
+    throw new Error(`Expected verification check ${index} to be an object.`);
+  }
+
+  const record = check as {
+    name?: unknown;
+    required?: unknown;
+    status?: unknown;
+  };
+
+  if (typeof record.name !== "string") {
+    throw new Error(`Expected verification check ${index} to use a string name.`);
+  }
+
+  if (typeof record.status !== "string") {
+    throw new Error(`Expected verification check ${index} to use a string status.`);
+  }
+
+  return {
+    name: record.name,
+    required: record.required === true,
+    status: record.status as AttemptVerificationCheckStatus
+  };
+}

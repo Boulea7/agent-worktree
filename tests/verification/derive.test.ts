@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { AttemptVerification } from "../../src/manifest/types.js";
-import { deriveAttemptVerificationSummary } from "../../src/verification/index.js";
+import { deriveAttemptVerificationSummary } from "../../src/verification/internal.js";
 
 describe("verification aggregation helpers", () => {
   it("should derive a stable pending summary for a fresh attempt payload", () => {
@@ -147,6 +147,44 @@ describe("verification aggregation helpers", () => {
         passed: 1,
         failed: 0,
         pending: 1,
+        skipped: 1,
+        error: 0
+      },
+      hasInvalidChecks: false,
+      hasComparablePayload: true,
+      isSelectionReady: false
+    });
+  });
+
+  it("should fail the required outcome when a required check is skipped", () => {
+    expect(
+      deriveAttemptVerificationSummary({
+        state: "pending",
+        checks: [
+          {
+            name: "lint",
+            status: "skipped",
+            required: true
+          },
+          {
+            name: "docs",
+            status: "passed"
+          }
+        ]
+      })
+    ).toEqual({
+      sourceState: "pending",
+      overallOutcome: "passed",
+      requiredOutcome: "failed",
+      counts: {
+        total: 2,
+        valid: 2,
+        invalid: 0,
+        required: 1,
+        optional: 1,
+        passed: 1,
+        failed: 0,
+        pending: 0,
         skipped: 1,
         error: 0
       },
