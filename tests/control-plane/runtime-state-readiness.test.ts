@@ -7,7 +7,7 @@ import {
   deriveExecutionSessionLifecycleDisposition,
   deriveExecutionSessionRecord,
   deriveExecutionSessionWaitReadiness
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 import type { ExecutionSessionRecord } from "../../src/control-plane/types.js";
 
 describe("control-plane runtime-state wait readiness helpers", () => {

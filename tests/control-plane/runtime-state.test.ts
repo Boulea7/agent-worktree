@@ -9,7 +9,7 @@ import { ValidationError } from "../../src/core/errors.js";
 import {
   buildExecutionSessionIndex,
   deriveExecutionSessionRecord
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 async function readFixture(name: string): Promise<string> {
   return readFile(

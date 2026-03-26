@@ -5,7 +5,7 @@ import {
   buildExecutionSessionView,
   deriveExecutionSessionSpawnCandidate,
   deriveExecutionSessionSpawnRequest
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 import type {
   ExecutionSessionRecord,
   ExecutionSessionSpawnRequestSourceKind

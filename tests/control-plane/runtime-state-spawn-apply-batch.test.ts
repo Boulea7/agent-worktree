@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   applyExecutionSessionSpawnBatch,
   type ExecutionSessionSpawnRequest
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-apply-batch helpers", () => {
   it("should return an empty batch result without invoking spawn", async () => {

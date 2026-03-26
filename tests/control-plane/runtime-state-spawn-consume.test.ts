@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   consumeExecutionSessionSpawn,
   type ExecutionSessionSpawnRequest
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-consume helpers", () => {
   it("should invoke spawn exactly once for a valid spawn request", async () => {

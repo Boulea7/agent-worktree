@@ -5,11 +5,11 @@ import {
   deriveExecutionSessionCloseTarget,
   deriveExecutionSessionSpawnHeadlessCloseCandidate,
   deriveExecutionSessionSpawnHeadlessContext,
+  deriveExecutionSessionSpawnHeadlessCloseTarget,
   type ExecutionSessionRecord,
   type ExecutionSessionSpawnHeadlessRecord,
   type ExecutionSessionSpawnHeadlessView
-} from "../../src/control-plane/index.js";
-import { deriveExecutionSessionSpawnHeadlessCloseTarget } from "../../src/control-plane/runtime-state-spawn-headless-close-target.js";
+} from "../../src/control-plane/internal.js";
 
 describe(
   "control-plane runtime-state spawn-headless-close-target helpers",

@@ -9,7 +9,7 @@ import {
   type ExecutionSessionSpawnHeadlessRecord,
   type ExecutionSessionSpawnHeadlessWaitCandidateBatch,
   type ExecutionSessionSpawnHeadlessViewBatch
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe(
   "control-plane runtime-state spawn-headless-wait-candidate-batch helpers",

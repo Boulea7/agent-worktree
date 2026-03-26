@@ -4,7 +4,7 @@ import type { HeadlessExecutionResult } from "../../src/adapters/types.js";
 import {
   deriveExecutionSessionSpawnHeadlessRecordBatch,
   type ExecutionSessionSpawnHeadlessExecute
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-headless-record-batch helpers", () => {
   it("should return an empty batch result when given no items", () => {

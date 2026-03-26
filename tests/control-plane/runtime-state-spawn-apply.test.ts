@@ -4,7 +4,7 @@ import { ValidationError } from "../../src/core/errors.js";
 import {
   applyExecutionSessionSpawn,
   type ExecutionSessionSpawnRequest
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-apply helpers", () => {
   it("should compose consume first and then derive effects", async () => {

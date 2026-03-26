@@ -4,7 +4,7 @@ import { ValidationError } from "../../src/core/errors.js";
 import {
   deriveExecutionSessionSpawnEffects,
   type ExecutionSessionSpawnRequest
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-effects helpers", () => {
   it("should derive minimal spawn effects from a valid fork request", () => {

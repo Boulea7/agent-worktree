@@ -7,7 +7,7 @@ import {
 import {
   executeExecutionSessionSpawnHeadless,
   type ExecutionSessionSpawnRequest
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-headless-execute helpers", () => {
   it("should compose headless apply first and then invoke headless execution", async () => {

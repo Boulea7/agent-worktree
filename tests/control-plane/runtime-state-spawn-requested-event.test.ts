@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   deriveExecutionSessionSpawnRequestedEvent,
   type ExecutionSessionSpawnRequest
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-requested-event helpers", () => {
   it("should derive a minimal spawn_requested event from a valid spawn request", () => {

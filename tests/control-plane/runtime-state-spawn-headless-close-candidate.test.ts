@@ -7,7 +7,7 @@ import {
   type ExecutionSessionRecord,
   type ExecutionSessionSpawnHeadlessRecord,
   type ExecutionSessionSpawnHeadlessView
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe(
   "control-plane runtime-state spawn-headless-close-candidate helpers",

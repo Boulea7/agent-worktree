@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   applyExecutionSessionSpawnHeadlessInput,
   type ExecutionSessionSpawnRequest
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-headless-apply helpers", () => {
   it("should compose spawn apply first and then derive headless input", async () => {

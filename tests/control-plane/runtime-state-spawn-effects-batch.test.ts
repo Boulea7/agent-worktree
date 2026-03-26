@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   deriveExecutionSessionSpawnEffectsBatch,
   type ExecutionSessionSpawnRequest
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-effects-batch helpers", () => {
   it("should return an empty batch result for an empty effects list", () => {

@@ -4,7 +4,7 @@ import {
   deriveExecutionSessionSpawnHeadlessInputBatch,
   type ExecutionSessionSpawnEffects,
   type ExecutionSessionSpawnHeadlessInputInput
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-headless-input-batch helpers", () => {
   it("should return an empty batch result for an empty bridge list", () => {

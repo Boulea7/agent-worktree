@@ -4,7 +4,7 @@ import {
   consumeExecutionSessionClose,
   type ExecutionSessionCloseConsumer,
   type ExecutionSessionCloseRequest
-} from "../../src/control-plane/index.js";
+} from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state close-consume helpers", () => {
   it("should invoke close exactly once for a supported close consumer", async () => {
