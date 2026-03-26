@@ -306,12 +306,11 @@ Cleanup MUST return a structured success payload for exactly one targeted attemp
 Cleanup SHOULD preserve additive attempt provenance fields in the returned attempt payload and in the rewritten manifest.
 
 Machine-readable cleanup output SHOULD be structured around explicit outcomes rather than free-form text.
-The payload SHOULD distinguish at least:
+The success payload SHOULD distinguish at least:
 
 - a successful cleanup
 - an already-cleaned attempt
-- a missing attempt
-- an invalid manifest discovered during cleanup
+- a safely converged cleanup where the worktree is already absent
 
 An early informative shape may look like:
 
@@ -323,12 +322,9 @@ An early informative shape may look like:
     "attempt": {
       "attemptId": "att_demo",
       "status": "cleaned",
+      "sourceKind": "direct",
       "repoRoot": "/abs/repo/root",
-      "worktreePath": "/abs/worktree",
-      "verification": {
-        "state": "pending",
-        "checks": []
-      }
+      "worktreePath": "/abs/worktree"
     },
     "cleanup": {
       "outcome": "removed",
@@ -344,6 +340,7 @@ The initial `cleanup.outcome` vocabulary is intentionally small:
 - `already_cleaned`
 - `missing_worktree_converged`
 
+If the targeted attempt does not exist, the command SHOULD return a structured `NOT_FOUND` error envelope rather than a success payload.
 If cleanup encounters an invalid manifest for the targeted attempt, the command SHOULD return a structured error payload that makes the invalid state explicit.
 It MUST NOT silently skip the manifest and report success as if nothing was found.
 Cleanup does not currently interpret `sourceKind` or `parentAttemptId` as live session state and MUST NOT infer delegated runtime semantics from them.

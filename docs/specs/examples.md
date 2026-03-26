@@ -93,12 +93,9 @@ agent-worktree attempt cleanup --attempt-id att_demo --json
     "attempt": {
       "attemptId": "att_demo",
       "status": "cleaned",
+      "sourceKind": "direct",
       "repoRoot": "/repos/agent-worktree",
-      "worktreePath": "/state/worktrees/att_demo",
-      "verification": {
-        "state": "pending",
-        "checks": []
-      }
+      "worktreePath": "/state/worktrees/att_demo"
     },
     "cleanup": {
       "outcome": "removed",
@@ -109,3 +106,4 @@ agent-worktree attempt cleanup --attempt-id att_demo --json
 ```
 
 This example is intentionally structured around explicit cleanup outcomes rather than free-form terminal text.
+Missing attempts and invalid manifests return structured error envelopes instead of widening the success payload.
