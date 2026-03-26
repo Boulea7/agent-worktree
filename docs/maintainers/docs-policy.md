@@ -20,3 +20,5 @@ Keep the repository coherent while it is still evolving quickly.
 - compatibility truth: `docs/compat/*`
 - research synthesis: `docs/research/*`
 - maintainer process: `docs/maintainers/*`
+
+`docs/maintainers/future-super-agent-harness/*` is maintainer planning only, non-contractual, and subordinate to the current README/SPEC/RFC/ADR layers.
