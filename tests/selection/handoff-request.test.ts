@@ -71,6 +71,24 @@ describe("selection handoff-request helpers", () => {
     });
   });
 
+  it("should trim taskId, attemptId, and runtime when deriving a handoff request", () => {
+    expect(
+      deriveAttemptHandoffRequest(
+        createHandoffTarget({
+          taskId: "  task_shared  ",
+          attemptId: "  att_ready  ",
+          runtime: "  codex-cli  "
+        })
+      )
+    ).toEqual({
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli",
+      status: "created",
+      sourceKind: undefined
+    });
+  });
+
   it("should fail loudly when target.handoffBasis is invalid", () => {
     const target = {
       ...createHandoffTarget(),
@@ -98,6 +116,17 @@ describe("selection handoff-request helpers", () => {
     const target = {
       ...createHandoffTarget(),
       taskId: undefined
+    } as unknown as AttemptHandoffTarget;
+
+    expect(() => deriveAttemptHandoffRequest(target)).toThrow(
+      "Attempt handoff request requires target.taskId to be a non-empty string."
+    );
+  });
+
+  it("should fail loudly when target.taskId is blank-only whitespace", () => {
+    const target = {
+      ...createHandoffTarget(),
+      taskId: "   "
     } as unknown as AttemptHandoffTarget;
 
     expect(() => deriveAttemptHandoffRequest(target)).toThrow(

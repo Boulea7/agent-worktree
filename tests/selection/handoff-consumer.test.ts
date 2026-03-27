@@ -113,6 +113,33 @@ describe("selection handoff-consumer helpers", () => {
     });
   });
 
+  it("should trim taskId, attemptId, and runtime when deriving a handoff consumer", () => {
+    expect(
+      deriveAttemptHandoffConsumer({
+        request: createHandoffRequest({
+          taskId: "  task_shared  ",
+          attemptId: "  att_ready  ",
+          runtime: "  codex-cli  "
+        }),
+        resolveHandoffCapability: () => true
+      })
+    ).toEqual({
+      request: {
+        taskId: "task_shared",
+        attemptId: "att_ready",
+        runtime: "codex-cli",
+        status: "created",
+        sourceKind: undefined
+      },
+      readiness: {
+        blockingReasons: [],
+        canConsumeHandoff: true,
+        hasBlockingReasons: false,
+        handoffSupported: true
+      }
+    });
+  });
+
   it("should fail loudly when the runtime resolver returns a non-boolean readiness value", () => {
     expect(() =>
       deriveAttemptHandoffConsumer({
@@ -133,6 +160,21 @@ describe("selection handoff-consumer helpers", () => {
         request
       })
     ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffConsumer({
+        request
+      })
+    ).toThrow(
+      "Attempt handoff consumer requires request.taskId to be a non-empty string."
+    );
+  });
+
+  it("should fail loudly when request.taskId is blank-only whitespace", () => {
+    const request = {
+      ...createHandoffRequest(),
+      taskId: "   "
+    } as unknown as AttemptHandoffRequest;
+
     expect(() =>
       deriveAttemptHandoffConsumer({
         request
@@ -308,6 +350,21 @@ describe("selection handoff-consumer helpers", () => {
       hasBlockingReasons: false,
       handoffSupported: true
     });
+  });
+
+  it("should call the supplied runtime resolver with the canonical trimmed runtime", () => {
+    const resolveHandoffCapability = vi.fn(() => true);
+
+    const consumer = deriveAttemptHandoffConsumer({
+      request: createHandoffRequest({
+        runtime: "  gemini-cli  "
+      }),
+      resolveHandoffCapability
+    });
+
+    expect(resolveHandoffCapability).toHaveBeenCalledTimes(1);
+    expect(resolveHandoffCapability).toHaveBeenCalledWith("gemini-cli");
+    expect(consumer?.request.runtime).toBe("gemini-cli");
   });
 
   it("should derive a stable handoff consumer through the canonical promotion-to-handoff chain", () => {

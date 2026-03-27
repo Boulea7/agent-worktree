@@ -23,17 +23,17 @@ export function deriveAttemptHandoffTarget(
   }
 
   validateTargetBasis(target);
-  validateTaskId(target.taskId);
-  validateNonEmptyString(target.attemptId, "target.attemptId");
-  validateNonEmptyString(target.runtime, "target.runtime");
+  const taskId = normalizeRequiredString(target.taskId, "target.taskId");
+  const attemptId = normalizeRequiredString(target.attemptId, "target.attemptId");
+  const runtime = normalizeRequiredString(target.runtime, "target.runtime");
   validateAttemptStatus(target.status);
   validateAttemptSourceKind(target.sourceKind);
 
   return {
     handoffBasis: ATTEMPT_HANDOFF_TARGET_BASIS,
-    taskId: target.taskId,
-    attemptId: target.attemptId,
-    runtime: target.runtime,
+    taskId,
+    attemptId,
+    runtime,
     status: target.status,
     sourceKind: target.sourceKind
   };
@@ -47,20 +47,22 @@ function validateTargetBasis(target: AttemptPromotionTarget): void {
   }
 }
 
-function validateTaskId(value: unknown): void {
-  if (typeof value !== "string" || value.trim().length === 0) {
-    throw new ValidationError(
-      "Attempt handoff target requires target.taskId to be a non-empty string."
-    );
-  }
-}
-
-function validateNonEmptyString(value: unknown, fieldName: string): void {
-  if (typeof value !== "string" || value.trim().length === 0) {
+function normalizeRequiredString(value: unknown, fieldName: string): string {
+  if (typeof value !== "string") {
     throw new ValidationError(
       `Attempt handoff target requires ${fieldName} to be a non-empty string.`
     );
   }
+
+  const normalized = value.trim();
+
+  if (normalized.length === 0) {
+    throw new ValidationError(
+      `Attempt handoff target requires ${fieldName} to be a non-empty string.`
+    );
+  }
+
+  return normalized;
 }
 
 function validateAttemptStatus(value: unknown): void {
