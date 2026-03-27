@@ -144,7 +144,8 @@ function deriveAttemptPromotionAuditCandidate(
       ...candidate.artifactSummary.blockingRequiredCheckNames
     ],
     failedOrErrorCheckNames: [...candidate.artifactSummary.failedOrErrorCheckNames],
-    pendingCheckNames: [...candidate.artifactSummary.pendingCheckNames]
+    pendingCheckNames: [...candidate.artifactSummary.pendingCheckNames],
+    skippedCheckNames: [...candidate.artifactSummary.skippedCheckNames]
   };
 }
 
@@ -216,6 +217,17 @@ function validateArtifactSummaryNameLists(
   if (!stringArraysEqual(artifactSummary.pendingCheckNames, pendingCheckNames)) {
     throw new ValidationError(
       "Attempt promotion audit summary requires candidate.artifactSummary.pendingCheckNames to match candidate.artifactSummary.checks."
+    );
+  }
+
+  const skippedCheckNames = collectCheckNames(
+    checks,
+    (check) => check.status === "skipped"
+  );
+
+  if (!stringArraysEqual(artifactSummary.skippedCheckNames, skippedCheckNames)) {
+    throw new ValidationError(
+      "Attempt promotion audit summary requires candidate.artifactSummary.skippedCheckNames to match candidate.artifactSummary.checks."
     );
   }
 }

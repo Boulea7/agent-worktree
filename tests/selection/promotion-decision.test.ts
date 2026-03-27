@@ -88,7 +88,8 @@ describe("selection promotion-decision helpers", () => {
         explanationCode: "selected",
         blockingRequiredCheckNames: [],
         failedOrErrorCheckNames: [],
-        pendingCheckNames: []
+        pendingCheckNames: [],
+        skippedCheckNames: []
       },
       blockingReasons: [],
       canPromote: true,
@@ -170,6 +171,37 @@ describe("selection promotion-decision helpers", () => {
       "required_checks_failed",
       "required_checks_pending"
     ]);
+  });
+
+  it("should derive both failed and pending blockers when required checks are skipped and pending together", () => {
+    const summary = createPromotionExplanationSummary([
+      createPromotionCandidate({
+        attemptId: "att_blocked",
+        verification: createVerification({
+          state: "failed",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "skipped"
+            },
+            {
+              name: "unit",
+              required: true,
+              status: "pending"
+            }
+          ]
+        })
+      })
+    ]);
+
+    const decision = deriveAttemptPromotionDecisionSummary(summary);
+
+    expect(decision.blockingReasons).toEqual([
+      "required_checks_failed",
+      "required_checks_pending"
+    ]);
+    expect(decision.selected?.skippedCheckNames).toEqual(["lint"]);
   });
 
   it("should derive verification_incomplete when the selected explanation candidate is not ready without failed or pending checks", () => {

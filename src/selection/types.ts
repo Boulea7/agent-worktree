@@ -58,6 +58,7 @@ export interface AttemptPromotionAuditCandidate {
   blockingRequiredCheckNames: string[];
   failedOrErrorCheckNames: string[];
   pendingCheckNames: string[];
+  skippedCheckNames: string[];
 }
 
 export interface AttemptPromotionAuditSummary {
@@ -105,6 +106,7 @@ export interface AttemptPromotionExplanationCandidate {
   blockingRequiredCheckNames: string[];
   failedOrErrorCheckNames: string[];
   pendingCheckNames: string[];
+  skippedCheckNames: string[];
 }
 
 export interface AttemptPromotionExplanationSummary {

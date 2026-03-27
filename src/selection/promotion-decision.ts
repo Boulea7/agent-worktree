@@ -221,6 +221,7 @@ function validateExplanationCandidate(
     "candidate.failedOrErrorCheckNames"
   );
   validateCheckNameList(candidate.pendingCheckNames, "candidate.pendingCheckNames");
+  validateCheckNameList(candidate.skippedCheckNames, "candidate.skippedCheckNames");
 }
 
 function deriveBlockingReasons(
@@ -236,6 +237,9 @@ function deriveBlockingReasons(
   }
 
   const blockingReasons: AttemptPromotionDecisionBlockingReason[] = [];
+  const hasRequiredSkipped = selected.blockingRequiredCheckNames.some((name) =>
+    selected.skippedCheckNames.includes(name)
+  );
   const hasRequiredFailure = selected.blockingRequiredCheckNames.some((name) =>
     selected.failedOrErrorCheckNames.includes(name)
   );
@@ -245,6 +249,7 @@ function deriveBlockingReasons(
 
   if (
     hasRequiredFailure ||
+    hasRequiredSkipped ||
     (selected.blockingRequiredCheckNames.length > 0 && !hasRequiredPending)
   ) {
     blockingReasons.push("required_checks_failed");
@@ -317,7 +322,8 @@ function cloneExplanationCandidate(
     explanationCode: candidate.explanationCode,
     blockingRequiredCheckNames: [...candidate.blockingRequiredCheckNames],
     failedOrErrorCheckNames: [...candidate.failedOrErrorCheckNames],
-    pendingCheckNames: [...candidate.pendingCheckNames]
+    pendingCheckNames: [...candidate.pendingCheckNames],
+    skippedCheckNames: [...candidate.skippedCheckNames]
   };
 }
 

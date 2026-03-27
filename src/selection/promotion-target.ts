@@ -206,6 +206,12 @@ function validatePromotionDecisionSummary(
       );
     }
 
+    if (summary.promotionReadyCandidateCount < 1) {
+      throw new ValidationError(
+        "Attempt promotion target requires summary.promotionReadyCandidateCount to be at least 1 when summary.canPromote is true."
+      );
+    }
+
     if (summary.recommendedForPromotion !== true) {
       throw new ValidationError(
         "Attempt promotion target requires summary.recommendedForPromotion to be true when summary.canPromote is true."
@@ -327,6 +333,10 @@ function validateSelectedCandidate(
     candidate.pendingCheckNames,
     "summary.selected.pendingCheckNames"
   );
+  validateCheckNameList(
+    candidate.skippedCheckNames,
+    "summary.selected.skippedCheckNames"
+  );
 }
 
 function deriveBlockingReasons(
@@ -342,6 +352,9 @@ function deriveBlockingReasons(
   }
 
   const blockingReasons: AttemptPromotionDecisionBlockingReason[] = [];
+  const hasRequiredSkipped = selected.blockingRequiredCheckNames.some((name) =>
+    selected.skippedCheckNames.includes(name)
+  );
   const hasRequiredFailure = selected.blockingRequiredCheckNames.some((name) =>
     selected.failedOrErrorCheckNames.includes(name)
   );
@@ -351,6 +364,7 @@ function deriveBlockingReasons(
 
   if (
     hasRequiredFailure ||
+    hasRequiredSkipped ||
     (selected.blockingRequiredCheckNames.length > 0 && !hasRequiredPending)
   ) {
     blockingReasons.push("required_checks_failed");
