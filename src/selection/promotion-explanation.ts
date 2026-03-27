@@ -234,6 +234,7 @@ function validatePromotionAuditCandidate(
     "candidate.failedOrErrorCheckNames"
   );
   validateCheckNameList(candidate.pendingCheckNames, "candidate.pendingCheckNames");
+  validateCheckNameList(candidate.skippedCheckNames, "candidate.skippedCheckNames");
 }
 
 function deriveExplanationCandidate(
@@ -253,7 +254,8 @@ function deriveExplanationCandidate(
     explanationCode: deriveExplanationCode(candidate, isSelected),
     blockingRequiredCheckNames: [...candidate.blockingRequiredCheckNames],
     failedOrErrorCheckNames: [...candidate.failedOrErrorCheckNames],
-    pendingCheckNames: [...candidate.pendingCheckNames]
+    pendingCheckNames: [...candidate.pendingCheckNames],
+    skippedCheckNames: [...candidate.skippedCheckNames]
   };
 }
 
@@ -271,7 +273,8 @@ function cloneExplanationCandidate(
     explanationCode: candidate.explanationCode,
     blockingRequiredCheckNames: [...candidate.blockingRequiredCheckNames],
     failedOrErrorCheckNames: [...candidate.failedOrErrorCheckNames],
-    pendingCheckNames: [...candidate.pendingCheckNames]
+    pendingCheckNames: [...candidate.pendingCheckNames],
+    skippedCheckNames: [...candidate.skippedCheckNames]
   };
 }
 
@@ -288,6 +291,9 @@ function deriveExplanationCode(
   }
 
   if (candidate.blockingRequiredCheckNames.length > 0) {
+    const hasRequiredSkipped = candidate.blockingRequiredCheckNames.some((name) =>
+      candidate.skippedCheckNames.includes(name)
+    );
     const hasRequiredPending = candidate.blockingRequiredCheckNames.some((name) =>
       candidate.pendingCheckNames.includes(name)
     );
@@ -295,7 +301,11 @@ function deriveExplanationCode(
       candidate.failedOrErrorCheckNames.includes(name)
     );
 
-    if (hasRequiredFailure || candidate.summary.requiredOutcome === "failed") {
+    if (
+      hasRequiredFailure ||
+      hasRequiredSkipped ||
+      candidate.summary.requiredOutcome === "failed"
+    ) {
       return "required_checks_failed";
     }
 
@@ -348,7 +358,8 @@ function promotionAuditCandidatesEqual(
       left.failedOrErrorCheckNames,
       right.failedOrErrorCheckNames
     ) &&
-    stringArraysEqual(left.pendingCheckNames, right.pendingCheckNames)
+    stringArraysEqual(left.pendingCheckNames, right.pendingCheckNames) &&
+    stringArraysEqual(left.skippedCheckNames, right.skippedCheckNames)
   );
 }
 

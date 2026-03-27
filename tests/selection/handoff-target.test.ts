@@ -32,6 +32,25 @@ describe("selection handoff-target helpers", () => {
     });
   });
 
+  it("should trim taskId, attemptId, and runtime when deriving a handoff target", () => {
+    expect(
+      deriveAttemptHandoffTarget(
+        createPromotionTarget({
+          taskId: "  task_shared  ",
+          attemptId: "  att_ready  ",
+          runtime: "  codex-cli  "
+        })
+      )
+    ).toEqual({
+      handoffBasis: "promotion_target",
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli",
+      status: "created",
+      sourceKind: undefined
+    });
+  });
+
   it("should fail loudly when target.targetBasis is invalid", () => {
     const target = {
       ...createPromotionTarget(),
@@ -44,14 +63,36 @@ describe("selection handoff-target helpers", () => {
     );
   });
 
-  it("should fail loudly when target.taskId is not a string when provided", () => {
+  it("should fail loudly when target.taskId is not a non-empty string", () => {
     const target = {
       ...createPromotionTarget(),
       taskId: 42
     } as unknown as AttemptPromotionTarget;
 
     expect(() => deriveAttemptHandoffTarget(target)).toThrow(
-      "Attempt handoff target requires target.taskId to be a string when provided."
+      "Attempt handoff target requires target.taskId to be a non-empty string."
+    );
+  });
+
+  it("should fail loudly when target.taskId is undefined", () => {
+    const target = {
+      ...createPromotionTarget(),
+      taskId: undefined
+    } as unknown as AttemptPromotionTarget;
+
+    expect(() => deriveAttemptHandoffTarget(target)).toThrow(
+      "Attempt handoff target requires target.taskId to be a non-empty string."
+    );
+  });
+
+  it("should fail loudly when target.taskId is blank-only whitespace", () => {
+    const target = {
+      ...createPromotionTarget(),
+      taskId: "   "
+    } as unknown as AttemptPromotionTarget;
+
+    expect(() => deriveAttemptHandoffTarget(target)).toThrow(
+      "Attempt handoff target requires target.taskId to be a non-empty string."
     );
   });
 

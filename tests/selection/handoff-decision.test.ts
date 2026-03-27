@@ -68,6 +68,36 @@ describe("selection handoff-decision helpers", () => {
     expect(deriveAttemptHandoffDecisionSummary(undefined)).toBeUndefined();
   });
 
+  it("should fail loudly when the supplied handoff explanation summary is null", () => {
+    expect(() =>
+      deriveAttemptHandoffDecisionSummary(
+        null as unknown as Parameters<typeof deriveAttemptHandoffDecisionSummary>[0]
+      )
+    ).toThrow(ValidationError);
+  });
+
+  it("should fail loudly when summary.results is not an array", () => {
+    expect(() =>
+      deriveAttemptHandoffDecisionSummary({
+        ...createExplanationSummary([]),
+        results: null
+      } as unknown as Parameters<typeof deriveAttemptHandoffDecisionSummary>[0])
+    ).toThrow(
+      "Attempt handoff decision summary requires summary.results to be an array."
+    );
+  });
+
+  it("should fail loudly when summary.results contains a non-object entry", () => {
+    expect(() =>
+      deriveAttemptHandoffDecisionSummary({
+        ...createExplanationSummary([]),
+        results: [null]
+      } as unknown as Parameters<typeof deriveAttemptHandoffDecisionSummary>[0])
+    ).toThrow(
+      "Attempt handoff decision summary requires summary.results entries to be objects."
+    );
+  });
+
   it("should derive a stable no-results decision summary", () => {
     expect(
       deriveAttemptHandoffDecisionSummary(createExplanationSummary([]))
@@ -582,9 +612,21 @@ function createExecutedCheckFromVerificationCheck(
     );
   }
 
-  return {
+  const status = record.status as AttemptVerificationCheckStatus;
+  const baseCheck = {
     name: record.name,
     required: record.required === true,
-    status: record.status as AttemptVerificationCheckStatus
+    status
   };
+
+  switch (status) {
+    case "passed":
+      return { ...baseCheck, exitCode: 0 };
+    case "failed":
+      return { ...baseCheck, exitCode: 1 };
+    case "error":
+      return { ...baseCheck, failureKind: "timeout" as const };
+    default:
+      return baseCheck;
+  }
 }

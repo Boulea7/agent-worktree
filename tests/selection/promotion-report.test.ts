@@ -85,6 +85,34 @@ describe("selection promotion-report helpers", () => {
     });
   });
 
+  it("should preserve skipped required checks on report candidates", () => {
+    const summary = createPromotionAuditSummary([
+      createPromotionCandidate({
+        attemptId: "att_required_skipped_pending",
+        verification: createVerification({
+          state: "failed",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "skipped"
+            },
+            {
+              name: "unit",
+              required: true,
+              status: "pending"
+            }
+          ]
+        })
+      })
+    ]);
+
+    const report = deriveAttemptPromotionReport(summary);
+
+    expect(report.candidates[0]?.skippedCheckNames).toEqual(["lint"]);
+    expect(report.candidates[0]?.pendingCheckNames).toEqual(["unit"]);
+  });
+
   it("should preserve candidate order while deriving grouped report projections", () => {
     const summary = createPromotionAuditSummary([
       createPromotionCandidate({
@@ -646,9 +674,21 @@ function createExecutedCheckFromVerificationCheck(
     throw new Error(`Expected verification check ${index} to use a string status.`);
   }
 
-  return {
+  const status = record.status as AttemptVerificationCheckStatus;
+  const baseCheck = {
     name: record.name,
     required: record.required === true,
-    status: record.status as AttemptVerificationCheckStatus
+    status
   };
+
+  switch (status) {
+    case "passed":
+      return { ...baseCheck, exitCode: 0 };
+    case "failed":
+      return { ...baseCheck, exitCode: 1 };
+    case "error":
+      return { ...baseCheck, failureKind: "timeout" as const };
+    default:
+      return baseCheck;
+  }
 }

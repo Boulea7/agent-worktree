@@ -29,8 +29,8 @@ describe("public cli serializers", () => {
           guidanceFile: "AGENTS.md",
           projectConfig: ".codex/config.toml",
           machineReadableMode: "strong",
-          resume: "strong",
-          mcp: "strong",
+          resume: "unsupported",
+          mcp: "unsupported",
           note: "Catalog entry.",
           hiddenField: "internal"
         }
@@ -45,8 +45,8 @@ describe("public cli serializers", () => {
           guidanceFile: "AGENTS.md",
           projectConfig: ".codex/config.toml",
           machineReadableMode: "strong",
-          resume: "strong",
-          mcp: "strong",
+          resume: "unsupported",
+          mcp: "unsupported",
           note: "Catalog entry."
         }
       ]
@@ -61,8 +61,8 @@ describe("public cli serializers", () => {
         guidanceFile: "GEMINI.md",
         projectConfig: ".gemini/settings.json",
         machineReadableMode: "strong",
-        resume: "strong",
-        mcp: "strong",
+        resume: "unsupported",
+        mcp: "unsupported",
         note: "Catalog entry.",
         hiddenField: "internal"
       }
@@ -75,8 +75,8 @@ describe("public cli serializers", () => {
         guidanceFile: "GEMINI.md",
         projectConfig: ".gemini/settings.json",
         machineReadableMode: "strong",
-        resume: "strong",
-        mcp: "strong",
+        resume: "unsupported",
+        mcp: "unsupported",
         note: "Catalog entry."
       }
     });
@@ -504,6 +504,33 @@ describe("public cli serializers", () => {
       });
     }
   );
+
+  it("should fail loudly when a smoke payload uses values outside the public vocabulary", () => {
+    expect(() =>
+      serializeCompatibilitySmokeData({
+        smoke: {
+          runtime: "codex-cli",
+          supportTier: "tier1",
+          guidanceFile: "AGENTS.md",
+          projectConfig: ".codex/config.toml",
+          note: "Concrete runtime.",
+          capabilities: {
+            machineReadableMode: "strong",
+            resume: "unsupported",
+            mcp: "unsupported",
+            sessionLifecycle: "unsupported",
+            eventStreamParsing: "partial"
+          },
+          adapterStatus: "implemented",
+          smokeStatus: "future-status",
+          diagnosis: {
+            code: "unexpected_error",
+            summary: "Smoke failed."
+          }
+        }
+      } as unknown as CompatibilitySmokeData)
+    ).toThrow(ValidationError);
+  });
 
   it("should serialize attempt create data through an explicit allow-list", () => {
     const result = serializeAttemptCreateData({

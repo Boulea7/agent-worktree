@@ -72,6 +72,14 @@ describe("selection handoff-report-ready helpers", () => {
     expect(deriveAttemptHandoffReportReady(undefined)).toBeUndefined();
   });
 
+  it("should fail loudly when the supplied promotion target-apply batch is null", () => {
+    expect(() =>
+      deriveAttemptHandoffReportReady(
+        null as unknown as Parameters<typeof deriveAttemptHandoffReportReady>[0]
+      )
+    ).toThrow(ValidationError);
+  });
+
   it("should return a stable empty report-ready summary for an empty batch", () => {
     expect(deriveAttemptHandoffReportReady({ results: [] })).toEqual({
       reportBasis: "promotion_target_apply_batch",
@@ -108,6 +116,25 @@ describe("selection handoff-report-ready helpers", () => {
       results: batch.results,
       invokedResults: [batch.results[1], batch.results[3]],
       blockedResults: [batch.results[0], batch.results[2]]
+    });
+  });
+
+  it("should canonicalize identity fields when deriving a report-ready summary from an internally consistent batch", () => {
+    expect(
+      deriveAttemptHandoffReportReady({
+        results: [
+          createSupportedPromotionTargetApply({
+            taskId: "  task_shared  ",
+            attemptId: "  att_ready  ",
+            runtime: "  codex-cli  "
+          })
+        ]
+      })
+    ).toEqual({
+      reportBasis: "promotion_target_apply_batch",
+      results: [createSupportedPromotionTargetApply()],
+      invokedResults: [createSupportedPromotionTargetApply()],
+      blockedResults: []
     });
   });
 
@@ -160,6 +187,59 @@ describe("selection handoff-report-ready helpers", () => {
     expect(() => deriveAttemptHandoffReportReady(batch)).toThrow(ValidationError);
   });
 
+  it("should fail loudly when batch.results contains a non-object entry", () => {
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [null] as unknown as AttemptPromotionTargetApply[]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires each batch result to be an object."
+    );
+  });
+
+  it("should fail loudly when entry.handoffTarget.taskId is undefined", () => {
+    const invalidEntry = createSupportedPromotionTargetApply();
+
+    invalidEntry.handoffTarget = {
+      ...invalidEntry.handoffTarget,
+      taskId: undefined as unknown as string
+    };
+    invalidEntry.targetApply.request = {
+      ...invalidEntry.targetApply.request,
+      taskId: undefined as unknown as string
+    };
+    invalidEntry.targetApply.apply.consumer.request = {
+      ...invalidEntry.targetApply.apply.consumer.request,
+      taskId: undefined as unknown as string
+    };
+    invalidEntry.targetApply.apply.consume.request = {
+      ...invalidEntry.targetApply.apply.consume.request,
+      taskId: undefined as unknown as string
+    };
+
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [invalidEntry]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires entry.handoffTarget.taskId to be a non-empty string."
+    );
+  });
+
+  it("should fail loudly when entry.handoffTarget.taskId is blank", () => {
+    const invalidEntry = createSupportedPromotionTargetApply({
+      taskId: "   "
+    });
+
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [invalidEntry]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires entry.handoffTarget.taskId to be a non-empty string."
+    );
+  });
+
   it("should fail loudly when a request no longer matches the projected handoff target", () => {
     const batch = {
       results: [
@@ -183,6 +263,40 @@ describe("selection handoff-report-ready helpers", () => {
     };
 
     expect(() => deriveAttemptHandoffReportReady(batch)).toThrow(ValidationError);
+  });
+
+  it("should fail loudly with the consumer request field path when consumer request identity is blank", () => {
+    const invalidEntry = createSupportedPromotionTargetApply();
+
+    invalidEntry.targetApply.apply.consumer.request = {
+      ...invalidEntry.targetApply.apply.consumer.request,
+      taskId: "   "
+    };
+
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [invalidEntry]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires entry.targetApply.apply.consumer.request.taskId to be a non-empty string."
+    );
+  });
+
+  it("should fail loudly with the consume request field path when consume request identity is blank", () => {
+    const invalidEntry = createSupportedPromotionTargetApply();
+
+    invalidEntry.targetApply.apply.consume.request = {
+      ...invalidEntry.targetApply.apply.consume.request,
+      runtime: "   "
+    };
+
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [invalidEntry]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires entry.targetApply.apply.consume.request.runtime to be a non-empty string."
+    );
   });
 
   it("should not mutate the supplied batch and should derive fresh arrays and entries", () => {
@@ -319,6 +433,7 @@ describe("selection handoff-report-ready helpers", () => {
 });
 
 function createPromotionTargetApply(input?: {
+  taskId?: string;
   attemptId?: string;
   runtime?: string;
   status?: AttemptPromotionTarget["status"];
@@ -327,6 +442,7 @@ function createPromotionTargetApply(input?: {
   invoked?: boolean;
 }): AttemptPromotionTargetApply {
   const target = createPromotionTarget({
+    ...(input?.taskId === undefined ? {} : { taskId: input.taskId }),
     ...(input?.attemptId === undefined ? {} : { attemptId: input.attemptId }),
     ...(input?.runtime === undefined ? {} : { runtime: input.runtime }),
     ...(input?.status === undefined ? {} : { status: input.status }),
@@ -385,6 +501,7 @@ function createBlockedPromotionTargetApply(
   overrides: Partial<AttemptPromotionTarget> = {}
 ): AttemptPromotionTargetApply {
   return createPromotionTargetApply({
+    ...(overrides.taskId === undefined ? {} : { taskId: overrides.taskId }),
     ...(overrides.attemptId === undefined ? {} : { attemptId: overrides.attemptId }),
     ...(overrides.runtime === undefined ? {} : { runtime: overrides.runtime }),
     ...(overrides.status === undefined ? {} : { status: overrides.status }),
@@ -400,6 +517,7 @@ function createSupportedPromotionTargetApply(
   overrides: Partial<AttemptPromotionTarget> = {}
 ): AttemptPromotionTargetApply {
   return createPromotionTargetApply({
+    ...(overrides.taskId === undefined ? {} : { taskId: overrides.taskId }),
     ...(overrides.attemptId === undefined ? {} : { attemptId: overrides.attemptId }),
     ...(overrides.runtime === undefined ? {} : { runtime: overrides.runtime }),
     ...(overrides.status === undefined ? {} : { status: overrides.status }),
@@ -548,9 +666,21 @@ function createExecutedCheckFromVerificationCheck(
     );
   }
 
-  return {
+  const status = record.status as AttemptVerificationCheckStatus;
+  const baseCheck = {
     name: record.name,
     required: record.required === true,
-    status: record.status as AttemptVerificationCheckStatus
+    status
   };
+
+  switch (status) {
+    case "passed":
+      return { ...baseCheck, exitCode: 0 };
+    case "failed":
+      return { ...baseCheck, exitCode: 1 };
+    case "error":
+      return { ...baseCheck, failureKind: "timeout" as const };
+    default:
+      return baseCheck;
+  }
 }

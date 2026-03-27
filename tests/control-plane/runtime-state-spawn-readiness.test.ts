@@ -234,6 +234,91 @@ describe("control-plane runtime-state spawn-readiness helpers", () => {
     });
   });
 
+  it("should block spawn with lineage_depth_unknown for cyclic lineage when maxDepth is present", () => {
+    const recordA = createRecord({
+      attemptId: "att_a",
+      sessionId: "thr_a",
+      sourceKind: "delegated",
+      parentAttemptId: "att_b",
+      lifecycleState: "active",
+      guardrails: {
+        maxDepth: 3
+      }
+    });
+    const recordB = createRecord({
+      attemptId: "att_b",
+      sessionId: "thr_b",
+      sourceKind: "fork",
+      parentAttemptId: "att_a",
+      lifecycleState: "active"
+    });
+    const context = createContext([recordA, recordB], "att_a");
+
+    expect(
+      deriveExecutionSessionSpawnReadiness({
+        context,
+        view: contextView(context)
+      })
+    ).toEqual({
+      blockingReasons: ["lineage_depth_unknown"],
+      canSpawn: false,
+      hasBlockingReasons: true,
+      lineageDepth: undefined,
+      lineageDepthKnown: false,
+      withinDepthLimit: false,
+      withinChildLimit: true
+    });
+  });
+
+  it("should preserve blocker ordering when lifecycle, session, depth, and child limits all block with known lineage depth", () => {
+    const rootRecord = createRecord({
+      attemptId: "att_root",
+      sessionId: "thr_root",
+      sourceKind: "direct",
+      lifecycleState: "active"
+    });
+    const selectedRecord = createRecord({
+      attemptId: "att_known_depth",
+      sourceKind: "delegated",
+      parentAttemptId: "att_root",
+      lifecycleState: "failed",
+      guardrails: {
+        maxChildren: 1,
+        maxDepth: 1
+      }
+    });
+    const childRecord = createRecord({
+      attemptId: "att_known_depth_child",
+      sourceKind: "fork",
+      parentAttemptId: "att_known_depth",
+      lifecycleState: "active"
+    });
+    const context = createContext(
+      [rootRecord, selectedRecord, childRecord],
+      "att_known_depth"
+    );
+
+    expect(
+      deriveExecutionSessionSpawnReadiness({
+        context,
+        view: contextView(context)
+      })
+    ).toEqual({
+      blockingReasons: [
+        "lifecycle_terminal",
+        "session_unknown",
+        "depth_limit_reached",
+        "child_limit_reached"
+      ],
+      canSpawn: false,
+      hasBlockingReasons: true,
+      lineageDepth: 1,
+      lineageDepthKnown: true,
+      withinDepthLimit: false,
+      withinChildLimit: false
+    });
+  });
+
   it("should preserve blocker ordering when lifecycle, session, lineage, and child limits all block", () => {
     const selectedRecord = createRecord({
       attemptId: "att_gap",

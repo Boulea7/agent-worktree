@@ -162,6 +162,7 @@ function validatePromotionAuditCandidate(
     "candidate.failedOrErrorCheckNames"
   );
   validateCheckNameList(candidate.pendingCheckNames, "candidate.pendingCheckNames");
+  validateCheckNameList(candidate.skippedCheckNames, "candidate.skippedCheckNames");
 }
 
 function clonePromotionAuditCandidate(
@@ -176,7 +177,8 @@ function clonePromotionAuditCandidate(
     recommendedForPromotion: candidate.recommendedForPromotion,
     blockingRequiredCheckNames: [...candidate.blockingRequiredCheckNames],
     failedOrErrorCheckNames: [...candidate.failedOrErrorCheckNames],
-    pendingCheckNames: [...candidate.pendingCheckNames]
+    pendingCheckNames: [...candidate.pendingCheckNames],
+    skippedCheckNames: [...candidate.skippedCheckNames]
   };
 }
 

@@ -6,11 +6,28 @@ import {
   attemptStatuses,
   type AttemptManifest
 } from "./types.js";
+import {
+  attemptVerificationCheckStatuses
+} from "../verification/types.js";
+
+const attemptVerificationStates = [
+  "pending",
+  "passed",
+  "verified",
+  "failed",
+  "error"
+] as const;
+
+const attemptVerificationCheckSchema = z.object({
+  name: z.string().trim().min(1),
+  status: z.enum(attemptVerificationCheckStatuses),
+  required: z.boolean().optional()
+});
 
 const attemptVerificationSchema = z
   .object({
-    state: z.string(),
-    checks: z.array(z.unknown())
+    state: z.enum(attemptVerificationStates),
+    checks: z.array(attemptVerificationCheckSchema)
   })
   .passthrough();
 

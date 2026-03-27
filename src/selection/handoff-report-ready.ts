@@ -32,6 +32,12 @@ export function deriveAttemptHandoffReportReady(
     return undefined;
   }
 
+  if (!isRecord(batch)) {
+    throw new ValidationError(
+      "Attempt handoff report-ready requires batch to be an object."
+    );
+  }
+
   validateBatch(batch);
 
   const results = batch.results.map(cloneEntry);
@@ -195,12 +201,10 @@ function validateRequest(
   validateTaskId(request.taskId, `${fieldName}.taskId`);
   validateNonEmptyString(
     request.attemptId,
-    `${fieldName}.attemptId`,
     `Attempt handoff report-ready requires ${fieldName}.attemptId to be a non-empty string.`
   );
   validateNonEmptyString(
     request.runtime,
-    `${fieldName}.runtime`,
     `Attempt handoff report-ready requires ${fieldName}.runtime to be a non-empty string.`
   );
   validateAttemptStatus(request.status, `${fieldName}.status`);
@@ -213,9 +217,12 @@ function assertRequestMatchesTarget(
   fieldName: string
 ): void {
   if (
-    request.taskId !== target.taskId ||
-    request.attemptId !== target.attemptId ||
-    request.runtime !== target.runtime ||
+    normalizeComparableString(request.taskId) !==
+      normalizeComparableString(target.taskId) ||
+    normalizeComparableString(request.attemptId) !==
+      normalizeComparableString(target.attemptId) ||
+    normalizeComparableString(request.runtime) !==
+      normalizeComparableString(target.runtime) ||
     request.status !== target.status ||
     request.sourceKind !== target.sourceKind
   ) {
@@ -328,9 +335,15 @@ function cloneEntry(
 function cloneHandoffTarget(target: AttemptHandoffTarget): AttemptHandoffTarget {
   return {
     handoffBasis: target.handoffBasis,
-    taskId: target.taskId,
-    attemptId: target.attemptId,
-    runtime: target.runtime,
+    taskId: normalizeTaskId(target.taskId, "entry.handoffTarget.taskId"),
+    attemptId: normalizeNonEmptyString(
+      target.attemptId,
+      "Attempt handoff report-ready requires entry.handoffTarget.attemptId to be a non-empty string."
+    ),
+    runtime: normalizeNonEmptyString(
+      target.runtime,
+      "Attempt handoff report-ready requires entry.handoffTarget.runtime to be a non-empty string."
+    ),
     status: target.status,
     sourceKind: target.sourceKind
   };
@@ -340,14 +353,23 @@ function cloneTargetApply(
   targetApply: AttemptHandoffTargetApply
 ): AttemptHandoffTargetApply {
   return {
-    request: cloneRequest(targetApply.request),
+    request: cloneRequest(
+      targetApply.request,
+      "entry.targetApply.request"
+    ),
     apply: {
       consumer: {
-        request: cloneRequest(targetApply.apply.consumer.request),
+        request: cloneRequest(
+          targetApply.apply.consumer.request,
+          "entry.targetApply.apply.consumer.request"
+        ),
         readiness: cloneReadiness(targetApply.apply.consumer.readiness)
       },
       consume: {
-        request: cloneRequest(targetApply.apply.consume.request),
+        request: cloneRequest(
+          targetApply.apply.consume.request,
+          "entry.targetApply.apply.consume.request"
+        ),
         readiness: cloneReadiness(targetApply.apply.consume.readiness),
         invoked: targetApply.apply.consume.invoked
       }
@@ -355,11 +377,20 @@ function cloneTargetApply(
   };
 }
 
-function cloneRequest(request: AttemptHandoffRequest): AttemptHandoffRequest {
+function cloneRequest(
+  request: AttemptHandoffRequest,
+  fieldPath: string
+): AttemptHandoffRequest {
   return {
-    taskId: request.taskId,
-    attemptId: request.attemptId,
-    runtime: request.runtime,
+    taskId: normalizeTaskId(request.taskId, `${fieldPath}.taskId`),
+    attemptId: normalizeNonEmptyString(
+      request.attemptId,
+      `Attempt handoff report-ready requires ${fieldPath}.attemptId to be a non-empty string.`
+    ),
+    runtime: normalizeNonEmptyString(
+      request.runtime,
+      `Attempt handoff report-ready requires ${fieldPath}.runtime to be a non-empty string.`
+    ),
     status: request.status,
     sourceKind: request.sourceKind
   };
@@ -390,21 +421,39 @@ function readinessEqual(
 }
 
 function validateTaskId(value: unknown, fieldName: string): void {
-  if (value !== undefined && typeof value !== "string") {
-    throw new ValidationError(
-      `Attempt handoff report-ready requires ${fieldName} to be a string when provided.`
-    );
-  }
+  normalizeTaskId(value, fieldName);
 }
 
 function validateNonEmptyString(
   value: unknown,
-  fieldName: string,
   errorMessage: string
 ): void {
-  if (typeof value !== "string" || value.trim().length === 0) {
+  normalizeNonEmptyString(value, errorMessage);
+}
+
+function normalizeTaskId(value: unknown, fieldName: string): string {
+  return normalizeNonEmptyString(
+    value,
+    `Attempt handoff report-ready requires ${fieldName} to be a non-empty string.`
+  );
+}
+
+function normalizeNonEmptyString(value: unknown, errorMessage: string): string {
+  if (typeof value !== "string") {
     throw new ValidationError(errorMessage);
   }
+
+  const normalized = value.trim();
+
+  if (normalized.length === 0) {
+    throw new ValidationError(errorMessage);
+  }
+
+  return normalized;
+}
+
+function normalizeComparableString(value: unknown): unknown {
+  return typeof value === "string" ? value.trim() : value;
 }
 
 function validateAttemptStatus(value: unknown, fieldName: string): void {

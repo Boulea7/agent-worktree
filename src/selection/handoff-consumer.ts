@@ -25,22 +25,25 @@ export function deriveAttemptHandoffConsumer(input: {
     return undefined;
   }
 
-  validateTaskId(request.taskId);
-  validateNonEmptyString(request.attemptId, "request.attemptId");
-  validateNonEmptyString(request.runtime, "request.runtime");
+  const taskId = normalizeRequiredString(request.taskId, "request.taskId");
+  const attemptId = normalizeRequiredString(request.attemptId, "request.attemptId");
+  const runtime = normalizeRequiredString(request.runtime, "request.runtime");
   validateAttemptStatus(request.status);
   validateAttemptSourceKind(request.sourceKind);
 
-  const handoffSupported =
-    input.resolveHandoffCapability?.(request.runtime) ?? false;
+  const handoffSupported = normalizeHandoffCapability(
+    input.resolveHandoffCapability === undefined
+      ? false
+      : input.resolveHandoffCapability(runtime)
+  );
   const blockingReasons: AttemptHandoffConsumerBlockingReason[] =
     handoffSupported ? [] : ["handoff_unsupported"];
 
   return {
     request: {
-      taskId: request.taskId,
-      attemptId: request.attemptId,
-      runtime: request.runtime,
+      taskId,
+      attemptId,
+      runtime,
       status: request.status,
       sourceKind: request.sourceKind
     },
@@ -53,20 +56,32 @@ export function deriveAttemptHandoffConsumer(input: {
   };
 }
 
-function validateTaskId(value: unknown): void {
-  if (value !== undefined && typeof value !== "string") {
+function normalizeHandoffCapability(value: unknown): boolean {
+  if (typeof value !== "boolean") {
     throw new ValidationError(
-      "Attempt handoff consumer requires request.taskId to be a string when provided."
+      "Attempt handoff consumer requires resolveHandoffCapability to return a boolean."
     );
   }
+
+  return value;
 }
 
-function validateNonEmptyString(value: unknown, fieldName: string): void {
-  if (typeof value !== "string" || value.trim().length === 0) {
+function normalizeRequiredString(value: unknown, fieldName: string): string {
+  if (typeof value !== "string") {
     throw new ValidationError(
       `Attempt handoff consumer requires ${fieldName} to be a non-empty string.`
     );
   }
+
+  const normalized = value.trim();
+
+  if (normalized.length === 0) {
+    throw new ValidationError(
+      `Attempt handoff consumer requires ${fieldName} to be a non-empty string.`
+    );
+  }
+
+  return normalized;
 }
 
 function validateAttemptStatus(value: unknown): void {

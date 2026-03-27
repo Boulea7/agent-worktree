@@ -113,6 +113,53 @@ describe("selection handoff-consumer helpers", () => {
     });
   });
 
+  it("should trim taskId, attemptId, and runtime when deriving a handoff consumer", () => {
+    expect(
+      deriveAttemptHandoffConsumer({
+        request: createHandoffRequest({
+          taskId: "  task_shared  ",
+          attemptId: "  att_ready  ",
+          runtime: "  codex-cli  "
+        }),
+        resolveHandoffCapability: () => true
+      })
+    ).toEqual({
+      request: {
+        taskId: "task_shared",
+        attemptId: "att_ready",
+        runtime: "codex-cli",
+        status: "created",
+        sourceKind: undefined
+      },
+      readiness: {
+        blockingReasons: [],
+        canConsumeHandoff: true,
+        hasBlockingReasons: false,
+        handoffSupported: true
+      }
+    });
+  });
+
+  it("should fail loudly when the runtime resolver returns a non-boolean readiness value", () => {
+    expect(() =>
+      deriveAttemptHandoffConsumer({
+        request: createHandoffRequest(),
+        resolveHandoffCapability: (() => "yes") as never
+      })
+    ).toThrow(ValidationError);
+  });
+
+  it("should fail loudly when the runtime resolver returns undefined", () => {
+    expect(() =>
+      deriveAttemptHandoffConsumer({
+        request: createHandoffRequest(),
+        resolveHandoffCapability: (() => undefined) as never
+      })
+    ).toThrow(
+      "Attempt handoff consumer requires resolveHandoffCapability to return a boolean."
+    );
+  });
+
   it("should fail loudly when request.taskId is not a string when provided", () => {
     const request = {
       ...createHandoffRequest(),
@@ -129,7 +176,22 @@ describe("selection handoff-consumer helpers", () => {
         request
       })
     ).toThrow(
-      "Attempt handoff consumer requires request.taskId to be a string when provided."
+      "Attempt handoff consumer requires request.taskId to be a non-empty string."
+    );
+  });
+
+  it("should fail loudly when request.taskId is blank-only whitespace", () => {
+    const request = {
+      ...createHandoffRequest(),
+      taskId: "   "
+    } as unknown as AttemptHandoffRequest;
+
+    expect(() =>
+      deriveAttemptHandoffConsumer({
+        request
+      })
+    ).toThrow(
+      "Attempt handoff consumer requires request.taskId to be a non-empty string."
     );
   });
 
@@ -299,6 +361,21 @@ describe("selection handoff-consumer helpers", () => {
       hasBlockingReasons: false,
       handoffSupported: true
     });
+  });
+
+  it("should call the supplied runtime resolver with the canonical trimmed runtime", () => {
+    const resolveHandoffCapability = vi.fn(() => true);
+
+    const consumer = deriveAttemptHandoffConsumer({
+      request: createHandoffRequest({
+        runtime: "  gemini-cli  "
+      }),
+      resolveHandoffCapability
+    });
+
+    expect(resolveHandoffCapability).toHaveBeenCalledTimes(1);
+    expect(resolveHandoffCapability).toHaveBeenCalledWith("gemini-cli");
+    expect(consumer?.request.runtime).toBe("gemini-cli");
   });
 
   it("should derive a stable handoff consumer through the canonical promotion-to-handoff chain", () => {
@@ -472,9 +549,21 @@ function createExecutedCheckFromVerificationCheck(
     throw new Error(`Expected verification check ${index} to use a string status.`);
   }
 
-  return {
+  const status = record.status as AttemptVerificationCheckStatus;
+  const baseCheck = {
     name: record.name,
     required: record.required === true,
-    status: record.status as AttemptVerificationCheckStatus
+    status
   };
+
+  switch (status) {
+    case "passed":
+      return { ...baseCheck, exitCode: 0 };
+    case "failed":
+      return { ...baseCheck, exitCode: 1 };
+    case "error":
+      return { ...baseCheck, failureKind: "timeout" as const };
+    default:
+      return baseCheck;
+  }
 }

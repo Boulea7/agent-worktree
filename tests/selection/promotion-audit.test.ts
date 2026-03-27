@@ -86,7 +86,8 @@ describe("selection promotion-audit helpers", () => {
           recommendedForPromotion: true,
           blockingRequiredCheckNames: [],
           failedOrErrorCheckNames: [],
-          pendingCheckNames: []
+          pendingCheckNames: [],
+          skippedCheckNames: ["docs"]
         }
       ]
     });
@@ -115,6 +116,39 @@ describe("selection promotion-audit helpers", () => {
     expect(summary.candidates[0]?.blockingRequiredCheckNames).toEqual(["lint"]);
     expect(summary.candidates[0]?.failedOrErrorCheckNames).toEqual([]);
     expect(summary.candidates[0]?.pendingCheckNames).toEqual([]);
+    expect(summary.candidates[0]?.skippedCheckNames).toEqual(["lint"]);
+  });
+
+  it("should preserve skipped and pending required checks together without collapsing either", () => {
+    const candidate = createPromotionCandidate({
+      attemptId: "att_required_skipped_pending",
+      verification: createVerification({
+        state: "failed",
+        checks: [
+          {
+            name: "lint",
+            required: true,
+            status: "skipped"
+          },
+          {
+            name: "unit",
+            required: true,
+            status: "pending"
+          }
+        ]
+      })
+    });
+
+    const summary = deriveAttemptPromotionAuditSummary(
+      deriveAttemptPromotionResult([candidate])
+    );
+
+    expect(summary.candidates[0]?.blockingRequiredCheckNames).toEqual([
+      "lint",
+      "unit"
+    ]);
+    expect(summary.candidates[0]?.pendingCheckNames).toEqual(["unit"]);
+    expect(summary.candidates[0]?.skippedCheckNames).toEqual(["lint"]);
   });
 
   it("should preserve promotion-result candidate order in the audit summary", () => {
@@ -625,9 +659,21 @@ function createExecutedCheckFromVerificationCheck(
     );
   }
 
-  return {
+  const status = record.status as AttemptVerificationCheckStatus;
+  const baseCheck = {
     name: record.name,
     required: record.required === true,
-    status: record.status as AttemptVerificationCheckStatus
+    status
   };
+
+  switch (status) {
+    case "passed":
+      return { ...baseCheck, exitCode: 0 };
+    case "failed":
+      return { ...baseCheck, exitCode: 1 };
+    case "error":
+      return { ...baseCheck, failureKind: "timeout" as const };
+    default:
+      return baseCheck;
+  }
 }

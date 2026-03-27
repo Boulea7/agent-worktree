@@ -40,19 +40,16 @@ export async function executeAttemptVerification(
     } catch (error) {
       if (error instanceof RuntimeError) {
         const failureKind = extractFailureKind(error);
+        if (failureKind === undefined) {
+          throw error;
+        }
         const executedCheck: AttemptVerificationExecutedCheck =
-          failureKind === undefined
-            ? {
-                name: check.name,
-                required: check.required,
-                status: "error"
-              }
-            : {
-                name: check.name,
-                required: check.required,
-                status: "error",
-                failureKind
-              };
+          {
+            name: check.name,
+            required: check.required,
+            status: "error",
+            failureKind
+          };
 
         executedChecks.push(executedCheck);
         continue;

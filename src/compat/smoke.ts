@@ -1,4 +1,4 @@
-import { NotImplementedError, RuntimeError } from "../core/errors.js";
+import { NotFoundError, NotImplementedError, RuntimeError } from "../core/errors.js";
 import { getAdapterDescriptor, getRuntimeAdapter } from "../adapters/catalog.js";
 import {
   smokeCodexCliCompatibility,
@@ -69,7 +69,10 @@ export async function buildCompatibilitySmokeData(
     options.getRuntimeAdapterImpl ?? getRuntimeAdapter;
   const smokeCodexCliCompatibilityImpl =
     options.smokeCodexCliCompatibilityImpl ?? smokeCodexCliCompatibility;
-  const descriptor = getAdapterDescriptorImpl(runtime);
+  const descriptor = resolveCompatibilityDescriptor(
+    runtime,
+    getAdapterDescriptorImpl
+  );
 
   return {
     smoke: await buildCompatibilitySmokeRuntime(descriptor, {
@@ -113,24 +116,54 @@ async function buildCompatibilitySmokeRuntime(
     );
   }
 
-  const smoke = await options.smokeCodexCliCompatibilityImpl();
+  try {
+    const smoke = await options.smokeCodexCliCompatibilityImpl();
 
-  return {
-    adapterStatus: "implemented",
-    smokeStatus:
-      smoke.smokeStatus === "passed"
-        ? "passed"
-        : smoke.smokeStatus === "failed"
-          ? "failed"
-          : smoke.smokeStatus === "skipped"
-            ? "skipped"
-            : "error",
-    diagnosis: {
-      code: smoke.diagnosisCode,
-      summary: smoke.summary
-    },
-    ...cloneSmokeDescriptor(descriptor)
-  };
+    return {
+      adapterStatus: "implemented",
+      smokeStatus:
+        smoke.smokeStatus === "passed"
+          ? "passed"
+          : smoke.smokeStatus === "failed"
+            ? "failed"
+            : smoke.smokeStatus === "skipped"
+              ? "skipped"
+              : "error",
+      diagnosis: {
+        code: smoke.diagnosisCode,
+        summary: smoke.summary
+      },
+      ...cloneSmokeDescriptor(descriptor)
+    };
+  } catch {
+    return {
+      adapterStatus: "implemented",
+      smokeStatus: "error",
+      diagnosis: {
+        code: "unexpected_error",
+        summary:
+          "The bounded codex-cli smoke path did not complete successfully."
+      },
+      ...cloneSmokeDescriptor(descriptor)
+    };
+  }
+}
+
+function resolveCompatibilityDescriptor(
+  runtime: AdapterDescriptor["runtime"] | string,
+  getAdapterDescriptorImpl: (
+    runtime: AdapterDescriptor["runtime"] | string
+  ) => AdapterDescriptor
+): AdapterDescriptor {
+  try {
+    return getAdapterDescriptorImpl(runtime);
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      throw new NotFoundError(`Unknown compatibility target: ${runtime}.`);
+    }
+
+    throw error;
+  }
 }
 
 function cloneSmokeDescriptor(

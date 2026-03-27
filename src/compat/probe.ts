@@ -1,4 +1,4 @@
-import { NotImplementedError, RuntimeError } from "../core/errors.js";
+import { NotFoundError, NotImplementedError, RuntimeError } from "../core/errors.js";
 import { getAdapterDescriptor, getRuntimeAdapter } from "../adapters/catalog.js";
 import {
   probeCodexCliCompatibility,
@@ -68,7 +68,10 @@ export async function buildCompatibilityProbeData(
     options.getRuntimeAdapterImpl ?? getRuntimeAdapter;
   const probeCodexCliCompatibilityImpl =
     options.probeCodexCliCompatibilityImpl ?? probeCodexCliCompatibility;
-  const descriptor = getAdapterDescriptorImpl(runtime);
+  const descriptor = resolveCompatibilityDescriptor(
+    runtime,
+    getAdapterDescriptorImpl
+  );
 
   return {
     probe: await buildCompatibilityProbeRuntime(descriptor, {
@@ -76,6 +79,23 @@ export async function buildCompatibilityProbeData(
       probeCodexCliCompatibilityImpl
     })
   };
+}
+
+function resolveCompatibilityDescriptor(
+  runtime: AdapterDescriptor["runtime"] | string,
+  getAdapterDescriptorImpl: (
+    runtime: AdapterDescriptor["runtime"] | string
+  ) => AdapterDescriptor
+): AdapterDescriptor {
+  try {
+    return getAdapterDescriptorImpl(runtime);
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      throw new NotFoundError(`Unknown compatibility target: ${runtime}.`);
+    }
+
+    throw error;
+  }
 }
 
 async function buildCompatibilityProbeRuntime(

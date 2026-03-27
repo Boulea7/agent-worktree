@@ -37,7 +37,6 @@ export function deriveAttemptPromotionTarget(
   summary: AttemptPromotionDecisionSummary
 ): AttemptPromotionTarget | undefined {
   validateDecisionBasis(summary);
-  validateTaskId(summary.taskId);
   validatePromotionDecisionSummary(summary);
 
   if (!summary.canPromote) {
@@ -54,9 +53,15 @@ export function deriveAttemptPromotionTarget(
 
   return {
     targetBasis: ATTEMPT_PROMOTION_TARGET_BASIS,
-    taskId: summary.taskId,
-    attemptId: selected.attemptId,
-    runtime: selected.runtime,
+    taskId: normalizeTaskId(summary.taskId),
+    attemptId: normalizeRequiredString(
+      selected.attemptId,
+      "summary.selected.attemptId"
+    ),
+    runtime: normalizeRequiredString(
+      selected.runtime,
+      "summary.selected.runtime"
+    ),
     status: selected.status,
     sourceKind: selected.sourceKind
   };
@@ -70,12 +75,26 @@ function validateDecisionBasis(summary: AttemptPromotionDecisionSummary): void {
   }
 }
 
-function validateTaskId(value: unknown): void {
-  if (value !== undefined && typeof value !== "string") {
+function normalizeTaskId(value: unknown): string {
+  return normalizeRequiredString(value, "summary.taskId");
+}
+
+function normalizeRequiredString(value: unknown, fieldName: string): string {
+  if (typeof value !== "string") {
     throw new ValidationError(
-      "Attempt promotion target requires summary.taskId to be a string when provided."
+      `Attempt promotion target requires ${fieldName} to be a non-empty string.`
     );
   }
+
+  const normalized = value.trim();
+
+  if (normalized.length === 0) {
+    throw new ValidationError(
+      `Attempt promotion target requires ${fieldName} to be a non-empty string.`
+    );
+  }
+
+  return normalized;
 }
 
 function validatePromotionDecisionSummary(
@@ -194,6 +213,12 @@ function validatePromotionDecisionSummary(
     if (summary.comparableCandidateCount < 1) {
       throw new ValidationError(
         "Attempt promotion target requires summary.comparableCandidateCount to be at least 1 when summary.canPromote is true."
+      );
+    }
+
+    if (summary.promotionReadyCandidateCount < 1) {
+      throw new ValidationError(
+        "Attempt promotion target requires summary.promotionReadyCandidateCount to be at least 1 when summary.canPromote is true."
       );
     }
 
@@ -318,6 +343,10 @@ function validateSelectedCandidate(
     candidate.pendingCheckNames,
     "summary.selected.pendingCheckNames"
   );
+  validateCheckNameList(
+    candidate.skippedCheckNames,
+    "summary.selected.skippedCheckNames"
+  );
 }
 
 function deriveBlockingReasons(
@@ -333,6 +362,9 @@ function deriveBlockingReasons(
   }
 
   const blockingReasons: AttemptPromotionDecisionBlockingReason[] = [];
+  const hasRequiredSkipped = selected.blockingRequiredCheckNames.some((name) =>
+    selected.skippedCheckNames.includes(name)
+  );
   const hasRequiredFailure = selected.blockingRequiredCheckNames.some((name) =>
     selected.failedOrErrorCheckNames.includes(name)
   );
@@ -342,6 +374,7 @@ function deriveBlockingReasons(
 
   if (
     hasRequiredFailure ||
+    hasRequiredSkipped ||
     (selected.blockingRequiredCheckNames.length > 0 && !hasRequiredPending)
   ) {
     blockingReasons.push("required_checks_failed");

@@ -29,17 +29,17 @@ export function deriveAttemptHandoffFinalizationRequestSummary(
     return undefined;
   }
 
+  if (!isRecord(summary)) {
+    throw new ValidationError(
+      "Attempt handoff finalization request summary requires summary to be an object."
+    );
+  }
+
   validateSummaryBasis(summary);
   validateSummaryConsistency(summary);
 
   if (!summary.canFinalizeHandoff) {
     return undefined;
-  }
-
-  if (summary.targets.length === 0) {
-    throw new ValidationError(
-      "Attempt handoff finalization request summary requires at least one target when handoff finalization is ready."
-    );
   }
 
   return {
@@ -57,9 +57,9 @@ export function deriveAttemptHandoffFinalizationRequestSummary(
       validateAttemptSourceKind(target.sourceKind);
 
       return {
-        taskId: target.taskId,
-        attemptId: target.attemptId,
-        runtime: target.runtime,
+        taskId: normalizeTaskId(target.taskId),
+        attemptId: normalizeNonEmptyString(target.attemptId, "target.attemptId"),
+        runtime: normalizeNonEmptyString(target.runtime, "target.runtime"),
         status: target.status,
         sourceKind: target.sourceKind
       };
@@ -93,6 +93,18 @@ function validateSummaryConsistency(
   if (!Array.isArray(summary.targets)) {
     throw new ValidationError(
       "Attempt handoff finalization request summary requires summary.targets to be an array."
+    );
+  }
+
+  if (summary.targets.some((target) => !isRecord(target))) {
+    throw new ValidationError(
+      "Attempt handoff finalization request summary requires summary.targets entries to be objects."
+    );
+  }
+
+  if (summary.canFinalizeHandoff && summary.targets.length === 0) {
+    throw new ValidationError(
+      "Attempt handoff finalization request summary requires summary.targets to be non-empty when summary.canFinalizeHandoff is true."
     );
   }
 
@@ -133,13 +145,7 @@ function validateSummaryConsistency(
     );
   }
 
-  if (summary.canFinalizeHandoff) {
-    if (summary.targets.length === 0) {
-      throw new ValidationError(
-        "Attempt handoff finalization request summary requires summary.targets to be non-empty when summary.canFinalizeHandoff is true."
-      );
-    }
-  } else if (summary.targets.length > 0) {
+  if (!summary.canFinalizeHandoff && summary.targets.length > 0) {
     throw new ValidationError(
       "Attempt handoff finalization request summary requires summary.targets to be empty when summary.canFinalizeHandoff is false."
     );
@@ -147,11 +153,7 @@ function validateSummaryConsistency(
 }
 
 function validateTaskId(value: unknown): void {
-  if (value !== undefined && typeof value !== "string") {
-    throw new ValidationError(
-      "Attempt handoff finalization request summary requires target.taskId to be a string when provided."
-    );
-  }
+  normalizeTaskId(value);
 }
 
 function validateNonNegativeInteger(value: unknown, fieldName: string): void {
@@ -220,11 +222,29 @@ function blockingReasonArraysEqual(
 }
 
 function validateNonEmptyString(value: unknown, fieldName: string): void {
-  if (typeof value !== "string" || value.trim().length === 0) {
+  normalizeNonEmptyString(value, fieldName);
+}
+
+function normalizeTaskId(value: unknown): string {
+  return normalizeNonEmptyString(value, "target.taskId");
+}
+
+function normalizeNonEmptyString(value: unknown, fieldName: string): string {
+  if (typeof value !== "string") {
     throw new ValidationError(
       `Attempt handoff finalization request summary requires ${fieldName} to be a non-empty string.`
     );
   }
+
+  const normalized = value.trim();
+
+  if (normalized.length === 0) {
+    throw new ValidationError(
+      `Attempt handoff finalization request summary requires ${fieldName} to be a non-empty string.`
+    );
+  }
+
+  return normalized;
 }
 
 function validateAttemptStatus(value: unknown): void {
@@ -248,4 +268,8 @@ function validateAttemptSourceKind(value: unknown): void {
       "Attempt handoff finalization request summary requires target.sourceKind to use the existing attempt source-kind vocabulary when provided."
     );
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

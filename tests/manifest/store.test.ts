@@ -73,6 +73,49 @@ describe("manifest store", () => {
     ).toThrow(ValidationError);
   });
 
+  it("should reject unknown verification state values", () => {
+    expect(() =>
+      parseManifestContents(
+        JSON.stringify(
+          createManifest({
+            verification: {
+              state: "PASS",
+              checks: []
+            }
+          })
+        )
+      )
+    ).toThrow(ValidationError);
+  });
+
+  it("should reject malformed verification checks", () => {
+    expect(() =>
+      parseManifestContents(
+        JSON.stringify(
+          createManifest({
+            verification: {
+              state: "pending",
+              checks: [{ status: "passed" }]
+            }
+          })
+        )
+      )
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      parseManifestContents(
+        JSON.stringify(
+          createManifest({
+            verification: {
+              state: "pending",
+              checks: [{ name: "lint", status: "done" }]
+            }
+          })
+        )
+      )
+    ).toThrow(ValidationError);
+  });
+
   it("should serialize and parse the minimal example manifest", () => {
     const manifest = createManifest();
     const serialized = serializeManifest(manifest);
@@ -201,6 +244,22 @@ describe("manifest store", () => {
           ...createManifest(),
           schemaVersion: undefined as unknown as string
         },
+        { rootDir }
+      )
+    ).rejects.toThrow(ValidationError);
+  });
+
+  it("should reject invalid verification payloads before writing them", async () => {
+    const rootDir = await createTempDirectory();
+
+    await expect(
+      writeManifest(
+        createManifest({
+          verification: {
+            state: "PASS",
+            checks: []
+          }
+        }),
         { rootDir }
       )
     ).rejects.toThrow(ValidationError);

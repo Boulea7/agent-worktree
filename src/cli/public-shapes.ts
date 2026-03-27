@@ -35,7 +35,8 @@ export const publicCompatibilityCatalogCapabilitySupports = [
   "strong",
   "partial",
   "varies",
-  "platform-oriented"
+  "platform-oriented",
+  "unsupported"
 ] as const satisfies readonly CapabilityStrength[];
 
 export const publicCompatibilityDoctorAdapterStatuses = [

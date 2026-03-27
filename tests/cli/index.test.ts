@@ -2,13 +2,14 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type {
   CompatibilityDoctorData,
   CompatibilityProbeData,
   CompatibilitySmokeData
 } from "../../src/compat/index.js";
+import { buildCompatibilitySmokeData } from "../../src/compat/smoke.js";
 import { runCli } from "../../src/cli/index.js";
 import { readManifest, writeManifest } from "../../src/manifest/store.js";
 import { runGit } from "../../src/worktree/git.js";
@@ -20,6 +21,37 @@ class MemoryWriter {
   public write(chunk: string): void {
     this.output += chunk;
   }
+}
+
+type CompatibilityIndexModule = typeof import("../../src/compat/index.js");
+
+async function loadCliModuleWithCompatCatalogOverrides(overrides: {
+  getCompatibilityDescriptor?: CompatibilityIndexModule["getCompatibilityDescriptor"];
+  listCompatibilityDescriptors?: CompatibilityIndexModule["listCompatibilityDescriptors"];
+}): Promise<typeof import("../../src/cli/index.js")> {
+  vi.resetModules();
+  vi.doMock("../../src/compat/index.js", async () => {
+    const actual = await vi.importActual<CompatibilityIndexModule>(
+      "../../src/compat/index.js"
+    );
+
+    return {
+      ...actual,
+      ...(overrides.listCompatibilityDescriptors === undefined
+        ? {}
+        : {
+            listCompatibilityDescriptors:
+              overrides.listCompatibilityDescriptors
+          }),
+      ...(overrides.getCompatibilityDescriptor === undefined
+        ? {}
+        : {
+            getCompatibilityDescriptor: overrides.getCompatibilityDescriptor
+          })
+    };
+  });
+
+  return import("../../src/cli/index.js");
 }
 
 function assertNoInternalRuntimeMetadata(value: Record<string, unknown>): void {
@@ -102,10 +134,35 @@ function sortedKeys(value: Record<string, unknown>): string[] {
   return Object.keys(value).sort();
 }
 
+function createFakeRuntimeAdapter() {
+  return {
+    descriptor: {
+      runtime: "codex-cli" as const,
+      supportTier: "tier1" as const,
+      guidanceFile: "AGENTS.md",
+      projectConfig: ".codex/config.toml",
+      note: "Concrete runtime.",
+      capabilities: {
+        machineReadableMode: "strong" as const,
+        resume: "unsupported" as const,
+        mcp: "unsupported" as const,
+        sessionLifecycle: "unsupported" as const,
+        eventStreamParsing: "partial" as const
+      }
+    },
+    detect: vi.fn(async () => true),
+    renderCommand: vi.fn(),
+    degradeUnsupportedCapability: vi.fn(),
+    supportsCapability: vi.fn()
+  };
+}
+
 describe("runCli", () => {
   const tempDirectories: string[] = [];
 
   afterEach(async () => {
+    vi.doUnmock("../../src/compat/index.js");
+    vi.resetModules();
     await Promise.all(
       tempDirectories.map((directoryPath) =>
         rm(directoryPath, { recursive: true, force: true })
@@ -202,6 +259,210 @@ describe("runCli", () => {
         "tool"
       ].sort()
     );
+    expect(stderr.output).toBe("");
+  });
+
+  it("should serialize compat list json output through the public allow-list", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+    const { runCli: runMockedCli } =
+      await loadCliModuleWithCompatCatalogOverrides({
+        listCompatibilityDescriptors: () =>
+          [
+            {
+              tool: "codex-cli",
+              tier: "tier1",
+              guidanceFile: "AGENTS.md",
+              projectConfig: ".codex/config.toml",
+              machineReadableMode: "strong",
+              resume: "unsupported",
+              mcp: "unsupported",
+              note: "Catalog entry.",
+              hiddenField: "internal"
+            }
+          ] as never
+      });
+
+    const exitCode = await runMockedCli(["compat", "list", "--json"], {
+      stdout,
+      stderr
+    });
+
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: true,
+      command: "compat.list",
+      data: {
+        tools: [
+            {
+              tool: "codex-cli",
+              tier: "tier1",
+              guidanceFile: "AGENTS.md",
+              projectConfig: ".codex/config.toml",
+              machineReadableMode: "strong",
+              resume: "unsupported",
+              mcp: "unsupported",
+              note: "Catalog entry."
+            }
+          ]
+      }
+    });
+    const payload = JSON.parse(stdout.output) as {
+      data: { tools: Array<Record<string, unknown>> };
+    };
+    expect(payload.data.tools[0]).not.toHaveProperty("hiddenField");
+    expect(sortedKeys(payload.data.tools[0]!)).toEqual(
+      [
+        "guidanceFile",
+        "machineReadableMode",
+        "mcp",
+        "note",
+        "projectConfig",
+        "resume",
+        "tier",
+        "tool"
+      ].sort()
+    );
+    expect(stderr.output).toBe("");
+  });
+
+  it("should return a structured validation error when compat list json serialization fails", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+    const { runCli: runMockedCli } =
+      await loadCliModuleWithCompatCatalogOverrides({
+        listCompatibilityDescriptors: () =>
+          [
+            {
+              tool: "codex-cli",
+              tier: "tier1",
+              guidanceFile: "AGENTS.md",
+              projectConfig: ".codex/config.toml",
+              machineReadableMode: "future-mode",
+              resume: "strong",
+              mcp: "strong",
+              note: "Catalog entry."
+            }
+          ] as never
+      });
+
+    const exitCode = await runMockedCli(["compat", "list", "--json"], {
+      stdout,
+      stderr
+    });
+
+    expect(exitCode).toBe(1);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: false,
+      command: "compat.list",
+      error: {
+        code: "VALIDATION_ERROR"
+      }
+    });
+    const payload = JSON.parse(stdout.output) as {
+      error: { message: string };
+    };
+    expect(typeof payload.error.message).toBe("string");
+    expect(payload.error.message.trim().length).toBeGreaterThan(0);
+    expect(stderr.output).toBe("");
+  });
+
+  it("should serialize compat show json output through the public allow-list", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+    const { runCli: runMockedCli } =
+      await loadCliModuleWithCompatCatalogOverrides({
+        getCompatibilityDescriptor: () =>
+          ({
+            tool: "codex-cli",
+            tier: "tier1",
+            guidanceFile: "AGENTS.md",
+            projectConfig: ".codex/config.toml",
+            machineReadableMode: "strong",
+            resume: "unsupported",
+            mcp: "unsupported",
+            note: "Catalog entry.",
+            hiddenField: "internal"
+          }) as never
+      });
+
+    const exitCode = await runMockedCli(["compat", "show", "codex-cli", "--json"], {
+      stdout,
+      stderr
+    });
+
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: true,
+      command: "compat.show",
+      data: {
+          tool: {
+            tool: "codex-cli",
+            tier: "tier1",
+            guidanceFile: "AGENTS.md",
+            projectConfig: ".codex/config.toml",
+            machineReadableMode: "strong",
+            resume: "unsupported",
+            mcp: "unsupported",
+            note: "Catalog entry."
+          }
+        }
+    });
+    const payload = JSON.parse(stdout.output) as {
+      data: { tool: Record<string, unknown> };
+    };
+    expect(payload.data.tool).not.toHaveProperty("hiddenField");
+    expect(sortedKeys(payload.data.tool)).toEqual(
+      [
+        "guidanceFile",
+        "machineReadableMode",
+        "mcp",
+        "note",
+        "projectConfig",
+        "resume",
+        "tier",
+        "tool"
+      ].sort()
+    );
+    expect(stderr.output).toBe("");
+  });
+
+  it("should return a structured validation error when compat show json serialization fails", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+    const { runCli: runMockedCli } =
+      await loadCliModuleWithCompatCatalogOverrides({
+        getCompatibilityDescriptor: () =>
+          ({
+            tool: "codex-cli",
+            tier: "tier1",
+            guidanceFile: "AGENTS.md",
+            projectConfig: ".codex/config.toml",
+            machineReadableMode: "future-mode",
+            resume: "strong",
+            mcp: "strong",
+            note: "Catalog entry."
+          }) as never
+      });
+
+    const exitCode = await runMockedCli(["compat", "show", "codex-cli", "--json"], {
+      stdout,
+      stderr
+    });
+
+    expect(exitCode).toBe(1);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: false,
+      command: "compat.show",
+      error: {
+        code: "VALIDATION_ERROR"
+      }
+    });
+    const payload = JSON.parse(stdout.output) as {
+      error: { message: string };
+    };
+    expect(typeof payload.error.message).toBe("string");
+    expect(payload.error.message.trim().length).toBeGreaterThan(0);
     expect(stderr.output).toBe("");
   });
 
@@ -810,6 +1071,79 @@ describe("runCli", () => {
     expect(stderr.output).toBe("");
   });
 
+  it("should keep thrown smoke failures bounded to a success envelope with public error status", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["compat", "smoke", "codex-cli", "--json"], {
+      stdout,
+      stderr,
+      compatSmokeImpl: async () =>
+        buildCompatibilitySmokeData("codex-cli", {
+          getAdapterDescriptorImpl: () => ({
+            runtime: "codex-cli",
+            supportTier: "tier1",
+            guidanceFile: "AGENTS.md",
+            projectConfig: ".codex/config.toml",
+            note: "Concrete runtime.",
+            capabilities: {
+              machineReadableMode: "strong",
+              resume: "unsupported",
+              mcp: "unsupported",
+              sessionLifecycle: "unsupported",
+              eventStreamParsing: "partial"
+            }
+          }),
+          getRuntimeAdapterImpl: () => createFakeRuntimeAdapter(),
+          smokeCodexCliCompatibilityImpl: async () => {
+            throw new Error("runner exploded");
+          }
+        })
+    });
+
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: true,
+      command: "compat.smoke",
+      data: {
+        smoke: {
+          runtime: "codex-cli",
+          smokeStatus: "error",
+          diagnosis: {
+            code: "unexpected_error",
+            summary:
+              "The bounded codex-cli smoke path did not complete successfully."
+          }
+        }
+      }
+    });
+    expect(stderr.output).toBe("");
+  });
+
+  it("should normalize unexpected compat probe failures to the shared runtime error envelope", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["compat", "probe", "codex-cli", "--json"], {
+      stdout,
+      stderr,
+      compatProbeImpl: async () => {
+        throw new Error("boom");
+      }
+    });
+
+    expect(exitCode).toBe(1);
+    expect(JSON.parse(stdout.output)).toEqual({
+      ok: false,
+      command: "compat.probe",
+      error: {
+        code: "RUNTIME_ERROR",
+        message: "boom"
+      }
+    });
+    expect(stderr.output).toBe("");
+  });
+
   it("should return doctor diagnostics as json without leaking internal metadata", async () => {
     const stdout = new MemoryWriter();
     const stderr = new MemoryWriter();
@@ -1007,6 +1341,16 @@ describe("runCli", () => {
         code: "NOT_FOUND"
       }
     });
+    const payload = JSON.parse(stdout.output) as {
+      command: string;
+      error: Record<string, unknown>;
+      ok: boolean;
+    };
+    expect(sortedKeys(payload)).toEqual(["command", "error", "ok"]);
+    expect(sortedKeys(payload.error)).toEqual(["code", "message"]);
+    expect(payload.error.message).toBe(
+      "Unknown compatibility target: missing-tool."
+    );
     expect(stderr.output).toBe("");
   });
 
@@ -1027,6 +1371,12 @@ describe("runCli", () => {
         code: "NOT_FOUND"
       }
     });
+    const payload = JSON.parse(stdout.output) as {
+      error: { message: string };
+    };
+    expect(payload.error.message).toBe(
+      "Unknown compatibility target: missing-tool."
+    );
     expect(stderr.output).toBe("");
   });
 
@@ -1047,6 +1397,12 @@ describe("runCli", () => {
         code: "NOT_FOUND"
       }
     });
+    const payload = JSON.parse(stdout.output) as {
+      error: { message: string };
+    };
+    expect(payload.error.message).toBe(
+      "Unknown compatibility target: missing-tool."
+    );
     expect(stderr.output).toBe("");
   });
 
@@ -1343,6 +1699,16 @@ describe("runCli", () => {
         code: "NOT_IMPLEMENTED"
       }
     });
+    const payload = JSON.parse(stdout.output) as {
+      command: string;
+      error: Record<string, unknown>;
+      ok: boolean;
+    };
+    expect(sortedKeys(payload)).toEqual(["command", "error", "ok"]);
+    expect(sortedKeys(payload.error)).toEqual(["code", "message"]);
+    expect(payload.error.message).toBe(
+      "attempt.attach is not implemented in the current phase."
+    );
     expect(stderr.output).toBe("");
   });
 
@@ -1566,6 +1932,14 @@ describe("runCli", () => {
         code: "VALIDATION_ERROR"
       }
     });
+    const payload = JSON.parse(stdout.output) as {
+      command: string;
+      error: Record<string, unknown>;
+      ok: boolean;
+    };
+    expect(sortedKeys(payload)).toEqual(["command", "error", "ok"]);
+    expect(sortedKeys(payload.error)).toEqual(["code", "message"]);
+    expect(payload.error.message).toBe("attempt.create requires --task-id.");
     expect(stderr.output).toBe("");
   });
 

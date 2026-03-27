@@ -18,6 +18,8 @@ const validStatuses = new Set<AttemptVerificationCheckStatus>(
 );
 
 interface NormalizedArtifactCheck {
+  exitCode?: number;
+  failureKind?: string;
   name: string;
   required: boolean;
   status: AttemptVerificationCheckStatus;
@@ -154,10 +156,71 @@ function normalizeExecutedCheck(
     );
   }
 
-  return {
+  const normalized: NormalizedArtifactCheck = {
     name: normalizeCheckName(value.name, "executed", index),
     required: value.required,
     status: normalizeCheckStatus(value.status, "executed", index)
+  };
+
+  if (value.exitCode !== undefined) {
+    if (!Number.isInteger(value.exitCode)) {
+      throw new ValidationError(
+        `Verification artifact summary requires executed check ${index} to use an integer exitCode when provided.`
+      );
+    }
+
+    normalized.exitCode = value.exitCode;
+  }
+
+  if (value.failureKind !== undefined) {
+    if (typeof value.failureKind !== "string" || value.failureKind.length === 0) {
+      throw new ValidationError(
+        `Verification artifact summary requires executed check ${index} to use a non-empty string failureKind when provided.`
+      );
+    }
+
+    normalized.failureKind = value.failureKind;
+  }
+
+  validateExecutedCheckMetadata(normalized, index);
+
+  return normalized;
+}
+
+function validateExecutedCheckMetadata(
+  check: NormalizedArtifactCheck,
+  index: number
+): void {
+  switch (check.status) {
+    case "passed":
+      if (check.exitCode !== 0 || check.failureKind !== undefined) {
+        throw new ValidationError(
+          `Verification artifact summary requires executed check ${index} with status "passed" to use exitCode 0 and omit failureKind.`
+        );
+      }
+      return;
+    case "failed":
+      if (check.exitCode === undefined || check.exitCode === 0) {
+        throw new ValidationError(
+          `Verification artifact summary requires executed check ${index} with status "failed" to use a non-zero exitCode.`
+        );
+      }
+      return;
+    case "error":
+      if (check.exitCode !== undefined && check.exitCode === 0) {
+        throw new ValidationError(
+          `Verification artifact summary requires executed check ${index} with status "error" to avoid exitCode 0 when exitCode is provided.`
+        );
+      }
+      return;
+    case "pending":
+    case "skipped":
+      if (check.exitCode !== undefined || check.failureKind !== undefined) {
+        throw new ValidationError(
+          `Verification artifact summary requires executed check ${index} with status "${check.status}" to omit execution metadata.`
+        );
+      }
+      return;
   };
 }
 

@@ -55,16 +55,33 @@ describe("selection handoff-request helpers", () => {
     });
   });
 
-  it("should preserve undefined taskId and sourceKind on the derived request", () => {
+  it("should preserve sourceKind while requiring a concrete taskId on the derived request", () => {
     expect(
       deriveAttemptHandoffRequest(
         createHandoffTarget({
-          taskId: undefined,
           sourceKind: undefined
         })
       )
     ).toEqual({
-      taskId: undefined,
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli",
+      status: "created",
+      sourceKind: undefined
+    });
+  });
+
+  it("should trim taskId, attemptId, and runtime when deriving a handoff request", () => {
+    expect(
+      deriveAttemptHandoffRequest(
+        createHandoffTarget({
+          taskId: "  task_shared  ",
+          attemptId: "  att_ready  ",
+          runtime: "  codex-cli  "
+        })
+      )
+    ).toEqual({
+      taskId: "task_shared",
       attemptId: "att_ready",
       runtime: "codex-cli",
       status: "created",
@@ -84,14 +101,36 @@ describe("selection handoff-request helpers", () => {
     );
   });
 
-  it("should fail loudly when target.taskId is not a string when provided", () => {
+  it("should fail loudly when target.taskId is not a non-empty string", () => {
     const target = {
       ...createHandoffTarget(),
       taskId: 42
     } as unknown as AttemptHandoffTarget;
 
     expect(() => deriveAttemptHandoffRequest(target)).toThrow(
-      "Attempt handoff request requires target.taskId to be a string when provided."
+      "Attempt handoff request requires target.taskId to be a non-empty string."
+    );
+  });
+
+  it("should fail loudly when target.taskId is undefined", () => {
+    const target = {
+      ...createHandoffTarget(),
+      taskId: undefined
+    } as unknown as AttemptHandoffTarget;
+
+    expect(() => deriveAttemptHandoffRequest(target)).toThrow(
+      "Attempt handoff request requires target.taskId to be a non-empty string."
+    );
+  });
+
+  it("should fail loudly when target.taskId is blank-only whitespace", () => {
+    const target = {
+      ...createHandoffTarget(),
+      taskId: "   "
+    } as unknown as AttemptHandoffTarget;
+
+    expect(() => deriveAttemptHandoffRequest(target)).toThrow(
+      "Attempt handoff request requires target.taskId to be a non-empty string."
     );
   });
 
@@ -342,9 +381,21 @@ function createExecutedCheckFromVerificationCheck(
     throw new Error(`Expected verification check ${index} to use a string status.`);
   }
 
-  return {
+  const status = record.status as AttemptVerificationCheckStatus;
+  const baseCheck = {
     name: record.name,
     required: record.required === true,
-    status: record.status as AttemptVerificationCheckStatus
+    status
   };
+
+  switch (status) {
+    case "passed":
+      return { ...baseCheck, exitCode: 0 };
+    case "failed":
+      return { ...baseCheck, exitCode: 1 };
+    case "error":
+      return { ...baseCheck, failureKind: "timeout" as const };
+    default:
+      return baseCheck;
+  }
 }

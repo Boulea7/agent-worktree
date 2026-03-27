@@ -240,6 +240,28 @@ describe("verification execution helpers", () => {
     ).rejects.toThrow("boom");
   });
 
+  it("should rethrow runtime errors without a known subprocess failure kind", async () => {
+    const expectedError = new RuntimeError("runner infrastructure blew up", {
+      detail: "bad runner contract"
+    });
+    const runner = vi.fn<SubprocessRunner>(async () => {
+      throw expectedError;
+    });
+
+    await expect(
+      executeAttemptVerification({
+        checks: [
+          {
+            name: "lint",
+            executable: "npm",
+            args: ["run", "lint"]
+          }
+        ],
+        runner
+      })
+    ).rejects.toBe(expectedError);
+  });
+
   it("should fail loudly when the runner returns undefined instead of a subprocess result", async () => {
     const runner = vi.fn<SubprocessRunner>(async () => {
       return undefined as unknown as Awaited<ReturnType<SubprocessRunner>>;
@@ -301,6 +323,40 @@ describe("verification execution helpers", () => {
         })
       ).rejects.toThrow(ValidationError);
     }
+  });
+
+  it("should stop immediately when a malformed runner result is returned before later checks", async () => {
+    const runner = vi
+      .fn<SubprocessRunner>()
+      .mockResolvedValueOnce({
+        exitCode: "0",
+        stdout: "",
+        stderr: ""
+      } as never)
+      .mockResolvedValueOnce({
+        exitCode: 0,
+        stdout: "ok",
+        stderr: ""
+      });
+
+    await expect(
+      executeAttemptVerification({
+        checks: [
+          {
+            name: "lint",
+            executable: "npm",
+            args: ["run", "lint"]
+          },
+          {
+            name: "unit",
+            executable: "npm",
+            args: ["test"]
+          }
+        ],
+        runner
+      })
+    ).rejects.toThrow(ValidationError);
+    expect(runner).toHaveBeenCalledTimes(1);
   });
 
   it("should validate check definitions before invoking the runner", async () => {

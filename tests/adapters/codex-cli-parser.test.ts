@@ -168,16 +168,82 @@ describe("parseCodexCliJsonlLine", () => {
     });
   });
 
-  it("should preserve legal bracket-prefixed json values as unknown events", () => {
-    expect(parseCodexCliJsonlLine('[{"message":"array payload"}]', 1)).toEqual({
-      kind: "unknown",
-      rawType: "unknown",
+  it.each([
+    "[2026-03-27T10:15:12Z] codex prelude",
+    "[1/3] Retrying request",
+    "[1/3]",
+    "[12:34:56]"
+  ])(
+    "should normalize bracket-prefixed timestamp or progress noise as non-json output",
+    (line) => {
+      expect(parseCodexCliJsonlLine(line, 1)).toEqual({
+        kind: "unknown",
+        rawType: "non_json_output",
+        payload: {
+          line
+        },
+        index: 1
+      });
+    }
+  );
+
+  it.each([
+    {
+      line: "[1]",
+      payload: [1]
+    },
+    {
+      line: "[true]",
+      payload: [true]
+    },
+    {
+      line: "[null]",
+      payload: [null]
+    },
+    {
+      line: '[{"message":"array payload"}]',
       payload: [
         {
           message: "array payload"
         }
-      ],
+      ]
+    }
+  ])("should preserve legal bracket-prefixed json values as unknown events", ({ line, payload }) => {
+    expect(parseCodexCliJsonlLine(line, 1)).toEqual({
+      kind: "unknown",
+      rawType: "unknown",
+      payload,
       index: 1
+    });
+  });
+
+  it("should fail loudly on malformed bracket-prefixed json-looking lines", () => {
+    expect(() => parseCodexCliJsonlLine("[1,]", 2)).toThrow(RuntimeError);
+  });
+
+  it("should fail loudly when bracket noise prefixes are followed by a json payload", () => {
+    expect(() =>
+      parseCodexCliJsonlLine(
+        '[2026-03-27T10:15:12Z] {"type":"turn.completed"}',
+        3
+      )
+    ).toThrow(RuntimeError);
+  });
+
+  it("should fail loudly when generic bracket prefixes are followed by a json payload", () => {
+    expect(() =>
+      parseCodexCliJsonlLine('[warn] {"type":"turn.completed"}', 4)
+    ).toThrow(RuntimeError);
+  });
+
+  it("should preserve generic bracket-prefixed non-event objects as non-json output", () => {
+    expect(parseCodexCliJsonlLine('[warn] {"message":"retrying"}', 5)).toEqual({
+      kind: "unknown",
+      rawType: "non_json_output",
+      payload: {
+        line: '[warn] {"message":"retrying"}'
+      },
+      index: 5
     });
   });
 });

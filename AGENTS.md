@@ -36,7 +36,7 @@ The current thin Phase 4 public compatibility slice now includes:
 - explicit allow-list CLI JSON serializers for `doctor`, `compat list`, `compat show`, `compat probe`, `compat smoke`, `attempt create`, `attempt list`, and `attempt cleanup`, so additive internal DTO or manifest fields do not silently widen the public machine-readable contract
 - an explicit public cleanup-outcome vocabulary for `attempt cleanup --json`, so additive internal cleanup outcomes do not silently widen the public machine-readable contract
 
-That public compatibility baseline now satisfies the current Phase 4 exit criteria: `codex-cli` has a bounded public end-to-end compatibility proof through `compat smoke`, while the other Tier 1 runtimes retain explicit descriptor-only support boundaries through `doctor` and `compat probe`. That remains a compatibility promise only; it does not imply general public execution or lifecycle support.
+That public compatibility baseline now satisfies the current Phase 4 exit criteria: `codex-cli` has a bounded public compatibility smoke path through `compat smoke`, while the other Tier 1 runtimes retain explicit descriptor-only support boundaries through `doctor` and `compat probe`. That remains a compatibility promise only; it does not imply general public execution or lifecycle support.
 
 The current thin Phase 5 internal verification and selection slice now includes:
 

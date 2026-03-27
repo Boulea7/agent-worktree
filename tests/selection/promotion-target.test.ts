@@ -67,6 +67,46 @@ describe("selection promotion-target helpers", () => {
     });
   });
 
+  it("should trim selected attemptId and runtime when deriving a promotable target", () => {
+    const summary = createPromotionDecisionSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        status: "running",
+        runtime: "codex-cli",
+        sourceKind: "delegated",
+        verification: createVerification({
+          state: "passed",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(
+      deriveAttemptPromotionTarget({
+        ...summary,
+        selectedAttemptId: "  att_ready  ",
+        selected: {
+          ...summary.selected!,
+          attemptId: "  att_ready  ",
+          runtime: "  codex-cli  "
+        }
+      })
+    ).toEqual({
+      targetBasis: "promotion_decision_summary",
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli",
+      status: "running",
+      sourceKind: "delegated"
+    });
+  });
+
   it("should return undefined when the selected decision candidate is blocked by failed checks", () => {
     const summary = createPromotionDecisionSummary([
       createPromotionCandidate({
@@ -141,6 +181,35 @@ describe("selection promotion-target helpers", () => {
     expect(deriveAttemptPromotionTarget(summary)).toBeUndefined();
   });
 
+  it("should return undefined when required checks are skipped and pending together", () => {
+    const summary = createPromotionDecisionSummary([
+      createPromotionCandidate({
+        attemptId: "att_required_skipped_pending",
+        verification: createVerification({
+          state: "failed",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "skipped"
+            },
+            {
+              name: "unit",
+              required: true,
+              status: "pending"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(summary.blockingReasons).toEqual([
+      "required_checks_failed",
+      "required_checks_pending"
+    ]);
+    expect(deriveAttemptPromotionTarget(summary)).toBeUndefined();
+  });
+
   it("should return undefined when only optional checks failed", () => {
     const summary = createPromotionDecisionSummary([
       createPromotionCandidate({
@@ -178,6 +247,25 @@ describe("selection promotion-target helpers", () => {
 
     expect(() => deriveAttemptPromotionTarget(summary)).toThrow(
       "Attempt promotion target requires summary.comparableCandidateCount to be at least 1 when summary.canPromote is true."
+    );
+  });
+
+  it("should fail loudly when a promotable summary reports zero promotion-ready candidates", () => {
+    const summary = {
+      ...createPromotionDecisionSummary([
+        createPromotionCandidate({
+          attemptId: "att_ready",
+          verification: createVerification({
+            state: "verified",
+            checks: []
+          })
+        })
+      ]),
+      promotionReadyCandidateCount: 0
+    };
+
+    expect(() => deriveAttemptPromotionTarget(summary)).toThrow(
+      "Attempt promotion target requires summary.promotionReadyCandidateCount to be at least 1 when summary.canPromote is true."
     );
   });
 
@@ -251,6 +339,25 @@ describe("selection promotion-target helpers", () => {
     ).toThrow(
       "Attempt promotion target requires summary.selectedAttemptId to match summary.selected.attemptId."
     );
+  });
+
+  it("should fail loudly when summary.taskId is undefined", () => {
+    const summary = createPromotionDecisionSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "verified",
+          checks: []
+        })
+      })
+    ]);
+
+    expect(() =>
+      deriveAttemptPromotionTarget({
+        ...summary,
+        taskId: undefined
+      })
+    ).toThrow(ValidationError);
   });
 
   it("should fail loudly when comparableCandidateCount is not a valid light-checked integer", () => {
@@ -663,9 +770,21 @@ function createExecutedCheckFromVerificationCheck(
     throw new Error(`Expected verification check ${index} to use a string status.`);
   }
 
-  return {
+  const status = record.status as AttemptVerificationCheckStatus;
+  const baseCheck = {
     name: record.name,
     required: record.required === true,
-    status: record.status as AttemptVerificationCheckStatus
+    status
   };
+
+  switch (status) {
+    case "passed":
+      return { ...baseCheck, exitCode: 0 };
+    case "failed":
+      return { ...baseCheck, exitCode: 1 };
+    case "error":
+      return { ...baseCheck, failureKind: "timeout" as const };
+    default:
+      return baseCheck;
+  }
 }

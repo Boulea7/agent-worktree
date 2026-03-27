@@ -215,32 +215,46 @@ function reportEntryEqual(
 ): boolean {
   return (
     left.handoffTarget.handoffBasis === right.handoffTarget.handoffBasis &&
-    left.handoffTarget.taskId === right.handoffTarget.taskId &&
-    left.handoffTarget.attemptId === right.handoffTarget.attemptId &&
-    left.handoffTarget.runtime === right.handoffTarget.runtime &&
+    normalizeComparableString(left.handoffTarget.taskId) ===
+      normalizeComparableString(right.handoffTarget.taskId) &&
+    normalizeComparableString(left.handoffTarget.attemptId) ===
+      normalizeComparableString(right.handoffTarget.attemptId) &&
+    normalizeComparableString(left.handoffTarget.runtime) ===
+      normalizeComparableString(right.handoffTarget.runtime) &&
     left.handoffTarget.status === right.handoffTarget.status &&
     left.handoffTarget.sourceKind === right.handoffTarget.sourceKind &&
-    left.targetApply.request.taskId === right.targetApply.request.taskId &&
-    left.targetApply.request.attemptId === right.targetApply.request.attemptId &&
-    left.targetApply.request.runtime === right.targetApply.request.runtime &&
+    normalizeComparableString(left.targetApply.request.taskId) ===
+      normalizeComparableString(right.targetApply.request.taskId) &&
+    normalizeComparableString(left.targetApply.request.attemptId) ===
+      normalizeComparableString(right.targetApply.request.attemptId) &&
+    normalizeComparableString(left.targetApply.request.runtime) ===
+      normalizeComparableString(right.targetApply.request.runtime) &&
     left.targetApply.request.status === right.targetApply.request.status &&
     left.targetApply.request.sourceKind === right.targetApply.request.sourceKind &&
-    left.targetApply.apply.consumer.request.taskId ===
-      right.targetApply.apply.consumer.request.taskId &&
-    left.targetApply.apply.consumer.request.attemptId ===
-      right.targetApply.apply.consumer.request.attemptId &&
-    left.targetApply.apply.consumer.request.runtime ===
-      right.targetApply.apply.consumer.request.runtime &&
+    normalizeComparableString(left.targetApply.apply.consumer.request.taskId) ===
+      normalizeComparableString(right.targetApply.apply.consumer.request.taskId) &&
+    normalizeComparableString(
+      left.targetApply.apply.consumer.request.attemptId
+    ) ===
+      normalizeComparableString(
+        right.targetApply.apply.consumer.request.attemptId
+      ) &&
+    normalizeComparableString(left.targetApply.apply.consumer.request.runtime) ===
+      normalizeComparableString(right.targetApply.apply.consumer.request.runtime) &&
     left.targetApply.apply.consumer.request.status ===
       right.targetApply.apply.consumer.request.status &&
     left.targetApply.apply.consumer.request.sourceKind ===
       right.targetApply.apply.consumer.request.sourceKind &&
-    left.targetApply.apply.consume.request.taskId ===
-      right.targetApply.apply.consume.request.taskId &&
-    left.targetApply.apply.consume.request.attemptId ===
-      right.targetApply.apply.consume.request.attemptId &&
-    left.targetApply.apply.consume.request.runtime ===
-      right.targetApply.apply.consume.request.runtime &&
+    normalizeComparableString(left.targetApply.apply.consume.request.taskId) ===
+      normalizeComparableString(right.targetApply.apply.consume.request.taskId) &&
+    normalizeComparableString(
+      left.targetApply.apply.consume.request.attemptId
+    ) ===
+      normalizeComparableString(
+        right.targetApply.apply.consume.request.attemptId
+      ) &&
+    normalizeComparableString(left.targetApply.apply.consume.request.runtime) ===
+      normalizeComparableString(right.targetApply.apply.consume.request.runtime) &&
     left.targetApply.apply.consume.request.status ===
       right.targetApply.apply.consume.request.status &&
     left.targetApply.apply.consume.request.sourceKind ===
@@ -278,4 +292,8 @@ function stringArraysEqual(
     left.length === right.length &&
     left.every((value, index) => value === right[index])
   );
+}
+
+function normalizeComparableString(value: unknown): unknown {
+  return typeof value === "string" ? value.trim() : value;
 }

@@ -58,6 +58,7 @@ export interface AttemptPromotionAuditCandidate {
   blockingRequiredCheckNames: string[];
   failedOrErrorCheckNames: string[];
   pendingCheckNames: string[];
+  skippedCheckNames: string[];
 }
 
 export interface AttemptPromotionAuditSummary {
@@ -105,6 +106,7 @@ export interface AttemptPromotionExplanationCandidate {
   blockingRequiredCheckNames: string[];
   failedOrErrorCheckNames: string[];
   pendingCheckNames: string[];
+  skippedCheckNames: string[];
 }
 
 export interface AttemptPromotionExplanationSummary {
@@ -141,7 +143,7 @@ export interface AttemptPromotionDecisionSummary {
 
 export interface AttemptPromotionTarget {
   targetBasis: "promotion_decision_summary";
-  taskId: string | undefined;
+  taskId: string;
   attemptId: string;
   runtime: string;
   status: AttemptStatus;
@@ -150,7 +152,7 @@ export interface AttemptPromotionTarget {
 
 export interface AttemptHandoffTarget {
   handoffBasis: "promotion_target";
-  taskId: string | undefined;
+  taskId: string;
   attemptId: string;
   runtime: string;
   status: AttemptStatus;
@@ -158,7 +160,7 @@ export interface AttemptHandoffTarget {
 }
 
 export interface AttemptHandoffRequest {
-  taskId: string | undefined;
+  taskId: string;
   attemptId: string;
   runtime: string;
   status: AttemptStatus;
@@ -316,7 +318,7 @@ export interface AttemptHandoffDecisionSummary {
 }
 
 export interface AttemptHandoffFinalizationTarget {
-  taskId: string | undefined;
+  taskId: string;
   attemptId: string;
   runtime: string;
   status: AttemptStatus;
@@ -334,7 +336,7 @@ export interface AttemptHandoffFinalizationTargetSummary {
 }
 
 export interface AttemptHandoffFinalizationRequest {
-  taskId: string | undefined;
+  taskId: string;
   attemptId: string;
   runtime: string;
   status: AttemptStatus;

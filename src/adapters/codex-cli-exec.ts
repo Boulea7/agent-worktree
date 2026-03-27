@@ -151,8 +151,20 @@ export async function smokeCodexCliCompatibility(
   const detectImpl = options.detectImpl ?? (() => detectCodexCli(runner));
   const executeHeadlessImpl =
     options.executeHeadlessImpl ?? executeCodexHeadless;
+  const executeHeadlessRunnerOption =
+    options.runCommand === undefined && options.runner === undefined
+      ? {}
+      : { runCommand: runner };
 
-  if (!(await detectImpl())) {
+  let detected = false;
+
+  try {
+    detected = await detectImpl();
+  } catch {
+    detected = false;
+  }
+
+  if (!detected) {
     return {
       smokeStatus: "failed",
       diagnosisCode: "detect_unavailable",
@@ -176,7 +188,7 @@ export async function smokeCodexCliCompatibility(
         ...(options.resolveEnvironment === undefined
           ? {}
           : { resolveEnvironment: options.resolveEnvironment }),
-        runCommand: runner
+        ...executeHeadlessRunnerOption
       }
     );
 
@@ -438,14 +450,15 @@ function satisfiesCodexCliCompatibilitySmoke(
   result: HeadlessExecutionResult
 ): boolean {
   return (
+    result.exitCode === 0 &&
     result.command.args.filter((arg) => arg === "--ephemeral").length === 1 &&
     result.command.args.includes("--ephemeral") &&
     result.command.args.at(-1) === codexCliCompatibilitySmokePrompt &&
     /(^codex$|[\\/]codex(?:\.(?:exe|cmd|bat|com))?$)/iu.test(
       result.command.executable
     ) &&
-    typeof result.observation.runCompleted === "boolean" &&
-    typeof result.observation.errorEventCount === "number" &&
+    result.observation.runCompleted === true &&
+    result.observation.errorEventCount === 0 &&
     hasCodexCliSmokeEvidence(result)
   );
 }

@@ -88,7 +88,8 @@ describe("selection promotion-decision helpers", () => {
         explanationCode: "selected",
         blockingRequiredCheckNames: [],
         failedOrErrorCheckNames: [],
-        pendingCheckNames: []
+        pendingCheckNames: [],
+        skippedCheckNames: []
       },
       blockingReasons: [],
       canPromote: true,
@@ -170,6 +171,37 @@ describe("selection promotion-decision helpers", () => {
       "required_checks_failed",
       "required_checks_pending"
     ]);
+  });
+
+  it("should derive both failed and pending blockers when required checks are skipped and pending together", () => {
+    const summary = createPromotionExplanationSummary([
+      createPromotionCandidate({
+        attemptId: "att_blocked",
+        verification: createVerification({
+          state: "failed",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "skipped"
+            },
+            {
+              name: "unit",
+              required: true,
+              status: "pending"
+            }
+          ]
+        })
+      })
+    ]);
+
+    const decision = deriveAttemptPromotionDecisionSummary(summary);
+
+    expect(decision.blockingReasons).toEqual([
+      "required_checks_failed",
+      "required_checks_pending"
+    ]);
+    expect(decision.selected?.skippedCheckNames).toEqual(["lint"]);
   });
 
   it("should derive verification_incomplete when the selected explanation candidate is not ready without failed or pending checks", () => {
@@ -302,6 +334,36 @@ describe("selection promotion-decision helpers", () => {
       deriveAttemptPromotionDecisionSummary({
         ...summary,
         selected: summary.candidates[1]
+      })
+    ).toThrow(
+      "Attempt promotion decision summary requires summary.selected to match the first candidate."
+    );
+  });
+
+  it("should fail loudly when summary.selected drifts only in skippedCheckNames", () => {
+    const summary = createPromotionExplanationSummary([
+      createPromotionCandidate({
+        attemptId: "att_skipped",
+        verification: createVerification({
+          state: "failed",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "skipped"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...summary,
+        selected: {
+          ...summary.selected!,
+          skippedCheckNames: []
+        }
       })
     ).toThrow(
       "Attempt promotion decision summary requires summary.selected to match the first candidate."
@@ -662,9 +724,21 @@ function createExecutedCheckFromVerificationCheck(
     throw new Error(`Expected verification check ${index} to use a string status.`);
   }
 
-  return {
+  const status = record.status as AttemptVerificationCheckStatus;
+  const baseCheck = {
     name: record.name,
     required: record.required === true,
-    status: record.status as AttemptVerificationCheckStatus
+    status
   };
+
+  switch (status) {
+    case "passed":
+      return { ...baseCheck, exitCode: 0 };
+    case "failed":
+      return { ...baseCheck, exitCode: 1 };
+    case "error":
+      return { ...baseCheck, failureKind: "timeout" as const };
+    default:
+      return baseCheck;
+  }
 }

@@ -25,7 +25,8 @@ export const capabilityStrengths = [
   "strong",
   "partial",
   "varies",
-  "platform-oriented"
+  "platform-oriented",
+  "unsupported"
 ] as const;
 
 export type RuntimeKind = (typeof runtimeKinds)[number];

@@ -79,6 +79,32 @@ describe("buildCompatibilitySmokeData", () => {
     } satisfies CompatibilitySmokeData);
   });
 
+  it("should report detect-unavailable smoke failures as a bounded public failure state", async () => {
+    await expect(
+      buildCompatibilitySmokeData("codex-cli", {
+        getAdapterDescriptorImpl: () => createCodexDescriptor(),
+        getRuntimeAdapterImpl: () => createFakeAdapter(),
+        smokeCodexCliCompatibilityImpl: async () => ({
+          smokeStatus: "failed",
+          diagnosisCode: "detect_unavailable",
+          summary:
+            "The local codex executable could not be detected for the bounded compatibility smoke path."
+        })
+      })
+    ).resolves.toEqual({
+      smoke: {
+        ...createCodexDescriptor(),
+        adapterStatus: "implemented",
+        smokeStatus: "failed",
+        diagnosis: {
+          code: "detect_unavailable",
+          summary:
+            "The local codex executable could not be detected for the bounded compatibility smoke path."
+        }
+      }
+    } satisfies CompatibilitySmokeData);
+  });
+
   it("should report gate-disabled smoke runs as skipped", async () => {
     await expect(
       buildCompatibilitySmokeData("codex-cli", {
@@ -116,6 +142,29 @@ describe("buildCompatibilitySmokeData", () => {
           summary:
             "The bounded codex-cli smoke path did not complete successfully."
         })
+      })
+    ).resolves.toEqual({
+      smoke: {
+        ...createCodexDescriptor(),
+        adapterStatus: "implemented",
+        smokeStatus: "error",
+        diagnosis: {
+          code: "unexpected_error",
+          summary:
+            "The bounded codex-cli smoke path did not complete successfully."
+        }
+      }
+    } satisfies CompatibilitySmokeData);
+  });
+
+  it("should map thrown smoke failures into the bounded public error state", async () => {
+    await expect(
+      buildCompatibilitySmokeData("codex-cli", {
+        getAdapterDescriptorImpl: () => createCodexDescriptor(),
+        getRuntimeAdapterImpl: () => createFakeAdapter(),
+        smokeCodexCliCompatibilityImpl: async () => {
+          throw new Error("runner exploded");
+        }
       })
     ).resolves.toEqual({
       smoke: {
@@ -183,7 +232,7 @@ describe("buildCompatibilitySmokeData", () => {
     await expect(
       buildCompatibilitySmokeData("missing-tool", {
         getAdapterDescriptorImpl: () => {
-          throw new NotFoundError("Unknown compatibility target: missing-tool.");
+          throw new NotFoundError("Unknown adapter target: missing-tool.");
         }
       })
     ).rejects.toMatchObject({

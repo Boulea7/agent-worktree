@@ -86,7 +86,8 @@ describe("selection promotion-explanation helpers", () => {
         explanationCode: "selected",
         blockingRequiredCheckNames: [],
         failedOrErrorCheckNames: [],
-        pendingCheckNames: []
+        pendingCheckNames: [],
+        skippedCheckNames: []
       },
       candidates: [
         {
@@ -100,7 +101,8 @@ describe("selection promotion-explanation helpers", () => {
           explanationCode: "selected",
           blockingRequiredCheckNames: [],
           failedOrErrorCheckNames: [],
-          pendingCheckNames: []
+          pendingCheckNames: [],
+          skippedCheckNames: []
         }
       ]
     });
@@ -223,7 +225,8 @@ describe("selection promotion-explanation helpers", () => {
       explanationCode: "required_checks_failed",
       blockingRequiredCheckNames: ["lint"],
       failedOrErrorCheckNames: ["lint"],
-      pendingCheckNames: []
+      pendingCheckNames: [],
+      skippedCheckNames: []
     });
   });
 
@@ -281,6 +284,45 @@ describe("selection promotion-explanation helpers", () => {
     expect(pendingCandidate?.explanationCode).toBe("required_checks_pending");
     expect(pendingCandidate?.blockingRequiredCheckNames).toEqual(["lint"]);
     expect(pendingCandidate?.pendingCheckNames).toEqual(["lint"]);
+    expect(pendingCandidate?.skippedCheckNames).toEqual([]);
+  });
+
+  it("should keep skipped required checks in the explanation candidate while classifying mixed skipped and pending as failed-priority", () => {
+    const report = createPromotionReport([
+      createPromotionCandidate({
+        attemptId: "att_selected",
+        verification: createVerification({
+          state: "verified",
+          checks: []
+        })
+      }),
+      createPromotionCandidate({
+        attemptId: "att_mixed_required_blockers",
+        verification: createVerification({
+          state: "failed",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "skipped"
+            },
+            {
+              name: "unit",
+              required: true,
+              status: "pending"
+            }
+          ]
+        })
+      })
+    ]);
+
+    const explanation = deriveAttemptPromotionExplanationSummary(report);
+    const mixedCandidate = explanation.candidates[1];
+
+    expect(mixedCandidate?.explanationCode).toBe("required_checks_failed");
+    expect(mixedCandidate?.blockingRequiredCheckNames).toEqual(["lint", "unit"]);
+    expect(mixedCandidate?.pendingCheckNames).toEqual(["unit"]);
+    expect(mixedCandidate?.skippedCheckNames).toEqual(["lint"]);
   });
 
   it("should derive verification_incomplete when only optional checks failed", () => {
@@ -834,9 +876,21 @@ function createExecutedCheckFromVerificationCheck(
     throw new Error(`Expected verification check ${index} to use a string status.`);
   }
 
-  return {
+  const status = record.status as AttemptVerificationCheckStatus;
+  const baseCheck = {
     name: record.name,
     required: record.required === true,
-    status: record.status as AttemptVerificationCheckStatus
+    status
   };
+
+  switch (status) {
+    case "passed":
+      return { ...baseCheck, exitCode: 0 };
+    case "failed":
+      return { ...baseCheck, exitCode: 1 };
+    case "error":
+      return { ...baseCheck, failureKind: "timeout" as const };
+    default:
+      return baseCheck;
+  }
 }
