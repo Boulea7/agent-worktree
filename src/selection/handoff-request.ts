@@ -46,9 +46,9 @@ function validateTargetBasis(target: AttemptHandoffTarget): void {
 }
 
 function validateTaskId(value: unknown): void {
-  if (value !== undefined && typeof value !== "string") {
+  if (typeof value !== "string" || value.trim().length === 0) {
     throw new ValidationError(
-      "Attempt handoff request requires target.taskId to be a string when provided."
+      "Attempt handoff request requires target.taskId to be a non-empty string."
     );
   }
 }

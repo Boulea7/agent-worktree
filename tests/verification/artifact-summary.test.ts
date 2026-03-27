@@ -388,6 +388,24 @@ describe("verification artifact summary helpers", () => {
     );
   });
 
+  it("should fail loudly when a passed executed check carries contradictory execution metadata", () => {
+    const result = createExecutionResult({
+      checks: [
+        createExecutedCheck({
+          name: "lint",
+          required: true,
+          status: "passed",
+          exitCode: 99,
+          failureKind: "timeout"
+        })
+      ]
+    });
+
+    expect(() => deriveAttemptVerificationArtifactSummary(result)).toThrow(
+      ValidationError
+    );
+  });
+
   it("should not mutate the supplied execution result", () => {
     const result = {
       checks: [

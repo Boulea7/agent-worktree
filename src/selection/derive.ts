@@ -1,5 +1,11 @@
 import { ValidationError } from "../core/errors.js";
-import type { AttemptManifest } from "../manifest/types.js";
+import {
+  attemptSourceKinds,
+  attemptStatuses,
+  type AttemptManifest,
+  type AttemptSourceKind,
+  type AttemptStatus
+} from "../manifest/types.js";
 import {
   compareAttemptVerificationCandidates
 } from "../verification/compare.js";
@@ -10,16 +16,18 @@ import type {
 } from "./types.js";
 
 const ATTEMPT_SELECTION_BASIS = "verification_summary" as const;
+const validAttemptStatuses = new Set<AttemptStatus>(attemptStatuses);
+const validAttemptSourceKinds = new Set<AttemptSourceKind>(attemptSourceKinds);
 
 export function deriveAttemptSelectionCandidate(
   manifest: AttemptManifest
 ): AttemptSelectionCandidate {
   return {
-    attemptId: manifest.attemptId,
-    taskId: manifest.taskId,
-    runtime: manifest.runtime,
-    status: manifest.status,
-    sourceKind: manifest.sourceKind,
+    attemptId: normalizeRequiredString(manifest.attemptId, "manifest.attemptId"),
+    taskId: normalizeRequiredString(manifest.taskId, "manifest.taskId"),
+    runtime: normalizeRequiredString(manifest.runtime, "manifest.runtime"),
+    status: normalizeAttemptStatus(manifest.status),
+    sourceKind: normalizeAttemptSourceKind(manifest.sourceKind),
     summary: deriveAttemptVerificationSummary(manifest.verification)
   };
 }
@@ -41,7 +49,7 @@ export function deriveAttemptSelectionResult(
     };
   }
 
-  const taskId = firstManifest.taskId;
+  const taskId = normalizeRequiredString(firstManifest.taskId, "manifest.taskId");
   validateTaskBoundary(manifests, taskId);
 
   const candidates = manifests.map((manifest) =>
@@ -74,10 +82,60 @@ function validateTaskBoundary(
   taskId: string
 ): void {
   for (const manifest of manifests) {
-    if (manifest.taskId !== taskId) {
+    if (normalizeRequiredString(manifest.taskId, "manifest.taskId") !== taskId) {
       throw new ValidationError(
         "Attempt selection requires manifests from a single taskId."
       );
     }
   }
+}
+
+function normalizeRequiredString(value: unknown, fieldName: string): string {
+  if (typeof value !== "string") {
+    throw new ValidationError(
+      `Attempt selection requires ${fieldName} to be a non-empty string.`
+    );
+  }
+
+  const normalized = value.trim();
+
+  if (normalized.length === 0) {
+    throw new ValidationError(
+      `Attempt selection requires ${fieldName} to be a non-empty string.`
+    );
+  }
+
+  return normalized;
+}
+
+function normalizeAttemptStatus(value: unknown): AttemptStatus {
+  if (
+    typeof value !== "string" ||
+    !validAttemptStatuses.has(value as AttemptStatus)
+  ) {
+    throw new ValidationError(
+      "Attempt selection requires manifest.status to use the existing attempt status vocabulary."
+    );
+  }
+
+  return value as AttemptStatus;
+}
+
+function normalizeAttemptSourceKind(
+  value: unknown
+): AttemptSourceKind | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (
+    typeof value !== "string" ||
+    !validAttemptSourceKinds.has(value as AttemptSourceKind)
+  ) {
+    throw new ValidationError(
+      "Attempt selection requires manifest.sourceKind to use the existing attempt source-kind vocabulary when provided."
+    );
+  }
+
+  return value as AttemptSourceKind;
 }

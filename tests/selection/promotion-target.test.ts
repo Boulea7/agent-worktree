@@ -253,6 +253,25 @@ describe("selection promotion-target helpers", () => {
     );
   });
 
+  it("should fail loudly when summary.taskId is undefined", () => {
+    const summary = createPromotionDecisionSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "verified",
+          checks: []
+        })
+      })
+    ]);
+
+    expect(() =>
+      deriveAttemptPromotionTarget({
+        ...summary,
+        taskId: undefined
+      })
+    ).toThrow(ValidationError);
+  });
+
   it("should fail loudly when comparableCandidateCount is not a valid light-checked integer", () => {
     const summary = createPromotionDecisionSummary([
       createPromotionCandidate({
@@ -663,9 +682,21 @@ function createExecutedCheckFromVerificationCheck(
     throw new Error(`Expected verification check ${index} to use a string status.`);
   }
 
-  return {
+  const status = record.status as AttemptVerificationCheckStatus;
+  const baseCheck = {
     name: record.name,
     required: record.required === true,
-    status: record.status as AttemptVerificationCheckStatus
+    status
   };
+
+  switch (status) {
+    case "passed":
+      return { ...baseCheck, exitCode: 0 };
+    case "failed":
+      return { ...baseCheck, exitCode: 1 };
+    case "error":
+      return { ...baseCheck, failureKind: "timeout" as const };
+    default:
+      return baseCheck;
+  }
 }

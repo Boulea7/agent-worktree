@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import type {
   AttemptManifest,
   AttemptVerification
@@ -274,6 +275,26 @@ describe("selection handoff-consume helpers", () => {
       invoked: true
     });
   });
+
+  it("should fail before invoking handoff when readiness carries a non-boolean handoffSupported value", async () => {
+    const consumer = createHandoffConsumer({
+      readiness: {
+        blockingReasons: [],
+        canConsumeHandoff: true,
+        hasBlockingReasons: false,
+        handoffSupported: "yes" as never
+      }
+    });
+    const invokeHandoff = vi.fn(async () => {});
+
+    await expect(
+      consumeAttemptHandoff({
+        consumer,
+        invokeHandoff
+      })
+    ).rejects.toThrow(ValidationError);
+    expect(invokeHandoff).not.toHaveBeenCalled();
+  });
 });
 
 function createHandoffConsumer(
@@ -407,9 +428,21 @@ function createExecutedCheckFromVerificationCheck(
     throw new Error(`Expected verification check ${index} to use a string status.`);
   }
 
-  return {
+  const status = record.status as AttemptVerificationCheckStatus;
+  const baseCheck = {
     name: record.name,
     required: record.required === true,
-    status: record.status as AttemptVerificationCheckStatus
+    status
   };
+
+  switch (status) {
+    case "passed":
+      return { ...baseCheck, exitCode: 0 };
+    case "failed":
+      return { ...baseCheck, exitCode: 1 };
+    case "error":
+      return { ...baseCheck, failureKind: "timeout" as const };
+    default:
+      return baseCheck;
+  }
 }

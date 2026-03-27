@@ -37,7 +37,6 @@ export function deriveAttemptPromotionTarget(
   summary: AttemptPromotionDecisionSummary
 ): AttemptPromotionTarget | undefined {
   validateDecisionBasis(summary);
-  validateTaskId(summary.taskId);
   validatePromotionDecisionSummary(summary);
 
   if (!summary.canPromote) {
@@ -54,7 +53,7 @@ export function deriveAttemptPromotionTarget(
 
   return {
     targetBasis: ATTEMPT_PROMOTION_TARGET_BASIS,
-    taskId: summary.taskId,
+    taskId: normalizeTaskId(summary.taskId),
     attemptId: selected.attemptId,
     runtime: selected.runtime,
     status: selected.status,
@@ -70,12 +69,22 @@ function validateDecisionBasis(summary: AttemptPromotionDecisionSummary): void {
   }
 }
 
-function validateTaskId(value: unknown): void {
-  if (value !== undefined && typeof value !== "string") {
+function normalizeTaskId(value: unknown): string {
+  if (typeof value !== "string") {
     throw new ValidationError(
-      "Attempt promotion target requires summary.taskId to be a string when provided."
+      "Attempt promotion target requires summary.taskId to be a non-empty string."
     );
   }
+
+  const normalized = value.trim();
+
+  if (normalized.length === 0) {
+    throw new ValidationError(
+      "Attempt promotion target requires summary.taskId to be a non-empty string."
+    );
+  }
+
+  return normalized;
 }
 
 function validatePromotionDecisionSummary(

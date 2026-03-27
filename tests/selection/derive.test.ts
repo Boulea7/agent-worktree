@@ -146,6 +146,53 @@ describe("selection helpers", () => {
     );
   });
 
+  it("should normalize taskId whitespace before validating the task boundary", () => {
+    const manifests = [
+      createManifest({
+        attemptId: "att_a",
+        taskId: "task_shared"
+      }),
+      createManifest({
+        attemptId: "att_b",
+        taskId: " task_shared "
+      })
+    ];
+
+    const result = deriveAttemptSelectionResult(manifests);
+
+    expect(result.taskId).toBe("task_shared");
+    expect(result.candidates.map((candidate) => candidate.taskId)).toEqual([
+      "task_shared",
+      "task_shared"
+    ]);
+  });
+
+  it("should fail loudly when manifest metadata uses invalid selection-facing values", () => {
+    expect(() =>
+      deriveAttemptSelectionCandidate(
+        createManifest({
+          attemptId: "   "
+        })
+      )
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      deriveAttemptSelectionCandidate(
+        createManifest({
+          status: "queued" as AttemptManifest["status"]
+        })
+      )
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      deriveAttemptSelectionCandidate(
+        createManifest({
+          sourceKind: "sideways" as AttemptManifest["sourceKind"]
+        })
+      )
+    ).toThrow(ValidationError);
+  });
+
   it("should propagate incomplete verification summaries without re-deriving policy in selection", () => {
     const manifest = createManifest({
       attemptId: "att_incomplete",

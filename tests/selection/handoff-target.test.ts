@@ -44,14 +44,25 @@ describe("selection handoff-target helpers", () => {
     );
   });
 
-  it("should fail loudly when target.taskId is not a string when provided", () => {
+  it("should fail loudly when target.taskId is not a non-empty string", () => {
     const target = {
       ...createPromotionTarget(),
       taskId: 42
     } as unknown as AttemptPromotionTarget;
 
     expect(() => deriveAttemptHandoffTarget(target)).toThrow(
-      "Attempt handoff target requires target.taskId to be a string when provided."
+      "Attempt handoff target requires target.taskId to be a non-empty string."
+    );
+  });
+
+  it("should fail loudly when target.taskId is undefined", () => {
+    const target = {
+      ...createPromotionTarget(),
+      taskId: undefined
+    } as unknown as AttemptPromotionTarget;
+
+    expect(() => deriveAttemptHandoffTarget(target)).toThrow(
+      "Attempt handoff target requires target.taskId to be a non-empty string."
     );
   });
 

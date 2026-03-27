@@ -32,7 +32,9 @@ export function deriveAttemptHandoffConsumer(input: {
   validateAttemptSourceKind(request.sourceKind);
 
   const handoffSupported =
-    input.resolveHandoffCapability?.(request.runtime) ?? false;
+    normalizeHandoffCapability(
+      input.resolveHandoffCapability?.(request.runtime) ?? false
+    );
   const blockingReasons: AttemptHandoffConsumerBlockingReason[] =
     handoffSupported ? [] : ["handoff_unsupported"];
 
@@ -54,11 +56,21 @@ export function deriveAttemptHandoffConsumer(input: {
 }
 
 function validateTaskId(value: unknown): void {
-  if (value !== undefined && typeof value !== "string") {
+  if (typeof value !== "string" || value.trim().length === 0) {
     throw new ValidationError(
-      "Attempt handoff consumer requires request.taskId to be a string when provided."
+      "Attempt handoff consumer requires request.taskId to be a non-empty string."
     );
   }
+}
+
+function normalizeHandoffCapability(value: unknown): boolean {
+  if (typeof value !== "boolean") {
+    throw new ValidationError(
+      "Attempt handoff consumer requires resolveHandoffCapability to return a boolean."
+    );
+  }
+
+  return value;
 }
 
 function validateNonEmptyString(value: unknown, fieldName: string): void {
