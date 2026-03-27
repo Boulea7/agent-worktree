@@ -26,7 +26,13 @@ export function getManifestDirectory(
   attemptId: string,
   options: ManifestStoreOptions = {}
 ): string {
-  return path.join(options.rootDir ?? defaultManifestRoot, attemptId);
+  const rootDir = path.resolve(options.rootDir ?? defaultManifestRoot);
+  const normalizedAttemptId = normalizeAttemptIdForManifestPath(
+    attemptId,
+    rootDir
+  );
+
+  return path.join(rootDir, normalizedAttemptId);
 }
 
 export function getManifestPath(
@@ -34,6 +40,50 @@ export function getManifestPath(
   options: ManifestStoreOptions = {}
 ): string {
   return path.join(getManifestDirectory(attemptId, options), "manifest.json");
+}
+
+function normalizeAttemptIdForManifestPath(
+  attemptId: string,
+  rootDir: string
+): string {
+  const normalizedAttemptId = attemptId.trim();
+
+  if (normalizedAttemptId.length === 0) {
+    throw new ValidationError(
+      "Attempt manifest paths require attemptId to be a non-empty string."
+    );
+  }
+
+  if (!isSingleSafePathSegment(normalizedAttemptId)) {
+    throw new ValidationError(
+      "Attempt manifest paths require attemptId to be a single safe path segment."
+    );
+  }
+
+  const resolvedDirectory = path.resolve(rootDir, normalizedAttemptId);
+  const relativePath = path.relative(rootDir, resolvedDirectory);
+
+  if (
+    relativePath.length === 0 ||
+    relativePath === "." ||
+    relativePath.startsWith("..") ||
+    path.isAbsolute(relativePath)
+  ) {
+    throw new ValidationError(
+      "Attempt manifest paths require attemptId to stay within the manifest root."
+    );
+  }
+
+  return normalizedAttemptId;
+}
+
+function isSingleSafePathSegment(attemptId: string): boolean {
+  return (
+    attemptId !== "." &&
+    attemptId !== ".." &&
+    !attemptId.includes(path.posix.sep) &&
+    !attemptId.includes(path.win32.sep)
+  );
 }
 
 export function serializeManifest(manifest: AttemptManifest): string {
@@ -78,21 +128,31 @@ export async function readManifest(
   attemptId: string,
   options: ManifestStoreOptions = {}
 ): Promise<AttemptManifest> {
-  const manifestPath = getManifestPath(attemptId, options);
+  const rootDir = path.resolve(options.rootDir ?? defaultManifestRoot);
+  const normalizedAttemptId = normalizeAttemptIdForManifestPath(
+    attemptId,
+    rootDir
+  );
+  const manifestPath = path.join(rootDir, normalizedAttemptId, "manifest.json");
 
   try {
     const fileContents = await readFile(manifestPath, "utf8");
-    return parseManifestForAttempt(fileContents, attemptId);
+    return parseManifestForAttempt(fileContents, normalizedAttemptId);
   } catch (error) {
     if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-      throw new NotFoundError(`Manifest not found for attempt ${attemptId}.`);
+      throw new NotFoundError(
+        `Manifest not found for attempt ${normalizedAttemptId}.`
+      );
     }
 
     if (error instanceof AgentWorktreeError) {
       throw error;
     }
 
-    throw new RuntimeError(`Failed to read manifest for attempt ${attemptId}.`, error);
+    throw new RuntimeError(
+      `Failed to read manifest for attempt ${normalizedAttemptId}.`,
+      error
+    );
   }
 }
 

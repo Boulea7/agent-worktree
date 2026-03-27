@@ -2,25 +2,24 @@
 
 ## Now
 
-- Establish the documentation skeleton
-- Define public/private documentation boundaries
-- Document compatibility goals for Tier 1 tools
-- Draft the initial public specs
-- Maintain a clean local handoff workflow for future sessions
+- Keep build, typecheck, and test gates green on the implemented CLI and worktree baseline
+- Harden manifest, path, and runtime execution boundaries without widening the public surface
+- Keep public compatibility docs and machine-readable contracts aligned with real behavior
+- Continue thin internal helper progression for verification, selection, and handoff composition
+- Maintain a clean worktree-first handoff workflow for future sessions
 
 ## Next
 
-- Finalize the adapter capability model
-- Refine runtime-manifest and CLI contracts
-- Publish first RFCs for worktree lifecycle and compatibility guarantees
-- Decide which project-level config files should be shared for each supported tool
+- Refine cleanup, manifest, and compatibility contracts where docs and implementation still diverge
+- Continue bounded internal lifecycle helpers without exposing public spawn, wait, close, or execution commands
+- Tighten executable probing and credential-injection trust boundaries for `codex-cli`
+- Publish focused RFCs only when a contract is ready to stabilize
 
 ## Later
 
-- Build a minimal CLI prototype
-- Add worktree lifecycle commands
-- Add adapter stubs for Tier 1 tools
-- Add verification and selection workflows
+- Broaden internal lifecycle composition above the current bounded helper chain
+- Consider additional Tier 1 runtime execution slices once the first execution baseline stays healthy
+- Explore richer maintainer workflows and future branch planning beyond the current narrow public CLI
 
 ## Research Tracks
 

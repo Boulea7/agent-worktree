@@ -223,7 +223,7 @@ This difference is expected when a same-name shadow binary appears earlier in `P
 - smoke tests SHOULD be gated behind an environment variable such as `RUN_CODEX_SMOKE=1`
 - public `compat smoke codex-cli` SHOULD use that same gate and return a bounded `skipped` result rather than failing when the gate is disabled
 - smoke tests SHOULD confirm detection, bounded internal execution, and baseline parsing only
-- smoke output MAY include internal observation diagnostics for debugging, but those diagnostics remain non-contractual
+- internal smoke harnesses MAY include observation diagnostics for debugging, but the public `compat smoke` contract must keep those diagnostics out of serialized output
 - smoke tests MUST NOT become the default validation path for the repository
 - direct-shell invocation and the env-gated Vitest smoke harness were both re-verified successfully in this workspace on 2026-03-21
 - the Vitest smoke harness remains narrower and should still be treated as a bounded secondary probe rather than a public reliability guarantee

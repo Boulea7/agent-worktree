@@ -235,6 +235,65 @@ describe("manifest store", () => {
     await expect(readManifest("att_demo", { rootDir })).resolves.toEqual(manifest);
   });
 
+  it("should reject writing manifests whose attemptId is not a single safe path segment", async () => {
+    const rootDir = await createTempDirectory();
+
+    await expect(
+      writeManifest(createManifest({ attemptId: "../att_escape" }), { rootDir })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      writeManifest(createManifest({ attemptId: "nested/att_demo" }), { rootDir })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      writeManifest(createManifest({ attemptId: "   " }), { rootDir })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      writeManifest(createManifest({ attemptId: "." }), { rootDir })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      writeManifest(createManifest({ attemptId: ".." }), { rootDir })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      writeManifest(createManifest({ attemptId: "" }), { rootDir })
+    ).rejects.toThrow(ValidationError);
+  });
+
+  it("should reject reading manifests whose selector is not a single safe path segment", async () => {
+    const rootDir = await createTempDirectory();
+
+    await expect(readManifest("../att_escape", { rootDir })).rejects.toThrow(
+      ValidationError
+    );
+    await expect(readManifest("nested/att_demo", { rootDir })).rejects.toThrow(
+      ValidationError
+    );
+    await expect(readManifest("   ", { rootDir })).rejects.toThrow(
+      ValidationError
+    );
+    await expect(readManifest(".", { rootDir })).rejects.toThrow(
+      ValidationError
+    );
+    await expect(readManifest("..", { rootDir })).rejects.toThrow(
+      ValidationError
+    );
+    await expect(readManifest("", { rootDir })).rejects.toThrow(
+      ValidationError
+    );
+  });
+
+  it("should canonicalize padded attemptId selectors when reading manifests", async () => {
+    const rootDir = await createTempDirectory();
+    const manifest = createManifest({
+      attemptId: "att_padded"
+    });
+
+    await writeManifest(manifest, { rootDir });
+
+    await expect(readManifest("  att_padded  ", { rootDir })).resolves.toEqual(
+      manifest
+    );
+  });
+
   it("should reject invalid manifests before writing them", async () => {
     const rootDir = await createTempDirectory();
 

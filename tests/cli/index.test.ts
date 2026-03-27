@@ -1682,6 +1682,38 @@ describe("runCli", () => {
     expect(stderr.output).toBe("");
   });
 
+  it("should return a structured validation error when cleanup uses an unsafe attempt-id selector", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+    const manifestRoot = await createTempDirectory("agent-worktree-cli-manifest-");
+
+    const exitCode = await runCli(
+      [
+        "attempt",
+        "cleanup",
+        "--attempt-id",
+        "../att_escape",
+        "--manifest-root",
+        manifestRoot,
+        "--json"
+      ],
+      {
+        stdout,
+        stderr
+      }
+    );
+
+    expect(exitCode).toBe(1);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: false,
+      command: "attempt.cleanup",
+      error: {
+        code: "VALIDATION_ERROR"
+      }
+    });
+    expect(stderr.output).toBe("");
+  });
+
   it("should keep attempt attach unimplemented in json mode", async () => {
     const stdout = new MemoryWriter();
     const stderr = new MemoryWriter();

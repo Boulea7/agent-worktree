@@ -48,7 +48,7 @@ const attemptTimestampsSchema = z
 export const attemptManifestSchema = z
   .object({
     schemaVersion: z.string(),
-    attemptId: z.string(),
+    attemptId: z.string().trim().min(1),
     taskId: z.string(),
     runtime: z.string(),
     adapter: z.string(),
