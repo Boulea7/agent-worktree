@@ -255,6 +255,29 @@ describe("smokeCodexCliCompatibility", () => {
     expect(detectImpl).toHaveBeenCalledTimes(1);
   });
 
+  it("should return a structured detect_unavailable diagnosis when detection throws", async () => {
+    const detectImpl = vi.fn(async () => {
+      throw new Error("probe crashed");
+    });
+    const executeHeadlessImpl = vi.fn();
+
+    await expect(
+      smokeCodexCliCompatibility({
+        env: {
+          RUN_CODEX_SMOKE: "1"
+        },
+        detectImpl,
+        executeHeadlessImpl
+      })
+    ).resolves.toEqual({
+      smokeStatus: "failed",
+      diagnosisCode: "detect_unavailable",
+      summary:
+        "No local codex executable with `exec --json` support was confirmed before smoke execution."
+    });
+    expect(executeHeadlessImpl).not.toHaveBeenCalled();
+  });
+
   it("should report passed when the bounded smoke checks succeed", async () => {
     const detectImpl = vi.fn(async () => true);
     const executeHeadlessImpl = vi.fn(async (_input, options) => ({
@@ -303,6 +326,67 @@ describe("smokeCodexCliCompatibility", () => {
       })
     );
   });
+
+  it.each([
+    {
+      label: "the exit code is non-zero",
+      exitCode: 17,
+      runCompleted: true,
+      errorEventCount: 0
+    },
+    {
+      label: "the run is not completed",
+      exitCode: 0,
+      runCompleted: false,
+      errorEventCount: 0
+    },
+    {
+      label: "the event stream includes errors",
+      exitCode: 0,
+      runCompleted: true,
+      errorEventCount: 1
+    }
+  ])(
+    "should fail when $label even if the smoke command shape matches",
+    async ({ exitCode, runCompleted, errorEventCount }) => {
+      const detectImpl = vi.fn(async () => true);
+      const executeHeadlessImpl = vi.fn(async (_input, options) => ({
+        command: {
+          ...options.command,
+          executable: "codex",
+          args: [
+            "exec",
+            "--json",
+            "--ephemeral",
+            codexCliCompatibilitySmokePrompt
+          ]
+        },
+        exitCode,
+        stdout: "ok",
+        stderr: "",
+        events: [],
+        observation: {
+          runCompleted,
+          errorEventCount
+        }
+      }));
+
+      await expect(
+        smokeCodexCliCompatibility({
+          env: {
+            RUN_CODEX_SMOKE: "1"
+          },
+          detectImpl,
+          executeHeadlessImpl
+        })
+      ).resolves.toEqual({
+        smokeStatus: "failed",
+        diagnosisCode: "execution_failed",
+        summary:
+          "The bounded codex-cli smoke path did not satisfy the public compatibility checks."
+      });
+    }
+  );
 
   it("should report failed when the bounded smoke checks are not satisfied", async () => {
     const detectImpl = vi.fn(async () => true);
