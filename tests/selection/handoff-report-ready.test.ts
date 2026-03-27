@@ -119,6 +119,25 @@ describe("selection handoff-report-ready helpers", () => {
     });
   });
 
+  it("should canonicalize identity fields when deriving a report-ready summary from an internally consistent batch", () => {
+    expect(
+      deriveAttemptHandoffReportReady({
+        results: [
+          createSupportedPromotionTargetApply({
+            taskId: "  task_shared  ",
+            attemptId: "  att_ready  ",
+            runtime: "  codex-cli  "
+          })
+        ]
+      })
+    ).toEqual({
+      reportBasis: "promotion_target_apply_batch",
+      results: [createSupportedPromotionTargetApply()],
+      invokedResults: [createSupportedPromotionTargetApply()],
+      blockedResults: []
+    });
+  });
+
   it("should fail loudly when an invoked entry still carries blocking reasons", () => {
     const batch = {
       results: [

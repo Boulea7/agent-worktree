@@ -157,6 +157,25 @@ describe("selection handoff-explanation helpers", () => {
     });
   });
 
+  it("should canonicalize identity fields when deriving an explanation summary from an internally consistent report", () => {
+    expect(
+      deriveAttemptHandoffExplanationSummary(
+        createReport([
+          createSupportedPromotionTargetApply({
+            taskId: "  task_shared  ",
+            attemptId: "  att_ready  ",
+            runtime: "  codex-cli  "
+          })
+        ])
+      )
+    ).toEqual({
+      explanationBasis: "handoff_report_ready",
+      results: [createInvokedExplanationEntry()],
+      invokedResults: [createInvokedExplanationEntry()],
+      blockedResults: []
+    });
+  });
+
   it("should preserve order and derive invoked and blocked subgroups from report results", () => {
     const report = createReport([
       createBlockedPromotionTargetApply({

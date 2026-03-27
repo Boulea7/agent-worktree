@@ -110,6 +110,36 @@ describe("selection handoff-finalization-target helpers", () => {
     });
   });
 
+  it("should canonicalize target identity fields when deriving finalization targets from a valid explanation summary", () => {
+    expect(
+      deriveAttemptHandoffFinalizationTargetSummary(
+        createExplanationSummary([
+          createInvokedExplanationEntry({
+            taskId: "  task_shared  ",
+            attemptId: "  att_ready  ",
+            runtime: "  codex-cli  "
+          })
+        ])
+      )
+    ).toEqual({
+      finalizationBasis: "handoff_decision_summary",
+      resultCount: 1,
+      invokedResultCount: 1,
+      blockedResultCount: 0,
+      blockingReasons: [],
+      canFinalizeHandoff: true,
+      targets: [
+        {
+          taskId: "task_shared",
+          attemptId: "att_ready",
+          runtime: "codex-cli",
+          status: "created",
+          sourceKind: undefined
+        }
+      ]
+    });
+  });
+
   it("should keep the finalization target shape minimal without leaking apply or readiness metadata", () => {
     const summary = deriveAttemptHandoffFinalizationTargetSummary(
       createExplanationSummary([createInvokedExplanationEntry()])

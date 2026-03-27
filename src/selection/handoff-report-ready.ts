@@ -219,9 +219,12 @@ function assertRequestMatchesTarget(
   fieldName: string
 ): void {
   if (
-    request.taskId !== target.taskId ||
-    request.attemptId !== target.attemptId ||
-    request.runtime !== target.runtime ||
+    normalizeComparableString(request.taskId) !==
+      normalizeComparableString(target.taskId) ||
+    normalizeComparableString(request.attemptId) !==
+      normalizeComparableString(target.attemptId) ||
+    normalizeComparableString(request.runtime) !==
+      normalizeComparableString(target.runtime) ||
     request.status !== target.status ||
     request.sourceKind !== target.sourceKind
   ) {
@@ -334,9 +337,15 @@ function cloneEntry(
 function cloneHandoffTarget(target: AttemptHandoffTarget): AttemptHandoffTarget {
   return {
     handoffBasis: target.handoffBasis,
-    taskId: target.taskId,
-    attemptId: target.attemptId,
-    runtime: target.runtime,
+    taskId: normalizeTaskId(target.taskId, "entry.handoffTarget.taskId"),
+    attemptId: normalizeNonEmptyString(
+      target.attemptId,
+      "Attempt handoff report-ready requires entry.handoffTarget.attemptId to be a non-empty string."
+    ),
+    runtime: normalizeNonEmptyString(
+      target.runtime,
+      "Attempt handoff report-ready requires entry.handoffTarget.runtime to be a non-empty string."
+    ),
     status: target.status,
     sourceKind: target.sourceKind
   };
@@ -363,9 +372,15 @@ function cloneTargetApply(
 
 function cloneRequest(request: AttemptHandoffRequest): AttemptHandoffRequest {
   return {
-    taskId: request.taskId,
-    attemptId: request.attemptId,
-    runtime: request.runtime,
+    taskId: normalizeTaskId(request.taskId, "entry.targetApply.request.taskId"),
+    attemptId: normalizeNonEmptyString(
+      request.attemptId,
+      "Attempt handoff report-ready requires entry.targetApply.request.attemptId to be a non-empty string."
+    ),
+    runtime: normalizeNonEmptyString(
+      request.runtime,
+      "Attempt handoff report-ready requires entry.targetApply.request.runtime to be a non-empty string."
+    ),
     status: request.status,
     sourceKind: request.sourceKind
   };
@@ -396,11 +411,7 @@ function readinessEqual(
 }
 
 function validateTaskId(value: unknown, fieldName: string): void {
-  if (typeof value !== "string" || value.trim().length === 0) {
-    throw new ValidationError(
-      `Attempt handoff report-ready requires ${fieldName} to be a non-empty string.`
-    );
-  }
+  normalizeTaskId(value, fieldName);
 }
 
 function validateNonEmptyString(
@@ -408,9 +419,32 @@ function validateNonEmptyString(
   fieldName: string,
   errorMessage: string
 ): void {
-  if (typeof value !== "string" || value.trim().length === 0) {
+  normalizeNonEmptyString(value, errorMessage);
+}
+
+function normalizeTaskId(value: unknown, fieldName: string): string {
+  return normalizeNonEmptyString(
+    value,
+    `Attempt handoff report-ready requires ${fieldName} to be a non-empty string.`
+  );
+}
+
+function normalizeNonEmptyString(value: unknown, errorMessage: string): string {
+  if (typeof value !== "string") {
     throw new ValidationError(errorMessage);
   }
+
+  const normalized = value.trim();
+
+  if (normalized.length === 0) {
+    throw new ValidationError(errorMessage);
+  }
+
+  return normalized;
+}
+
+function normalizeComparableString(value: unknown): unknown {
+  return typeof value === "string" ? value.trim() : value;
 }
 
 function validateAttemptStatus(value: unknown, fieldName: string): void {

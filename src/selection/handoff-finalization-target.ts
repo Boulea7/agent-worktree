@@ -1,5 +1,6 @@
 import { ValidationError } from "../core/errors.js";
 import { deriveAttemptHandoffDecisionSummary } from "./handoff-decision.js";
+import { deriveAttemptHandoffExplanationSummary } from "./handoff-explanation.js";
 import type {
   AttemptHandoffExplanationSummary,
   AttemptHandoffFinalizationTargetSummary
@@ -21,6 +22,28 @@ export function deriveAttemptHandoffFinalizationTargetSummary(
     return undefined;
   }
 
+  const canonicalSummary = deriveAttemptHandoffExplanationSummary({
+    reportBasis: "promotion_target_apply_batch",
+    results: summary.results.map((entry) => ({
+      handoffTarget: entry.handoffTarget,
+      targetApply: entry.targetApply
+    })),
+    invokedResults: summary.invokedResults.map((entry) => ({
+      handoffTarget: entry.handoffTarget,
+      targetApply: entry.targetApply
+    })),
+    blockedResults: summary.blockedResults.map((entry) => ({
+      handoffTarget: entry.handoffTarget,
+      targetApply: entry.targetApply
+    }))
+  });
+
+  if (canonicalSummary === undefined) {
+    throw new ValidationError(
+      "Attempt handoff finalization target summary requires summary to produce a canonical explanation summary."
+    );
+  }
+
   if (summary.invokedResults.length === 0) {
     throw new ValidationError(
       "Attempt handoff finalization target summary requires at least one invoked result when handoff finalization is ready."
@@ -34,7 +57,7 @@ export function deriveAttemptHandoffFinalizationTargetSummary(
     blockedResultCount: decision.blockedResultCount,
     blockingReasons: [...decision.blockingReasons],
     canFinalizeHandoff: decision.canFinalizeHandoff,
-    targets: summary.invokedResults.map((entry) => ({
+    targets: canonicalSummary.invokedResults.map((entry) => ({
       taskId: entry.handoffTarget.taskId,
       attemptId: entry.handoffTarget.attemptId,
       runtime: entry.handoffTarget.runtime,

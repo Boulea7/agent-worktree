@@ -249,6 +249,38 @@ describe("selection handoff-finalization-request helpers", () => {
     });
   });
 
+  it("should canonicalize request identity fields when deriving finalization requests from valid targets", () => {
+    expect(
+      deriveAttemptHandoffFinalizationRequestSummary(
+        createFinalizationTargetSummary([
+          {
+            taskId: "  task_shared  ",
+            attemptId: "  att_ready  ",
+            runtime: "  codex-cli  ",
+            status: "created",
+            sourceKind: undefined
+          }
+        ])
+      )
+    ).toEqual({
+      requestBasis: "handoff_finalization_target_summary",
+      resultCount: 2,
+      invokedResultCount: 1,
+      blockedResultCount: 1,
+      blockingReasons: [],
+      canFinalizeHandoff: true,
+      requests: [
+        {
+          taskId: "task_shared",
+          attemptId: "att_ready",
+          runtime: "codex-cli",
+          status: "created",
+          sourceKind: undefined
+        }
+      ]
+    });
+  });
+
   it("should keep the finalization request summary minimal without leaking target metadata", () => {
     const summary = deriveAttemptHandoffFinalizationRequestSummary(
       createFinalizationTargetSummary([
