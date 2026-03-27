@@ -110,9 +110,11 @@ export async function detectCodexCli(
   runner: SubprocessRunner = runSubprocess
 ): Promise<boolean> {
   try {
+    const probeEnvironment = await resolveCodexCliProbeEnvironment(runner);
+
     return (
       (await resolveCodexExecutableForExecution(runner, {
-        env: await resolveCodexCliProbeEnvironment(runner)
+        ...(probeEnvironment === undefined ? {} : { env: probeEnvironment })
       })) !== null
     );
   } catch {
@@ -123,8 +125,9 @@ export async function detectCodexCli(
 export async function probeCodexCliCompatibility(
   runner: SubprocessRunner = runSubprocess
 ): Promise<CodexCliCompatibilityProbe> {
+  const probeEnvironment = await resolveCodexCliProbeEnvironment(runner);
   const executable = await resolveCodexExecutableForExecution(runner, {
-    env: await resolveCodexCliProbeEnvironment(runner)
+    ...(probeEnvironment === undefined ? {} : { env: probeEnvironment })
   });
 
   if (executable === null) {
@@ -271,7 +274,9 @@ export async function executeCodexHeadless(
   const executable =
     command.executable === "codex"
       ? (await resolveCodexExecutableForExecution(runner, {
-          ...(usesDefaultRunner ? { env: resolvedEnv } : {})
+          ...(usesDefaultRunner && resolvedEnv !== undefined
+            ? { env: resolvedEnv }
+            : {})
         })) ?? command.executable
       : command.executable;
   const executableCommand =
