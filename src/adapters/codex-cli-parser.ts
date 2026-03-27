@@ -14,6 +14,12 @@ const jsonArrayStartingTokens = new Set([
   "-"
 ]);
 
+const bracketNoisePrefixPatterns = [
+  /^\d+\/\d+$/u,
+  /^\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/u,
+  /^\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$/u
+] as const;
+
 export function splitJsonLines(output: string): string[] {
   return output
     .split(/\r?\n/u)
@@ -127,6 +133,10 @@ function isPotentialJsonLine(line: string): boolean {
     return false;
   }
 
+  if (startsWithBracketNoisePrefix(line)) {
+    return false;
+  }
+
   const firstToken = line.slice(1).trimStart().at(0);
 
   if (firstToken === undefined) {
@@ -192,5 +202,42 @@ function startsWithJsonLiteral(line: string): boolean {
     trimmedArrayContents.startsWith("true") ||
     trimmedArrayContents.startsWith("false") ||
     trimmedArrayContents.startsWith("null")
+  );
+}
+
+function startsWithBracketNoisePrefix(line: string): boolean {
+  const closingBracketIndex = line.indexOf("]");
+
+  if (closingBracketIndex <= 1) {
+    return false;
+  }
+
+  const bracketContent = line.slice(1, closingBracketIndex).trim();
+  const trailingText = line.slice(closingBracketIndex + 1).trimStart();
+
+  if (
+    !bracketNoisePrefixPatterns.some((pattern) => pattern.test(bracketContent))
+  ) {
+    return false;
+  }
+
+  if (trailingText.length === 0) {
+    return true;
+  }
+
+  return !startsWithPotentialJsonValue(trailingText);
+}
+
+function startsWithPotentialJsonValue(value: string): boolean {
+  const firstToken = value.at(0);
+
+  if (firstToken === undefined) {
+    return false;
+  }
+
+  return (
+    jsonArrayStartingTokens.has(firstToken) ||
+    isDigit(firstToken) ||
+    startsWithJsonLiteral(`[${value}`)
   );
 }
