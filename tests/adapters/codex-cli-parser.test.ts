@@ -229,4 +229,21 @@ describe("parseCodexCliJsonlLine", () => {
       )
     ).toThrow(RuntimeError);
   });
+
+  it("should fail loudly when generic bracket prefixes are followed by a json payload", () => {
+    expect(() =>
+      parseCodexCliJsonlLine('[warn] {"type":"turn.completed"}', 4)
+    ).toThrow(RuntimeError);
+  });
+
+  it("should preserve generic bracket-prefixed non-event objects as non-json output", () => {
+    expect(parseCodexCliJsonlLine('[warn] {"message":"retrying"}', 5)).toEqual({
+      kind: "unknown",
+      rawType: "non_json_output",
+      payload: {
+        line: '[warn] {"message":"retrying"}'
+      },
+      index: 5
+    });
+  });
 });

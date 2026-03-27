@@ -133,6 +133,10 @@ function isPotentialJsonLine(line: string): boolean {
     return false;
   }
 
+  if (startsWithBracketPrefixedEventPayload(line)) {
+    return true;
+  }
+
   if (startsWithBracketNoisePrefix(line)) {
     return false;
   }
@@ -226,6 +230,27 @@ function startsWithBracketNoisePrefix(line: string): boolean {
   }
 
   return !startsWithPotentialJsonValue(trailingText);
+}
+
+function startsWithBracketPrefixedEventPayload(line: string): boolean {
+  const closingBracketIndex = line.indexOf("]");
+
+  if (closingBracketIndex <= 1) {
+    return false;
+  }
+
+  const trailingText = line.slice(closingBracketIndex + 1).trimStart();
+
+  if (!trailingText.startsWith("{")) {
+    return false;
+  }
+
+  try {
+    const parsedValue = JSON.parse(trailingText) as JsonLineRecord;
+    return typeof parsedValue.type === "string";
+  } catch {
+    return /^\{\s*"type"\s*:/u.test(trailingText);
+  }
 }
 
 function startsWithPotentialJsonValue(value: string): boolean {
