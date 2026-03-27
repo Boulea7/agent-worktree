@@ -371,3 +371,18 @@ export interface AttemptHandoffFinalizationConsumer {
   request: AttemptHandoffFinalizationRequest;
   readiness: AttemptHandoffFinalizationConsumerReadiness;
 }
+
+export interface AttemptHandoffFinalizationInvoker {
+  (request: AttemptHandoffFinalizationRequest): void | Promise<void>;
+}
+
+export interface AttemptHandoffFinalizationConsumeInput {
+  consumer: AttemptHandoffFinalizationConsumer;
+  invokeHandoffFinalization: AttemptHandoffFinalizationInvoker;
+}
+
+export interface AttemptHandoffFinalizationConsume {
+  request: AttemptHandoffFinalizationRequest;
+  readiness: AttemptHandoffFinalizationConsumerReadiness;
+  invoked: boolean;
+}
