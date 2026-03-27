@@ -68,11 +68,8 @@ export {
   consumeAttemptHandoffFinalizationBatch
 } from "./handoff-finalization-consume-batch.js";
 export {
-  applyAttemptHandoffFinalization
-} from "./handoff-finalization-apply.js";
-export {
-  applyAttemptHandoffFinalizationBatch
-} from "./handoff-finalization-apply-batch.js";
+  applyAttemptHandoffFinalizationRequestSummary
+} from "./handoff-finalization-request-apply.js";
 export {
   deriveAttemptPromotionReport
 } from "./promotion-report.js";
@@ -117,13 +114,12 @@ export type {
   AttemptHandoffFinalizationConsumeInput,
   AttemptHandoffFinalizationApply,
   AttemptHandoffFinalizationApplyBatch,
-  AttemptHandoffFinalizationApplyBatchInput,
-  AttemptHandoffFinalizationApplyInput,
   AttemptHandoffFinalizationConsumer,
   AttemptHandoffFinalizationConsumerBlockingReason,
   AttemptHandoffFinalizationConsumerReadiness,
   AttemptHandoffFinalizationInvoker,
   AttemptHandoffFinalizationRequest,
+  AttemptHandoffFinalizationRequestSummaryApplyInput,
   AttemptHandoffFinalizationRequestSummary,
   AttemptHandoffFinalizationTarget,
   AttemptHandoffFinalizationTargetSummary,

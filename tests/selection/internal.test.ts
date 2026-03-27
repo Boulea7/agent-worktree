@@ -12,15 +12,14 @@ import type {
   AttemptHandoffExplanationCode,
   AttemptHandoffExplanationEntry,
   AttemptHandoffExplanationSummary,
-  AttemptHandoffFinalizationApply,
   AttemptHandoffFinalizationApplyBatch,
   AttemptHandoffFinalizationCapabilityResolver,
   AttemptHandoffFinalizationConsume,
   AttemptHandoffFinalizationConsumeBatch,
   AttemptHandoffFinalizationConsumer,
   AttemptHandoffFinalizationInvoker,
-  AttemptHandoffFinalizationRequest,
   AttemptHandoffFinalizationRequestSummary,
+  AttemptHandoffFinalizationRequestSummaryApplyInput,
   AttemptHandoffFinalizationTarget,
   AttemptHandoffFinalizationTargetSummary,
   AttemptHandoffReportReady,
@@ -44,8 +43,7 @@ describe("selection internal exports", () => {
       [
         "applyAttemptHandoff",
         "applyAttemptHandoffBatch",
-        "applyAttemptHandoffFinalization",
-        "applyAttemptHandoffFinalizationBatch",
+        "applyAttemptHandoffFinalizationRequestSummary",
         "applyAttemptHandoffTarget",
         "applyAttemptHandoffTargetBatch",
         "applyAttemptPromotionTarget",
@@ -88,15 +86,14 @@ describe("selection internal exports", () => {
       handoffExplanationCode: AttemptHandoffExplanationCode;
       handoffExplanationEntry: AttemptHandoffExplanationEntry;
       handoffExplanationSummary: AttemptHandoffExplanationSummary;
-      handoffFinalizationApply: AttemptHandoffFinalizationApply;
       handoffFinalizationApplyBatch: AttemptHandoffFinalizationApplyBatch;
       handoffFinalizationCapabilityResolver: AttemptHandoffFinalizationCapabilityResolver;
       handoffFinalizationConsume: AttemptHandoffFinalizationConsume;
       handoffFinalizationConsumeBatch: AttemptHandoffFinalizationConsumeBatch;
       handoffFinalizationConsumer: AttemptHandoffFinalizationConsumer;
       handoffFinalizationInvoker: AttemptHandoffFinalizationInvoker;
-      handoffFinalizationRequest: AttemptHandoffFinalizationRequest;
       handoffFinalizationRequestSummary: AttemptHandoffFinalizationRequestSummary;
+      handoffFinalizationRequestSummaryApplyInput: AttemptHandoffFinalizationRequestSummaryApplyInput;
       handoffFinalizationTarget: AttemptHandoffFinalizationTarget;
       handoffFinalizationTargetSummary: AttemptHandoffFinalizationTargetSummary;
       handoffReportReady: AttemptHandoffReportReady;
