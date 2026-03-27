@@ -151,6 +151,10 @@ export async function smokeCodexCliCompatibility(
   const detectImpl = options.detectImpl ?? (() => detectCodexCli(runner));
   const executeHeadlessImpl =
     options.executeHeadlessImpl ?? executeCodexHeadless;
+  const executeHeadlessRunnerOption =
+    options.runCommand === undefined && options.runner === undefined
+      ? {}
+      : { runCommand: runner };
 
   let detected = false;
 
@@ -184,7 +188,7 @@ export async function smokeCodexCliCompatibility(
         ...(options.resolveEnvironment === undefined
           ? {}
           : { resolveEnvironment: options.resolveEnvironment }),
-        runCommand: runner
+        ...executeHeadlessRunnerOption
       }
     );
 

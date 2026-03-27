@@ -465,6 +465,65 @@ describe("smokeCodexCliCompatibility", () => {
         "The bounded codex-cli smoke path did not complete successfully."
     });
   });
+
+  it("should preserve default relay-compatible env injection for smoke execution", async () => {
+    vi.stubEnv("PATH", "");
+    const stdout = await readFixture("success.observed.jsonl");
+    const resolveCodexCliEnvironment = vi.fn(async () => ({
+      PATH: "/usr/bin:/bin",
+      OPENAI_API_KEY: "relay-token"
+    }));
+    const runSubprocess = vi.fn(
+      async (
+        _executable: string,
+        args: string[],
+        invocation: {
+          cwd?: string;
+          env?: NodeJS.ProcessEnv;
+          timeoutMs?: number;
+        } = {}
+      ) => {
+        if (args[1] === "--help") {
+          return {
+            exitCode: 0,
+            stdout: "Usage: codex exec\n      --json\n",
+            stderr: ""
+          };
+        }
+
+        if (invocation.env?.OPENAI_API_KEY !== "relay-token") {
+          throw new RuntimeError("missing relay env");
+        }
+
+        return {
+          exitCode: 0,
+          stdout,
+          stderr: ""
+        };
+      }
+    );
+    const { smokeCodexCliCompatibility: smokeWithDefaultRunner } =
+      await loadCodexExecModule({
+        accessImpl: createAccessMock([]),
+        runSubprocess,
+        resolveCodexCliEnvironment
+      });
+
+    await expect(
+      smokeWithDefaultRunner({
+        env: {
+          RUN_CODEX_SMOKE: "1"
+        },
+        detectImpl: async () => true
+      })
+    ).resolves.toEqual({
+      smokeStatus: "passed",
+      diagnosisCode: "smoke_passed",
+      summary:
+        "The bounded codex-cli smoke path completed the public compatibility checks."
+    });
+    expect(resolveCodexCliEnvironment).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("executeCodexHeadless", () => {
