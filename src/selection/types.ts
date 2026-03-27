@@ -395,3 +395,24 @@ export interface AttemptHandoffFinalizationConsumeBatchInput {
 export interface AttemptHandoffFinalizationConsumeBatch {
   results: AttemptHandoffFinalizationConsume[];
 }
+
+export interface AttemptHandoffFinalizationApplyInput {
+  request: AttemptHandoffFinalizationRequest | undefined;
+  invokeHandoffFinalization: AttemptHandoffFinalizationInvoker;
+  resolveHandoffFinalizationCapability?: AttemptHandoffFinalizationCapabilityResolver;
+}
+
+export interface AttemptHandoffFinalizationApply {
+  consumer: AttemptHandoffFinalizationConsumer;
+  consume: AttemptHandoffFinalizationConsume;
+}
+
+export interface AttemptHandoffFinalizationApplyBatchInput {
+  requests: readonly AttemptHandoffFinalizationRequest[];
+  invokeHandoffFinalization: AttemptHandoffFinalizationInvoker;
+  resolveHandoffFinalizationCapability?: AttemptHandoffFinalizationCapabilityResolver;
+}
+
+export interface AttemptHandoffFinalizationApplyBatch {
+  results: AttemptHandoffFinalizationApply[];
+}
