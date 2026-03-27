@@ -245,6 +245,69 @@ describe("control-plane runtime-state spawn-candidate helpers", () => {
       }
     });
   });
+
+  it("should preserve known-depth blocker ordering in the derived candidate", () => {
+    const rootRecord = createRecord({
+      attemptId: "att_root",
+      sessionId: "thr_root",
+      sourceKind: "direct",
+      lifecycleState: "active"
+    });
+    const selectedRecord = createRecord({
+      attemptId: "att_known_depth",
+      sourceKind: "delegated",
+      parentAttemptId: "att_root",
+      lifecycleState: "failed",
+      guardrails: {
+        maxChildren: 1,
+        maxDepth: 1
+      }
+    });
+    const childRecord = createRecord({
+      attemptId: "att_known_depth_child",
+      sourceKind: "fork",
+      parentAttemptId: "att_known_depth",
+      lifecycleState: "active"
+    });
+    const view = buildExecutionSessionView([
+      rootRecord,
+      selectedRecord,
+      childRecord
+    ]);
+
+    expect(
+      deriveExecutionSessionSpawnCandidate({
+        view,
+        selector: {
+          attemptId: "att_known_depth"
+        }
+      })
+    ).toMatchObject({
+      context: {
+        record: selectedRecord,
+        selectedBy: "attemptId",
+        childRecords: [childRecord],
+        hasKnownSession: false,
+        hasParent: true,
+        hasResolvedParent: true,
+        hasChildren: true
+      },
+      readiness: {
+        blockingReasons: [
+          "lifecycle_terminal",
+          "session_unknown",
+          "depth_limit_reached",
+          "child_limit_reached"
+        ],
+        canSpawn: false,
+        hasBlockingReasons: true,
+        lineageDepth: 1,
+        lineageDepthKnown: true,
+        withinDepthLimit: false,
+        withinChildLimit: false
+      }
+    });
+  });
 });
 
 function createRecord(

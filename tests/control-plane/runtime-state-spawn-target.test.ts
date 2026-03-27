@@ -205,6 +205,63 @@ describe("control-plane runtime-state spawn-target helpers", () => {
     expect(target).not.toHaveProperty("branch");
     expect(target).not.toHaveProperty("worktreePath");
   });
+
+  it("should preserve known-depth blocked candidate semantics when target derivation returns undefined", () => {
+    const rootRecord = createRecord({
+      attemptId: "att_root",
+      sessionId: "thr_root",
+      sourceKind: "direct",
+      lifecycleState: "active"
+    });
+    const selectedRecord = createRecord({
+      attemptId: "att_known_depth",
+      sourceKind: "delegated",
+      parentAttemptId: "att_root",
+      lifecycleState: "failed",
+      guardrails: {
+        maxChildren: 1,
+        maxDepth: 1
+      }
+    });
+    const childRecord = createRecord({
+      attemptId: "att_known_depth_child",
+      sourceKind: "fork",
+      parentAttemptId: "att_known_depth",
+      lifecycleState: "active"
+    });
+    const candidate = deriveExecutionSessionSpawnCandidate({
+      view: buildExecutionSessionView([
+        rootRecord,
+        selectedRecord,
+        childRecord
+      ]),
+      selector: {
+        attemptId: "att_known_depth"
+      }
+    })!;
+    const candidateSnapshot = JSON.parse(JSON.stringify(candidate));
+
+    expect(candidate.readiness).toEqual({
+      blockingReasons: [
+        "lifecycle_terminal",
+        "session_unknown",
+        "depth_limit_reached",
+        "child_limit_reached"
+      ],
+      canSpawn: false,
+      hasBlockingReasons: true,
+      lineageDepth: 1,
+      lineageDepthKnown: true,
+      withinDepthLimit: false,
+      withinChildLimit: false
+    });
+    expect(
+      deriveExecutionSessionSpawnTarget({
+        candidate
+      })
+    ).toBeUndefined();
+    expect(candidate).toEqual(candidateSnapshot);
+  });
 });
 
 function createRecord(
