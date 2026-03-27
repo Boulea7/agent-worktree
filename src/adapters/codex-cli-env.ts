@@ -75,8 +75,12 @@ async function readOptionalTextFile(
 ): Promise<string | undefined> {
   try {
     return await readTextFile(filePath);
-  } catch {
-    return undefined;
+  } catch (error) {
+    if (isMissingFileError(error)) {
+      return undefined;
+    }
+
+    throw error;
   }
 }
 
@@ -130,13 +134,7 @@ function parseShellValue(rawValue: string): string | undefined {
   }
 
   if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
-    return trimmed
-      .slice(1, -1)
-      .replace(/\\n/gu, "\n")
-      .replace(/\\r/gu, "\r")
-      .replace(/\\t/gu, "\t")
-      .replace(/\\"/gu, '"')
-      .replace(/\\\\/gu, "\\");
+    return decodeDoubleQuotedValue(trimmed.slice(1, -1));
   }
 
   return trimmed.replace(/\s+#.*$/u, "").trim();
@@ -241,12 +239,7 @@ function readTomlString(content: string, key: string): string | undefined {
 
     const value = match[1]!;
 
-    return value
-      .replace(/\\n/gu, "\n")
-      .replace(/\\r/gu, "\r")
-      .replace(/\\t/gu, "\t")
-      .replace(/\\"/gu, '"')
-      .replace(/\\\\/gu, "\\");
+    return decodeDoubleQuotedValue(value);
   }
 
   return undefined;
@@ -254,6 +247,60 @@ function readTomlString(content: string, key: string): string | undefined {
 
 function escapeForRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+}
+
+function isMissingFileError(error: unknown): error is NodeJS.ErrnoException {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "ENOENT"
+  );
+}
+
+function decodeDoubleQuotedValue(value: string): string {
+  let decoded = "";
+
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value[index]!;
+
+    if (character !== "\\") {
+      decoded += character;
+      continue;
+    }
+
+    const nextCharacter = value[index + 1];
+
+    if (nextCharacter === undefined) {
+      decoded += "\\";
+      continue;
+    }
+
+    switch (nextCharacter) {
+      case "n":
+        decoded += "\n";
+        break;
+      case "r":
+        decoded += "\r";
+        break;
+      case "t":
+        decoded += "\t";
+        break;
+      case '"':
+        decoded += '"';
+        break;
+      case "\\":
+        decoded += "\\";
+        break;
+      default:
+        decoded += `\\${nextCharacter}`;
+        break;
+    }
+
+    index += 1;
+  }
+
+  return decoded;
 }
 
 function quoteTomlKeySegment(value: string): string {

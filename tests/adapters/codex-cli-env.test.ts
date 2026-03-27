@@ -56,6 +56,35 @@ describe("resolveCodexCliEnvironment", () => {
     });
   });
 
+  it("should preserve escaped backslashes while still decoding real newline escapes in codex.env", async () => {
+    const homeDir = await createTempHome();
+    await mkdir(path.join(homeDir, ".ccswitch"), { recursive: true });
+    await writeFile(
+      path.join(homeDir, ".ccswitch", "codex.env"),
+      [
+        'export WINDOWS_PATH="C:\\\\new\\\\tools"',
+        'export LITERAL_BACKSLASH_N="literal\\\\nvalue"',
+        'export MULTILINE_VALUE="line1\\nline2"',
+        ""
+      ].join("\n"),
+      "utf8"
+    );
+
+    await expect(
+      resolveCodexCliEnvironment({
+        homeDir,
+        baseEnv: {
+          PATH: "/usr/bin:/bin"
+        }
+      })
+    ).resolves.toEqual({
+      PATH: "/usr/bin:/bin",
+      WINDOWS_PATH: "C:\\new\\tools",
+      LITERAL_BACKSLASH_N: "literal\\nvalue",
+      MULTILINE_VALUE: "line1\nline2"
+    });
+  });
+
   it("should resolve OPENAI_API_KEY from auth.json using the active provider env_key when codex.env is absent", async () => {
     const homeDir = await createTempHome();
     await mkdir(path.join(homeDir, ".codex"), { recursive: true });
@@ -196,10 +225,35 @@ describe("resolveCodexCliEnvironment", () => {
       OPENAI_API_KEY: "quoted-auth-token"
     });
   });
+
+  it("should rethrow non-missing file read errors instead of swallowing them", async () => {
+    const homeDir = await createTempHome();
+
+    await expect(
+      resolveCodexCliEnvironment({
+        homeDir,
+        readTextFile: async () => {
+          throw createErrnoError("EACCES", "permission denied");
+        }
+      })
+    ).rejects.toMatchObject({
+      code: "EACCES",
+      message: "permission denied"
+    });
+  });
 });
 
 async function createTempHome(): Promise<string> {
   const homeDir = await mkdtemp(path.join(os.tmpdir(), "agent-worktree-codex-env-"));
   tempDirectories.push(homeDir);
   return homeDir;
+}
+
+function createErrnoError(
+  code: string,
+  message: string
+): NodeJS.ErrnoException {
+  const error = new Error(message) as NodeJS.ErrnoException;
+  error.code = code;
+  return error;
 }
