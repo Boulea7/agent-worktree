@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { ValidationError } from "../../src/core/errors.js";
+import { applyAttemptHandoffFinalization } from "../../src/selection/handoff-finalization-apply.js";
 import type {
   AttemptManifest,
   AttemptVerification
@@ -9,7 +10,7 @@ import * as selection from "../../src/selection/internal.js";
 import type {
   AttemptHandoffFinalizationRequest,
   AttemptPromotionCandidate
-} from "../../src/selection/internal.js";
+} from "../../src/selection/types.js";
 import {
   deriveAttemptVerificationArtifactSummary,
   deriveAttemptVerificationSummary
@@ -20,70 +21,6 @@ import type {
   AttemptVerificationExecutedCheck,
   AttemptVerificationExecutionResult
 } from "../../src/verification/internal.js";
-
-const applyAttemptHandoffFinalization = (
-  selection as Partial<{
-    applyAttemptHandoffFinalization: (input: {
-      request: AttemptHandoffFinalizationRequest | undefined;
-      invokeHandoffFinalization: (
-        request: AttemptHandoffFinalizationRequest
-      ) => void | Promise<void>;
-      resolveHandoffFinalizationCapability?: (runtime: string) => boolean;
-    }) => Promise<
-      | {
-          consumer: {
-            request: AttemptHandoffFinalizationRequest;
-            readiness: {
-              blockingReasons: string[];
-              canConsumeHandoffFinalization: boolean;
-              hasBlockingReasons: boolean;
-              handoffFinalizationSupported: boolean;
-            };
-          };
-          consume: {
-            request: AttemptHandoffFinalizationRequest;
-            readiness: {
-              blockingReasons: string[];
-              canConsumeHandoffFinalization: boolean;
-              hasBlockingReasons: boolean;
-              handoffFinalizationSupported: boolean;
-            };
-            invoked: boolean;
-          };
-        }
-      | undefined
-    >;
-  }>
-).applyAttemptHandoffFinalization as (input: {
-  request: AttemptHandoffFinalizationRequest | undefined;
-  invokeHandoffFinalization: (
-    request: AttemptHandoffFinalizationRequest
-  ) => void | Promise<void>;
-  resolveHandoffFinalizationCapability?: (runtime: string) => boolean;
-}) => Promise<
-  | {
-      consumer: {
-        request: AttemptHandoffFinalizationRequest;
-        readiness: {
-          blockingReasons: string[];
-          canConsumeHandoffFinalization: boolean;
-          hasBlockingReasons: boolean;
-          handoffFinalizationSupported: boolean;
-        };
-      };
-      consume: {
-        request: AttemptHandoffFinalizationRequest;
-        readiness: {
-          blockingReasons: string[];
-          canConsumeHandoffFinalization: boolean;
-          hasBlockingReasons: boolean;
-          handoffFinalizationSupported: boolean;
-        };
-        invoked: boolean;
-      };
-    }
-  | undefined
->;
 
 describe("selection handoff-finalization-apply helpers", () => {
   it("should return undefined when the supplied finalization request is undefined", async () => {

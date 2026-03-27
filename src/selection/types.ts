@@ -416,3 +416,9 @@ export interface AttemptHandoffFinalizationApplyBatchInput {
 export interface AttemptHandoffFinalizationApplyBatch {
   results: AttemptHandoffFinalizationApply[];
 }
+
+export interface AttemptHandoffFinalizationRequestSummaryApplyInput {
+  summary: AttemptHandoffFinalizationRequestSummary | undefined;
+  invokeHandoffFinalization: AttemptHandoffFinalizationInvoker;
+  resolveHandoffFinalizationCapability?: AttemptHandoffFinalizationCapabilityResolver;
+}
