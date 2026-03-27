@@ -4,19 +4,51 @@ import { promisify } from "node:util";
 import { GitError } from "../core/errors.js";
 
 const execFileAsync = promisify(execFile);
+export const defaultGitCommandTimeoutMs = 15000;
+
+export interface GitCommandRunnerResult {
+  stdout: string;
+}
+
+export interface GitCommandRunnerOptions {
+  cwd: string;
+  encoding: "utf8";
+  env: NodeJS.ProcessEnv;
+  timeout: number;
+}
+
+export interface GitCommandRunner {
+  (
+    file: string,
+    args: readonly string[],
+    options: GitCommandRunnerOptions
+  ): Promise<GitCommandRunnerResult>;
+}
 
 export interface GitCommandOptions {
   cwd: string;
+  env?: NodeJS.ProcessEnv;
+  runCommand?: GitCommandRunner;
+  timeoutMs?: number;
 }
 
 export async function runGit(
   args: string[],
   options: GitCommandOptions
 ): Promise<string> {
+  const runner = options.runCommand ?? (execFileAsync as GitCommandRunner);
+  const env = {
+    ...process.env,
+    ...(options.env ?? {}),
+    GIT_TERMINAL_PROMPT: "0"
+  };
+
   try {
-    const { stdout } = await execFileAsync("git", args, {
+    const { stdout } = await runner("git", args, {
       cwd: options.cwd,
-      encoding: "utf8"
+      encoding: "utf8",
+      env,
+      timeout: options.timeoutMs ?? defaultGitCommandTimeoutMs
     });
 
     return stdout.trim();
