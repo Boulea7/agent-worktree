@@ -1,70 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { ValidationError } from "../../src/core/errors.js";
-import * as selection from "../../src/selection/internal.js";
-import type { AttemptHandoffFinalizationRequest } from "../../src/selection/internal.js";
-
-const applyAttemptHandoffFinalizationBatch = (
-  selection as Partial<{
-    applyAttemptHandoffFinalizationBatch: (input: {
-      requests: readonly AttemptHandoffFinalizationRequest[];
-      invokeHandoffFinalization: (
-        request: AttemptHandoffFinalizationRequest
-      ) => void | Promise<void>;
-      resolveHandoffFinalizationCapability?: (runtime: string) => boolean;
-    }) => Promise<{
-      results: Array<{
-        consumer: {
-          request: AttemptHandoffFinalizationRequest;
-          readiness: {
-            blockingReasons: string[];
-            canConsumeHandoffFinalization: boolean;
-            hasBlockingReasons: boolean;
-            handoffFinalizationSupported: boolean;
-          };
-        };
-        consume: {
-          request: AttemptHandoffFinalizationRequest;
-          readiness: {
-            blockingReasons: string[];
-            canConsumeHandoffFinalization: boolean;
-            hasBlockingReasons: boolean;
-            handoffFinalizationSupported: boolean;
-          };
-          invoked: boolean;
-        };
-      }>;
-    }>;
-  }>
-).applyAttemptHandoffFinalizationBatch as (input: {
-  requests: readonly AttemptHandoffFinalizationRequest[];
-  invokeHandoffFinalization: (
-    request: AttemptHandoffFinalizationRequest
-  ) => void | Promise<void>;
-  resolveHandoffFinalizationCapability?: (runtime: string) => boolean;
-}) => Promise<{
-  results: Array<{
-    consumer: {
-      request: AttemptHandoffFinalizationRequest;
-      readiness: {
-        blockingReasons: string[];
-        canConsumeHandoffFinalization: boolean;
-        hasBlockingReasons: boolean;
-        handoffFinalizationSupported: boolean;
-      };
-    };
-    consume: {
-      request: AttemptHandoffFinalizationRequest;
-      readiness: {
-        blockingReasons: string[];
-        canConsumeHandoffFinalization: boolean;
-        hasBlockingReasons: boolean;
-        handoffFinalizationSupported: boolean;
-      };
-      invoked: boolean;
-    };
-  }>;
-}>;
+import { applyAttemptHandoffFinalizationBatch } from "../../src/selection/handoff-finalization-apply-batch.js";
+import type { AttemptHandoffFinalizationRequest } from "../../src/selection/types.js";
 
 describe("selection handoff-finalization-apply-batch helpers", () => {
   it("should return an empty batch result for an empty finalization request list", async () => {
