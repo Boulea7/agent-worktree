@@ -29,17 +29,17 @@ export function deriveAttemptHandoffFinalizationRequestSummary(
     return undefined;
   }
 
+  if (!isRecord(summary)) {
+    throw new ValidationError(
+      "Attempt handoff finalization request summary requires summary to be an object."
+    );
+  }
+
   validateSummaryBasis(summary);
   validateSummaryConsistency(summary);
 
   if (!summary.canFinalizeHandoff) {
     return undefined;
-  }
-
-  if (summary.targets.length === 0) {
-    throw new ValidationError(
-      "Attempt handoff finalization request summary requires at least one target when handoff finalization is ready."
-    );
   }
 
   return {
@@ -96,6 +96,18 @@ function validateSummaryConsistency(
     );
   }
 
+  if (summary.targets.some((target) => !isRecord(target))) {
+    throw new ValidationError(
+      "Attempt handoff finalization request summary requires summary.targets entries to be objects."
+    );
+  }
+
+  if (summary.canFinalizeHandoff && summary.targets.length === 0) {
+    throw new ValidationError(
+      "Attempt handoff finalization request summary requires summary.targets to be non-empty when summary.canFinalizeHandoff is true."
+    );
+  }
+
   if (summary.invokedResultCount !== summary.targets.length) {
     throw new ValidationError(
       "Attempt handoff finalization request summary requires summary.invokedResultCount to match summary.targets.length."
@@ -147,9 +159,9 @@ function validateSummaryConsistency(
 }
 
 function validateTaskId(value: unknown): void {
-  if (value !== undefined && typeof value !== "string") {
+  if (typeof value !== "string" || value.trim().length === 0) {
     throw new ValidationError(
-      "Attempt handoff finalization request summary requires target.taskId to be a string when provided."
+      "Attempt handoff finalization request summary requires target.taskId to be a non-empty string."
     );
   }
 }
@@ -248,4 +260,8 @@ function validateAttemptSourceKind(value: unknown): void {
       "Attempt handoff finalization request summary requires target.sourceKind to use the existing attempt source-kind vocabulary when provided."
     );
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

@@ -72,6 +72,14 @@ describe("selection handoff-report-ready helpers", () => {
     expect(deriveAttemptHandoffReportReady(undefined)).toBeUndefined();
   });
 
+  it("should fail loudly when the supplied promotion target-apply batch is null", () => {
+    expect(() =>
+      deriveAttemptHandoffReportReady(
+        null as unknown as Parameters<typeof deriveAttemptHandoffReportReady>[0]
+      )
+    ).toThrow(ValidationError);
+  });
+
   it("should return a stable empty report-ready summary for an empty batch", () => {
     expect(deriveAttemptHandoffReportReady({ results: [] })).toEqual({
       reportBasis: "promotion_target_apply_batch",
@@ -158,6 +166,59 @@ describe("selection handoff-report-ready helpers", () => {
     };
 
     expect(() => deriveAttemptHandoffReportReady(batch)).toThrow(ValidationError);
+  });
+
+  it("should fail loudly when batch.results contains a non-object entry", () => {
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [null] as unknown as AttemptPromotionTargetApply[]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires each batch result to be an object."
+    );
+  });
+
+  it("should fail loudly when entry.handoffTarget.taskId is undefined", () => {
+    const invalidEntry = createSupportedPromotionTargetApply();
+
+    invalidEntry.handoffTarget = {
+      ...invalidEntry.handoffTarget,
+      taskId: undefined as unknown as string
+    };
+    invalidEntry.targetApply.request = {
+      ...invalidEntry.targetApply.request,
+      taskId: undefined as unknown as string
+    };
+    invalidEntry.targetApply.apply.consumer.request = {
+      ...invalidEntry.targetApply.apply.consumer.request,
+      taskId: undefined as unknown as string
+    };
+    invalidEntry.targetApply.apply.consume.request = {
+      ...invalidEntry.targetApply.apply.consume.request,
+      taskId: undefined as unknown as string
+    };
+
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [invalidEntry]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires entry.handoffTarget.taskId to be a non-empty string."
+    );
+  });
+
+  it("should fail loudly when entry.handoffTarget.taskId is blank", () => {
+    const invalidEntry = createSupportedPromotionTargetApply({
+      taskId: "   "
+    });
+
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [invalidEntry]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires entry.handoffTarget.taskId to be a non-empty string."
+    );
   });
 
   it("should fail loudly when a request no longer matches the projected handoff target", () => {
@@ -319,6 +380,7 @@ describe("selection handoff-report-ready helpers", () => {
 });
 
 function createPromotionTargetApply(input?: {
+  taskId?: string;
   attemptId?: string;
   runtime?: string;
   status?: AttemptPromotionTarget["status"];
@@ -327,6 +389,7 @@ function createPromotionTargetApply(input?: {
   invoked?: boolean;
 }): AttemptPromotionTargetApply {
   const target = createPromotionTarget({
+    ...(input?.taskId === undefined ? {} : { taskId: input.taskId }),
     ...(input?.attemptId === undefined ? {} : { attemptId: input.attemptId }),
     ...(input?.runtime === undefined ? {} : { runtime: input.runtime }),
     ...(input?.status === undefined ? {} : { status: input.status }),
@@ -385,6 +448,7 @@ function createBlockedPromotionTargetApply(
   overrides: Partial<AttemptPromotionTarget> = {}
 ): AttemptPromotionTargetApply {
   return createPromotionTargetApply({
+    ...(overrides.taskId === undefined ? {} : { taskId: overrides.taskId }),
     ...(overrides.attemptId === undefined ? {} : { attemptId: overrides.attemptId }),
     ...(overrides.runtime === undefined ? {} : { runtime: overrides.runtime }),
     ...(overrides.status === undefined ? {} : { status: overrides.status }),
@@ -400,6 +464,7 @@ function createSupportedPromotionTargetApply(
   overrides: Partial<AttemptPromotionTarget> = {}
 ): AttemptPromotionTargetApply {
   return createPromotionTargetApply({
+    ...(overrides.taskId === undefined ? {} : { taskId: overrides.taskId }),
     ...(overrides.attemptId === undefined ? {} : { attemptId: overrides.attemptId }),
     ...(overrides.runtime === undefined ? {} : { runtime: overrides.runtime }),
     ...(overrides.status === undefined ? {} : { status: overrides.status }),

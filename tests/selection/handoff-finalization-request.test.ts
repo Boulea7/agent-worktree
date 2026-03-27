@@ -43,6 +43,16 @@ describe("selection handoff-finalization-request helpers", () => {
     expect(deriveAttemptHandoffFinalizationRequestSummary(undefined)).toBeUndefined();
   });
 
+  it("should fail loudly when the supplied finalization target summary is null", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationRequestSummary(
+        null as unknown as Parameters<
+          typeof deriveAttemptHandoffFinalizationRequestSummary
+        >[0]
+      )
+    ).toThrow(ValidationError);
+  });
+
   it("should return undefined when the supplied blocked finalization target summary is valid", () => {
     expect(
       deriveAttemptHandoffFinalizationRequestSummary(createFinalizationTargetSummary([]))
@@ -117,6 +127,79 @@ describe("selection handoff-finalization-request helpers", () => {
 
     expect(() => deriveAttemptHandoffFinalizationRequestSummary(summary)).toThrow(
       ValidationError
+    );
+  });
+
+  it("should fail loudly when summary.targets is not an array", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationRequestSummary({
+        ...createFinalizationTargetSummary([]),
+        targets: null,
+        resultCount: 1,
+        blockedResultCount: 1,
+        blockingReasons: ["handoff_unsupported"]
+      } as unknown as Parameters<
+        typeof deriveAttemptHandoffFinalizationRequestSummary
+      >[0])
+    ).toThrow(
+      "Attempt handoff finalization request summary requires summary.targets to be an array."
+    );
+  });
+
+  it("should fail loudly when summary.targets contains a non-object entry", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationRequestSummary({
+        ...createFinalizationTargetSummary([
+          {
+            taskId: "task_shared",
+            attemptId: "att_ready",
+            runtime: "codex-cli",
+            status: "created",
+            sourceKind: undefined
+          }
+        ]),
+        targets: [null]
+      } as unknown as Parameters<
+        typeof deriveAttemptHandoffFinalizationRequestSummary
+      >[0])
+    ).toThrow(
+      "Attempt handoff finalization request summary requires summary.targets entries to be objects."
+    );
+  });
+
+  it("should fail loudly when target.taskId is undefined", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationRequestSummary(
+        createFinalizationTargetSummary([
+          {
+            taskId: undefined,
+            attemptId: "att_ready",
+            runtime: "codex-cli",
+            status: "created",
+            sourceKind: undefined
+          }
+        ])
+      )
+    ).toThrow(
+      "Attempt handoff finalization request summary requires target.taskId to be a non-empty string."
+    );
+  });
+
+  it("should fail loudly when target.taskId is blank", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationRequestSummary(
+        createFinalizationTargetSummary([
+          {
+            taskId: "   ",
+            attemptId: "att_ready",
+            runtime: "codex-cli",
+            status: "created",
+            sourceKind: undefined
+          }
+        ])
+      )
+    ).toThrow(
+      "Attempt handoff finalization request summary requires target.taskId to be a non-empty string."
     );
   });
 
@@ -213,7 +296,9 @@ describe("selection handoff-finalization-request helpers", () => {
         canFinalizeHandoff: true,
         targets: []
       })
-    ).toThrow(ValidationError);
+    ).toThrow(
+      "Attempt handoff finalization request summary requires summary.targets to be non-empty when summary.canFinalizeHandoff is true."
+    );
   });
 
   it("should derive a stable request summary through the canonical finalization chain", async () => {

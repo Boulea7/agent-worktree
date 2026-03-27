@@ -18,7 +18,14 @@ export function deriveAttemptHandoffDecisionSummary(
     return undefined;
   }
 
+  if (!isRecord(summary)) {
+    throw new ValidationError(
+      "Attempt handoff decision summary requires summary to be an object."
+    );
+  }
+
   validateExplanationBasis(summary);
+  validateSummaryResults(summary.results);
 
   const canonicalSummary = deriveAttemptHandoffExplanationSummary({
     reportBasis: "promotion_target_apply_batch",
@@ -70,6 +77,20 @@ function validateExplanationBasis(
   if (summary.explanationBasis !== ATTEMPT_HANDOFF_EXPLANATION_BASIS) {
     throw new ValidationError(
       'Attempt handoff decision summary requires summary.explanationBasis to be "handoff_report_ready".'
+    );
+  }
+}
+
+function validateSummaryResults(value: unknown): void {
+  if (!Array.isArray(value)) {
+    throw new ValidationError(
+      "Attempt handoff decision summary requires summary.results to be an array."
+    );
+  }
+
+  if (value.some((entry) => !isRecord(entry))) {
+    throw new ValidationError(
+      "Attempt handoff decision summary requires summary.results entries to be objects."
     );
   }
 }
@@ -208,4 +229,8 @@ function stringArraysEqual(
     left.length === right.length &&
     left.every((value, index) => value === right[index])
   );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

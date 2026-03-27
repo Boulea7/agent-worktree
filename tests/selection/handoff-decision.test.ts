@@ -68,6 +68,36 @@ describe("selection handoff-decision helpers", () => {
     expect(deriveAttemptHandoffDecisionSummary(undefined)).toBeUndefined();
   });
 
+  it("should fail loudly when the supplied handoff explanation summary is null", () => {
+    expect(() =>
+      deriveAttemptHandoffDecisionSummary(
+        null as unknown as Parameters<typeof deriveAttemptHandoffDecisionSummary>[0]
+      )
+    ).toThrow(ValidationError);
+  });
+
+  it("should fail loudly when summary.results is not an array", () => {
+    expect(() =>
+      deriveAttemptHandoffDecisionSummary({
+        ...createExplanationSummary([]),
+        results: null
+      } as unknown as Parameters<typeof deriveAttemptHandoffDecisionSummary>[0])
+    ).toThrow(
+      "Attempt handoff decision summary requires summary.results to be an array."
+    );
+  });
+
+  it("should fail loudly when summary.results contains a non-object entry", () => {
+    expect(() =>
+      deriveAttemptHandoffDecisionSummary({
+        ...createExplanationSummary([]),
+        results: [null]
+      } as unknown as Parameters<typeof deriveAttemptHandoffDecisionSummary>[0])
+    ).toThrow(
+      "Attempt handoff decision summary requires summary.results entries to be objects."
+    );
+  });
+
   it("should derive a stable no-results decision summary", () => {
     expect(
       deriveAttemptHandoffDecisionSummary(createExplanationSummary([]))

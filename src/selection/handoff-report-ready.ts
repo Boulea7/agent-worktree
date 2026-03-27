@@ -32,6 +32,12 @@ export function deriveAttemptHandoffReportReady(
     return undefined;
   }
 
+  if (!isRecord(batch)) {
+    throw new ValidationError(
+      "Attempt handoff report-ready requires batch to be an object."
+    );
+  }
+
   validateBatch(batch);
 
   const results = batch.results.map(cloneEntry);
@@ -390,9 +396,9 @@ function readinessEqual(
 }
 
 function validateTaskId(value: unknown, fieldName: string): void {
-  if (value !== undefined && typeof value !== "string") {
+  if (typeof value !== "string" || value.trim().length === 0) {
     throw new ValidationError(
-      `Attempt handoff report-ready requires ${fieldName} to be a string when provided.`
+      `Attempt handoff report-ready requires ${fieldName} to be a non-empty string.`
     );
   }
 }
