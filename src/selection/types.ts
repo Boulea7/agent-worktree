@@ -386,3 +386,12 @@ export interface AttemptHandoffFinalizationConsume {
   readiness: AttemptHandoffFinalizationConsumerReadiness;
   invoked: boolean;
 }
+
+export interface AttemptHandoffFinalizationConsumeBatchInput {
+  consumers: readonly AttemptHandoffFinalizationConsumer[];
+  invokeHandoffFinalization: AttemptHandoffFinalizationInvoker;
+}
+
+export interface AttemptHandoffFinalizationConsumeBatch {
+  results: AttemptHandoffFinalizationConsume[];
+}

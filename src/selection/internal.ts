@@ -65,6 +65,9 @@ export {
   consumeAttemptHandoffFinalization
 } from "./handoff-finalization-consume.js";
 export {
+  consumeAttemptHandoffFinalizationBatch
+} from "./handoff-finalization-consume-batch.js";
+export {
   deriveAttemptPromotionReport
 } from "./promotion-report.js";
 export {
@@ -103,6 +106,8 @@ export type {
   AttemptHandoffDecisionSummary,
   AttemptHandoffFinalizationCapabilityResolver,
   AttemptHandoffFinalizationConsume,
+  AttemptHandoffFinalizationConsumeBatch,
+  AttemptHandoffFinalizationConsumeBatchInput,
   AttemptHandoffFinalizationConsumeInput,
   AttemptHandoffFinalizationConsumer,
   AttemptHandoffFinalizationConsumerBlockingReason,
