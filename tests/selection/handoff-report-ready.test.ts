@@ -265,6 +265,40 @@ describe("selection handoff-report-ready helpers", () => {
     expect(() => deriveAttemptHandoffReportReady(batch)).toThrow(ValidationError);
   });
 
+  it("should fail loudly with the consumer request field path when consumer request identity is blank", () => {
+    const invalidEntry = createSupportedPromotionTargetApply();
+
+    invalidEntry.targetApply.apply.consumer.request = {
+      ...invalidEntry.targetApply.apply.consumer.request,
+      taskId: "   "
+    };
+
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [invalidEntry]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires entry.targetApply.apply.consumer.request.taskId to be a non-empty string."
+    );
+  });
+
+  it("should fail loudly with the consume request field path when consume request identity is blank", () => {
+    const invalidEntry = createSupportedPromotionTargetApply();
+
+    invalidEntry.targetApply.apply.consume.request = {
+      ...invalidEntry.targetApply.apply.consume.request,
+      runtime: "   "
+    };
+
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [invalidEntry]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires entry.targetApply.apply.consume.request.runtime to be a non-empty string."
+    );
+  });
+
   it("should not mutate the supplied batch and should derive fresh arrays and entries", () => {
     const batch = Object.freeze({
       results: [

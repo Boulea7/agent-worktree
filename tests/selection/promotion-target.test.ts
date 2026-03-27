@@ -67,6 +67,46 @@ describe("selection promotion-target helpers", () => {
     });
   });
 
+  it("should trim selected attemptId and runtime when deriving a promotable target", () => {
+    const summary = createPromotionDecisionSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        status: "running",
+        runtime: "codex-cli",
+        sourceKind: "delegated",
+        verification: createVerification({
+          state: "passed",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(
+      deriveAttemptPromotionTarget({
+        ...summary,
+        selectedAttemptId: "  att_ready  ",
+        selected: {
+          ...summary.selected!,
+          attemptId: "  att_ready  ",
+          runtime: "  codex-cli  "
+        }
+      })
+    ).toEqual({
+      targetBasis: "promotion_decision_summary",
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli",
+      status: "running",
+      sourceKind: "delegated"
+    });
+  });
+
   it("should return undefined when the selected decision candidate is blocked by failed checks", () => {
     const summary = createPromotionDecisionSummary([
       createPromotionCandidate({

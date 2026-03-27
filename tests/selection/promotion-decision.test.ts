@@ -340,6 +340,36 @@ describe("selection promotion-decision helpers", () => {
     );
   });
 
+  it("should fail loudly when summary.selected drifts only in skippedCheckNames", () => {
+    const summary = createPromotionExplanationSummary([
+      createPromotionCandidate({
+        attemptId: "att_skipped",
+        verification: createVerification({
+          state: "failed",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "skipped"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...summary,
+        selected: {
+          ...summary.selected!,
+          skippedCheckNames: []
+        }
+      })
+    ).toThrow(
+      "Attempt promotion decision summary requires summary.selected to match the first candidate."
+    );
+  });
+
   it("should fail loudly when selected flags are inconsistent with canonical first-candidate semantics", () => {
     const summary = createPromotionExplanationSummary([
       createPromotionCandidate({

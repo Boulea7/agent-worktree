@@ -282,10 +282,11 @@ describe("control-plane runtime-state spawn-candidate helpers", () => {
           attemptId: "att_known_depth"
         }
       })
-    ).toMatchObject({
+    ).toEqual({
       context: {
         record: selectedRecord,
         selectedBy: "attemptId",
+        parentRecord: rootRecord,
         childRecords: [childRecord],
         hasKnownSession: false,
         hasParent: true,

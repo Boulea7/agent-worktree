@@ -201,12 +201,10 @@ function validateRequest(
   validateTaskId(request.taskId, `${fieldName}.taskId`);
   validateNonEmptyString(
     request.attemptId,
-    `${fieldName}.attemptId`,
     `Attempt handoff report-ready requires ${fieldName}.attemptId to be a non-empty string.`
   );
   validateNonEmptyString(
     request.runtime,
-    `${fieldName}.runtime`,
     `Attempt handoff report-ready requires ${fieldName}.runtime to be a non-empty string.`
   );
   validateAttemptStatus(request.status, `${fieldName}.status`);
@@ -355,14 +353,23 @@ function cloneTargetApply(
   targetApply: AttemptHandoffTargetApply
 ): AttemptHandoffTargetApply {
   return {
-    request: cloneRequest(targetApply.request),
+    request: cloneRequest(
+      targetApply.request,
+      "entry.targetApply.request"
+    ),
     apply: {
       consumer: {
-        request: cloneRequest(targetApply.apply.consumer.request),
+        request: cloneRequest(
+          targetApply.apply.consumer.request,
+          "entry.targetApply.apply.consumer.request"
+        ),
         readiness: cloneReadiness(targetApply.apply.consumer.readiness)
       },
       consume: {
-        request: cloneRequest(targetApply.apply.consume.request),
+        request: cloneRequest(
+          targetApply.apply.consume.request,
+          "entry.targetApply.apply.consume.request"
+        ),
         readiness: cloneReadiness(targetApply.apply.consume.readiness),
         invoked: targetApply.apply.consume.invoked
       }
@@ -370,16 +377,19 @@ function cloneTargetApply(
   };
 }
 
-function cloneRequest(request: AttemptHandoffRequest): AttemptHandoffRequest {
+function cloneRequest(
+  request: AttemptHandoffRequest,
+  fieldPath: string
+): AttemptHandoffRequest {
   return {
-    taskId: normalizeTaskId(request.taskId, "entry.targetApply.request.taskId"),
+    taskId: normalizeTaskId(request.taskId, `${fieldPath}.taskId`),
     attemptId: normalizeNonEmptyString(
       request.attemptId,
-      "Attempt handoff report-ready requires entry.targetApply.request.attemptId to be a non-empty string."
+      `Attempt handoff report-ready requires ${fieldPath}.attemptId to be a non-empty string.`
     ),
     runtime: normalizeNonEmptyString(
       request.runtime,
-      "Attempt handoff report-ready requires entry.targetApply.request.runtime to be a non-empty string."
+      `Attempt handoff report-ready requires ${fieldPath}.runtime to be a non-empty string.`
     ),
     status: request.status,
     sourceKind: request.sourceKind
@@ -416,7 +426,6 @@ function validateTaskId(value: unknown, fieldName: string): void {
 
 function validateNonEmptyString(
   value: unknown,
-  fieldName: string,
   errorMessage: string
 ): void {
   normalizeNonEmptyString(value, errorMessage);

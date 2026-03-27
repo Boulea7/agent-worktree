@@ -304,7 +304,8 @@ function explanationCandidatesEqual(
       left.failedOrErrorCheckNames,
       right.failedOrErrorCheckNames
     ) &&
-    stringArraysEqual(left.pendingCheckNames, right.pendingCheckNames)
+    stringArraysEqual(left.pendingCheckNames, right.pendingCheckNames) &&
+    stringArraysEqual(left.skippedCheckNames, right.skippedCheckNames)
   );
 }
 

@@ -95,7 +95,7 @@ agent-worktree attempt cleanup --attempt-id att_demo --json
       "status": "cleaned",
       "sourceKind": "direct",
       "repoRoot": "/repos/agent-worktree",
-      "worktreePath": "/state/worktrees/att_demo"
+      "worktreePath": "<worktree_path>"
     },
     "cleanup": {
       "outcome": "removed",

@@ -54,8 +54,14 @@ export function deriveAttemptPromotionTarget(
   return {
     targetBasis: ATTEMPT_PROMOTION_TARGET_BASIS,
     taskId: normalizeTaskId(summary.taskId),
-    attemptId: selected.attemptId,
-    runtime: selected.runtime,
+    attemptId: normalizeRequiredString(
+      selected.attemptId,
+      "summary.selected.attemptId"
+    ),
+    runtime: normalizeRequiredString(
+      selected.runtime,
+      "summary.selected.runtime"
+    ),
     status: selected.status,
     sourceKind: selected.sourceKind
   };
@@ -70,9 +76,13 @@ function validateDecisionBasis(summary: AttemptPromotionDecisionSummary): void {
 }
 
 function normalizeTaskId(value: unknown): string {
+  return normalizeRequiredString(value, "summary.taskId");
+}
+
+function normalizeRequiredString(value: unknown, fieldName: string): string {
   if (typeof value !== "string") {
     throw new ValidationError(
-      "Attempt promotion target requires summary.taskId to be a non-empty string."
+      `Attempt promotion target requires ${fieldName} to be a non-empty string.`
     );
   }
 
@@ -80,7 +90,7 @@ function normalizeTaskId(value: unknown): string {
 
   if (normalized.length === 0) {
     throw new ValidationError(
-      "Attempt promotion target requires summary.taskId to be a non-empty string."
+      `Attempt promotion target requires ${fieldName} to be a non-empty string.`
     );
   }
 

@@ -149,6 +149,17 @@ describe("selection handoff-consumer helpers", () => {
     ).toThrow(ValidationError);
   });
 
+  it("should fail loudly when the runtime resolver returns undefined", () => {
+    expect(() =>
+      deriveAttemptHandoffConsumer({
+        request: createHandoffRequest(),
+        resolveHandoffCapability: (() => undefined) as never
+      })
+    ).toThrow(
+      "Attempt handoff consumer requires resolveHandoffCapability to return a boolean."
+    );
+  });
+
   it("should fail loudly when request.taskId is not a string when provided", () => {
     const request = {
       ...createHandoffRequest(),

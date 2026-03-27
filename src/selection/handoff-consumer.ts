@@ -31,10 +31,11 @@ export function deriveAttemptHandoffConsumer(input: {
   validateAttemptStatus(request.status);
   validateAttemptSourceKind(request.sourceKind);
 
-  const handoffSupported =
-    normalizeHandoffCapability(
-      input.resolveHandoffCapability?.(runtime) ?? false
-    );
+  const handoffSupported = normalizeHandoffCapability(
+    input.resolveHandoffCapability === undefined
+      ? false
+      : input.resolveHandoffCapability(runtime)
+  );
   const blockingReasons: AttemptHandoffConsumerBlockingReason[] =
     handoffSupported ? [] : ["handoff_unsupported"];
 

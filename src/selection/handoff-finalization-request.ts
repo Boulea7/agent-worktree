@@ -145,13 +145,7 @@ function validateSummaryConsistency(
     );
   }
 
-  if (summary.canFinalizeHandoff) {
-    if (summary.targets.length === 0) {
-      throw new ValidationError(
-        "Attempt handoff finalization request summary requires summary.targets to be non-empty when summary.canFinalizeHandoff is true."
-      );
-    }
-  } else if (summary.targets.length > 0) {
+  if (!summary.canFinalizeHandoff && summary.targets.length > 0) {
     throw new ValidationError(
       "Attempt handoff finalization request summary requires summary.targets to be empty when summary.canFinalizeHandoff is false."
     );

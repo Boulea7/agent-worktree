@@ -263,6 +263,8 @@ function startsWithPotentialJsonValue(value: string): boolean {
   return (
     jsonArrayStartingTokens.has(firstToken) ||
     isDigit(firstToken) ||
+    // Wrap the value as array contents so the existing literal detector can
+    // recognize true/false/null without duplicating that logic here.
     startsWithJsonLiteral(`[${value}`)
   );
 }
