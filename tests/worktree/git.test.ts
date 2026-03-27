@@ -12,7 +12,7 @@ describe("worktree git runner", () => {
     const runCommand = vi.fn(
       async (_file: string, _args: readonly string[], options: GitCommandRunnerOptions) => {
         expect(options.timeout).toBe(defaultGitCommandTimeoutMs);
-        expect(options.env.GIT_TERMINAL_PROMPT).toBe("0");
+        expect(options.env?.GIT_TERMINAL_PROMPT).toBe("0");
         return {
           stdout: " main \n"
         };
@@ -32,8 +32,8 @@ describe("worktree git runner", () => {
     const runCommand = vi.fn(
       async (_file: string, _args: readonly string[], options: GitCommandRunnerOptions) => {
         expect(options.timeout).toBe(1234);
-        expect(options.env.CUSTOM_FLAG).toBe("enabled");
-        expect(options.env.GIT_TERMINAL_PROMPT).toBe("0");
+        expect(options.env?.CUSTOM_FLAG).toBe("enabled");
+        expect(options.env?.GIT_TERMINAL_PROMPT).toBe("0");
         return {
           stdout: "ok\n"
         };

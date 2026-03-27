@@ -13,8 +13,8 @@ export interface GitCommandRunnerResult {
 export interface GitCommandRunnerOptions {
   cwd: string;
   encoding: "utf8";
-  env: NodeJS.ProcessEnv;
-  timeout: number;
+  env?: NodeJS.ProcessEnv;
+  timeout?: number;
 }
 
 export interface GitCommandRunner {

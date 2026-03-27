@@ -247,6 +247,15 @@ describe("manifest store", () => {
     await expect(
       writeManifest(createManifest({ attemptId: "   " }), { rootDir })
     ).rejects.toThrow(ValidationError);
+    await expect(
+      writeManifest(createManifest({ attemptId: "." }), { rootDir })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      writeManifest(createManifest({ attemptId: ".." }), { rootDir })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      writeManifest(createManifest({ attemptId: "" }), { rootDir })
+    ).rejects.toThrow(ValidationError);
   });
 
   it("should reject reading manifests whose selector is not a single safe path segment", async () => {
@@ -260,6 +269,28 @@ describe("manifest store", () => {
     );
     await expect(readManifest("   ", { rootDir })).rejects.toThrow(
       ValidationError
+    );
+    await expect(readManifest(".", { rootDir })).rejects.toThrow(
+      ValidationError
+    );
+    await expect(readManifest("..", { rootDir })).rejects.toThrow(
+      ValidationError
+    );
+    await expect(readManifest("", { rootDir })).rejects.toThrow(
+      ValidationError
+    );
+  });
+
+  it("should canonicalize padded attemptId selectors when reading manifests", async () => {
+    const rootDir = await createTempDirectory();
+    const manifest = createManifest({
+      attemptId: "att_padded"
+    });
+
+    await writeManifest(manifest, { rootDir });
+
+    await expect(readManifest("  att_padded  ", { rootDir })).resolves.toEqual(
+      manifest
     );
   });
 

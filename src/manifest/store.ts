@@ -54,12 +54,7 @@ function normalizeAttemptIdForManifestPath(
     );
   }
 
-  if (
-    normalizedAttemptId === "." ||
-    normalizedAttemptId === ".." ||
-    normalizedAttemptId.includes("/") ||
-    normalizedAttemptId.includes("\\")
-  ) {
+  if (!isSingleSafePathSegment(normalizedAttemptId)) {
     throw new ValidationError(
       "Attempt manifest paths require attemptId to be a single safe path segment."
     );
@@ -80,6 +75,15 @@ function normalizeAttemptIdForManifestPath(
   }
 
   return normalizedAttemptId;
+}
+
+function isSingleSafePathSegment(attemptId: string): boolean {
+  return (
+    attemptId !== "." &&
+    attemptId !== ".." &&
+    !attemptId.includes(path.posix.sep) &&
+    !attemptId.includes(path.win32.sep)
+  );
 }
 
 export function serializeManifest(manifest: AttemptManifest): string {
@@ -124,21 +128,31 @@ export async function readManifest(
   attemptId: string,
   options: ManifestStoreOptions = {}
 ): Promise<AttemptManifest> {
-  const manifestPath = getManifestPath(attemptId, options);
+  const rootDir = path.resolve(options.rootDir ?? defaultManifestRoot);
+  const normalizedAttemptId = normalizeAttemptIdForManifestPath(
+    attemptId,
+    rootDir
+  );
+  const manifestPath = path.join(rootDir, normalizedAttemptId, "manifest.json");
 
   try {
     const fileContents = await readFile(manifestPath, "utf8");
-    return parseManifestForAttempt(fileContents, attemptId);
+    return parseManifestForAttempt(fileContents, normalizedAttemptId);
   } catch (error) {
     if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-      throw new NotFoundError(`Manifest not found for attempt ${attemptId}.`);
+      throw new NotFoundError(
+        `Manifest not found for attempt ${normalizedAttemptId}.`
+      );
     }
 
     if (error instanceof AgentWorktreeError) {
       throw error;
     }
 
-    throw new RuntimeError(`Failed to read manifest for attempt ${attemptId}.`, error);
+    throw new RuntimeError(
+      `Failed to read manifest for attempt ${normalizedAttemptId}.`,
+      error
+    );
   }
 }
 
