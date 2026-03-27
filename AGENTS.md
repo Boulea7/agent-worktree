@@ -93,6 +93,7 @@ The current thin Phase 3 foundation also includes:
 - a bounded internal `codex-cli` execution contract for detect, `codex exec --json`, minimal canonical event parsing, and an env-gated smoke scaffold
 - a bounded internal `codex-cli` profile-aware execution path that may pass an explicit `--profile` through project-managed `codex exec --json` calls without becoming provider management, a public CLI surface, or manifest-backed state
 - a bounded internal `codex-cli` relay-compatible execution-env helper that may derive subprocess env overlays from local Codex config, auth, or shell-export state without becoming a public provider-management contract
+- a bounded internal `codex-cli` default-runner probing path that may reuse that relay-compatible env overlay on detect, probe, smoke preflight, and executable resolution as a best-effort default-runner behavior only, while custom runners still keep their original environment unless an internal caller explicitly supplies a replacement environment resolver
 - a minimal internal session-tree/control-plane foundation derived from attempt provenance and bounded execution observation, implemented as pure helpers only
 - a bounded internal execution-to-control-plane bridge for `codex-cli`, where supplied attempt lineage may derive an internal session snapshot in the execution result
 - a minimal internal runtime-state foundation that may derive execution-session records and indexes from lineage, observation, and optional internal session snapshots without persisting them

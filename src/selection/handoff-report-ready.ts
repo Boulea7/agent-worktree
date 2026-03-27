@@ -135,12 +135,10 @@ function validateHandoffTarget(target: AttemptHandoffTarget): void {
   validateTaskId(target.taskId, "entry.handoffTarget.taskId");
   validateNonEmptyString(
     target.attemptId,
-    "entry.handoffTarget.attemptId",
     "Attempt handoff report-ready requires entry.handoffTarget.attemptId to be a non-empty string."
   );
   validateNonEmptyString(
     target.runtime,
-    "entry.handoffTarget.runtime",
     "Attempt handoff report-ready requires entry.handoffTarget.runtime to be a non-empty string."
   );
   validateAttemptStatus(target.status, "entry.handoffTarget.status");
