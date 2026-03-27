@@ -1,70 +1,88 @@
 # Contributing
 
-## Current Focus
+## Current Project Stage
 
-This repository is in a research and specification phase.
+This repository is in an early implementation phase.
 
 Good contributions right now:
 
-- terminology cleanup
-- compatibility research
-- spec improvements
-- RFCs for cross-cutting changes
-- documentation polish and examples
+- thin implementation slices with clear boundaries
+- test-backed contract hardening
+- worktree lifecycle and internal helper progression
+- compatibility diagnostics that stay aligned with real behavior
+- documentation updates that keep public contracts accurate
 
-Avoid adding implementation code unless the documentation phase explicitly opens that track.
+Avoid:
 
-## Workflow
+- widening public CLI or lifecycle surfaces without an explicit spec
+- large refactors that mix unrelated cleanup with feature work
+- implementation changes without tests for the affected behavior
 
-1. Read [README.md](README.md), [SPEC.md](SPEC.md), and [docs/index.md](docs/index.md).
-2. Check whether the change belongs in normal docs, an RFC, or an ADR.
-3. Update public docs in the same PR as any behavior or contract change.
-4. Keep local-only research, transcripts, and scratch work out of Git.
+## Preferred Workflow
 
-## RFC vs ADR vs Normal Docs
+Contributions should be worktree-first and checkpoint-friendly.
 
-- Normal docs update:
-  - clarifications
-  - examples
-  - non-breaking reference changes
-- RFC:
-  - user-visible or cross-cutting changes
-  - compatibility model changes
-  - new public configuration or CLI surface
-- ADR:
-  - accepted durable decisions after direction is settled
+1. Read [README.md](README.md), [AGENTS.md](AGENTS.md), and [docs/index.md](docs/index.md).
+2. Start from a clean branch or isolated git worktree rather than stacking unrelated edits in the main checkout.
+3. Keep each change narrow enough to review, validate, and revert independently.
+4. Prefer multiple small commits over one large mixed commit.
+5. Push each completed thin slice once its targeted validation is green.
 
-See:
+When a change spans multiple behaviors, split it into separate commits or separate pull requests whenever practical.
 
-- [rfcs/README.md](rfcs/README.md)
-- [docs/adrs/README.md](docs/adrs/README.md)
-- [docs/maintainers/docs-policy.md](docs/maintainers/docs-policy.md)
+## Implementation Expectations
 
-## Pull Request Expectations
+Implementation work should stay contract-first:
 
-Every PR should:
+- preserve machine-readable behavior before improving human-facing ergonomics
+- keep internal-only helpers internal
+- update canonical docs when behavior or boundaries change
+- follow existing naming and validation patterns unless there is a strong reason not to
 
-- explain why the change is needed
-- identify affected canonical documents
-- state whether compatibility promises changed
-- update docs or explicitly say why no doc update was needed
+For new internal helper chains, prefer a thin progression such as projection, consume, batch, then higher-order composition rather than landing an entire stack at once.
 
-## Public vs Private Material
+## Testing And Verification
+
+Every implementation change should include the smallest sufficient verification for the affected surface.
+
+Expected validation usually includes:
+
+- targeted unit tests for the changed helper or contract
+- `pnpm run typecheck`
+- broader targeted tests when the change touches shared types, barrels, or invariants
+
+Before opening or updating a pull request, review the staged diff and run:
+
+```bash
+git diff --cached --check
+```
+
+Use full-suite validation when the change is broad enough to justify it or when preparing to close a larger development window.
+
+Pure documentation-only changes may skip tests, but the pull request or handoff note should say so explicitly.
+
+## Public And Private Material
 
 Commit:
 
 - durable, shared, secret-free docs
-- sanitized examples
-- public compatibility guidance
+- implementation code that matches the current documented boundary
+- sanitized examples and test fixtures
 
 Do not commit:
 
-- transcripts
-- raw research scratchpads
-- personal AI settings
-- machine-specific paths
-- secret-bearing local config
+- `PROJECT_STATUS.local.md`
+- local research notes, transcripts, or scratch files
+- machine-specific paths or environment details
+- personal credentials or local configuration secrets
 
-## Handoff Hygiene
+## Pull Request Guidance
 
-Use the ignored root file `PROJECT_STATUS.local.md` for session continuity across windows and future AI handoffs.
+Every pull request should:
+
+- explain the change and why it is needed
+- state whether public contracts changed
+- mention the validation that was run
+- call out any intentionally deferred follow-up
+
+Small, focused pull requests are preferred over broad “catch-up” branches.
