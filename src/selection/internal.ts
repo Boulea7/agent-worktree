@@ -71,6 +71,9 @@ export {
   applyAttemptHandoffFinalization
 } from "./handoff-finalization-apply.js";
 export {
+  applyAttemptHandoffFinalizationBatch
+} from "./handoff-finalization-apply-batch.js";
+export {
   deriveAttemptPromotionReport
 } from "./promotion-report.js";
 export {
