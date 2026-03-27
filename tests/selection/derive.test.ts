@@ -179,6 +179,7 @@ describe("selection helpers", () => {
     expect(() =>
       deriveAttemptSelectionCandidate(
         createManifest({
+          attemptId: "att_invalid_status",
           status: "queued" as AttemptManifest["status"]
         })
       )
@@ -187,7 +188,9 @@ describe("selection helpers", () => {
     expect(() =>
       deriveAttemptSelectionCandidate(
         createManifest({
-          sourceKind: "sideways" as AttemptManifest["sourceKind"]
+          attemptId: "att_invalid_source_kind",
+          sourceKind:
+            "sideways" as unknown as NonNullable<AttemptManifest["sourceKind"]>
         })
       )
     ).toThrow(ValidationError);
