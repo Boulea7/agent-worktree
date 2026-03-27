@@ -22,7 +22,7 @@ Avoid:
 
 Contributions should be worktree-first and checkpoint-friendly.
 
-1. Read [README.md](README.md), [AGENTS.md](AGENTS.md), and [docs/index.md](docs/index.md).
+1. Read the canonical sources in repository order: [SPEC.md](SPEC.md), [README.md](README.md), [docs/index.md](docs/index.md), then the relevant files under `docs/specs/*`, `docs/compat/*`, and `docs/research/*`. Use [AGENTS.md](AGENTS.md) as the repository-specific execution and boundary companion, not as a replacement for that canonical source order.
 2. Start from a clean branch or isolated git worktree rather than stacking unrelated edits in the main checkout.
 3. Keep each change narrow enough to review, validate, and revert independently.
 4. Prefer multiple small commits over one large mixed commit.
@@ -48,7 +48,7 @@ Every implementation change should include the smallest sufficient verification 
 Expected validation usually includes:
 
 - targeted unit tests for the changed helper or contract
-- `pnpm run typecheck`
+- `npm run typecheck`
 - broader targeted tests when the change touches shared types, barrels, or invariants
 
 Before opening or updating a pull request, review the staged diff and run:
