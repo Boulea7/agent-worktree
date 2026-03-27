@@ -295,6 +295,26 @@ describe("selection handoff-consume helpers", () => {
     ).rejects.toThrow(ValidationError);
     expect(invokeHandoff).not.toHaveBeenCalled();
   });
+
+  it("should fail before invoking handoff when readiness claims unsupported handoff can still be consumed", async () => {
+    const consumer = createHandoffConsumer({
+      readiness: {
+        blockingReasons: ["handoff_unsupported"],
+        canConsumeHandoff: true,
+        hasBlockingReasons: true,
+        handoffSupported: false
+      }
+    });
+    const invokeHandoff = vi.fn(async () => {});
+
+    await expect(
+      consumeAttemptHandoff({
+        consumer,
+        invokeHandoff
+      })
+    ).rejects.toThrow(ValidationError);
+    expect(invokeHandoff).not.toHaveBeenCalled();
+  });
 });
 
 function createHandoffConsumer(
