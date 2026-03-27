@@ -6,9 +6,9 @@ export const compatibilityCatalog: CapabilityDescriptor[] = [
     tier: "tier1",
     guidanceFile: "CLAUDE.md",
     projectConfig: ".claude/settings.json",
-    machineReadableMode: "strong",
-    resume: "strong",
-    mcp: "strong",
+    machineReadableMode: "unsupported",
+    resume: "unsupported",
+    mcp: "unsupported",
     note: "Rich hook model and clear settings scopes."
   },
   {
@@ -17,8 +17,8 @@ export const compatibilityCatalog: CapabilityDescriptor[] = [
     guidanceFile: "AGENTS.md",
     projectConfig: ".codex/config.toml",
     machineReadableMode: "strong",
-    resume: "strong",
-    mcp: "strong",
+    resume: "unsupported",
+    mcp: "unsupported",
     note: "Most naturally aligned with root AGENTS.md."
   },
   {
@@ -26,9 +26,9 @@ export const compatibilityCatalog: CapabilityDescriptor[] = [
     tier: "tier1",
     guidanceFile: "GEMINI.md",
     projectConfig: ".gemini/settings.json",
-    machineReadableMode: "strong",
-    resume: "strong",
-    mcp: "strong",
+    machineReadableMode: "unsupported",
+    resume: "unsupported",
+    mcp: "unsupported",
     note: "Strong extension and hook story."
   },
   {
@@ -36,9 +36,9 @@ export const compatibilityCatalog: CapabilityDescriptor[] = [
     tier: "tier1",
     guidanceFile: "AGENTS.md",
     projectConfig: "opencode.json",
-    machineReadableMode: "strong",
-    resume: "strong",
-    mcp: "strong",
+    machineReadableMode: "unsupported",
+    resume: "unsupported",
+    mcp: "unsupported",
     note: "Good plugin and server-oriented surface."
   },
   {
@@ -46,9 +46,9 @@ export const compatibilityCatalog: CapabilityDescriptor[] = [
     tier: "experimental",
     guidanceFile: "workspace prompt files",
     projectConfig: "gateway/workspace config",
-    machineReadableMode: "partial",
-    resume: "platform-oriented",
-    mcp: "platform-oriented",
+    machineReadableMode: "unsupported",
+    resume: "unsupported",
+    mcp: "unsupported",
     note: "Better as a secondary adapter target."
   },
   {
@@ -56,9 +56,9 @@ export const compatibilityCatalog: CapabilityDescriptor[] = [
     tier: "experimental",
     guidanceFile: "generic mapping",
     projectConfig: "generic mapping",
-    machineReadableMode: "varies",
-    resume: "varies",
-    mcp: "varies",
+    machineReadableMode: "unsupported",
+    resume: "unsupported",
+    mcp: "unsupported",
     note: "Use generic shell or native plugin adapters."
   }
 ];

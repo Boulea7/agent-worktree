@@ -9,6 +9,7 @@ import type {
   CompatibilityProbeData,
   CompatibilitySmokeData
 } from "../../src/compat/index.js";
+import { buildCompatibilitySmokeData } from "../../src/compat/smoke.js";
 import { runCli } from "../../src/cli/index.js";
 import { readManifest, writeManifest } from "../../src/manifest/store.js";
 import { runGit } from "../../src/worktree/git.js";
@@ -133,6 +134,29 @@ function sortedKeys(value: Record<string, unknown>): string[] {
   return Object.keys(value).sort();
 }
 
+function createFakeRuntimeAdapter() {
+  return {
+    descriptor: {
+      runtime: "codex-cli" as const,
+      supportTier: "tier1" as const,
+      guidanceFile: "AGENTS.md",
+      projectConfig: ".codex/config.toml",
+      note: "Concrete runtime.",
+      capabilities: {
+        machineReadableMode: "strong" as const,
+        resume: "unsupported" as const,
+        mcp: "unsupported" as const,
+        sessionLifecycle: "unsupported" as const,
+        eventStreamParsing: "partial" as const
+      }
+    },
+    detect: vi.fn(async () => true),
+    renderCommand: vi.fn(),
+    degradeUnsupportedCapability: vi.fn(),
+    supportsCapability: vi.fn()
+  };
+}
+
 describe("runCli", () => {
   const tempDirectories: string[] = [];
 
@@ -251,8 +275,8 @@ describe("runCli", () => {
               guidanceFile: "AGENTS.md",
               projectConfig: ".codex/config.toml",
               machineReadableMode: "strong",
-              resume: "strong",
-              mcp: "strong",
+              resume: "unsupported",
+              mcp: "unsupported",
               note: "Catalog entry.",
               hiddenField: "internal"
             }
@@ -270,17 +294,17 @@ describe("runCli", () => {
       command: "compat.list",
       data: {
         tools: [
-          {
-            tool: "codex-cli",
-            tier: "tier1",
-            guidanceFile: "AGENTS.md",
-            projectConfig: ".codex/config.toml",
-            machineReadableMode: "strong",
-            resume: "strong",
-            mcp: "strong",
-            note: "Catalog entry."
-          }
-        ]
+            {
+              tool: "codex-cli",
+              tier: "tier1",
+              guidanceFile: "AGENTS.md",
+              projectConfig: ".codex/config.toml",
+              machineReadableMode: "strong",
+              resume: "unsupported",
+              mcp: "unsupported",
+              note: "Catalog entry."
+            }
+          ]
       }
     });
     const payload = JSON.parse(stdout.output) as {
@@ -355,8 +379,8 @@ describe("runCli", () => {
             guidanceFile: "AGENTS.md",
             projectConfig: ".codex/config.toml",
             machineReadableMode: "strong",
-            resume: "strong",
-            mcp: "strong",
+            resume: "unsupported",
+            mcp: "unsupported",
             note: "Catalog entry.",
             hiddenField: "internal"
           }) as never
@@ -372,17 +396,17 @@ describe("runCli", () => {
       ok: true,
       command: "compat.show",
       data: {
-        tool: {
-          tool: "codex-cli",
-          tier: "tier1",
-          guidanceFile: "AGENTS.md",
-          projectConfig: ".codex/config.toml",
-          machineReadableMode: "strong",
-          resume: "strong",
-          mcp: "strong",
-          note: "Catalog entry."
+          tool: {
+            tool: "codex-cli",
+            tier: "tier1",
+            guidanceFile: "AGENTS.md",
+            projectConfig: ".codex/config.toml",
+            machineReadableMode: "strong",
+            resume: "unsupported",
+            mcp: "unsupported",
+            note: "Catalog entry."
+          }
         }
-      }
     });
     const payload = JSON.parse(stdout.output) as {
       data: { tool: Record<string, unknown> };
@@ -1047,6 +1071,55 @@ describe("runCli", () => {
     expect(stderr.output).toBe("");
   });
 
+  it("should keep thrown smoke failures bounded to a success envelope with public error status", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["compat", "smoke", "codex-cli", "--json"], {
+      stdout,
+      stderr,
+      compatSmokeImpl: async () =>
+        buildCompatibilitySmokeData("codex-cli", {
+          getAdapterDescriptorImpl: () => ({
+            runtime: "codex-cli",
+            supportTier: "tier1",
+            guidanceFile: "AGENTS.md",
+            projectConfig: ".codex/config.toml",
+            note: "Concrete runtime.",
+            capabilities: {
+              machineReadableMode: "strong",
+              resume: "unsupported",
+              mcp: "unsupported",
+              sessionLifecycle: "unsupported",
+              eventStreamParsing: "partial"
+            }
+          }),
+          getRuntimeAdapterImpl: () => createFakeRuntimeAdapter(),
+          smokeCodexCliCompatibilityImpl: async () => {
+            throw new Error("runner exploded");
+          }
+        })
+    });
+
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: true,
+      command: "compat.smoke",
+      data: {
+        smoke: {
+          runtime: "codex-cli",
+          smokeStatus: "error",
+          diagnosis: {
+            code: "unexpected_error",
+            summary:
+              "The bounded codex-cli smoke path did not complete successfully."
+          }
+        }
+      }
+    });
+    expect(stderr.output).toBe("");
+  });
+
   it("should normalize unexpected compat probe failures to the shared runtime error envelope", async () => {
     const stdout = new MemoryWriter();
     const stderr = new MemoryWriter();
@@ -1298,6 +1371,12 @@ describe("runCli", () => {
         code: "NOT_FOUND"
       }
     });
+    const payload = JSON.parse(stdout.output) as {
+      error: { message: string };
+    };
+    expect(payload.error.message).toBe(
+      "Unknown compatibility target: missing-tool."
+    );
     expect(stderr.output).toBe("");
   });
 
@@ -1318,6 +1397,12 @@ describe("runCli", () => {
         code: "NOT_FOUND"
       }
     });
+    const payload = JSON.parse(stdout.output) as {
+      error: { message: string };
+    };
+    expect(payload.error.message).toBe(
+      "Unknown compatibility target: missing-tool."
+    );
     expect(stderr.output).toBe("");
   });
 

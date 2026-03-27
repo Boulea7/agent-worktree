@@ -146,7 +146,7 @@ describe("buildCompatibilityProbeData", () => {
     await expect(
       buildCompatibilityProbeData("missing-tool", {
         getAdapterDescriptorImpl: () => {
-          throw new NotFoundError("Unknown compatibility target: missing-tool.");
+          throw new NotFoundError("Unknown adapter target: missing-tool.");
         }
       })
     ).rejects.toMatchObject({

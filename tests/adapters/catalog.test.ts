@@ -28,8 +28,8 @@ describe("adapter catalog", () => {
       }
     });
 
-    expect(compatDescriptor.resume).toBe("strong");
-    expect(compatDescriptor.mcp).toBe("strong");
+    expect(compatDescriptor.resume).toBe("unsupported");
+    expect(compatDescriptor.mcp).toBe("unsupported");
   });
 
   it("should list codex-cli as an available adapter descriptor", () => {
@@ -48,7 +48,7 @@ describe("adapter catalog", () => {
     const compatDescriptor = getCompatibilityDescriptor("claude-code");
 
     expect(descriptor.capabilities.machineReadableMode).toBe("unsupported");
-    expect(compatDescriptor.machineReadableMode).toBe("strong");
+    expect(compatDescriptor.machineReadableMode).toBe("unsupported");
   });
 
   it("should return the concrete codex-cli runtime adapter", () => {
