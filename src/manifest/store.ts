@@ -26,7 +26,13 @@ export function getManifestDirectory(
   attemptId: string,
   options: ManifestStoreOptions = {}
 ): string {
-  return path.join(options.rootDir ?? defaultManifestRoot, attemptId);
+  const rootDir = path.resolve(options.rootDir ?? defaultManifestRoot);
+  const normalizedAttemptId = normalizeAttemptIdForManifestPath(
+    attemptId,
+    rootDir
+  );
+
+  return path.join(rootDir, normalizedAttemptId);
 }
 
 export function getManifestPath(
@@ -34,6 +40,46 @@ export function getManifestPath(
   options: ManifestStoreOptions = {}
 ): string {
   return path.join(getManifestDirectory(attemptId, options), "manifest.json");
+}
+
+function normalizeAttemptIdForManifestPath(
+  attemptId: string,
+  rootDir: string
+): string {
+  const normalizedAttemptId = attemptId.trim();
+
+  if (normalizedAttemptId.length === 0) {
+    throw new ValidationError(
+      "Attempt manifest paths require attemptId to be a non-empty string."
+    );
+  }
+
+  if (
+    normalizedAttemptId === "." ||
+    normalizedAttemptId === ".." ||
+    normalizedAttemptId.includes("/") ||
+    normalizedAttemptId.includes("\\")
+  ) {
+    throw new ValidationError(
+      "Attempt manifest paths require attemptId to be a single safe path segment."
+    );
+  }
+
+  const resolvedDirectory = path.resolve(rootDir, normalizedAttemptId);
+  const relativePath = path.relative(rootDir, resolvedDirectory);
+
+  if (
+    relativePath.length === 0 ||
+    relativePath === "." ||
+    relativePath.startsWith("..") ||
+    path.isAbsolute(relativePath)
+  ) {
+    throw new ValidationError(
+      "Attempt manifest paths require attemptId to stay within the manifest root."
+    );
+  }
+
+  return normalizedAttemptId;
 }
 
 export function serializeManifest(manifest: AttemptManifest): string {
