@@ -70,7 +70,7 @@ These are the minimum fields that early validators should require.
 These fields are recommended once worktree lifecycle commands begin to land, but they are not required for the earliest manifest validators.
 `repoRoot` is an additive lifecycle field that records the canonical repository root for the attempt.
 Early consumers SHOULD tolerate its absence, and later producers SHOULD prefer populating it once the worktree lifecycle exists.
-Session-backed execution metadata remains intentionally non-manifest-backed in the current phase. Public manifests SHOULD NOT be read as attach/resume truth.
+Session-backed execution metadata still remains intentionally non-public in the current phase. The current schema may carry a bounded internal `session` block in the manifest, but public consumers SHOULD NOT read it as attach/resume truth or as a promise of lifecycle control.
 
 ## Thin Attempt Provenance Fields
 
@@ -112,10 +112,11 @@ When `parentAttemptId` is present, it is an opaque reference to another attempt 
 The runtime manifest is intended to outlive disposable runtime material.
 If an attempt is cleaned, the manifest SHOULD remain as the durable audit record for that attempt.
 
-Cleanup MAY remove a worktree, session handle, or other transient artifacts, but it SHOULD preserve the manifest and update it to reflect the cleaned lifecycle state.
+Cleanup MAY remove a worktree or other transient artifacts, but it SHOULD preserve the manifest and update it to reflect the cleaned lifecycle state.
 The most common visible outcome is expected to be `status: "cleaned"` plus an updated timestamp.
 Phase 2 cleanup MUST NOT delete branches and MUST fail clearly when it cannot confirm a safe cleanup target.
 Cleanup SHOULD preserve thin provenance fields such as `sourceKind` and `parentAttemptId` when rewriting a manifest into a cleaned state.
+In the current implementation, cleanup also refuses to proceed while a durable `manifest.session` record is still present; callers should treat that as a blocking precondition rather than expecting cleanup to silently clear session metadata.
 Any future internal close-preflight metadata MUST remain derived and non-manifest-backed in this phase; manifest rewrites for cleanup MUST NOT persist close blockers, closeability summaries, or other internal preflight-only hints as durable state.
 
 ## Minimal Status Vocabulary
