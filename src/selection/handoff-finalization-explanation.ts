@@ -33,9 +33,9 @@ export function deriveAttemptHandoffFinalizationExplanationSummary(
     return undefined;
   }
 
-  validateSummary(summary);
+  const outcomes = validateSummary(summary);
 
-  const results = summary.outcomes.map(deriveExplanationEntry);
+  const results = outcomes.map(deriveExplanationEntry);
 
   return {
     explanationBasis: attemptHandoffFinalizationExplanationBasis,
@@ -47,7 +47,7 @@ export function deriveAttemptHandoffFinalizationExplanationSummary(
 
 function validateSummary(
   summary: AttemptHandoffFinalizationOutcomeSummary
-): void {
+): AttemptHandoffFinalizationOutcome[] {
   if (!isRecord(summary)) {
     throw new ValidationError(
       "Attempt handoff finalization explanation summary requires summary to be an object."
@@ -107,6 +107,8 @@ function validateSummary(
       "Attempt handoff finalization explanation summary requires summary.blockingReasons to match the stable blocking-reason union derived from summary.outcomes."
     );
   }
+
+  return outcomes;
 }
 
 function validateOutcome(

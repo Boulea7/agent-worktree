@@ -226,6 +226,33 @@ describe("selection handoff-finalization-explanation helpers", () => {
     );
   });
 
+  it("should emit canonical trimmed outcome fields after validation", () => {
+    expect(
+      deriveAttemptHandoffFinalizationExplanationSummary(
+        createOutcomeSummary([
+          createInvokedOutcome({
+            taskId: "  task_shared  ",
+            attemptId: "  att_invoked  ",
+            runtime: "  codex-cli  "
+          }),
+          createBlockedOutcome({
+            taskId: "  task_shared  ",
+            attemptId: "  att_blocked  ",
+            runtime: "  blocked-cli  "
+          })
+        ])
+      )
+    ).toEqual({
+      explanationBasis: "handoff_finalization_outcome_summary",
+      results: [
+        createInvokedExplanationEntry(),
+        createBlockedExplanationEntry()
+      ],
+      invokedResults: [createInvokedExplanationEntry()],
+      blockedResults: [createBlockedExplanationEntry()]
+    });
+  });
+
   it("should return fresh subgroup arrays without mutating the supplied summary", () => {
     const summary = createOutcomeSummary([
       createInvokedOutcome(),
