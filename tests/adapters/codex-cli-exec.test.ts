@@ -1262,6 +1262,71 @@ describe("executeCodexHeadless", () => {
     ]);
   });
 
+  it("should still inject relay-compatible env when the caller explicitly passes the default runner", async () => {
+    vi.stubEnv("PATH", "/mock/real");
+    const stdout = await readFixture("success.observed.jsonl");
+    const runSubprocess = vi.fn(
+      async (executable: string, args: string[]) => {
+        if (args.at(1) === "--help") {
+          return {
+            exitCode: 0,
+            stdout: "Usage: codex exec\n      --json\n",
+            stderr: ""
+          };
+        }
+
+        return {
+          exitCode: 0,
+          stdout,
+          stderr: ""
+        };
+      }
+    );
+    const { executeCodexHeadless: executeWithDefaultRunner } =
+      await loadCodexExecModule({
+        accessImpl: createAccessMock(["/mock/real/codex"]),
+        runSubprocess,
+        resolveCodexCliEnvironment: vi.fn(async () => ({
+          PATH: "/usr/bin:/bin",
+          OPENAI_API_KEY: "relay-token"
+        }))
+      });
+    const adapter = new CodexCliAdapter(getAdapterDescriptor("codex-cli"));
+
+    await executeWithDefaultRunner(
+      { prompt: "Reply with ok", timeoutMs: 5_000 },
+      {
+        command: adapter.renderCommand({ prompt: "Reply with ok" }),
+        runCommand: runSubprocess
+      }
+    );
+
+    expect(runSubprocess.mock.calls).toEqual([
+      [
+        "codex",
+        ["exec", "--help"],
+        {
+          timeoutMs: 5_000,
+          env: {
+            PATH: "/usr/bin:/bin",
+            OPENAI_API_KEY: "relay-token"
+          }
+        }
+      ],
+      [
+        "codex",
+        ["exec", "--json", "--ephemeral", "Reply with ok"],
+        {
+          timeoutMs: 5_000,
+          env: {
+            PATH: "/usr/bin:/bin",
+            OPENAI_API_KEY: "relay-token"
+          }
+        }
+      ]
+    ]);
+  });
+
   it("should use relay-compatible overlay PATH when the default runner resolves the executable", async () => {
     vi.stubEnv("PATH", "");
     const stdout = await readFixture("success.observed.jsonl");

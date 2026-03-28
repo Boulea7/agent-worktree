@@ -263,8 +263,7 @@ export async function executeCodexHeadless(
   }
 
   const runner = options.runCommand ?? options.runner ?? runSubprocess;
-  const usesDefaultRunner =
-    options.runCommand === undefined && options.runner === undefined;
+  const usesDefaultRunner = runner === runSubprocess;
   const parseEventStream = options.parseEventStream ?? parseCodexCliJsonl;
   const resolveEnvironment =
     options.resolveEnvironment ??
