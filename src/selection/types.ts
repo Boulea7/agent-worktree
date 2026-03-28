@@ -352,3 +352,46 @@ export interface AttemptHandoffFinalizationRequestSummary {
   canFinalizeHandoff: boolean;
   requests: AttemptHandoffFinalizationRequest[];
 }
+
+export type AttemptHandoffFinalizationConsumerBlockingReason =
+  "handoff_finalization_unsupported";
+
+export interface AttemptHandoffFinalizationCapabilityResolver {
+  (runtime: string): boolean;
+}
+
+export interface AttemptHandoffFinalizationConsumerReadiness {
+  blockingReasons: AttemptHandoffFinalizationConsumerBlockingReason[];
+  canConsumeHandoffFinalization: boolean;
+  hasBlockingReasons: boolean;
+  handoffFinalizationSupported: boolean;
+}
+
+export interface AttemptHandoffFinalizationConsumer {
+  request: AttemptHandoffFinalizationRequest;
+  readiness: AttemptHandoffFinalizationConsumerReadiness;
+}
+
+export interface AttemptHandoffFinalizationInvoker {
+  (request: AttemptHandoffFinalizationRequest): void | Promise<void>;
+}
+
+export interface AttemptHandoffFinalizationConsumeInput {
+  consumer: AttemptHandoffFinalizationConsumer;
+  invokeHandoffFinalization: AttemptHandoffFinalizationInvoker;
+}
+
+export interface AttemptHandoffFinalizationConsume {
+  request: AttemptHandoffFinalizationRequest;
+  readiness: AttemptHandoffFinalizationConsumerReadiness;
+  invoked: boolean;
+}
+
+export interface AttemptHandoffFinalizationConsumeBatchInput {
+  consumers: readonly AttemptHandoffFinalizationConsumer[];
+  invokeHandoffFinalization: AttemptHandoffFinalizationInvoker;
+}
+
+export interface AttemptHandoffFinalizationConsumeBatch {
+  results: AttemptHandoffFinalizationConsume[];
+}
