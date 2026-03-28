@@ -14,6 +14,21 @@ describe("selection handoff-finalization-outcome-summary helpers", () => {
     ).toBeUndefined();
   });
 
+  it("should derive a zero-count summary for an empty apply batch results array", () => {
+    expect(
+      selection.deriveAttemptHandoffFinalizationOutcomeSummary({
+        results: []
+      })
+    ).toEqual({
+      outcomeBasis: "handoff_finalization_apply_batch",
+      resultCount: 0,
+      invokedResultCount: 0,
+      blockedResultCount: 0,
+      blockingReasons: [],
+      outcomes: []
+    });
+  });
+
   it("should derive minimal ordered outcomes plus canonical counts from a mixed apply batch", () => {
     const summary = selection.deriveAttemptHandoffFinalizationOutcomeSummary({
       results: [
