@@ -8,6 +8,17 @@ import type {
   AttemptHandoffFinalizationExplanationSummary
 } from "../../src/selection/types.js";
 
+type ReportReadyEntryShape = {
+  taskId: string;
+  attemptId: string;
+  runtime: string;
+  status: string;
+  sourceKind: string | undefined;
+  explanationCode: string;
+  invoked: boolean;
+  blockingReasons: AttemptHandoffFinalizationConsumerBlockingReason[];
+};
+
 const deriveAttemptHandoffFinalizationReportReady = (
   selection as Partial<{
     deriveAttemptHandoffFinalizationReportReady: (
@@ -15,36 +26,9 @@ const deriveAttemptHandoffFinalizationReportReady = (
     ) =>
       | {
           reportBasis: string;
-          results: Array<{
-            taskId: string;
-            attemptId: string;
-            runtime: string;
-            status: string;
-            sourceKind: string | undefined;
-            explanationCode: string;
-            invoked: boolean;
-            blockingReasons: AttemptHandoffFinalizationConsumerBlockingReason[];
-          }>;
-          invokedResults: Array<{
-            taskId: string;
-            attemptId: string;
-            runtime: string;
-            status: string;
-            sourceKind: string | undefined;
-            explanationCode: string;
-            invoked: boolean;
-            blockingReasons: AttemptHandoffFinalizationConsumerBlockingReason[];
-          }>;
-          blockedResults: Array<{
-            taskId: string;
-            attemptId: string;
-            runtime: string;
-            status: string;
-            sourceKind: string | undefined;
-            explanationCode: string;
-            invoked: boolean;
-            blockingReasons: AttemptHandoffFinalizationConsumerBlockingReason[];
-          }>;
+          results: ReportReadyEntryShape[];
+          invokedResults: ReportReadyEntryShape[];
+          blockedResults: ReportReadyEntryShape[];
         }
       | undefined;
   }>
@@ -53,36 +37,9 @@ const deriveAttemptHandoffFinalizationReportReady = (
 ) =>
   | {
       reportBasis: string;
-      results: Array<{
-        taskId: string;
-        attemptId: string;
-        runtime: string;
-        status: string;
-        sourceKind: string | undefined;
-        explanationCode: string;
-        invoked: boolean;
-        blockingReasons: AttemptHandoffFinalizationConsumerBlockingReason[];
-      }>;
-      invokedResults: Array<{
-        taskId: string;
-        attemptId: string;
-        runtime: string;
-        status: string;
-        sourceKind: string | undefined;
-        explanationCode: string;
-        invoked: boolean;
-        blockingReasons: AttemptHandoffFinalizationConsumerBlockingReason[];
-      }>;
-      blockedResults: Array<{
-        taskId: string;
-        attemptId: string;
-        runtime: string;
-        status: string;
-        sourceKind: string | undefined;
-        explanationCode: string;
-        invoked: boolean;
-        blockingReasons: AttemptHandoffFinalizationConsumerBlockingReason[];
-      }>;
+      results: ReportReadyEntryShape[];
+      invokedResults: ReportReadyEntryShape[];
+      blockedResults: ReportReadyEntryShape[];
     }
   | undefined;
 
