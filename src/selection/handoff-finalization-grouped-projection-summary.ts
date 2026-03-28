@@ -39,7 +39,7 @@ export function deriveAttemptHandoffFinalizationGroupedProjectionSummary(
 
   validateSummary(summary);
 
-  const results = summary.results.map(validateReportReadyEntry);
+  const results = validateReportReadyEntryArray(summary.results, "summary.results");
   validateCanonicalSubgroups(summary, results);
 
   const groups = deriveGroups(results);
@@ -191,6 +191,29 @@ function validateReportReadyEntry(
   };
 }
 
+function validateReportReadyEntryArray(
+  entries: readonly AttemptHandoffFinalizationReportReadyEntry[],
+  fieldName: string
+): AttemptHandoffFinalizationReportReadyEntry[] {
+  const validatedEntries: AttemptHandoffFinalizationReportReadyEntry[] = [];
+
+  for (let index = 0; index < entries.length; index += 1) {
+    if (!(index in entries) || !isRecord(entries[index])) {
+      throw new ValidationError(
+        `Attempt handoff finalization grouped projection summary requires ${fieldName} entries to be objects.`
+      );
+    }
+
+    validatedEntries.push(
+      validateReportReadyEntry(
+        entries[index] as AttemptHandoffFinalizationReportReadyEntry
+      )
+    );
+  }
+
+  return validatedEntries;
+}
+
 function cloneReportReadyEntry(
   entry: AttemptHandoffFinalizationReportReadyEntry
 ): AttemptHandoffFinalizationReportReadyEntry {
@@ -210,16 +233,29 @@ function reportReadyEntryArraysEqual(
   left: readonly AttemptHandoffFinalizationReportReadyEntry[] | unknown,
   right: readonly AttemptHandoffFinalizationReportReadyEntry[]
 ): boolean {
-  return (
-    Array.isArray(left) &&
-    left.length === right.length &&
-    left.every((entry, index) =>
-      reportReadyEntryEqual(
-        entry as AttemptHandoffFinalizationReportReadyEntry,
-        right[index]!
-      )
-    )
-  );
+  if (!Array.isArray(left) || left.length !== right.length) {
+    return false;
+  }
+
+  for (let index = 0; index < left.length; index += 1) {
+    if (!(index in left) || !isRecord(left[index])) {
+      return false;
+    }
+
+    try {
+      const entry = validateReportReadyEntry(
+        left[index] as AttemptHandoffFinalizationReportReadyEntry
+      );
+
+      if (!reportReadyEntryEqual(entry, right[index]!)) {
+        return false;
+      }
+    } catch {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function reportReadyEntryEqual(
