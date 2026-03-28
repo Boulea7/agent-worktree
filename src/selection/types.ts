@@ -422,3 +422,22 @@ export interface AttemptHandoffFinalizationRequestSummaryApplyInput {
   invokeHandoffFinalization: AttemptHandoffFinalizationInvoker;
   resolveHandoffFinalizationCapability?: AttemptHandoffFinalizationCapabilityResolver;
 }
+
+export interface AttemptHandoffFinalizationOutcome {
+  taskId: string;
+  attemptId: string;
+  runtime: string;
+  status: AttemptStatus;
+  sourceKind: AttemptSourceKind | undefined;
+  invoked: boolean;
+  blockingReasons: AttemptHandoffFinalizationConsumerBlockingReason[];
+}
+
+export interface AttemptHandoffFinalizationOutcomeSummary {
+  outcomeBasis: "handoff_finalization_apply_batch";
+  resultCount: number;
+  invokedResultCount: number;
+  blockedResultCount: number;
+  blockingReasons: AttemptHandoffFinalizationConsumerBlockingReason[];
+  outcomes: AttemptHandoffFinalizationOutcome[];
+}
