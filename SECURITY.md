@@ -2,19 +2,21 @@
 
 ## Scope
 
-This repository is currently documentation-first and does not yet ship an implementation runtime.
+This repository is currently in an early implementation phase with a still-narrow public contract.
+It now ships a limited local implementation baseline, but not a broad public execution or lifecycle runtime.
 
 Security concerns today are mostly about:
 
 - accidental publication of secrets
 - over-promising unsafe compatibility behaviors
+- implementation/code-path drift across docs, tests, and runtime boundaries
 - documenting risky local automation without warnings
 
 ## Reporting
 
 Until a dedicated security channel is established, do not publish sensitive findings in public issues.
 
-Open a private contact path before implementation begins, then update this file with official reporting instructions.
+Open a private contact path before a broader public release process begins, then update this file with official reporting instructions.
 
 ## Documentation Safety Rules
 
@@ -27,6 +29,6 @@ Open a private contact path before implementation begins, then update this file 
 
 - No formal vulnerability disclosure SLA yet
 - No signed release process yet
-- No implementation-level sandbox or isolation guarantees yet
+- No broad public implementation-level sandbox or isolation guarantees yet
 
 These gaps are intentional and tracked as future work.

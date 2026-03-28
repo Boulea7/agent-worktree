@@ -8,7 +8,7 @@ Read these next:
 - [docs/index.md](docs/index.md)
 - [docs/compat/claude-code.md](docs/compat/claude-code.md)
 
-This repository is currently in a documentation-first phase.
-Prefer improving public docs and specs over writing implementation code.
+This repository is currently in an early implementation phase with a still-narrow public contract.
+Prefer keeping docs, tests, and implementation boundaries aligned over widening public surfaces prematurely.
 
 If present, `PROJECT_STATUS.local.md` may contain local handoff notes for the current workstation and should not be treated as public policy.
