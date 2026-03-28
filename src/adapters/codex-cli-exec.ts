@@ -110,7 +110,13 @@ export async function detectCodexCli(
   runner: SubprocessRunner = runSubprocess
 ): Promise<boolean> {
   try {
-    return (await resolveCodexExecutableForExecution(runner)) !== null;
+    const probeEnvironment = await resolveCodexCliProbeEnvironment(runner);
+
+    return (
+      (await resolveCodexExecutableForExecution(runner, {
+        ...(probeEnvironment === undefined ? {} : { env: probeEnvironment })
+      })) !== null
+    );
   } catch {
     return false;
   }
@@ -119,7 +125,10 @@ export async function detectCodexCli(
 export async function probeCodexCliCompatibility(
   runner: SubprocessRunner = runSubprocess
 ): Promise<CodexCliCompatibilityProbe> {
-  const executable = await resolveCodexExecutableForExecution(runner);
+  const probeEnvironment = await resolveCodexCliProbeEnvironment(runner);
+  const executable = await resolveCodexExecutableForExecution(runner, {
+    ...(probeEnvironment === undefined ? {} : { env: probeEnvironment })
+  });
 
   if (executable === null) {
     return {
@@ -254,9 +263,20 @@ export async function executeCodexHeadless(
   }
 
   const runner = options.runCommand ?? options.runner ?? runSubprocess;
+  const usesDefaultRunner = runner === runSubprocess;
+  const parseEventStream = options.parseEventStream ?? parseCodexCliJsonl;
+  const resolveEnvironment =
+    options.resolveEnvironment ??
+    (usesDefaultRunner ? resolveCodexCliEnvironment : undefined);
+  const resolvedEnv =
+    resolveEnvironment === undefined ? undefined : await resolveEnvironment();
   const executable =
     command.executable === "codex"
-      ? (await resolveCodexExecutableForExecution(runner)) ?? command.executable
+      ? (await resolveCodexExecutableForExecution(runner, {
+          ...(usesDefaultRunner && resolvedEnv !== undefined
+            ? { env: resolvedEnv }
+            : {})
+        })) ?? command.executable
       : command.executable;
   const executableCommand =
     executable === command.executable
@@ -265,14 +285,6 @@ export async function executeCodexHeadless(
           ...command,
           executable
         };
-  const parseEventStream = options.parseEventStream ?? parseCodexCliJsonl;
-  const resolveEnvironment =
-    options.resolveEnvironment ??
-    (options.runCommand === undefined && options.runner === undefined
-      ? resolveCodexCliEnvironment
-      : undefined);
-  const resolvedEnv =
-    resolveEnvironment === undefined ? undefined : await resolveEnvironment();
   const invocation = {
     ...(executableCommand.cwd === undefined ? {} : { cwd: executableCommand.cwd }),
     ...(resolvedEnv === undefined ? {} : { env: resolvedEnv }),
@@ -330,6 +342,7 @@ export const detectCodexCliSupport = detectCodexCli;
 export const executeRenderedHeadlessCommand = executeCodexHeadless;
 
 export interface ResolveCodexExecutableOptions {
+  env?: NodeJS.ProcessEnv;
   pathCandidates?: string[];
   scanPathCandidates?: boolean;
 }
@@ -349,25 +362,31 @@ export async function resolveCodexExecutableForExecution(
   const scanPathCandidates = options.scanPathCandidates ?? runner === runSubprocess;
 
   if (scanPathCandidates) {
-    const candidates = options.pathCandidates ?? (await listCodexExecutableCandidates("codex"));
+    const candidates =
+      options.pathCandidates ??
+      (await listCodexExecutableCandidates("codex", options.env));
 
     for (const candidate of candidates) {
-      if (await probeCodexExecJsonSupport(runner, candidate)) {
+      if (await probeCodexExecJsonSupport(runner, candidate, options.env)) {
         return candidate;
       }
     }
   }
 
-  return (await probeCodexExecJsonSupport(runner, "codex")) ? "codex" : null;
+  return (await probeCodexExecJsonSupport(runner, "codex", options.env))
+    ? "codex"
+    : null;
 }
 
 export async function probeCodexExecJsonSupport(
   runner: SubprocessRunner,
-  executable: string
+  executable: string,
+  env?: NodeJS.ProcessEnv
 ): Promise<boolean> {
   try {
     const result = await runner(executable, ["exec", "--help"], {
-      timeoutMs: detectTimeoutMs
+      timeoutMs: detectTimeoutMs,
+      ...(env === undefined ? {} : { env })
     });
 
     if (result.exitCode !== 0) {
@@ -380,8 +399,11 @@ export async function probeCodexExecJsonSupport(
   }
 }
 
-async function listCodexExecutableCandidates(command: string): Promise<string[]> {
-  const rawPath = process.env.PATH ?? "";
+async function listCodexExecutableCandidates(
+  command: string,
+  env?: NodeJS.ProcessEnv
+): Promise<string[]> {
+  const rawPath = env?.PATH ?? process.env.PATH ?? "";
 
   if (rawPath.length === 0) {
     return [];
@@ -415,6 +437,20 @@ async function listCodexExecutableCandidates(command: string): Promise<string[]>
   }
 
   return candidates;
+}
+
+async function resolveCodexCliProbeEnvironment(
+  runner: SubprocessRunner
+): Promise<NodeJS.ProcessEnv | undefined> {
+  if (runner !== runSubprocess) {
+    return undefined;
+  }
+
+  try {
+    return await resolveCodexCliEnvironment();
+  } catch {
+    return undefined;
+  }
 }
 
 function getExecutableSuffixes(command: string): string[] {

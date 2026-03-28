@@ -182,6 +182,78 @@ describe("detectCodexCli", () => {
       })
     );
   });
+
+  it("should use relay-compatible overlay PATH when the default runner detects codex", async () => {
+    vi.stubEnv("PATH", "");
+    const runSubprocess = vi.fn(
+      async (
+        executable: string,
+        args: string[],
+        invocation: {
+          env?: NodeJS.ProcessEnv;
+          timeoutMs?: number;
+        } = {}
+      ) => {
+        expect(args).toEqual(["exec", "--help"]);
+        expect(invocation).toEqual({
+          timeoutMs: 5_000,
+          env: {
+            PATH: "/relay/bin",
+            OPENAI_API_KEY: "relay-token"
+          }
+        });
+
+        if (executable !== "/relay/bin/codex") {
+          throw new Error(`Unexpected executable ${executable}`);
+        }
+
+        return {
+          exitCode: 0,
+          stdout: "Usage: codex exec\n      --json\n",
+          stderr: ""
+        };
+      }
+    );
+    const resolveCodexCliEnvironment = vi.fn(async () => ({
+      PATH: "/relay/bin",
+      OPENAI_API_KEY: "relay-token"
+    }));
+    const { detectCodexCli: detectWithDefaultRunner } =
+      await loadCodexExecModule({
+        accessImpl: createAccessMock(["/relay/bin/codex"]),
+        runSubprocess,
+        resolveCodexCliEnvironment
+      });
+
+    await expect(detectWithDefaultRunner()).resolves.toBe(true);
+    expect(resolveCodexCliEnvironment).toHaveBeenCalledTimes(1);
+    expect(runSubprocess).toHaveBeenCalledTimes(1);
+  });
+
+  it("should fall back to the ambient environment when default-runner overlay resolution fails", async () => {
+    const runSubprocess = vi.fn(async () => ({
+      exitCode: 0,
+      stdout: "Usage: codex exec\n      --json\n",
+      stderr: ""
+    }));
+    const { detectCodexCli: detectWithDefaultRunner } =
+      await loadCodexExecModule({
+        accessImpl: createAccessMock([]),
+        runSubprocess,
+        resolveCodexCliEnvironment: vi.fn(async () => {
+          throw Object.assign(new Error("permission denied"), { code: "EACCES" });
+        })
+      });
+
+    await expect(detectWithDefaultRunner()).resolves.toBe(true);
+    expect(runSubprocess).toHaveBeenCalledWith(
+      "codex",
+      ["exec", "--help"],
+      {
+        timeoutMs: 5_000
+      }
+    );
+  });
 });
 
 describe("probeCodexCliCompatibility", () => {
@@ -211,6 +283,85 @@ describe("probeCodexCliCompatibility", () => {
       diagnosisCode: "exec_json_unavailable",
       summary: "No local codex executable with `exec --json` support was confirmed."
     });
+  });
+
+  it("should use relay-compatible overlay PATH for default-runner probing", async () => {
+    vi.stubEnv("PATH", "");
+    const runSubprocess = vi.fn(
+      async (
+        executable: string,
+        args: string[],
+        invocation: {
+          env?: NodeJS.ProcessEnv;
+          timeoutMs?: number;
+        } = {}
+      ) => {
+        expect(args).toEqual(["exec", "--help"]);
+        expect(invocation).toEqual({
+          timeoutMs: 5_000,
+          env: {
+            PATH: "/relay/bin",
+            OPENAI_API_KEY: "relay-token"
+          }
+        });
+
+        if (executable !== "/relay/bin/codex") {
+          throw new Error(`Unexpected executable ${executable}`);
+        }
+
+        return {
+          exitCode: 0,
+          stdout: "Usage: codex exec\n      --json\n",
+          stderr: ""
+        };
+      }
+    );
+    const resolveCodexCliEnvironment = vi.fn(async () => ({
+      PATH: "/relay/bin",
+      OPENAI_API_KEY: "relay-token"
+    }));
+    const { probeCodexCliCompatibility: probeWithDefaultRunner } =
+      await loadCodexExecModule({
+        accessImpl: createAccessMock(["/relay/bin/codex"]),
+        runSubprocess,
+        resolveCodexCliEnvironment
+      });
+
+    await expect(probeWithDefaultRunner()).resolves.toEqual({
+      supported: true,
+      diagnosisCode: "exec_json_supported",
+      summary: "A local codex executable with `exec --json` support was confirmed."
+    });
+    expect(resolveCodexCliEnvironment).toHaveBeenCalledTimes(1);
+  });
+
+  it("should fall back to the ambient environment when probe overlay resolution fails", async () => {
+    const runSubprocess = vi.fn(async () => ({
+      exitCode: 0,
+      stdout: "Usage: codex exec\n      --json\n",
+      stderr: ""
+    }));
+    const { probeCodexCliCompatibility: probeWithDefaultRunner } =
+      await loadCodexExecModule({
+        accessImpl: createAccessMock([]),
+        runSubprocess,
+        resolveCodexCliEnvironment: vi.fn(async () => {
+          throw Object.assign(new Error("permission denied"), { code: "EACCES" });
+        })
+      });
+
+    await expect(probeWithDefaultRunner()).resolves.toEqual({
+      supported: true,
+      diagnosisCode: "exec_json_supported",
+      summary: "A local codex executable with `exec --json` support was confirmed."
+    });
+    expect(runSubprocess).toHaveBeenCalledWith(
+      "codex",
+      ["exec", "--help"],
+      {
+        timeoutMs: 5_000
+      }
+    );
   });
 });
 
@@ -523,6 +674,75 @@ describe("smokeCodexCliCompatibility", () => {
         "The bounded codex-cli smoke path completed the public compatibility checks."
     });
     expect(resolveCodexCliEnvironment).toHaveBeenCalledTimes(1);
+  });
+
+  it("should use relay-compatible overlay PATH for default-runner smoke detection", async () => {
+    vi.stubEnv("PATH", "");
+    const stdout = await readFixture("success.observed.jsonl");
+    const resolveCodexCliEnvironment = vi.fn(async () => ({
+      PATH: "/relay/bin",
+      OPENAI_API_KEY: "relay-token"
+    }));
+    const runSubprocess = vi.fn(
+      async (
+        executable: string,
+        args: string[],
+        invocation: {
+          cwd?: string;
+          env?: NodeJS.ProcessEnv;
+          timeoutMs?: number;
+        } = {}
+      ) => {
+        if (args[1] === "--help") {
+          expect(executable).toBe("/relay/bin/codex");
+          expect(invocation).toEqual({
+            timeoutMs: 5_000,
+            env: {
+              PATH: "/relay/bin",
+              OPENAI_API_KEY: "relay-token"
+            }
+          });
+
+          return {
+            exitCode: 0,
+            stdout: "Usage: codex exec\n      --json\n",
+            stderr: ""
+          };
+        }
+
+        expect(executable).toBe("/relay/bin/codex");
+        expect(invocation.env).toEqual({
+          PATH: "/relay/bin",
+          OPENAI_API_KEY: "relay-token"
+        });
+
+        return {
+          exitCode: 0,
+          stdout,
+          stderr: ""
+        };
+      }
+    );
+    const { smokeCodexCliCompatibility: smokeWithDefaultRunner } =
+      await loadCodexExecModule({
+        accessImpl: createAccessMock(["/relay/bin/codex"]),
+        runSubprocess,
+        resolveCodexCliEnvironment
+      });
+
+    await expect(
+      smokeWithDefaultRunner({
+        env: {
+          RUN_CODEX_SMOKE: "1"
+        }
+      })
+    ).resolves.toEqual({
+      smokeStatus: "passed",
+      diagnosisCode: "smoke_passed",
+      summary:
+        "The bounded codex-cli smoke path completed the public compatibility checks."
+    });
+    expect(resolveCodexCliEnvironment).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -1017,9 +1237,19 @@ describe("executeCodexHeadless", () => {
     );
 
     expect(runSubprocess.mock.calls).toEqual([
-      ["/mock/real/codex", ["exec", "--help"], { timeoutMs: 5_000 }],
       [
-        "/mock/real/codex",
+        "codex",
+        ["exec", "--help"],
+        {
+          timeoutMs: 5_000,
+          env: {
+            PATH: "/usr/bin:/bin",
+            OPENAI_API_KEY: "relay-token"
+          }
+        }
+      ],
+      [
+        "codex",
         ["exec", "--json", "--ephemeral", "Reply with ok"],
         {
           timeoutMs: 5_000,
@@ -1030,6 +1260,139 @@ describe("executeCodexHeadless", () => {
         }
       ]
     ]);
+  });
+
+  it("should still inject relay-compatible env when the caller explicitly passes the default runner", async () => {
+    vi.stubEnv("PATH", "/mock/real");
+    const stdout = await readFixture("success.observed.jsonl");
+    const runSubprocess = vi.fn(
+      async (executable: string, args: string[]) => {
+        if (args.at(1) === "--help") {
+          return {
+            exitCode: 0,
+            stdout: "Usage: codex exec\n      --json\n",
+            stderr: ""
+          };
+        }
+
+        return {
+          exitCode: 0,
+          stdout,
+          stderr: ""
+        };
+      }
+    );
+    const { executeCodexHeadless: executeWithDefaultRunner } =
+      await loadCodexExecModule({
+        accessImpl: createAccessMock(["/mock/real/codex"]),
+        runSubprocess,
+        resolveCodexCliEnvironment: vi.fn(async () => ({
+          PATH: "/usr/bin:/bin",
+          OPENAI_API_KEY: "relay-token"
+        }))
+      });
+    const adapter = new CodexCliAdapter(getAdapterDescriptor("codex-cli"));
+
+    await executeWithDefaultRunner(
+      { prompt: "Reply with ok", timeoutMs: 5_000 },
+      {
+        command: adapter.renderCommand({ prompt: "Reply with ok" }),
+        runCommand: runSubprocess
+      }
+    );
+
+    expect(runSubprocess.mock.calls).toEqual([
+      [
+        "codex",
+        ["exec", "--help"],
+        {
+          timeoutMs: 5_000,
+          env: {
+            PATH: "/usr/bin:/bin",
+            OPENAI_API_KEY: "relay-token"
+          }
+        }
+      ],
+      [
+        "codex",
+        ["exec", "--json", "--ephemeral", "Reply with ok"],
+        {
+          timeoutMs: 5_000,
+          env: {
+            PATH: "/usr/bin:/bin",
+            OPENAI_API_KEY: "relay-token"
+          }
+        }
+      ]
+    ]);
+  });
+
+  it("should use relay-compatible overlay PATH when the default runner resolves the executable", async () => {
+    vi.stubEnv("PATH", "");
+    const stdout = await readFixture("success.observed.jsonl");
+    const runSubprocess = vi.fn(
+      async (
+        executable: string,
+        args: string[],
+        invocation: {
+          env?: NodeJS.ProcessEnv;
+          timeoutMs?: number;
+        } = {}
+      ) => {
+        if (args.at(1) === "--help") {
+          expect(executable).toBe("/relay/bin/codex");
+          expect(invocation).toEqual({
+            timeoutMs: 5_000,
+            env: {
+              PATH: "/relay/bin",
+              OPENAI_API_KEY: "relay-token"
+            }
+          });
+
+          return {
+            exitCode: 0,
+            stdout: "Usage: codex exec\n      --json\n",
+            stderr: ""
+          };
+        }
+
+        expect(executable).toBe("/relay/bin/codex");
+        expect(invocation.env).toEqual({
+          PATH: "/relay/bin",
+          OPENAI_API_KEY: "relay-token"
+        });
+
+        return {
+          exitCode: 0,
+          stdout,
+          stderr: ""
+        };
+      }
+    );
+    const { executeCodexHeadless: executeWithDefaultRunner } =
+      await loadCodexExecModule({
+        accessImpl: createAccessMock(["/relay/bin/codex"]),
+        runSubprocess,
+        resolveCodexCliEnvironment: vi.fn(async () => ({
+          PATH: "/relay/bin",
+          OPENAI_API_KEY: "relay-token"
+        }))
+      });
+    const adapter = new CodexCliAdapter(getAdapterDescriptor("codex-cli"));
+
+    await expect(
+      executeWithDefaultRunner(
+        { prompt: "Reply with ok", timeoutMs: 5_000 },
+        {
+          command: adapter.renderCommand({ prompt: "Reply with ok" })
+        }
+      )
+    ).resolves.toMatchObject({
+      command: {
+        executable: "/relay/bin/codex"
+      },
+      exitCode: 0
+    });
   });
 
   it("should preserve profile ordering when the default runner injects relay-compatible env", async () => {
@@ -1078,9 +1441,19 @@ describe("executeCodexHeadless", () => {
     );
 
     expect(runSubprocess.mock.calls).toEqual([
-      ["/mock/real/codex", ["exec", "--help"], { timeoutMs: 5_000 }],
       [
-        "/mock/real/codex",
+        "codex",
+        ["exec", "--help"],
+        {
+          timeoutMs: 5_000,
+          env: {
+            PATH: "/usr/bin:/bin",
+            OPENAI_API_KEY: "relay-token"
+          }
+        }
+      ],
+      [
+        "codex",
         [
           "exec",
           "--json",
