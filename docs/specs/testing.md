@@ -915,7 +915,9 @@ The current public baseline satisfies this Phase 4 test slice through `doctor`, 
 
 - internal-only verification aggregation tests
 - internal-only selection logic tests
-- failure-mode tests
+- internal-only promotion, handoff, and handoff-finalization composition tests
+- internal-only barrel-boundary and negative-export assertions for `src/selection/index.ts`, `src/selection/internal.ts`, and related helper chains
+- failure-mode tests for request validation, readiness validation, and fail-fast batch composition across the Phase 5 helper chain
 
 ## Definition Of Done For Future Coding Tasks
 

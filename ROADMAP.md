@@ -5,13 +5,15 @@
 - Keep build, typecheck, and test gates green on the implemented CLI and worktree baseline
 - Harden manifest, path, and runtime execution boundaries without widening the public surface
 - Keep public compatibility docs and machine-readable contracts aligned with real behavior
-- Continue thin internal helper progression for verification, selection, and handoff composition
+- Continue thin internal helper progression for verification, selection, promotion, handoff, and handoff-finalization composition
 - Maintain a clean worktree-first handoff workflow for future sessions
 
 ## Next
 
+- Finish aligning maintainer docs and local handoff guidance with the current internal Phase 5 slice
 - Refine cleanup, manifest, and compatibility contracts where docs and implementation still diverge
 - Continue bounded internal lifecycle helpers without exposing public spawn, wait, close, or execution commands
+- Consider the next internal-only consumer above the current handoff-finalization apply chain rather than widening public surfaces
 - Tighten executable probing and credential-injection trust boundaries for `codex-cli`
 - Publish focused RFCs only when a contract is ready to stabilize
 

@@ -2,23 +2,24 @@
 
 ## Current Focus
 
-This repository is in a research and specification phase.
+This repository is in an early implementation phase with a still-narrow public contract.
 
 Good contributions right now:
 
 - terminology cleanup
-- compatibility research
-- spec improvements
+- compatibility and contract research
+- spec improvements and maintainer-doc alignment
+- implementation hardening with matching tests
 - RFCs for cross-cutting changes
 - documentation polish and examples
 
-Avoid adding implementation code unless the documentation phase explicitly opens that track.
+Avoid widening the public surface unless the relevant contract docs are updated in the same change.
 
 ## Workflow
 
 1. Read [README.md](README.md), [SPEC.md](SPEC.md), and [docs/index.md](docs/index.md).
 2. Check whether the change belongs in normal docs, an RFC, or an ADR.
-3. Update public docs in the same PR as any behavior or contract change.
+3. Update public docs in the same PR as any behavior or contract change, and keep internal-only boundary notes aligned when maintainer truth changes.
 4. Keep local-only research, transcripts, and scratch work out of Git.
 
 ## RFC vs ADR vs Normal Docs
