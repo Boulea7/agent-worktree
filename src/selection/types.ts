@@ -459,3 +459,21 @@ export interface AttemptHandoffFinalizationExplanationSummary {
   invokedResults: AttemptHandoffFinalizationExplanationEntry[];
   blockedResults: AttemptHandoffFinalizationExplanationEntry[];
 }
+
+export interface AttemptHandoffFinalizationReportReadyEntry {
+  taskId: string;
+  attemptId: string;
+  runtime: string;
+  status: AttemptStatus;
+  sourceKind: AttemptSourceKind | undefined;
+  explanationCode: AttemptHandoffFinalizationExplanationCode;
+  invoked: boolean;
+  blockingReasons: AttemptHandoffFinalizationConsumerBlockingReason[];
+}
+
+export interface AttemptHandoffFinalizationReportReady {
+  reportBasis: "handoff_finalization_explanation_summary";
+  results: AttemptHandoffFinalizationReportReadyEntry[];
+  invokedResults: AttemptHandoffFinalizationReportReadyEntry[];
+  blockedResults: AttemptHandoffFinalizationReportReadyEntry[];
+}
