@@ -2,8 +2,14 @@ import { ValidationError } from "../core/errors.js";
 import type {
   AttemptHandoffFinalizationConsume,
   AttemptHandoffFinalizationConsumeInput,
+  AttemptHandoffFinalizationConsumerBlockingReason,
   AttemptHandoffFinalizationConsumerReadiness
 } from "./types.js";
+
+const validBlockingReasons =
+  new Set<AttemptHandoffFinalizationConsumerBlockingReason>([
+    "handoff_finalization_unsupported"
+  ]);
 
 export async function consumeAttemptHandoffFinalization(
   input: AttemptHandoffFinalizationConsumeInput
@@ -34,6 +40,20 @@ function validateReadiness(
   if (!Array.isArray(value.blockingReasons)) {
     throw new ValidationError(
       "Attempt handoff finalization consume requires consumer.readiness.blockingReasons to be an array."
+    );
+  }
+
+  if (
+    value.blockingReasons.some(
+      (reason) =>
+        typeof reason !== "string" ||
+        !validBlockingReasons.has(
+          reason as AttemptHandoffFinalizationConsumerBlockingReason
+        )
+    )
+  ) {
+    throw new ValidationError(
+      "Attempt handoff finalization consume requires consumer.readiness.blockingReasons to contain only known blocking reasons."
     );
   }
 

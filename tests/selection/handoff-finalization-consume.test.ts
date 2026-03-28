@@ -97,7 +97,107 @@ describe("selection handoff-finalization-consume helpers", () => {
           throw expectedError;
         }
       })
-    ).rejects.toThrow(expectedError);
+    ).rejects.toBe(expectedError);
+  });
+
+  it("should fail before invoking handoff finalization when readiness blockingReasons is not an array", async () => {
+    const consumer = createFinalizationConsumer({
+      readiness: {
+        blockingReasons: "not-an-array" as never,
+        canConsumeHandoffFinalization: false,
+        hasBlockingReasons: false,
+        handoffFinalizationSupported: false
+      }
+    });
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      consumeAttemptHandoffFinalization({
+        consumer,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(ValidationError);
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
+  it("should fail before invoking handoff finalization when readiness blockingReasons contains an unknown reason", async () => {
+    const consumer = createFinalizationConsumer({
+      readiness: {
+        blockingReasons: ["unexpected_reason"] as never,
+        canConsumeHandoffFinalization: false,
+        hasBlockingReasons: true,
+        handoffFinalizationSupported: false
+      }
+    });
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      consumeAttemptHandoffFinalization({
+        consumer,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(ValidationError);
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
+  it("should fail before invoking handoff finalization when canConsumeHandoffFinalization is true but blockingReasons is non-empty", async () => {
+    const consumer = createFinalizationConsumer({
+      readiness: {
+        blockingReasons: ["handoff_finalization_unsupported"],
+        canConsumeHandoffFinalization: true,
+        hasBlockingReasons: true,
+        handoffFinalizationSupported: true
+      }
+    });
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      consumeAttemptHandoffFinalization({
+        consumer,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(ValidationError);
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
+  it("should fail before invoking handoff finalization when hasBlockingReasons is false but blockingReasons is non-empty", async () => {
+    const consumer = createFinalizationConsumer({
+      readiness: {
+        blockingReasons: ["handoff_finalization_unsupported"],
+        canConsumeHandoffFinalization: false,
+        hasBlockingReasons: false,
+        handoffFinalizationSupported: false
+      }
+    });
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      consumeAttemptHandoffFinalization({
+        consumer,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(ValidationError);
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
+  it("should fail before invoking handoff finalization when handoffFinalizationSupported does not match canConsumeHandoffFinalization", async () => {
+    const consumer = createFinalizationConsumer({
+      readiness: {
+        blockingReasons: [],
+        canConsumeHandoffFinalization: false,
+        hasBlockingReasons: false,
+        handoffFinalizationSupported: true
+      }
+    });
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      consumeAttemptHandoffFinalization({
+        consumer,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(ValidationError);
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
   });
 
   it("should fail before invoking handoff finalization when readiness carries a non-boolean supported value", async () => {
