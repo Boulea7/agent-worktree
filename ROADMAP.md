@@ -13,7 +13,7 @@
 - Keep maintainer docs and local handoff guidance aligned with the current internal Phase 5 slice as follow-up helpers land
 - Refine cleanup, manifest, and compatibility contracts where docs and implementation still diverge
 - Continue bounded internal lifecycle helpers without exposing public spawn, wait, close, or execution commands
-- Consider the next internal-only consumer above the current handoff-finalization report-ready projection layer rather than widening public surfaces
+- Consider the next internal-only consumer above the current handoff-finalization grouped projection summary layer rather than widening public surfaces
 - Tighten executable probing and credential-injection trust boundaries for `codex-cli`
 - Publish focused RFCs only when a contract is ready to stabilize
 

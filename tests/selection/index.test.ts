@@ -123,6 +123,12 @@ type SelectionIndexShouldNotExportHandoffFinalizationExplanationEntry = import("
 // @ts-expect-error selection index must not export handoff finalization explanation summary types
 type SelectionIndexShouldNotExportHandoffFinalizationExplanationSummary = import("../../src/selection/index.js").AttemptHandoffFinalizationExplanationSummary;
 
+// @ts-expect-error selection index must not export handoff finalization grouped projection group types
+type SelectionIndexShouldNotExportHandoffFinalizationGroupedProjectionGroup = import("../../src/selection/index.js").AttemptHandoffFinalizationGroupedProjectionGroup;
+
+// @ts-expect-error selection index must not export handoff finalization grouped projection summary types
+type SelectionIndexShouldNotExportHandoffFinalizationGroupedProjectionSummary = import("../../src/selection/index.js").AttemptHandoffFinalizationGroupedProjectionSummary;
+
 // @ts-expect-error selection index must not export handoff finalization report-ready types
 type SelectionIndexShouldNotExportHandoffFinalizationReportReady = import("../../src/selection/index.js").AttemptHandoffFinalizationReportReady;
 
@@ -185,6 +191,9 @@ type SelectionIndexShouldNotExportDeriveAttemptHandoffFinalizationOutcomeSummary
 
 // @ts-expect-error selection index must not export handoff finalization explanation summary helpers
 type SelectionIndexShouldNotExportDeriveAttemptHandoffFinalizationExplanationSummary = typeof import("../../src/selection/index.js").deriveAttemptHandoffFinalizationExplanationSummary;
+
+// @ts-expect-error selection index must not export handoff finalization grouped projection summary helpers
+type SelectionIndexShouldNotExportDeriveAttemptHandoffFinalizationGroupedProjectionSummary = typeof import("../../src/selection/index.js").deriveAttemptHandoffFinalizationGroupedProjectionSummary;
 
 // @ts-expect-error selection index must not export handoff finalization report-ready helpers
 type SelectionIndexShouldNotExportDeriveAttemptHandoffFinalizationReportReady = typeof import("../../src/selection/index.js").deriveAttemptHandoffFinalizationReportReady;
