@@ -441,3 +441,21 @@ export interface AttemptHandoffFinalizationOutcomeSummary {
   blockingReasons: AttemptHandoffFinalizationConsumerBlockingReason[];
   outcomes: AttemptHandoffFinalizationOutcome[];
 }
+
+export type AttemptHandoffFinalizationExplanationCode =
+  | "handoff_finalization_invoked"
+  | "handoff_finalization_blocked_unsupported";
+
+export interface AttemptHandoffFinalizationExplanationEntry {
+  outcome: AttemptHandoffFinalizationOutcome;
+  explanationCode: AttemptHandoffFinalizationExplanationCode;
+  invoked: boolean;
+  blockingReasons: AttemptHandoffFinalizationConsumerBlockingReason[];
+}
+
+export interface AttemptHandoffFinalizationExplanationSummary {
+  explanationBasis: "handoff_finalization_outcome_summary";
+  results: AttemptHandoffFinalizationExplanationEntry[];
+  invokedResults: AttemptHandoffFinalizationExplanationEntry[];
+  blockedResults: AttemptHandoffFinalizationExplanationEntry[];
+}

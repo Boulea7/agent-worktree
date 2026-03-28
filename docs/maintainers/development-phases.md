@@ -118,7 +118,7 @@ Exit criteria:
 Current closeout status:
 
 - the current baseline satisfies these exit criteria through `doctor`, `compat probe`, and the bounded public `compat smoke codex-cli` path
-- Phase 5 internal-only work is now in progress through verification, selection, promotion, handoff, and handoff-finalization composition helpers, including the current outcome-summary layer above finalization apply-batch
+- Phase 5 internal-only work is now in progress through verification, selection, promotion, handoff, and handoff-finalization composition helpers, including the current explanation-summary layer above finalization outcome-summary
 - the next implementation windows should continue that internal Phase 5 chain rather than widening public lifecycle or execution surfaces
 
 ## Phase 5: Verification and Selection
