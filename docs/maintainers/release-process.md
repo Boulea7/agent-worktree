@@ -2,7 +2,7 @@
 
 ## Current State
 
-No release process is active yet because the repository is still in the documentation-first phase.
+No release process is active yet because the repository is still experimental and in an early implementation phase.
 
 ## Preconditions Before First Release
 

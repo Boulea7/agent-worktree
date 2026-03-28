@@ -87,7 +87,7 @@ That promotion-target-apply-batch helper remains composition-only as well. It do
 That handoff report-ready bridge remains projection-only as well. It does not introduce public `attempt report`, durable report state, queue metadata, or any wider handoff lifecycle semantics.
 That handoff explanation-ready consumer remains code-only as well. It does not introduce freeform explanation text, a public explanation surface, durable explanation state, or any wider handoff lifecycle semantics.
 That handoff decision-ready consumer remains blocker-only as well. It does not introduce public decision payloads, merge or review policy, rollback semantics, durable decision state, or any wider handoff lifecycle semantics.
-Those internal handoff-finalization helpers remain request-based and composition-only. They do not introduce public handoff-finalization apply, apply-batch, queue, persistence, or durable finalization state semantics.
+Those internal handoff-finalization helpers remain request-based and composition-only. They do not introduce public handoff-finalization apply, apply-batch, request-summary apply, queue, persistence, or durable finalization state semantics.
 Required verification checks that end in `skipped` now remain blocking for Phase 5 selection and promotion semantics; they must not be treated as satisfied gates.
 The default `src/selection/index.ts` and `src/verification/index.ts` barrels should stay narrower than the full internal helper chain; repo-internal code and tests should use the dedicated internal barrels or concrete module paths instead of re-expanding those default entry points into a de facto public helper surface.
 
