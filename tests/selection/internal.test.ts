@@ -18,6 +18,8 @@ import type {
   AttemptHandoffFinalizationExplanationSummary,
   AttemptHandoffFinalizationOutcome,
   AttemptHandoffFinalizationOutcomeSummary,
+  AttemptHandoffFinalizationReportReady,
+  AttemptHandoffFinalizationReportReadyEntry,
   AttemptHandoffFinalizationCapabilityResolver,
   AttemptHandoffFinalizationConsume,
   AttemptHandoffFinalizationConsumeBatch,
@@ -64,6 +66,7 @@ describe("selection internal exports", () => {
         "deriveAttemptHandoffFinalizationConsumer",
         "deriveAttemptHandoffFinalizationExplanationSummary",
         "deriveAttemptHandoffFinalizationRequestSummary",
+        "deriveAttemptHandoffFinalizationReportReady",
         "deriveAttemptHandoffFinalizationTargetSummary",
         "deriveAttemptHandoffReportReady",
         "deriveAttemptHandoffRequest",
@@ -99,6 +102,8 @@ describe("selection internal exports", () => {
       handoffFinalizationExplanationSummary: AttemptHandoffFinalizationExplanationSummary;
       handoffFinalizationOutcome: AttemptHandoffFinalizationOutcome;
       handoffFinalizationOutcomeSummary: AttemptHandoffFinalizationOutcomeSummary;
+      handoffFinalizationReportReady: AttemptHandoffFinalizationReportReady;
+      handoffFinalizationReportReadyEntry: AttemptHandoffFinalizationReportReadyEntry;
       handoffFinalizationCapabilityResolver: AttemptHandoffFinalizationCapabilityResolver;
       handoffFinalizationConsume: AttemptHandoffFinalizationConsume;
       handoffFinalizationConsumeBatch: AttemptHandoffFinalizationConsumeBatch;

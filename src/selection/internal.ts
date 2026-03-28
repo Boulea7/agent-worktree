@@ -77,6 +77,9 @@ export {
   deriveAttemptHandoffFinalizationExplanationSummary
 } from "./handoff-finalization-explanation.js";
 export {
+  deriveAttemptHandoffFinalizationReportReady
+} from "./handoff-finalization-report-ready.js";
+export {
   deriveAttemptPromotionReport
 } from "./promotion-report.js";
 export {
@@ -128,6 +131,8 @@ export type {
   AttemptHandoffFinalizationConsumerReadiness,
   AttemptHandoffFinalizationOutcome,
   AttemptHandoffFinalizationOutcomeSummary,
+  AttemptHandoffFinalizationReportReady,
+  AttemptHandoffFinalizationReportReadyEntry,
   AttemptHandoffFinalizationInvoker,
   AttemptHandoffFinalizationRequest,
   AttemptHandoffFinalizationRequestSummaryApplyInput,
