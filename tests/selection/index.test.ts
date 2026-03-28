@@ -93,11 +93,35 @@ type SelectionIndexShouldNotExportHandoffFinalizationConsumerReadiness = import(
 // @ts-expect-error selection index must not export handoff finalization invoker types
 type SelectionIndexShouldNotExportHandoffFinalizationInvoker = import("../../src/selection/index.js").AttemptHandoffFinalizationInvoker;
 
+// @ts-expect-error selection index must not export handoff finalization apply result types
+type SelectionIndexShouldNotExportHandoffFinalizationApply = import("../../src/selection/index.js").AttemptHandoffFinalizationApply;
+
+// @ts-expect-error selection index must not export handoff finalization apply input types
+type SelectionIndexShouldNotExportHandoffFinalizationApplyInput = import("../../src/selection/index.js").AttemptHandoffFinalizationApplyInput;
+
+// @ts-expect-error selection index must not export handoff finalization apply-batch result types
+type SelectionIndexShouldNotExportHandoffFinalizationApplyBatch = import("../../src/selection/index.js").AttemptHandoffFinalizationApplyBatch;
+
+// @ts-expect-error selection index must not export handoff finalization apply-batch input types
+type SelectionIndexShouldNotExportHandoffFinalizationApplyBatchInput = import("../../src/selection/index.js").AttemptHandoffFinalizationApplyBatchInput;
+
 // @ts-expect-error selection index must not export handoff report-ready types
 type SelectionIndexShouldNotExportHandoffReportReady = import("../../src/selection/index.js").AttemptHandoffReportReady;
 
+// @ts-expect-error selection index must not export handoff report-ready entry types
+type SelectionIndexShouldNotExportHandoffReportReadyEntry = import("../../src/selection/index.js").AttemptHandoffReportReadyEntry;
+
+// @ts-expect-error selection index must not export handoff explanation code types
+type SelectionIndexShouldNotExportHandoffExplanationCode = import("../../src/selection/index.js").AttemptHandoffExplanationCode;
+
+// @ts-expect-error selection index must not export handoff explanation entry types
+type SelectionIndexShouldNotExportHandoffExplanationEntry = import("../../src/selection/index.js").AttemptHandoffExplanationEntry;
+
 // @ts-expect-error selection index must not export handoff explanation summaries
 type SelectionIndexShouldNotExportHandoffExplanationSummary = import("../../src/selection/index.js").AttemptHandoffExplanationSummary;
+
+// @ts-expect-error selection index must not export handoff decision blocking reason types
+type SelectionIndexShouldNotExportHandoffDecisionBlockingReason = import("../../src/selection/index.js").AttemptHandoffDecisionBlockingReason;
 
 // @ts-expect-error selection index must not export handoff decision summaries
 type SelectionIndexShouldNotExportHandoffDecisionSummary = import("../../src/selection/index.js").AttemptHandoffDecisionSummary;
@@ -125,6 +149,12 @@ type SelectionIndexShouldNotExportConsumeAttemptHandoffFinalization = typeof imp
 
 // @ts-expect-error selection index must not export handoff finalization consume-batch helpers
 type SelectionIndexShouldNotExportConsumeAttemptHandoffFinalizationBatch = typeof import("../../src/selection/index.js").consumeAttemptHandoffFinalizationBatch;
+
+// @ts-expect-error selection index must not export handoff finalization apply helpers
+type SelectionIndexShouldNotExportApplyAttemptHandoffFinalization = typeof import("../../src/selection/index.js").applyAttemptHandoffFinalization;
+
+// @ts-expect-error selection index must not export handoff finalization apply-batch helpers
+type SelectionIndexShouldNotExportApplyAttemptHandoffFinalizationBatch = typeof import("../../src/selection/index.js").applyAttemptHandoffFinalizationBatch;
 
 // @ts-expect-error selection index must not export handoff report-ready helpers
 type SelectionIndexShouldNotExportDeriveAttemptHandoffReportReady = typeof import("../../src/selection/index.js").deriveAttemptHandoffReportReady;

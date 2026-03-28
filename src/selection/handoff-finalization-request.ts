@@ -10,10 +10,12 @@ import type {
   AttemptHandoffFinalizationRequestSummary,
   AttemptHandoffFinalizationTargetSummary
 } from "./types.js";
+import {
+  attemptHandoffFinalizationRequestBasis,
+  deriveCanonicalAttemptHandoffDecisionBlockingReasons
+} from "./handoff-finalization-request-summary-shared.js";
 
 const ATTEMPT_HANDOFF_FINALIZATION_BASIS = "handoff_decision_summary" as const;
-const ATTEMPT_HANDOFF_FINALIZATION_REQUEST_BASIS =
-  "handoff_finalization_target_summary" as const;
 const validAttemptStatuses = new Set<AttemptStatus>(attemptStatuses);
 const validAttemptSourceKinds = new Set<AttemptSourceKind>(attemptSourceKinds);
 const validBlockingReasons =
@@ -43,7 +45,7 @@ export function deriveAttemptHandoffFinalizationRequestSummary(
   }
 
   return {
-    requestBasis: ATTEMPT_HANDOFF_FINALIZATION_REQUEST_BASIS,
+    requestBasis: attemptHandoffFinalizationRequestBasis,
     resultCount: summary.resultCount,
     invokedResultCount: summary.invokedResultCount,
     blockedResultCount: summary.blockedResultCount,
@@ -123,10 +125,11 @@ function validateSummaryConsistency(
     );
   }
 
-  const canonicalBlockingReasons = deriveCanonicalBlockingReasons(
-    summary.resultCount,
-    summary.invokedResultCount
-  );
+  const canonicalBlockingReasons =
+    deriveCanonicalAttemptHandoffDecisionBlockingReasons(
+      summary.resultCount,
+      summary.invokedResultCount
+    );
 
   if (
     !blockingReasonArraysEqual(
@@ -194,21 +197,6 @@ function validateBlockingReasons(value: unknown): void {
       "Attempt handoff finalization request summary requires summary.blockingReasons to use the existing handoff decision blocker vocabulary."
     );
   }
-}
-
-function deriveCanonicalBlockingReasons(
-  resultCount: number,
-  invokedResultCount: number
-): AttemptHandoffDecisionBlockingReason[] {
-  if (resultCount === 0) {
-    return ["no_results"];
-  }
-
-  if (invokedResultCount > 0) {
-    return [];
-  }
-
-  return ["handoff_unsupported"];
 }
 
 function blockingReasonArraysEqual(
