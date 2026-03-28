@@ -477,3 +477,19 @@ export interface AttemptHandoffFinalizationReportReady {
   invokedResults: AttemptHandoffFinalizationReportReadyEntry[];
   blockedResults: AttemptHandoffFinalizationReportReadyEntry[];
 }
+
+export interface AttemptHandoffFinalizationGroupedProjectionGroup {
+  groupKey: AttemptHandoffFinalizationExplanationCode;
+  resultCount: number;
+  invokedResultCount: number;
+  blockedResultCount: number;
+  results: AttemptHandoffFinalizationReportReadyEntry[];
+}
+
+export interface AttemptHandoffFinalizationGroupedProjectionSummary {
+  groupedProjectionBasis: "handoff_finalization_report_ready";
+  resultCount: number;
+  invokedResultCount: number;
+  blockedResultCount: number;
+  groups: AttemptHandoffFinalizationGroupedProjectionGroup[];
+}
