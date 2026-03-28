@@ -107,6 +107,55 @@ describe("selection handoff-finalization-report-ready helpers", () => {
     });
   });
 
+  it("should fail loudly when the supplied summary is not an object", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady(null as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady(null as never)
+    ).toThrow(
+      "Attempt handoff finalization report-ready requires summary to be an object."
+    );
+  });
+
+  it("should fail loudly when the supplied explanation basis drifts from the current finalization explanation layer", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady({
+        ...createExplanationSummary([]),
+        explanationBasis: "handoff_finalization_apply_batch"
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady({
+        ...createExplanationSummary([]),
+        explanationBasis: "handoff_finalization_apply_batch"
+      } as never)
+    ).toThrow(
+      'Attempt handoff finalization report-ready requires summary.explanationBasis to be "handoff_finalization_outcome_summary".'
+    );
+  });
+
+  it("should fail loudly when the supplied explanation results are not an array", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady({
+        explanationBasis: "handoff_finalization_outcome_summary",
+        results: null,
+        invokedResults: [],
+        blockedResults: []
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady({
+        explanationBasis: "handoff_finalization_outcome_summary",
+        results: null,
+        invokedResults: [],
+        blockedResults: []
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization report-ready requires summary.results to be an array."
+    );
+  });
+
   it("should flatten explanation entries into a stable grouped report-ready projection", () => {
     expect(
       deriveAttemptHandoffFinalizationReportReady(
