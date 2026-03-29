@@ -508,3 +508,12 @@ export interface AttemptHandoffFinalizationGroupedReportingSummary {
   blockedResultCount: number;
   groups: AttemptHandoffFinalizationGroupedReportingGroup[];
 }
+
+export interface AttemptHandoffFinalizationGroupedReportingDispositionSummary {
+  groupedReportingDispositionBasis: "handoff_finalization_grouped_reporting_summary";
+  resultCount: number;
+  invokedResultCount: number;
+  blockedResultCount: number;
+  groupCount: number;
+  reportingDisposition: "empty" | "all_invoked" | "all_blocked" | "mixed";
+}
