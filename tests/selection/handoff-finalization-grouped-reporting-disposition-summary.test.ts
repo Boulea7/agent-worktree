@@ -133,6 +133,19 @@ describe(
       );
     });
 
+    it("should fail loudly when top-level grouped reporting counts are not non-negative integers", () => {
+      const act = () =>
+        deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary({
+          ...createGroupedReportingSummary([]),
+          resultCount: 0.5
+        });
+
+      expect(act).toThrow(ValidationError);
+      expect(act).toThrow(
+        "Attempt handoff finalization grouped reporting disposition summary requires summary.resultCount to be a non-negative integer."
+      );
+    });
+
     it("should fail loudly when top-level grouped reporting counts drift from the canonical group sums", () => {
       const act = () =>
         deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary({
