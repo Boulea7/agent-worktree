@@ -215,6 +215,42 @@ describe(
       );
     });
 
+    it("should fail loudly when an invoked group reports blocked results", () => {
+      const act = () =>
+        deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary(
+          createGroupedReportingSummary([
+            createInvokedReportingGroup({
+              resultCount: 2,
+              invokedResultCount: 0,
+              blockedResultCount: 2
+            })
+          ])
+        );
+
+      expect(act).toThrow(ValidationError);
+      expect(act).toThrow(
+        'Attempt handoff finalization grouped reporting disposition summary requires "handoff_finalization_invoked" groups to keep all results invoked.'
+      );
+    });
+
+    it("should fail loudly when a blocked group reports invoked results", () => {
+      const act = () =>
+        deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary(
+          createGroupedReportingSummary([
+            createBlockedReportingGroup({
+              resultCount: 3,
+              invokedResultCount: 3,
+              blockedResultCount: 0
+            })
+          ])
+        );
+
+      expect(act).toThrow(ValidationError);
+      expect(act).toThrow(
+        'Attempt handoff finalization grouped reporting disposition summary requires "handoff_finalization_blocked_unsupported" groups to keep all results blocked.'
+      );
+    });
+
     it("should keep the grouped reporting disposition summary shape minimal without leaking grouped reporting detail", () => {
       const summary =
         deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary(
