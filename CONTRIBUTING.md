@@ -17,10 +17,11 @@ Avoid widening the public surface unless the relevant contract docs are updated 
 
 ## Workflow
 
-1. Read [README.md](README.md), [SPEC.md](SPEC.md), and [docs/index.md](docs/index.md).
-2. Check whether the change belongs in normal docs, an RFC, or an ADR.
-3. Update public docs in the same PR as any behavior or contract change, and keep internal-only boundary notes aligned when maintainer truth changes.
-4. Keep local-only research, transcripts, and scratch work out of Git.
+1. Read [SPEC.md](SPEC.md), [README.md](README.md), and [docs/index.md](docs/index.md), and use [AGENTS.md](AGENTS.md) as the repository-specific execution-rules and boundary companion when changing contracts, compatibility wording, or implementation boundaries.
+2. Prefer a clean branch or isolated git worktree, and keep each completed thin slice checkpointed in a reviewable commit.
+3. Check whether the change belongs in normal docs, an RFC, or an ADR.
+4. Update public docs in the same PR as any behavior or contract change, and keep internal-only boundary notes aligned when maintainer-facing guidance changes.
+5. Keep local-only research, transcripts, and scratch work out of Git.
 
 ## RFC vs ADR vs Normal Docs
 
