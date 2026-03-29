@@ -132,7 +132,7 @@ describe("selection handoff-finalization-report-ready helpers", () => {
         blockedResults: []
       })
     ).toThrow(
-      "Attempt handoff finalization report-ready requires summary.results entries to be objects."
+      "Attempt handoff finalization report-ready requires summary.results[0] to be an object."
     );
   });
 
@@ -159,7 +159,7 @@ describe("selection handoff-finalization-report-ready helpers", () => {
           blockedResults: []
         })
       ).toThrow(
-        "Attempt handoff finalization report-ready requires summary.results entries to be objects."
+        "Attempt handoff finalization report-ready requires summary.results[0] to be an object."
       );
     } finally {
       delete Array.prototype[0];

@@ -236,17 +236,15 @@ function validateExplanationEntryArray(
   const validatedEntries: AttemptHandoffFinalizationExplanationEntry[] = [];
 
   for (let index = 0; index < entries.length; index += 1) {
-    if (!hasOwnIndex(entries, index) || !isRecord(entries[index])) {
+    const entry = entries[index];
+
+    if (!hasOwnIndex(entries, index) || !isRecord(entry)) {
       throw new ValidationError(
-        `Attempt handoff finalization report-ready requires ${fieldName} entries to be objects.`
+        `Attempt handoff finalization report-ready requires ${fieldName}[${index}] to be an object.`
       );
     }
 
-    validatedEntries.push(
-      validateExplanationEntry(
-        entries[index] as AttemptHandoffFinalizationExplanationEntry
-      )
-    );
+    validatedEntries.push(validateExplanationEntry(entry));
   }
 
   return validatedEntries;
