@@ -129,6 +129,12 @@ type SelectionIndexShouldNotExportHandoffFinalizationGroupedProjectionGroup = im
 // @ts-expect-error selection index must not export handoff finalization grouped projection summary types
 type SelectionIndexShouldNotExportHandoffFinalizationGroupedProjectionSummary = import("../../src/selection/index.js").AttemptHandoffFinalizationGroupedProjectionSummary;
 
+// @ts-expect-error selection index must not export handoff finalization grouped reporting group types
+type SelectionIndexShouldNotExportHandoffFinalizationGroupedReportingGroup = import("../../src/selection/index.js").AttemptHandoffFinalizationGroupedReportingGroup;
+
+// @ts-expect-error selection index must not export handoff finalization grouped reporting summary types
+type SelectionIndexShouldNotExportHandoffFinalizationGroupedReportingSummary = import("../../src/selection/index.js").AttemptHandoffFinalizationGroupedReportingSummary;
+
 // @ts-expect-error selection index must not export handoff finalization report-ready types
 type SelectionIndexShouldNotExportHandoffFinalizationReportReady = import("../../src/selection/index.js").AttemptHandoffFinalizationReportReady;
 
@@ -194,6 +200,9 @@ type SelectionIndexShouldNotExportDeriveAttemptHandoffFinalizationExplanationSum
 
 // @ts-expect-error selection index must not export handoff finalization grouped projection summary helpers
 type SelectionIndexShouldNotExportDeriveAttemptHandoffFinalizationGroupedProjectionSummary = typeof import("../../src/selection/index.js").deriveAttemptHandoffFinalizationGroupedProjectionSummary;
+
+// @ts-expect-error selection index must not export handoff finalization grouped reporting summary helpers
+type SelectionIndexShouldNotExportDeriveAttemptHandoffFinalizationGroupedReportingSummary = typeof import("../../src/selection/index.js").deriveAttemptHandoffFinalizationGroupedReportingSummary;
 
 // @ts-expect-error selection index must not export handoff finalization report-ready helpers
 type SelectionIndexShouldNotExportDeriveAttemptHandoffFinalizationReportReady = typeof import("../../src/selection/index.js").deriveAttemptHandoffFinalizationReportReady;
