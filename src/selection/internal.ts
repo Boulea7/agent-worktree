@@ -80,6 +80,9 @@ export {
   deriveAttemptHandoffFinalizationReportReady
 } from "./handoff-finalization-report-ready.js";
 export {
+  deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary
+} from "./handoff-finalization-grouped-reporting-disposition-summary.js";
+export {
   deriveAttemptHandoffFinalizationGroupedReportingSummary
 } from "./handoff-finalization-grouped-reporting-summary.js";
 export {
@@ -132,6 +135,7 @@ export type {
   AttemptHandoffFinalizationExplanationCode,
   AttemptHandoffFinalizationExplanationEntry,
   AttemptHandoffFinalizationExplanationSummary,
+  AttemptHandoffFinalizationGroupedReportingDispositionSummary,
   AttemptHandoffFinalizationGroupedReportingGroup,
   AttemptHandoffFinalizationGroupedReportingSummary,
   AttemptHandoffFinalizationGroupedProjectionGroup,
