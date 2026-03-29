@@ -149,6 +149,8 @@ function validateGroups(
       );
     }
 
+    validateGroupSemantics(group);
+
     validatedGroups.push({
       groupKey: group.groupKey,
       resultCount: group.resultCount,
@@ -167,6 +169,28 @@ function validateGroupKey(value: unknown): void {
   ) {
     throw new ValidationError(
       "Attempt handoff finalization grouped reporting disposition summary requires each groupKey to use the existing handoff-finalization explanation vocabulary."
+    );
+  }
+}
+
+function validateGroupSemantics(
+  group: AttemptHandoffFinalizationGroupedReportingGroup
+): void {
+  if (
+    group.groupKey === "handoff_finalization_invoked" &&
+    (group.invokedResultCount !== group.resultCount || group.blockedResultCount !== 0)
+  ) {
+    throw new ValidationError(
+      'Attempt handoff finalization grouped reporting disposition summary requires "handoff_finalization_invoked" groups to keep all results invoked.'
+    );
+  }
+
+  if (
+    group.groupKey === "handoff_finalization_blocked_unsupported" &&
+    (group.blockedResultCount !== group.resultCount || group.invokedResultCount !== 0)
+  ) {
+    throw new ValidationError(
+      'Attempt handoff finalization grouped reporting disposition summary requires "handoff_finalization_blocked_unsupported" groups to keep all results blocked.'
     );
   }
 }
