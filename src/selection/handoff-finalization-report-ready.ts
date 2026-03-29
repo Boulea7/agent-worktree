@@ -38,7 +38,7 @@ export function deriveAttemptHandoffFinalizationReportReady(
   }
 
   validateSummaryBasis(summary);
-  const results = summary.results.map(validateExplanationEntry);
+  const results = validateExplanationEntryArray(summary.results, "summary.results");
 
   validateCanonicalSubgroups(summary, results);
 
@@ -229,20 +229,60 @@ function deriveReportEntry(
   };
 }
 
+function validateExplanationEntryArray(
+  entries: readonly AttemptHandoffFinalizationExplanationEntry[],
+  fieldName: string
+): AttemptHandoffFinalizationExplanationEntry[] {
+  const validatedEntries: AttemptHandoffFinalizationExplanationEntry[] = [];
+
+  for (let index = 0; index < entries.length; index += 1) {
+    if (!hasOwnIndex(entries, index) || !isRecord(entries[index])) {
+      throw new ValidationError(
+        `Attempt handoff finalization report-ready requires ${fieldName} entries to be objects.`
+      );
+    }
+
+    validatedEntries.push(
+      validateExplanationEntry(
+        entries[index] as AttemptHandoffFinalizationExplanationEntry
+      )
+    );
+  }
+
+  return validatedEntries;
+}
+
 function explanationEntryArraysEqual(
   left: readonly AttemptHandoffFinalizationExplanationEntry[] | unknown,
   right: readonly AttemptHandoffFinalizationExplanationEntry[]
 ): boolean {
-  return (
-    Array.isArray(left) &&
-    left.length === right.length &&
-    left.every((entry, index) =>
-      explanationEntryEqual(
-        entry as AttemptHandoffFinalizationExplanationEntry,
-        right[index]!
-      )
-    )
-  );
+  if (!Array.isArray(left) || left.length !== right.length) {
+    return false;
+  }
+
+  for (let index = 0; index < left.length; index += 1) {
+    if (!hasOwnIndex(left, index) || !isRecord(left[index])) {
+      return false;
+    }
+
+    try {
+      const entry = validateExplanationEntry(
+        left[index] as AttemptHandoffFinalizationExplanationEntry
+      );
+
+      if (!explanationEntryEqual(entry, right[index]!)) {
+        return false;
+      }
+    } catch {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function hasOwnIndex(values: readonly unknown[], index: number): boolean {
+  return Object.prototype.hasOwnProperty.call(values, index);
 }
 
 function explanationEntryEqual(

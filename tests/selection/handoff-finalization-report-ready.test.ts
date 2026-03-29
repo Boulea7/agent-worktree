@@ -113,6 +113,59 @@ describe("selection handoff-finalization-report-ready helpers", () => {
     );
   });
 
+  it("should fail loudly when summary.results contains sparse slots", () => {
+    const sparseResults = new Array<AttemptHandoffFinalizationExplanationEntry>(1);
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady({
+        explanationBasis: "handoff_finalization_outcome_summary",
+        results: sparseResults,
+        invokedResults: [],
+        blockedResults: []
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady({
+        explanationBasis: "handoff_finalization_outcome_summary",
+        results: sparseResults,
+        invokedResults: [],
+        blockedResults: []
+      })
+    ).toThrow(
+      "Attempt handoff finalization report-ready requires summary.results entries to be objects."
+    );
+  });
+
+  it("should fail loudly when summary.results relies on inherited array indexes", () => {
+    Array.prototype[0] = createInvokedExplanationEntry();
+
+    try {
+      const sparseResults =
+        new Array<AttemptHandoffFinalizationExplanationEntry>(1);
+
+      expect(() =>
+        deriveAttemptHandoffFinalizationReportReady({
+          explanationBasis: "handoff_finalization_outcome_summary",
+          results: sparseResults,
+          invokedResults: [],
+          blockedResults: []
+        })
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveAttemptHandoffFinalizationReportReady({
+          explanationBasis: "handoff_finalization_outcome_summary",
+          results: sparseResults,
+          invokedResults: [],
+          blockedResults: []
+        })
+      ).toThrow(
+        "Attempt handoff finalization report-ready requires summary.results entries to be objects."
+      );
+    } finally {
+      delete Array.prototype[0];
+    }
+  });
+
   it("should flatten explanation entries into a stable grouped report-ready projection", () => {
     expect(
       deriveAttemptHandoffFinalizationReportReady(
@@ -178,6 +231,55 @@ describe("selection handoff-finalization-report-ready helpers", () => {
       })
     ).toThrow(
       "Attempt handoff finalization report-ready requires summary.invokedResults to match the stable filtered invoked subgroup."
+    );
+  });
+
+  it("should fail loudly when explanation subgroups contain sparse slots", () => {
+    const sparseInvokedResults =
+      new Array<AttemptHandoffFinalizationExplanationEntry>(1);
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady({
+        ...createExplanationSummary([createInvokedExplanationEntry()]),
+        invokedResults: sparseInvokedResults
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady({
+        ...createExplanationSummary([createInvokedExplanationEntry()]),
+        invokedResults: sparseInvokedResults
+      })
+    ).toThrow(
+      "Attempt handoff finalization report-ready requires summary.invokedResults to match the stable filtered invoked subgroup."
+    );
+  });
+
+  it("should fail loudly when explanation subgroups contain malformed entries", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady({
+        ...createExplanationSummary([createBlockedExplanationEntry()]),
+        blockedResults: [
+          {
+            explanationCode: "handoff_finalization_blocked_unsupported",
+            invoked: false,
+            blockingReasons: ["handoff_finalization_unsupported"]
+          } as never
+        ]
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady({
+        ...createExplanationSummary([createBlockedExplanationEntry()]),
+        blockedResults: [
+          {
+            explanationCode: "handoff_finalization_blocked_unsupported",
+            invoked: false,
+            blockingReasons: ["handoff_finalization_unsupported"]
+          } as never
+        ]
+      })
+    ).toThrow(
+      "Attempt handoff finalization report-ready requires summary.blockedResults to match the stable filtered blocked subgroup."
     );
   });
 
