@@ -493,3 +493,18 @@ export interface AttemptHandoffFinalizationGroupedProjectionSummary {
   blockedResultCount: number;
   groups: AttemptHandoffFinalizationGroupedProjectionGroup[];
 }
+
+export interface AttemptHandoffFinalizationGroupedReportingGroup {
+  groupKey: AttemptHandoffFinalizationExplanationCode;
+  resultCount: number;
+  invokedResultCount: number;
+  blockedResultCount: number;
+}
+
+export interface AttemptHandoffFinalizationGroupedReportingSummary {
+  groupedReportingBasis: "handoff_finalization_grouped_projection_summary";
+  resultCount: number;
+  invokedResultCount: number;
+  blockedResultCount: number;
+  groups: AttemptHandoffFinalizationGroupedReportingGroup[];
+}
