@@ -30,7 +30,7 @@ A normalized statement of how much write access, approval, and sandbox freedom t
 
 ## Project Guidance
 
-The shared repository instructions that agents should follow, with `AGENTS.md` as the canonical source.
+The shared repository instructions that agents should follow, with canonical committed truth starting from `SPEC.md`, then `README.md`, then `docs/index.md`, and `AGENTS.md` acting as the repository-specific execution rules and boundary companion.
 
 ## Runtime Manifest
 
