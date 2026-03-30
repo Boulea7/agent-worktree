@@ -116,7 +116,7 @@ Cleanup MAY remove a worktree or other transient artifacts, but it SHOULD preser
 The most common visible outcome is expected to be `status: "cleaned"` plus an updated timestamp.
 Phase 2 cleanup MUST NOT delete branches and MUST fail clearly when it cannot confirm a safe cleanup target.
 Cleanup SHOULD preserve thin provenance fields such as `sourceKind` and `parentAttemptId` when rewriting a manifest into a cleaned state.
-In the current implementation, cleanup also refuses to proceed while a durable `manifest.session` record is still present; callers should treat that as a blocking precondition rather than expecting cleanup to silently clear session metadata.
+In the current implementation, cleanup also refuses to proceed while a durable `manifest.session` record is still present, regardless of whether the stored attempt status is `running`; callers should treat session presence itself as the blocking precondition rather than expecting cleanup to silently clear session metadata.
 Any future internal close-preflight metadata MUST remain derived and non-manifest-backed in this phase; manifest rewrites for cleanup MUST NOT persist close blockers, closeability summaries, or other internal preflight-only hints as durable state.
 
 ## Minimal Status Vocabulary

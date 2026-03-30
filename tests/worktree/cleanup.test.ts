@@ -265,7 +265,9 @@ describe("cleanupAttempt", () => {
     ).rejects.toThrow(ValidationError);
   });
 
-  it("should reject cleanup when a running attempt still has a recorded session", async () => {
+  it(
+    "should reject cleanup when a running attempt manifest still records a session",
+    async () => {
     const { manifest, manifestRoot, worktreeRoot } = await createFixtureAttempt(
       "att_running",
       "Running cleanup"
@@ -290,7 +292,8 @@ describe("cleanupAttempt", () => {
         worktreeRoot
       })
     ).rejects.toThrow(ValidationError);
-  });
+    }
+  );
 
   it("should reject cleanup when the stored manifest attemptId does not match the selector", async () => {
     const { manifest, manifestRoot, worktreeRoot } = await createFixtureAttempt(
