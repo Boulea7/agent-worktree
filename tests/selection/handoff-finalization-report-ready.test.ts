@@ -324,6 +324,100 @@ describe("selection handoff-finalization-report-ready helpers", () => {
     );
   });
 
+  it("should fail loudly when explanation entries contain sparse blockingReasons arrays", () => {
+    const sparseBlockingReasons =
+      new Array<AttemptHandoffFinalizationConsumerBlockingReason>(1);
+    const blockedOutcome = createBlockedExplanationEntry().outcome;
+    const act = () =>
+      deriveAttemptHandoffFinalizationReportReady(
+        createExplanationSummary([
+          createBlockedExplanationEntry({
+            blockingReasons: sparseBlockingReasons,
+            outcome: blockedOutcome
+          })
+        ])
+      );
+
+    expect(act).toThrow(ValidationError);
+    expect(act).toThrow(
+      "Attempt handoff finalization report-ready requires entry.blockingReasons to use the existing handoff-finalization blocker vocabulary."
+    );
+  });
+
+  it("should fail loudly when explanation entries rely on inherited blockingReasons indexes", () => {
+    Array.prototype[0] = "handoff_finalization_unsupported";
+
+    try {
+      const inheritedBlockingReasons =
+        new Array<AttemptHandoffFinalizationConsumerBlockingReason>(1);
+      const blockedOutcome = createBlockedExplanationEntry().outcome;
+      const act = () =>
+        deriveAttemptHandoffFinalizationReportReady(
+          createExplanationSummary([
+            createBlockedExplanationEntry({
+              blockingReasons: inheritedBlockingReasons,
+              outcome: blockedOutcome
+            })
+          ])
+        );
+
+      expect(act).toThrow(ValidationError);
+      expect(act).toThrow(
+        "Attempt handoff finalization report-ready requires entry.blockingReasons to use the existing handoff-finalization blocker vocabulary."
+      );
+    } finally {
+      delete Array.prototype[0];
+    }
+  });
+
+  it("should fail loudly when explanation outcomes rely on inherited blockingReasons indexes", () => {
+    Array.prototype[0] = "handoff_finalization_unsupported";
+
+    try {
+      const inheritedBlockingReasons =
+        new Array<AttemptHandoffFinalizationConsumerBlockingReason>(1);
+      const act = () =>
+        deriveAttemptHandoffFinalizationReportReady(
+          createExplanationSummary([
+            createBlockedExplanationEntry({
+              outcome: {
+                ...createBlockedExplanationEntry().outcome,
+                blockingReasons: inheritedBlockingReasons
+              }
+            })
+          ])
+        );
+
+      expect(act).toThrow(ValidationError);
+      expect(act).toThrow(
+        "Attempt handoff finalization report-ready requires entry.outcome.blockingReasons to use the existing handoff-finalization blocker vocabulary."
+      );
+    } finally {
+      delete Array.prototype[0];
+    }
+  });
+
+  it("should fail loudly when explanation outcomes contain sparse blockingReasons arrays", () => {
+    const sparseBlockingReasons =
+      new Array<AttemptHandoffFinalizationConsumerBlockingReason>(1);
+    const act = () =>
+      deriveAttemptHandoffFinalizationReportReady(
+        createExplanationSummary([
+          createBlockedExplanationEntry({
+            outcome: {
+              ...createBlockedExplanationEntry().outcome,
+              blockingReasons: sparseBlockingReasons
+            }
+          })
+        ])
+      );
+
+    expect(act).toThrow(ValidationError);
+    expect(act).toThrow(
+      "Attempt handoff finalization report-ready requires entry.outcome.blockingReasons to use the existing handoff-finalization blocker vocabulary."
+    );
+  });
+
   it("should keep the flattened report-ready shape minimal without leaking nested explanation payloads", () => {
     const report = deriveAttemptHandoffFinalizationReportReady(
       createExplanationSummary([createInvokedExplanationEntry()])
