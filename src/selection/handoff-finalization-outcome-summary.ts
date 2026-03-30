@@ -181,16 +181,10 @@ function validateReadiness(
       `Attempt handoff finalization outcome summary requires ${fieldName}.blockingReasons to be an array.`
     );
   }
-
-  if (
-    readiness.blockingReasons.some(
-      (reason) => typeof reason !== "string" || !validBlockingReasons.has(reason)
-    )
-  ) {
-    throw new ValidationError(
-      `Attempt handoff finalization outcome summary requires ${fieldName}.blockingReasons to use the existing handoff-finalization blocker vocabulary.`
-    );
-  }
+  validateBlockingReasons(
+    readiness.blockingReasons,
+    `${fieldName}.blockingReasons`
+  );
 
   if (typeof readiness.canConsumeHandoffFinalization !== "boolean") {
     throw new ValidationError(
@@ -231,6 +225,27 @@ function validateReadiness(
     throw new ValidationError(
       `Attempt handoff finalization outcome summary requires ${fieldName}.handoffFinalizationSupported to match ${fieldName}.canConsumeHandoffFinalization.`
     );
+  }
+}
+
+function validateBlockingReasons(
+  blockingReasons: readonly unknown[],
+  fieldName: string
+): void {
+  for (let index = 0; index < blockingReasons.length; index += 1) {
+    if (
+      !hasOwnIndex(blockingReasons, index) ||
+      typeof blockingReasons[index] !== "string" ||
+      !validBlockingReasons.has(
+        blockingReasons[
+          index
+        ] as AttemptHandoffFinalizationConsumerBlockingReason
+      )
+    ) {
+      throw new ValidationError(
+        `Attempt handoff finalization outcome summary requires ${fieldName} to use the existing handoff-finalization blocker vocabulary.`
+      );
+    }
   }
 }
 

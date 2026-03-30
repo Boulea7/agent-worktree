@@ -223,18 +223,18 @@ function validateBlockingReasons(value: unknown, fieldName: string): void {
     );
   }
 
-  if (
-    value.some(
-      (reason) =>
-        typeof reason !== "string" ||
-        !validBlockingReasons.has(
-          reason as AttemptHandoffFinalizationConsumerBlockingReason
-        )
-    )
-  ) {
-    throw new ValidationError(
-      `Attempt handoff finalization explanation summary requires ${fieldName} to use the existing handoff-finalization blocker vocabulary.`
-    );
+  for (let index = 0; index < value.length; index += 1) {
+    if (
+      !hasOwnIndex(value, index) ||
+      typeof value[index] !== "string" ||
+      !validBlockingReasons.has(
+        value[index] as AttemptHandoffFinalizationConsumerBlockingReason
+      )
+    ) {
+      throw new ValidationError(
+        `Attempt handoff finalization explanation summary requires ${fieldName} to use the existing handoff-finalization blocker vocabulary.`
+      );
+    }
   }
 }
 

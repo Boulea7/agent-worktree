@@ -226,6 +226,54 @@ describe("selection handoff-finalization-explanation helpers", () => {
     );
   });
 
+  it("should fail loudly when summary.blockingReasons contains sparse array holes", () => {
+    const sparseBlockingReasons =
+      new Array<AttemptHandoffFinalizationConsumerBlockingReason>(1);
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary({
+        ...createOutcomeSummary([createBlockedOutcome()]),
+        blockingReasons: sparseBlockingReasons
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary({
+        ...createOutcomeSummary([createBlockedOutcome()]),
+        blockingReasons: sparseBlockingReasons
+      })
+    ).toThrow(
+      "Attempt handoff finalization explanation summary requires summary.blockingReasons to use the existing handoff-finalization blocker vocabulary."
+    );
+  });
+
+  it("should fail loudly when blocked outcomes rely on inherited blockingReasons indexes", () => {
+    const inheritedBlockingReasons = createInheritedIndexBlockingReasonArray(
+      0,
+      "handoff_finalization_unsupported"
+    );
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary(
+        createOutcomeSummary([
+          createBlockedOutcome({
+            blockingReasons: inheritedBlockingReasons
+          })
+        ])
+      )
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary(
+        createOutcomeSummary([
+          createBlockedOutcome({
+            blockingReasons: inheritedBlockingReasons
+          })
+        ])
+      )
+    ).toThrow(
+      "Attempt handoff finalization explanation summary requires outcome.blockingReasons to use the existing handoff-finalization blocker vocabulary."
+    );
+  });
+
   it("should fail loudly when summary.outcomes contains sparse array holes", () => {
     const outcomes = new Array<AttemptHandoffFinalizationOutcome>(1);
 
@@ -420,4 +468,22 @@ function createInheritedIndexOutcomeArray(
   Object.setPrototypeOf(outcomes, inheritedIndexPrototype);
 
   return outcomes;
+}
+
+function createInheritedIndexBlockingReasonArray(
+  index: number,
+  reason: AttemptHandoffFinalizationConsumerBlockingReason
+): AttemptHandoffFinalizationConsumerBlockingReason[] {
+  const blockingReasons =
+    new Array<AttemptHandoffFinalizationConsumerBlockingReason>(index + 1);
+  const inheritedIndexPrototype = Object.create(Array.prototype, {
+    [index]: {
+      value: reason,
+      configurable: true
+    }
+  });
+
+  Object.setPrototypeOf(blockingReasons, inheritedIndexPrototype);
+
+  return blockingReasons;
 }
