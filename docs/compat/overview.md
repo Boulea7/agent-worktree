@@ -116,6 +116,6 @@ Runtime lifecycle behavior, cross-runtime parity, and broader execution surfaces
 
 ## Canonical Shared Guidance
 
-For this repository, the canonical committed instruction source is `AGENTS.md`.
+For this repository, canonical committed truth starts with `SPEC.md`, then `README.md`, then `docs/index.md`. Use `AGENTS.md` as the repository-specific execution-rules and boundary companion rather than as a replacement for that committed doc set.
 
 Thin compatibility files such as `CLAUDE.md` and `GEMINI.md` exist to help specific tools without creating duplicated policy.
