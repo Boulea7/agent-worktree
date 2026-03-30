@@ -101,11 +101,14 @@ Most coding-agent workflows today live somewhere between:
 ## Canonical Documents
 
 - [SPEC.md](SPEC.md)
-- [AGENTS.md](AGENTS.md)
 - [docs/index.md](docs/index.md)
 - [ROADMAP.md](ROADMAP.md)
 - [docs/compat/tooling-matrix.md](docs/compat/tooling-matrix.md)
 - [docs/research/vision-synthesis.md](docs/research/vision-synthesis.md)
+
+Repository-specific agent guidance:
+
+- [AGENTS.md](AGENTS.md)
 
 ## Documentation Policy
 
