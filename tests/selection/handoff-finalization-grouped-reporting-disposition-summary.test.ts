@@ -4,6 +4,7 @@ import { ValidationError } from "../../src/core/errors.js";
 import * as selection from "../../src/selection/internal.js";
 import type {
   AttemptHandoffFinalizationExplanationCode,
+  AttemptHandoffFinalizationGroupedReportingGroup,
   AttemptHandoffFinalizationGroupedReportingSummary
 } from "../../src/selection/types.js";
 
@@ -188,6 +189,30 @@ describe(
       expect(act).toThrow(
         "Attempt handoff finalization grouped reporting disposition summary requires summary.groups to keep a single canonical group per explanation code."
       );
+    });
+
+    it("should fail loudly when grouped reporting groups rely on inherited array indexes", () => {
+      Array.prototype[0] = createBlockedReportingGroup();
+
+      try {
+        const sparseGroups =
+          new Array<AttemptHandoffFinalizationGroupedReportingGroup>(1);
+        const act = () =>
+          deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary({
+            groupedReportingBasis: "handoff_finalization_grouped_projection_summary",
+            resultCount: 0,
+            invokedResultCount: 0,
+            blockedResultCount: 0,
+            groups: sparseGroups
+          });
+
+        expect(act).toThrow(ValidationError);
+        expect(act).toThrow(
+          "Attempt handoff finalization grouped reporting disposition summary requires summary.groups entries to be objects."
+        );
+      } finally {
+        delete Array.prototype[0];
+      }
     });
 
     it("should fail loudly when a grouped reporting group count split stops adding up to the group total", () => {

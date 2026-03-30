@@ -5,6 +5,7 @@ import * as selection from "../../src/selection/internal.js";
 import type {
   AttemptHandoffFinalizationConsumerBlockingReason,
   AttemptHandoffFinalizationExplanationCode,
+  AttemptHandoffFinalizationGroupedProjectionGroup,
   AttemptHandoffFinalizationGroupedProjectionSummary,
   AttemptHandoffFinalizationReportReadyEntry
 } from "../../src/selection/types.js";
@@ -149,6 +150,63 @@ describe("selection handoff-finalization-grouped-reporting-summary helpers", () 
     );
   });
 
+  it("should fail loudly when grouped projection groups rely on inherited array indexes", () => {
+    Array.prototype[0] = createBlockedProjectionGroup();
+
+    try {
+      const sparseGroups =
+        new Array<AttemptHandoffFinalizationGroupedProjectionGroup>(1);
+      const act = () =>
+        deriveAttemptHandoffFinalizationGroupedReportingSummary({
+          groupedProjectionBasis: "handoff_finalization_report_ready",
+          resultCount: 0,
+          invokedResultCount: 0,
+          blockedResultCount: 0,
+          groups: sparseGroups
+        });
+
+      expect(act).toThrow(ValidationError);
+      expect(act).toThrow(
+        "Attempt handoff finalization grouped reporting summary requires summary.groups entries to be objects."
+      );
+    } finally {
+      delete Array.prototype[0];
+    }
+  });
+
+  it("should still accept own grouped projection entries that shadow inherited array indexes", () => {
+    Array.prototype[0] = createBlockedProjectionGroup({
+      results: [createBlockedReportReadyEntry({ attemptId: "att_inherited" })]
+    });
+
+    try {
+      const summary = deriveAttemptHandoffFinalizationGroupedReportingSummary(
+        createGroupedProjectionSummary([
+          createInvokedProjectionGroup({
+            results: [createInvokedReportReadyEntry({ attemptId: "att_own" })]
+          })
+        ])
+      );
+
+      expect(summary).toEqual({
+        groupedReportingBasis: "handoff_finalization_grouped_projection_summary",
+        resultCount: 1,
+        invokedResultCount: 1,
+        blockedResultCount: 0,
+        groups: [
+          {
+            groupKey: "handoff_finalization_invoked",
+            resultCount: 1,
+            invokedResultCount: 1,
+            blockedResultCount: 0
+          }
+        ]
+      });
+    } finally {
+      delete Array.prototype[0];
+    }
+  });
+
   it("should fail loudly when a grouped projection group count drifts from the canonical result length", () => {
     const act = () =>
       deriveAttemptHandoffFinalizationGroupedReportingSummary(
@@ -165,6 +223,32 @@ describe("selection handoff-finalization-grouped-reporting-summary helpers", () 
     expect(act).toThrow(
       "Attempt handoff finalization grouped reporting summary requires each group resultCount to match group.results.length."
     );
+  });
+
+  it("should fail loudly when group results rely on inherited array indexes", () => {
+    Array.prototype[0] = createBlockedReportReadyEntry();
+
+    try {
+      const sparseResults =
+        new Array<AttemptHandoffFinalizationReportReadyEntry>(1);
+      const act = () =>
+        deriveAttemptHandoffFinalizationGroupedReportingSummary(
+          createGroupedProjectionSummary([
+            createBlockedProjectionGroup({
+              resultCount: 1,
+              blockedResultCount: 1,
+              results: sparseResults
+            })
+          ])
+        );
+
+      expect(act).toThrow(ValidationError);
+      expect(act).toThrow(
+        "Attempt handoff finalization grouped reporting summary requires group.results entries to be objects."
+      );
+    } finally {
+      delete Array.prototype[0];
+    }
   });
 
   it("should fail loudly when a group key drifts from the grouped entry explanation code", () => {

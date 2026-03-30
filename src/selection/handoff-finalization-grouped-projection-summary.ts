@@ -198,7 +198,7 @@ function validateReportReadyEntryArray(
   const validatedEntries: AttemptHandoffFinalizationReportReadyEntry[] = [];
 
   for (let index = 0; index < entries.length; index += 1) {
-    if (!(index in entries) || !isRecord(entries[index])) {
+    if (!hasOwnIndex(entries, index) || !isRecord(entries[index])) {
       throw new ValidationError(
         `Attempt handoff finalization grouped projection summary requires ${fieldName} entries to be objects.`
       );
@@ -238,7 +238,12 @@ function reportReadyEntryArraysEqual(
   }
 
   for (let index = 0; index < left.length; index += 1) {
-    if (!(index in left) || !isRecord(left[index])) {
+    if (
+      !hasOwnIndex(left, index) ||
+      !hasOwnIndex(right, index) ||
+      !isRecord(left[index]) ||
+      !isRecord(right[index])
+    ) {
       return false;
     }
 
@@ -256,6 +261,10 @@ function reportReadyEntryArraysEqual(
   }
 
   return true;
+}
+
+function hasOwnIndex(values: readonly unknown[], index: number): boolean {
+  return Object.prototype.hasOwnProperty.call(values, index);
 }
 
 function reportReadyEntryEqual(

@@ -198,6 +198,29 @@ describe("selection handoff-finalization-grouped-projection-summary helpers", ()
     );
   });
 
+  it("should fail loudly when report-ready results rely on inherited array indexes", () => {
+    Array.prototype[0] = createBlockedReportReadyEntry();
+
+    try {
+      const sparseResults =
+        new Array<AttemptHandoffFinalizationReportReadyEntry>(1);
+      const act = () =>
+        deriveAttemptHandoffFinalizationGroupedProjectionSummary({
+          reportBasis: "handoff_finalization_explanation_summary",
+          results: sparseResults,
+          invokedResults: [],
+          blockedResults: []
+        });
+
+      expect(act).toThrow(ValidationError);
+      expect(act).toThrow(
+        "Attempt handoff finalization grouped projection summary requires summary.results entries to be objects."
+      );
+    } finally {
+      delete Array.prototype[0];
+    }
+  });
+
   it("should fail loudly when report-ready subgroups drift from the canonical filtered groups", () => {
     expect(() =>
       deriveAttemptHandoffFinalizationGroupedProjectionSummary({
@@ -241,6 +264,27 @@ describe("selection handoff-finalization-grouped-projection-summary helpers", ()
     expect(act).toThrow(
       "Attempt handoff finalization grouped projection summary requires summary.blockedResults to match the stable filtered blocked subgroup."
     );
+  });
+
+  it("should fail loudly when blocked subgroup arrays rely on inherited array indexes", () => {
+    Array.prototype[0] = createBlockedReportReadyEntry();
+
+    try {
+      const sparseBlockedResults =
+        new Array<AttemptHandoffFinalizationReportReadyEntry>(1);
+      const act = () =>
+        deriveAttemptHandoffFinalizationGroupedProjectionSummary({
+          ...createReportReadySummary([createBlockedReportReadyEntry()]),
+          blockedResults: sparseBlockedResults
+        });
+
+      expect(act).toThrow(ValidationError);
+      expect(act).toThrow(
+        "Attempt handoff finalization grouped projection summary requires summary.blockedResults to match the stable filtered blocked subgroup."
+      );
+    } finally {
+      delete Array.prototype[0];
+    }
   });
 
   it("should fail loudly when blocked subgroup arrays contain invalid entries", () => {
