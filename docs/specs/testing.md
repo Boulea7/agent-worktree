@@ -162,7 +162,7 @@ Must test:
 
 ## Internal Capability Buckets
 
-The remaining internal-only sections describe coverage by capability bucket rather than by fixed helper names or module topology. Tests in this part of the repo should continue to prove boundaries, failure modes, and deterministic derivation without turning internal helper chains into documentation contracts.
+The remaining internal-only sections group coverage by capability bucket, even when a bucket still uses a few short helper-oriented section labels for readability. Tests in this part of the repo should continue to prove boundaries, failure modes, and deterministic derivation without turning internal helper chains into documentation contracts.
 
 Current buckets to preserve are:
 
@@ -181,6 +181,11 @@ Representative expectations across those buckets:
 - delegated or headless bridges preserve explicit input order, fail fast on the first injected error, and avoid widening into public execution or lifecycle surfaces
 - wait and close paths preserve the same bounded behavior: blocked entries stay blocked, supported entries invoke only the injected request, and no helper becomes lifecycle truth
 - every internal bucket continues to prove that public CLI payloads, runtime manifests, and durable state stay unchanged unless a separate spec promotes that surface
+
+## Internal Spawn Request
+
+Must test:
+
 - helper immutability for the supplied spawn-candidate input
 - explicit confirmation that spawn-request output does not seed child attempt lineage, child worktree or branch planning, child runtime mode, or prompt/task payloads
 - explicit confirmation that internal spawn-request helpers do not decide child attempt identifiers, child branches, child worktrees, child runtime mode, child prompts, delegated-runtime approvals, or other actual spawn semantics
