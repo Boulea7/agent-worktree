@@ -98,11 +98,7 @@ function validateSummaryConsistency(
     );
   }
 
-  if (summary.targets.some((target) => !isRecord(target))) {
-    throw new ValidationError(
-      "Attempt handoff finalization request summary requires summary.targets entries to be objects."
-    );
-  }
+  validateTargets(summary.targets);
 
   if (summary.canFinalizeHandoff && summary.targets.length === 0) {
     throw new ValidationError(
@@ -186,16 +182,30 @@ function validateBlockingReasons(value: unknown): void {
     );
   }
 
-  if (
-    value.some(
-      (reason) =>
-        typeof reason !== "string" ||
-        !validBlockingReasons.has(reason as AttemptHandoffDecisionBlockingReason)
-    )
-  ) {
-    throw new ValidationError(
-      "Attempt handoff finalization request summary requires summary.blockingReasons to use the existing handoff decision blocker vocabulary."
-    );
+  for (let index = 0; index < value.length; index += 1) {
+    if (
+      !hasOwnIndex(value, index) ||
+      typeof value[index] !== "string" ||
+      !validBlockingReasons.has(
+        value[index] as AttemptHandoffDecisionBlockingReason
+      )
+    ) {
+      throw new ValidationError(
+        "Attempt handoff finalization request summary requires summary.blockingReasons to use the existing handoff decision blocker vocabulary."
+      );
+    }
+  }
+}
+
+function validateTargets(
+  value: readonly unknown[]
+): asserts value is AttemptHandoffFinalizationTargetSummary["targets"] {
+  for (let index = 0; index < value.length; index += 1) {
+    if (!hasOwnIndex(value, index) || !isRecord(value[index])) {
+      throw new ValidationError(
+        "Attempt handoff finalization request summary requires summary.targets entries to be objects."
+      );
+    }
   }
 }
 
@@ -207,6 +217,10 @@ function blockingReasonArraysEqual(
     left.length === right.length &&
     left.every((value, index) => value === right[index])
   );
+}
+
+function hasOwnIndex(values: readonly unknown[], index: number): boolean {
+  return Object.prototype.hasOwnProperty.call(values, index);
 }
 
 function validateNonEmptyString(value: unknown, fieldName: string): void {

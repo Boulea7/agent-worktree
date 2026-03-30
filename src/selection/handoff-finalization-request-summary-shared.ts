@@ -61,6 +61,8 @@ export function validateAttemptHandoffFinalizationRequestSummaryForApply(
     );
   }
 
+  validateRequests(summary.requests);
+
   if (summary.canFinalizeHandoff && summary.requests.length === 0) {
     throw new ValidationError(
       "Attempt handoff finalization request apply requires summary.requests to be non-empty when summary.canFinalizeHandoff is true."
@@ -130,18 +132,28 @@ function validateBlockingReasons(value: unknown): void {
     );
   }
 
-  if (
-    value.some(
-      (reason) =>
-        typeof reason !== "string" ||
-        !validAttemptHandoffDecisionBlockingReasons.has(
-          reason as AttemptHandoffDecisionBlockingReason
-        )
-    )
-  ) {
-    throw new ValidationError(
-      "Attempt handoff finalization request apply requires summary.blockingReasons to use the existing handoff decision blocker vocabulary."
-    );
+  for (let index = 0; index < value.length; index += 1) {
+    if (
+      !hasOwnIndex(value, index) ||
+      typeof value[index] !== "string" ||
+      !validAttemptHandoffDecisionBlockingReasons.has(
+        value[index] as AttemptHandoffDecisionBlockingReason
+      )
+    ) {
+      throw new ValidationError(
+        "Attempt handoff finalization request apply requires summary.blockingReasons to use the existing handoff decision blocker vocabulary."
+      );
+    }
+  }
+}
+
+function validateRequests(value: readonly unknown[]): void {
+  for (let index = 0; index < value.length; index += 1) {
+    if (!hasOwnIndex(value, index) || !isRecord(value[index])) {
+      throw new ValidationError(
+        "Attempt handoff finalization request apply requires summary.requests entries to be objects."
+      );
+    }
   }
 }
 
@@ -157,4 +169,8 @@ function blockingReasonArraysEqual(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasOwnIndex(values: readonly unknown[], index: number): boolean {
+  return Object.prototype.hasOwnProperty.call(values, index);
 }

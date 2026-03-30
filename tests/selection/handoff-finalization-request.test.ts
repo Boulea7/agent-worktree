@@ -167,6 +167,161 @@ describe("selection handoff-finalization-request helpers", () => {
     );
   });
 
+  it("should fail loudly when summary.targets contains sparse array holes", () => {
+    const targets = new Array<
+      ReturnType<typeof createFinalizationTargetSummary>["targets"][number]
+    >(1);
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationRequestSummary({
+        ...createFinalizationTargetSummary([
+          {
+            taskId: "task_shared",
+            attemptId: "att_ready",
+            runtime: "codex-cli",
+            status: "created",
+            sourceKind: undefined
+          }
+        ]),
+        targets,
+        resultCount: 1,
+        invokedResultCount: 1,
+        blockedResultCount: 0,
+        blockingReasons: []
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationRequestSummary({
+        ...createFinalizationTargetSummary([
+          {
+            taskId: "task_shared",
+            attemptId: "att_ready",
+            runtime: "codex-cli",
+            status: "created",
+            sourceKind: undefined
+          }
+        ]),
+        targets,
+        resultCount: 1,
+        invokedResultCount: 1,
+        blockedResultCount: 0,
+        blockingReasons: []
+      })
+    ).toThrow(
+      "Attempt handoff finalization request summary requires summary.targets entries to be objects."
+    );
+  });
+
+  it("should fail loudly when summary.targets relies on inherited array indexes", () => {
+    const targets = new Array<
+      ReturnType<typeof createFinalizationTargetSummary>["targets"][number]
+    >(1);
+    const inheritedTarget = {
+      taskId: "task_inherited",
+      attemptId: "att_inherited",
+      runtime: "codex-cli",
+      status: "created" as const,
+      sourceKind: undefined
+    };
+
+    Object.setPrototypeOf(targets, {
+      0: inheritedTarget
+    });
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationRequestSummary({
+        ...createFinalizationTargetSummary([
+          {
+            taskId: "task_shared",
+            attemptId: "att_ready",
+            runtime: "codex-cli",
+            status: "created",
+            sourceKind: undefined
+          }
+        ]),
+        targets,
+        resultCount: 1,
+        invokedResultCount: 1,
+        blockedResultCount: 0,
+        blockingReasons: []
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationRequestSummary({
+        ...createFinalizationTargetSummary([
+          {
+            taskId: "task_shared",
+            attemptId: "att_ready",
+            runtime: "codex-cli",
+            status: "created",
+            sourceKind: undefined
+          }
+        ]),
+        targets,
+        resultCount: 1,
+        invokedResultCount: 1,
+        blockedResultCount: 0,
+        blockingReasons: []
+      })
+    ).toThrow(
+      "Attempt handoff finalization request summary requires summary.targets entries to be objects."
+    );
+  });
+
+  it("should fail loudly when summary.blockingReasons contains sparse array holes", () => {
+    const blockingReasons = new Array<string>(1);
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationRequestSummary({
+        ...createFinalizationTargetSummary([]),
+        resultCount: 0,
+        invokedResultCount: 0,
+        blockedResultCount: 0,
+        blockingReasons
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationRequestSummary({
+        ...createFinalizationTargetSummary([]),
+        resultCount: 0,
+        invokedResultCount: 0,
+        blockedResultCount: 0,
+        blockingReasons
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization request summary requires summary.blockingReasons to use the existing handoff decision blocker vocabulary."
+    );
+  });
+
+  it("should fail loudly when summary.blockingReasons relies on inherited array indexes", () => {
+    const blockingReasons = new Array<string>(1);
+
+    Object.setPrototypeOf(blockingReasons, {
+      0: "no_results"
+    });
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationRequestSummary({
+        ...createFinalizationTargetSummary([]),
+        resultCount: 0,
+        invokedResultCount: 0,
+        blockedResultCount: 0,
+        blockingReasons
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationRequestSummary({
+        ...createFinalizationTargetSummary([]),
+        resultCount: 0,
+        invokedResultCount: 0,
+        blockedResultCount: 0,
+        blockingReasons
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization request summary requires summary.blockingReasons to use the existing handoff decision blocker vocabulary."
+    );
+  });
+
   it("should fail loudly when target.taskId is undefined", () => {
     expect(() =>
       deriveAttemptHandoffFinalizationRequestSummary(
