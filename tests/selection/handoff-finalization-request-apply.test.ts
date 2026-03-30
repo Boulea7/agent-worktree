@@ -207,7 +207,7 @@ describe("selection handoff-finalization-request-apply helpers", () => {
     expect(invokedAttemptIds).toEqual(["att_supported_1", "att_supported_2"]);
   });
 
-  it("should surface invalid request summary failures without wrapping them", async () => {
+  it("should fail loudly when summary.requests contains explicit undefined entries", async () => {
     const summary = {
       ...createRequestSummary(),
       requests: [undefined]
@@ -225,8 +225,138 @@ describe("selection handoff-finalization-request-apply helpers", () => {
         invokeHandoffFinalization: async () => undefined
       })
     ).rejects.toThrow(
-      "Attempt handoff finalization apply batch requires each request to produce an apply result."
+      "Attempt handoff finalization request apply requires summary.requests entries to be objects."
     );
+  });
+
+  it("should fail loudly when summary.requests contains sparse array holes", async () => {
+    const requests = new Array<ReturnType<typeof createRequest>>(1);
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      applyAttemptHandoffFinalizationRequestSummary({
+        summary: createRequestSummary({
+          requests
+        }) as never,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyAttemptHandoffFinalizationRequestSummary({
+        summary: createRequestSummary({
+          requests
+        }) as never,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization request apply requires summary.requests entries to be objects."
+    );
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
+  it("should fail loudly when summary.requests relies on inherited array indexes", async () => {
+    const requests = new Array<ReturnType<typeof createRequest>>(1);
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    Object.setPrototypeOf(requests, {
+      0: createRequest({
+        attemptId: "att_inherited"
+      })
+    });
+
+    await expect(
+      applyAttemptHandoffFinalizationRequestSummary({
+        summary: createRequestSummary({
+          requests
+        }) as never,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyAttemptHandoffFinalizationRequestSummary({
+        summary: createRequestSummary({
+          requests
+        }) as never,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization request apply requires summary.requests entries to be objects."
+    );
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
+  it("should fail loudly when summary.blockingReasons contains sparse array holes", async () => {
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+    const blockingReasons = new Array<string>(1);
+
+    await expect(
+      applyAttemptHandoffFinalizationRequestSummary({
+        summary: createRequestSummary({
+          resultCount: 0,
+          invokedResultCount: 0,
+          blockedResultCount: 0,
+          canFinalizeHandoff: false,
+          requests: [],
+          blockingReasons
+        }) as never,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyAttemptHandoffFinalizationRequestSummary({
+        summary: createRequestSummary({
+          resultCount: 0,
+          invokedResultCount: 0,
+          blockedResultCount: 0,
+          canFinalizeHandoff: false,
+          requests: [],
+          blockingReasons
+        }) as never,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization request apply requires summary.blockingReasons to use the existing handoff decision blocker vocabulary."
+    );
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
+  it("should fail loudly when summary.blockingReasons relies on inherited array indexes", async () => {
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+    const blockingReasons = new Array<string>(1);
+
+    Object.setPrototypeOf(blockingReasons, {
+      0: "no_results"
+    });
+
+    await expect(
+      applyAttemptHandoffFinalizationRequestSummary({
+        summary: createRequestSummary({
+          resultCount: 0,
+          invokedResultCount: 0,
+          blockedResultCount: 0,
+          canFinalizeHandoff: false,
+          requests: [],
+          blockingReasons
+        }) as never,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyAttemptHandoffFinalizationRequestSummary({
+        summary: createRequestSummary({
+          resultCount: 0,
+          invokedResultCount: 0,
+          blockedResultCount: 0,
+          canFinalizeHandoff: false,
+          requests: [],
+          blockingReasons
+        }) as never,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization request apply requires summary.blockingReasons to use the existing handoff decision blocker vocabulary."
+    );
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
   });
 });
 
