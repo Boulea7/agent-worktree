@@ -117,7 +117,7 @@ function validateGroups(
   const seenGroupKeys = new Set<AttemptHandoffFinalizationExplanationCode>();
 
   for (let index = 0; index < groups.length; index += 1) {
-    if (!(index in groups) || !isRecord(groups[index])) {
+    if (!hasOwnIndex(groups, index) || !isRecord(groups[index])) {
       throw new ValidationError(
         "Attempt handoff finalization grouped reporting summary requires summary.groups entries to be objects."
       );
@@ -195,7 +195,7 @@ function validateGroupResults(
   const validatedResults: AttemptHandoffFinalizationReportReadyEntry[] = [];
 
   for (let index = 0; index < results.length; index += 1) {
-    if (!(index in results) || !isRecord(results[index])) {
+    if (!hasOwnIndex(results, index) || !isRecord(results[index])) {
       throw new ValidationError(
         "Attempt handoff finalization grouped reporting summary requires group.results entries to be objects."
       );
@@ -360,6 +360,10 @@ function normalizeRequiredString(value: unknown, fieldName: string): string {
   }
 
   return normalized;
+}
+
+function hasOwnIndex(values: readonly unknown[], index: number): boolean {
+  return Object.prototype.hasOwnProperty.call(values, index);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
