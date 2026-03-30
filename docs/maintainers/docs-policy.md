@@ -6,6 +6,8 @@ Keep the repository coherent while it is still evolving quickly.
 
 ## Rules
 
+- The committed documentation spine starts with `SPEC.md`, then `README.md`, then `docs/index.md`.
+- Use `AGENTS.md` as the repository-specific execution rules and boundary companion, not as a replacement for the committed doc set.
 - Update canonical docs instead of creating duplicate guidance.
 - Any public contract change requires a doc update.
 - If behavior changes but docs do not, explain why.
@@ -14,9 +16,11 @@ Keep the repository coherent while it is still evolving quickly.
 
 ## Canonical Document Classes
 
+- public spec entry: `SPEC.md`
 - product entry: `README.md`
-- shared instructions: `AGENTS.md`
-- public contract: `SPEC.md` and `docs/specs/*`
+- documentation index: `docs/index.md`
+- execution rules and boundary companion: `AGENTS.md`
+- public contract detail: `docs/specs/*`
 - compatibility truth: `docs/compat/*`
 - research synthesis: `docs/research/*`
 - maintainer process: `docs/maintainers/*`

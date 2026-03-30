@@ -24,10 +24,14 @@ Use a lightweight three-lane model:
 
 ## Ownership
 
+For committed documentation order and review order, start with `SPEC.md`, then `README.md`, then `docs/index.md`.
+Use `AGENTS.md` as the repository-specific execution rules and boundary companion, not as a replacement for the committed spec/doc set.
+
 During the initial phase, core governance files should be reviewed carefully:
 
-- `README.md`
 - `SPEC.md`
+- `README.md`
+- `docs/index.md`
 - `AGENTS.md`
 - `docs/specs/*`
 - `docs/compat/*`
