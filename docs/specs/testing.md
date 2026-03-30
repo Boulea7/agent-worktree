@@ -44,10 +44,7 @@ Contract tests should validate:
 - default list visibility for cleaned attempts
 - additive provenance fields survive machine-readable create/list/cleanup flows
 - machine-readable `doctor` payloads report `adapterStatus` and `detected` without leaking internal runtime metadata
-- machine-readable CLI payloads do not leak internal spawn-requested or spawn-recorded marker metadata
-- machine-readable CLI payloads do not leak internal `spawnConsume` or `spawnConsumeBatch` metadata
-- machine-readable CLI payloads do not leak internal `spawnHeadlessWaitCandidate` or `spawnHeadlessWaitCandidateBatch` metadata
-- machine-readable CLI payloads do not leak internal wait-consume or wait-consume-batch metadata
+- machine-readable CLI payloads do not leak internal verification/selection/promotion/handoff metadata, execution-derived state, runtime-context/lifecycle-disposition metadata, delegated-child metadata, delegated/headless bridge metadata, or wait/close metadata
 - invalid manifests fail the command in machine-readable output
 - missing `manifest.json` files in attempt directories fail the command in machine-readable output
 - cleanup returns structured outcomes
@@ -162,6 +159,18 @@ Must test:
 - guardrail validation for additive internal limits such as depth or child count
 - parent/child indexing without parent-existence validation or delegated-runtime inference
 - explicit confirmation that internal control-plane helpers do not widen the public CLI or manifest persistence contract
+
+## Internal Capability Buckets
+
+The remaining internal-only sections describe current coverage areas by capability bucket. Any helper names or module topology referenced below are implementation-detail examples rather than durable contract terms.
+
+Current buckets to preserve are:
+
+- execution-derived state and read models
+- runtime context and lifecycle disposition
+- delegated-child/spawn-oriented preflight and composition
+- delegated/headless execution bridges
+- wait- and close-oriented preflight or consume paths
 
 ## Internal Runtime State
 
@@ -914,18 +923,13 @@ The current public baseline satisfies this Phase 4 test slice through `doctor`, 
 ### Phase 5: Internal-Only Verification and Selection
 
 - internal-only verification aggregation tests
-- internal-only selection logic tests
-- internal-only promotion, handoff, and handoff-finalization composition tests
-- internal-only handoff-finalization outcome-summary tests for invoked-vs-blocked aggregation and minimal shape preservation
-- internal-only handoff-finalization explanation-summary tests for code-only invoked-vs-blocked explanation derivation and subgroup stability
-- internal-only handoff-finalization report-ready projection tests for flattened report-facing grouping and minimal shape preservation
-- internal-only handoff-finalization grouped projection summary tests for explanation-code grouping, stable counts, and minimal grouped shape preservation
-- internal-only handoff-finalization grouped reporting summary tests for stable explanation-code grouped count rollups and minimal grouped shape preservation
-- internal-only handoff-finalization grouped reporting disposition summary tests for stable disposition derivation and minimal shape preservation
-- internal-only barrel-boundary assertions for `src/selection/internal.ts` plus negative-export assertions for `src/selection/index.ts` and other intentionally narrow default barrels
-- failure-mode tests for request validation, readiness validation, and fail-fast batch composition across the Phase 5 helper chain
+- internal-only selection, promotion, handoff, and handoff-finalization composition tests
+- internal-only grouped finalization reporting tests for stable explanation-code grouping, count rollups, and disposition derivation
+- internal-only barrel-boundary assertions for intentionally narrow default entry points
+- failure-mode tests for request validation, readiness validation, and fail-fast batch composition across the current internal-only capability buckets
 
 ## Definition Of Done For Future Coding Tasks
+
 
 A future implementation task should not be considered complete unless:
 

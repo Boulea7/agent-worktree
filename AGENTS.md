@@ -13,6 +13,7 @@ This file is the canonical, committed instruction source for repository-aware co
 ## Current Phase
 
 This repository is in an early implementation phase.
+The current public baseline is the thin Phase 4 compatibility baseline, built on the existing Phase 2 worktree lifecycle and bounded Phase 3 `codex-cli` execution foundations, while current internal continuation work remains a thin Phase 5 chain.
 This repository now has a usable Git `HEAD` baseline, so maintainer workflows should prefer non-destructive worktree isolation and commit-backed checkpoints for each completed thin slice.
 
 Agents working in this repository should prioritize:
@@ -256,13 +257,15 @@ When working in this repository, prefer these files in order:
 5. `docs/compat/*`
 6. `docs/research/*`
 
+Committed docs are the canonical repository policy and contract source. Local-only `*.local.md` files may provide ephemeral operational context, but they must not override committed docs.
+
 ## Local-Only Handoff Notes
 
-A visible local handoff file may exist at `PROJECT_STATUS.local.md`.
+Visible local handoff files may exist at `PROJECT_STATUS.local.md` and `CODING_PHASE_PROMPT.local.md`.
 
 - It is intentionally ignored by Git.
 - It may contain current progress, next steps, and local research pointers.
-- Treat it as operational context, not public policy.
+- Treat it as operational context, not public policy or canonical repository truth.
 
 ## Repository Rules
 
@@ -289,11 +292,11 @@ Experimental:
 
 The current implementation boundary should stay narrow:
 
-- prioritize `Phase 1: Core Scaffold` and thin, testable `Phase 2` slices
+- preserve the existing `Phase 1: Core Scaffold` and `Phase 2: Worktree Lifecycle` foundations while prioritizing Phase 4 baseline accuracy and thin internal Phase 5 continuation
 - keep machine-readable output and runtime manifests clearer than human-readable text
-- avoid introducing runtime adapters, verification ranking, or speculative orchestration features before their contracts are justified
+- avoid widening public adapter, execution, verification-ranking, report, or lifecycle surfaces unless a spec or RFC explicitly justifies that promotion
 - keep internal architecture flexible unless a spec explicitly defines a public contract
-- keep adapter work thin and contract-first even when a later Phase 3 sub-slice introduces a bounded internal `codex-cli` execution contract
+- keep adapter work thin and contract-first even with the existing bounded internal `codex-cli` execution contract
 
 ## Future Work Tracking
 

@@ -1,9 +1,11 @@
 # Documentation Index
 
+For committed repository truth, start with `SPEC.md`, then `README.md`, then this index. Use `AGENTS.md` as the repository-specific execution-rules and boundary companion rather than as a replacement for the committed spec/doc set.
+
 ## Start Here
 
-- [README.md](../README.md)
 - [SPEC.md](../SPEC.md)
+- [README.md](../README.md)
 - [AGENTS.md](../AGENTS.md)
 - [ROADMAP.md](../ROADMAP.md)
 
