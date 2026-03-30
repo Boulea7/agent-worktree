@@ -38,7 +38,8 @@ export function deriveAttemptHandoffFinalizationOutcomeSummary(
     );
   }
 
-  const outcomes = batch.results.map(deriveOutcome);
+  const results = validateApplyResultArray(batch.results, "batch.results");
+  const outcomes = results.map(deriveOutcome);
   const blockingReasons = collectBlockingReasons(outcomes);
   const invokedResultCount = outcomes.filter((outcome) => outcome.invoked).length;
   const blockedResultCount = outcomes.length - invokedResultCount;
@@ -51,6 +52,25 @@ export function deriveAttemptHandoffFinalizationOutcomeSummary(
     blockingReasons,
     outcomes
   };
+}
+
+function validateApplyResultArray(
+  results: readonly AttemptHandoffFinalizationApply[],
+  fieldName: string
+): AttemptHandoffFinalizationApply[] {
+  const validatedResults: AttemptHandoffFinalizationApply[] = [];
+
+  for (let index = 0; index < results.length; index += 1) {
+    if (!hasOwnIndex(results, index)) {
+      throw new ValidationError(
+        `Attempt handoff finalization outcome summary requires ${fieldName}[${index}] to expose consumer and consume objects.`
+      );
+    }
+
+    validatedResults.push(results[index]!);
+  }
+
+  return validatedResults;
 }
 
 function deriveOutcome(
@@ -236,6 +256,10 @@ function stringArraysEqual(
     left.length === right.length &&
     left.every((value, index) => value === right[index])
   );
+}
+
+function hasOwnIndex(values: readonly unknown[], index: number): boolean {
+  return Object.prototype.hasOwnProperty.call(values, index);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

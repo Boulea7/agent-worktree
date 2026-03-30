@@ -29,6 +29,58 @@ describe("selection handoff-finalization-outcome-summary helpers", () => {
     });
   });
 
+  it("should fail loudly when batch.results contains sparse array holes", () => {
+    const sparseResults = new Array<AttemptHandoffFinalizationApply>(1);
+
+    expect(() =>
+      selection.deriveAttemptHandoffFinalizationOutcomeSummary({
+        results: sparseResults
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      selection.deriveAttemptHandoffFinalizationOutcomeSummary({
+        results: sparseResults
+      })
+    ).toThrow(
+      "Attempt handoff finalization outcome summary requires batch.results[0] to expose consumer and consume objects."
+    );
+  });
+
+  it("should fail loudly when batch.results relies on inherited array indexes", () => {
+    const inheritedResults = createInheritedIndexApplyArray(
+      0,
+      createApplyResult({
+        request: {
+          taskId: "task_shared",
+          attemptId: "att_inherited",
+          runtime: "codex-cli",
+          status: "created",
+          sourceKind: undefined
+        },
+        readiness: {
+          blockingReasons: [],
+          canConsumeHandoffFinalization: true,
+          hasBlockingReasons: false,
+          handoffFinalizationSupported: true
+        },
+        invoked: true
+      })
+    );
+
+    expect(() =>
+      selection.deriveAttemptHandoffFinalizationOutcomeSummary({
+        results: inheritedResults
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      selection.deriveAttemptHandoffFinalizationOutcomeSummary({
+        results: inheritedResults
+      })
+    ).toThrow(
+      "Attempt handoff finalization outcome summary requires batch.results[0] to expose consumer and consume objects."
+    );
+  });
+
   it("should derive minimal ordered outcomes plus canonical counts from a mixed apply batch", () => {
     const summary = selection.deriveAttemptHandoffFinalizationOutcomeSummary({
       results: [
@@ -416,4 +468,21 @@ function createApplyResult(input: {
       invoked: input.invoked
     }
   };
+}
+
+function createInheritedIndexApplyArray(
+  index: number,
+  value: AttemptHandoffFinalizationApply
+): AttemptHandoffFinalizationApply[] {
+  const inheritedIndexPrototype = Object.create(Array.prototype, {
+    [index]: {
+      value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    }
+  });
+  const results = new Array<AttemptHandoffFinalizationApply>(index + 1);
+  Object.setPrototypeOf(results, inheritedIndexPrototype);
+  return results;
 }
