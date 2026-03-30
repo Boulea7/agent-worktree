@@ -162,102 +162,30 @@ Must test:
 
 ## Internal Capability Buckets
 
-The remaining internal-only sections describe current coverage areas by capability bucket. Any helper names or module topology referenced below are implementation-detail examples rather than durable contract terms.
+The remaining internal-only sections group coverage by capability bucket, even when a bucket still uses a few short helper-oriented section labels for readability. Tests in this part of the repo should continue to prove boundaries, failure modes, and deterministic derivation without turning internal helper chains into documentation contracts.
 
 Current buckets to preserve are:
 
 - execution-derived state and read models
 - runtime context and lifecycle disposition
-- delegated-child/spawn-oriented preflight and composition
-- delegated/headless execution bridges
+- delegated-child or spawn-oriented preflight and composition
+- delegated or headless execution bridges
 - wait- and close-oriented preflight or consume paths
 
-## Internal Runtime State
+Representative expectations across those buckets:
 
-Must test:
-
-- derived execution-session records built from attempt lineage, execution observation, and optional internal session snapshots
-- omitted-lineage behavior that returns no execution-session record
-- fallback derivation when an internal session snapshot is absent but bounded execution observation exists
-- deterministic indexing by `attemptId` and optional `sessionId`
-- loud failures for duplicate `attemptId` or duplicate non-empty `sessionId`
-- explicit confirmation that internal runtime-state helpers do not widen public CLI payloads or manifest persistence
-- read-only query/view helpers that resolve records by `attemptId` or `sessionId`
-- selector validation for missing, conflicting, or blank lookup keys
-- parent/child traversal that preserves input order and tolerates missing parents without treating them as runtime truth
-
-## Internal Runtime Context
-
-Must test:
-
-- context derivation from the existing read model plus a selector
-- lookup-by-`attemptId` and lookup-by-`sessionId` context resolution
-- loud failures for invalid selectors inherited from the read model contract
-- `undefined` results for selector misses without returning partial context objects
-- unresolved-parent handling that tolerates missing parent records without graph validation
-- child-record ordering that is preserved from the read model
-- explicit confirmation that internal runtime-context helpers do not widen public CLI payloads, manifest persistence, or lifecycle semantics
-
-## Internal Lifecycle Disposition
-
-Must test:
-
-- lifecycle-disposition derivation from an existing internal runtime-context
-- `alreadyFinal` derivation for terminal lifecycle states such as `completed`, `failed`, and `closed`
-- `hasKnownSession` derivation from existing context session knowledge without inventing new session truth
-- `wouldAffectDescendants` derivation from existing child-attempt presence without subtree policy expansion
-- unresolved-parent handling that remains neutral and does not become a new blocker source
-- explicit confirmation that internal lifecycle-disposition helpers do not resolve adapter capability, widen public CLI payloads, widen manifest persistence, or become lifecycle truth
-
-## Internal Spawn Readiness
-
-Must test:
-
-- spawn-readiness derivation from an existing internal runtime-context plus runtime-state view
-- guardrail carry-through from execution lineage into internal session snapshots and execution-session records
-- readiness success when the selected context is active, has a known session, and has no blocking child/depth guardrail violations
-- child-limit blocking when `maxChildren` is present and the selected context already has the maximum allowed child attempts
-- depth-limit blocking when `maxDepth` is present and the next delegated child would exceed the resolved lineage depth budget
-- lineage-depth-unknown blocking when `maxDepth` is present and ancestry contains unresolved gaps
-- lineage-depth-unknown blocking when ancestry is cyclic or otherwise cannot be resolved into a stable parent chain
-- unresolved ancestry remains neutral when `maxDepth` is absent
-- deterministic blocking-reason ordering for lifecycle, session-known, lineage-depth, depth-limit, and child-limit blockers
-- explicit confirmation that internal spawn-readiness helpers do not imply actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
-
-## Internal Spawn Candidate
-
-Must test:
-
-- spawn-candidate derivation from an existing read model plus selector without introducing a second selector contract
-- successful composition of an existing internal runtime-context and internal spawn-readiness object
-- `undefined` results for selector misses without creating partial candidate objects
-- loud failures for invalid selectors inherited from the runtime-context/read-model contract
-- unresolved-parent handling that remains neutral unless existing spawn-readiness blockers already apply
-- deterministic preservation of the existing spawn-readiness blocking-reason ordering inside the composed candidate object
-- explicit confirmation that internal spawn-candidate helpers do not widen public CLI payloads, manifest persistence, or lifecycle semantics
-
-## Internal Spawn Target
-
-Must test:
-
-- spawn-target derivation from an existing internal spawn-candidate without introducing a second selector contract
-- successful projection of a minimal `{ attemptId, runtime, sessionId }` target from a spawnable candidate
-- `undefined` results when spawn blockers remain present or when the selected session identity is unknown
-- equivalent target derivation through both existing `attemptId` and `sessionId` selection paths upstream of the candidate
-- explicit confirmation that internal spawn-target helpers do not decide child lineage, child attempt identifiers, child branches, child worktrees, or other actual spawn semantics
-- explicit confirmation that internal spawn-target helpers do not widen public CLI payloads, manifest persistence, or lifecycle semantics
+- derived records, contexts, and lifecycle classifications remain non-persistent, non-public, and deterministic
+- selectors fail loudly for invalid or conflicting input and return `undefined` for legitimate misses without producing partial objects
+- parent/child traversal preserves input order and tolerates unresolved ancestry unless an explicit guardrail requires a blocker
+- delegated-child preflight keeps inherited guardrails, readiness blockers, and capability checks stable without implying actual spawn support
+- delegated or headless bridges preserve explicit input order, fail fast on the first injected error, and avoid widening into public execution or lifecycle surfaces
+- wait and close paths preserve the same bounded behavior: blocked entries stay blocked, supported entries invoke only the injected request, and no helper becomes lifecycle truth
+- every internal bucket continues to prove that public CLI payloads, runtime manifests, and durable state stay unchanged unless a separate spec promotes that surface
 
 ## Internal Spawn Request
 
 Must test:
 
-- spawn-request derivation from an existing internal spawn-candidate without introducing a second selector contract
-- successful projection of a minimal `{ parentAttemptId, parentRuntime, parentSessionId, sourceKind }` request from a spawnable candidate
-- valid `fork` and `delegated` source choices supplied explicitly by the caller
-- `undefined` results when spawn blockers remain present or when the selected session identity is unknown
-- optional inherited guardrail carry-through when the parent record exposes guardrails
-- omission of `inheritedGuardrails` when the parent record has none
-- loud failures for invalid `sourceKind` inputs such as `direct`, `resume`, or blank strings
 - helper immutability for the supplied spawn-candidate input
 - explicit confirmation that spawn-request output does not seed child attempt lineage, child worktree or branch planning, child runtime mode, or prompt/task payloads
 - explicit confirmation that internal spawn-request helpers do not decide child attempt identifiers, child branches, child worktrees, child runtime mode, child prompts, delegated-runtime approvals, or other actual spawn semantics
@@ -819,90 +747,14 @@ Must test:
 - command rendering contract tests
 - structured degradation tests
 - bounded `codex-cli` detect and internal execution tests
-- executable probing contract tests for the bounded `codex-cli` helper
-- internal `codex-cli` profile-aware execution tests that lock explicit profile passthrough, blank-profile rejection, prompt ordering, default-runner env-overlay stability, custom-runner env behavior, and non-leakage into public CLI or manifest contracts
-- canonical parser tests driven by JSONL fixtures
-- internal execution observation-summary derivation tests for the bounded `codex-cli` path
-- internal session-tree/control-plane derivation and indexing tests
-- execution-linkage tests where `codex-cli` consumes attempt lineage and emits internal session snapshots without widening public contracts
-- internal runtime-state record and index tests layered on top of bounded execution results without widening public contracts
-- internal runtime-state read-model tests layered on top of derived records without introducing a mutable registry or lifecycle manager
-- internal runtime-context tests layered on top of the internal read model without introducing wait/close semantics or mutable state
-- internal lifecycle-disposition tests layered on top of internal runtime-context without introducing adapter capability checks, public selectors, persistence, or lifecycle truth
-- internal spawn-readiness tests layered on top of internal runtime-context and runtime-state views without introducing actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
-- internal spawn-candidate tests layered on top of the internal read model, runtime-context, and spawn-readiness helpers without introducing actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
-- internal spawn-target tests layered on top of internal spawn-candidate helpers without introducing actual spawn support, public selectors, manifest-backed guardrail truth, or mutable lifecycle state
-- internal spawn-request tests layered on top of internal spawn-candidate helpers without introducing actual spawn support, public selectors, manifest-backed guardrail truth, child-planning semantics, or mutable lifecycle state
-- internal spawn-lineage tests layered on top of internal spawn-request helpers without introducing actual spawn support, manifest-backed lifecycle truth, public selectors, or child-planning semantics
-- internal spawn-requested-event tests layered on top of internal spawn-request helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, or terminal lifecycle truth
-- internal spawn-recorded-event tests layered on top of internal spawn-requested-event helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, or terminal lifecycle truth
-- internal spawn-effects tests layered on top of internal spawn-lineage and spawn-event helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, or real runtime side effects
-- internal spawn-effects-batch tests layered on top of internal spawn-effects helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, real runtime side effects, or summary-policy contracts
-- internal spawn-consume tests layered on top of internal spawn-request helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, branch/worktree creation, prompt planning, or adapter-driven spawn success truth
-- internal spawn-consume-batch tests layered on top of internal spawn-consume helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, branch/worktree creation, prompt planning, adapter-driven spawn success truth, or summary-policy contracts
-- internal spawn-apply tests layered on top of internal spawn-consume and spawn-effects helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, or adapter-driven spawn success truth
-- internal spawn-apply-batch tests layered on top of internal spawn-apply helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, adapter-driven spawn success truth, or summary-policy contracts
-- internal spawn-headless-input tests layered on top of internal spawn-effects helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime launch, or adapter-driven spawn success truth
-- internal spawn-headless-input-batch tests layered on top of internal spawn-headless-input helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime launch, adapter-driven spawn success truth, or summary-policy contracts
-- internal spawn-headless-apply tests layered on top of internal spawn-apply helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, or adapter-driven spawn success truth
-- internal spawn-headless-apply-batch tests layered on top of internal spawn-headless-apply helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, adapter-driven spawn success truth, or summary-policy contracts
-- internal spawn-headless-execute tests layered on top of internal spawn-headless-apply helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, adapter-driven delegated-runtime truth, or summary-policy contracts
-- internal spawn-headless-execute-batch tests layered on top of internal spawn-headless-execute helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, adapter-driven delegated-runtime truth, or summary-policy contracts
-- internal spawn-headless-record tests layered on top of internal spawn-headless-execute helpers plus generic execution-session record derivation without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, adapter-driven delegated-runtime truth, or summary-policy contracts
-- internal spawn-headless-record-batch tests layered on top of internal spawn-headless-record helpers without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, adapter-driven delegated-runtime truth, or summary-policy contracts
-- internal spawn-headless-context tests layered on top of internal spawn-headless-view helpers plus generic execution-session context derivation without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, adapter-driven delegated-runtime truth, or summary-policy contracts
-- internal spawn-headless-context-batch tests layered on top of internal spawn-headless-view-batch helpers plus shared execution-session view reuse and generic execution-session context derivation without introducing actual spawn support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, adapter-driven delegated-runtime truth, or summary-policy contracts
-- internal spawn-headless-wait-candidate tests layered on top of internal spawn-headless-context helpers plus generic wait-readiness derivation without introducing actual wait support, polling truth, timeout scheduling truth, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, or summary-policy contracts
-- internal spawn-headless-wait-candidate-batch tests layered on top of internal spawn-headless-context-batch helpers by reusing the single-request wait bridge without introducing actual wait support, polling truth, timeout scheduling truth, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, or summary-policy contracts
-- internal spawn-headless-wait-target tests layered on top of internal spawn-headless-wait-candidate helpers plus generic wait-target derivation without introducing actual wait support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, or adapter-driven wait success truth
-- internal spawn-headless-wait-target-batch tests layered on top of internal spawn-headless-wait-candidate-batch helpers plus single-item wait-target reuse without introducing actual wait support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, adapter-driven wait success truth, or summary-policy contracts
-- internal spawn-headless-close-candidate tests layered on top of internal spawn-headless-context helpers plus generic close-readiness derivation without introducing actual close support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, or adapter-driven close success truth
-- internal spawn-headless-close-candidate-batch tests layered on top of internal spawn-headless-context-batch helpers plus single-item close-bridge reuse without introducing actual close support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, adapter-driven close success truth, or summary-policy contracts
-- internal spawn-headless-close-target tests layered on top of internal spawn-headless-close-candidate helpers plus generic close-target derivation without introducing actual close support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, or adapter-driven close success truth
-- internal spawn-headless-close-target-batch tests layered on top of internal spawn-headless-close-candidate-batch helpers plus single-item close-target reuse without introducing actual close support, child-creation truth, public selectors, manifest-backed state, terminal lifecycle truth, runtime truth, adapter-driven close success truth, or summary-policy contracts
-- lineage-aware spawn helper tests should continue to prove that ancestry/guardrail inputs affect only internal readiness, parent-session request shaping, and minimal child-lineage projection, never public spawn contracts or child-planning side effects
-- internal wait-readiness tests layered on top of internal runtime-context without introducing actual wait support, close support, or public selectors
-- internal wait-candidate tests layered on top of the internal read model, runtime-context, and wait-readiness helpers without introducing actual wait support, close support, public selectors, or mutable lifecycle state
-- internal wait-target tests layered on top of internal wait-candidate helpers without introducing actual wait support, close support, public selectors, or mutable lifecycle state
-- internal wait-request tests layered on top of internal wait-target helpers without introducing actual wait support, polling, timeout scheduling, public selectors, manifest-backed state, or mutable lifecycle state
-- internal wait-consumer-preflight tests layered on top of internal wait-request helpers without introducing actual wait support, polling, timeout scheduling, event subscription, adapter invocation, public selectors, manifest-backed state, or mutable lifecycle state
-- internal wait-consume tests layered on top of internal wait-consumer-preflight helpers without introducing actual wait support, polling loops, scheduling policy, public selectors, manifest-backed state, or mutable lifecycle state
-- internal wait-consume-batch tests layered on top of internal wait-consume helpers without introducing actual wait support, polling loops, scheduling policy, summary contracts, public selectors, manifest-backed state, or mutable lifecycle state
-- internal close-readiness, close-candidate, and close-target tests layered on top of existing runtime-context helpers without introducing actual close support, public selectors, manifest-backed lifecycle state, or mutable lifecycle state
-- internal close-request tests layered on top of internal close-target helpers without introducing actual close support, close-consumer preflight, public selectors, manifest-backed state, or mutable lifecycle state
-- internal close-requested-event tests layered on top of internal close-request helpers without introducing actual close support, close-consumer preflight, public selectors, manifest-backed state, or mutable lifecycle state
-- internal close-recorded-event tests layered on top of internal close-requested-event helpers without introducing actual close support, close-consumer preflight, adapter-driven close results, public selectors, manifest-backed state, or mutable lifecycle state
-- internal close-consumer-preflight tests layered on top of internal close-request helpers without introducing actual close support, adapter invocation, event subscription, public selectors, manifest-backed state, or mutable lifecycle state
-- internal close-consume tests layered on top of internal close-consumer-preflight helpers without introducing actual close support, adapter lifecycle promises, public selectors, manifest-backed state, or mutable lifecycle state
-- internal close-consume-batch tests layered on top of internal close-consume helpers without introducing actual close support, partial-failure aggregation contracts, public selectors, manifest-backed state, or mutable lifecycle state
-- parser boundary tests for bracket-prefixed log noise and malformed bracket-prefixed JSON-looking lines
-- env-gated `codex-cli` smoke scaffolding, when available, as a non-default compatibility probe
+- executable probing, profile passthrough, env-overlay, and parser-boundary tests for the bounded `codex-cli` path
+- execution observation, lineage carry-through, and internal session/control-plane derivation tests that stay non-public
+- runtime-state, runtime-context, and lifecycle-disposition tests that prove deterministic derived behavior without introducing mutable lifecycle truth
+- delegated-child or spawn-oriented preflight, request, lineage, event, consume, apply, and headless-bridge tests that preserve input order, fail fast on injected errors, and avoid widening into public spawn semantics
+- wait- and close-oriented readiness, target, request, consumer, and consume tests that keep blocked entries blocked, invoke only the injected request when supported, and avoid widening into public lifecycle semantics
+- explicit non-widening assertions that public CLI payloads, runtime manifests, and durable state stay unchanged while these internal buckets evolve
 
-Session-lifecycle integration tests, public execution CLI tests, and broader multi-runtime smoke coverage belong to a later post-P4 execution-expansion phase once execution contracts expand beyond the current limited `codex-cli` slice.
-Parent-attempt graph validation, delegated-runtime lifecycle tests, and wait/close semantics also belong to that later phase rather than this thin provenance slice.
-Manifest-backed execution observation persistence also belongs to that later phase rather than the current bounded internal execution slice.
-Manifest-backed session-tree persistence and public spawn/wait/close/resume behavior also belong to that later phase rather than the current internal control-plane slice.
-Manifest-backed runtime-state persistence and any mutable execution-session registry also belong to that later phase rather than the current derived internal runtime-state slice.
-Public selectors, public query commands, and any wait/close-oriented runtime-state consumer also belong to that later phase rather than the current internal read-model slice.
-Public runtime-context selectors, public wait/close-oriented context consumers, and any mutable runtime-context store also belong to that later phase rather than the current internal runtime-context slice.
-Public spawn-candidate selectors, public spawn-candidate stores, and any contract that treats internal spawn-candidates as lifecycle truth also belong to that later phase rather than the current internal spawn-candidate slice.
-Public spawn-target selectors, public spawn-target stores, and any contract that treats internal spawn-targets as lifecycle truth also belong to that later phase rather than the current internal spawn-target slice.
-Public spawn-request selectors, public spawn-request stores, and any contract that treats internal spawn-request output as lifecycle truth also belong to that later phase rather than the current internal spawn-request slice.
-Public spawn-lineage selectors, public spawn-lineage stores, and any contract that treats internal spawn-lineage output as lifecycle truth, manifest truth, or real child-attempt planning also belong to that later phase rather than the current internal spawn-lineage slice.
-Public spawn-requested-event selectors, public spawn-requested-event stores, public spawn-recorded-event selectors, public spawn-recorded-event stores, and any contract that treats internal spawn-requested-event or spawn-recorded-event output as child-creation truth, lifecycle truth, manifest truth, or public spawn status also belong to that later phase rather than the current internal spawn-event slice.
-Public spawn-effects selectors, public spawn-effects stores, and any contract that treats internal spawn-effects output as child-creation truth, lifecycle truth, manifest truth, real runtime side effects, or public spawn status also belong to that later phase rather than the current internal spawn-effects slice.
-Public spawn-consume selectors, public spawn-consume stores, public spawn-consume-batch selectors, public spawn-consume-batch stores, and any contract that treats internal spawn-consume or spawn-consume-batch output as child-creation truth, child-lineage truth, lifecycle truth, branch/worktree truth, adapter-driven spawn success truth, or a public session-lifecycle API also belong to that later phase rather than the current internal spawn-consume slice.
-Public spawn-apply selectors, public spawn-apply stores, public spawn-apply-batch selectors, public spawn-apply-batch stores, public spawn-effects/apply CLI surface, and any contract that treats internal spawn-apply or spawn-apply-batch output as child-creation truth, child-lineage truth, lifecycle truth, real spawn success truth, or a public session-lifecycle API also belong to that later phase rather than the current internal spawn-apply slice.
-Public spawn-headless-input selectors, public spawn-headless-input stores, public spawn-headless-input-batch selectors, public spawn-headless-input-batch stores, public spawn-headless-input CLI surface, and any contract that treats internal spawn-headless-input or spawn-headless-input-batch output as child-creation truth, child-runtime-execution truth, lifecycle truth, manifest truth, or a public session-lifecycle API also belong to that later phase rather than the current internal spawn-headless-input slice.
-Public spawn-headless-apply selectors, public spawn-headless-apply stores, public spawn-headless-apply-batch selectors, public spawn-headless-apply-batch stores, public spawn-headless-execute selectors, public spawn-headless-execute stores, public spawn-headless-execute-batch selectors, public spawn-headless-execute-batch stores, public spawn-headless-record selectors, public spawn-headless-record stores, public spawn-headless-record-batch selectors, public spawn-headless-record-batch stores, public spawn-headless-view selectors, public spawn-headless-view stores, public spawn-headless-view-batch selectors, public spawn-headless-view-batch stores, public spawn-headless-context selectors, public spawn-headless-context stores, public spawn-headless-context-batch selectors, public spawn-headless-context-batch stores, public spawn-headless-wait-candidate selectors, public spawn-headless-wait-candidate stores, public spawn-headless-wait-candidate-batch selectors, public spawn-headless-wait-candidate-batch stores, public spawn-headless-wait-target selectors, public spawn-headless-wait-target stores, public spawn-headless-wait-target-batch selectors, public spawn-headless-wait-target-batch stores, public spawn-headless-close-candidate selectors, public spawn-headless-close-candidate stores, public spawn-headless-close-candidate-batch selectors, public spawn-headless-close-candidate-batch stores, public spawn-headless-close-target selectors, public spawn-headless-close-target stores, public spawn-headless-close-target-batch selectors, public spawn-headless-close-target-batch stores, public spawn-headless-execute, spawn-headless-record, spawn-headless-view, spawn-headless-context, spawn-headless-wait-candidate, spawn-headless-wait-target, spawn-headless-close-candidate, or spawn-headless-close-target CLI surface, and any contract that treats internal spawn-headless-apply, spawn-headless-apply-batch, spawn-headless-execute, spawn-headless-execute-batch, spawn-headless-record, spawn-headless-record-batch, spawn-headless-view, spawn-headless-view-batch, spawn-headless-context, spawn-headless-context-batch, spawn-headless-wait-candidate, spawn-headless-wait-candidate-batch, spawn-headless-wait-target, spawn-headless-wait-target-batch, spawn-headless-close-candidate, spawn-headless-close-candidate-batch, spawn-headless-close-target, or spawn-headless-close-target-batch output as child-creation truth, child-runtime-execution truth, lifecycle truth, manifest truth, delegated-runtime truth, runtime truth, actual wait support, polling truth, timeout scheduling truth, close truth, or a public session-lifecycle API also belong to that later phase rather than the current internal spawn-headless-apply plus spawn-headless-execute plus spawn-headless-record plus spawn-headless-view plus spawn-headless-context plus spawn-headless-wait-candidate plus spawn-headless-wait-target plus spawn-headless-close-candidate plus spawn-headless-close-target slice.
-Actual wait commands, close commands, public wait-readiness selectors, and any mutable wait-readiness store also belong to that later phase rather than the current internal wait-readiness slice.
-Public wait-candidate selectors, public wait-candidate stores, and any contract that treats internal wait-candidates as lifecycle truth also belong to that later phase rather than the current internal wait-candidate slice.
-Public wait-target selectors, public wait-target stores, and any contract that treats internal wait-targets as lifecycle truth also belong to that later phase rather than the current internal wait-target slice.
-Public wait-request selectors, public wait-request stores, actual wait consumers, and any contract that treats internal wait-request output as lifecycle truth also belong to that later phase rather than the current internal wait-request slice.
-Public wait-consumer selectors, public wait-consumer stores, and any contract that treats internal wait-consumer output as lifecycle truth also belong to that later phase rather than the current internal wait-consumer-preflight slice.
-Public wait-consume selectors, public wait-consume stores, public wait-consume-batch stores, public wait or wait-consume CLI surface, polling or timeout scheduling loops, and any contract that treats internal wait-consume or wait-consume-batch output as lifecycle truth also belong to that later phase rather than the current internal wait-consume slice.
-Public close-oriented selectors, public close-oriented stores, any close-consumer preflight, any close-consume path, any close-consume-batch path, and any actual close command or contract that treats internal close-readiness, close-candidate, close-target, close-request, close-requested-event, close-recorded-event, close-consumer, close-consume, or close-consume-batch output as lifecycle truth also belong to that later phase rather than the current internal close-oriented helper slice.
-Git archival and checkpoint discipline belongs to maintainer workflow guidance rather than the current public runtime-state, CLI, or manifest contract; tests in this phase should not treat commit-backed checkpoints as an implemented product surface now that the repository has a usable `HEAD`, even though maintainers should continue recording each completed thin slice or debugging milestone with non-destructive Git history once a usable baseline exists.
+Later execution-expansion phases can add broader multi-runtime smoke coverage, public execution or lifecycle surfaces, and any durable runtime-state or session-tree persistence. Until a later spec or RFC promotes those ideas, tests in this phase should treat them as deferred rather than as current contracts.
 
 ### Phase 4: Tier 1 Compatibility Slice
 

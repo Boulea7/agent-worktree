@@ -1,6 +1,6 @@
 # Claude Code Project Context
 
-Canonical project instructions live in [AGENTS.md](AGENTS.md).
+Canonical committed truth starts with [SPEC.md](SPEC.md), then [README.md](README.md), then [docs/index.md](docs/index.md). Use [AGENTS.md](AGENTS.md) as the repository-specific execution rules and boundary companion.
 
 Read these next:
 
