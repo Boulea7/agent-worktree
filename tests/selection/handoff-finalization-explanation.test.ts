@@ -258,9 +258,7 @@ describe("selection handoff-finalization-explanation helpers", () => {
       attemptId: "att_inherited"
     });
 
-    Array.prototype[0] = inheritedOutcome;
-
-    try {
+    withInheritedArrayIndex(0, inheritedOutcome, () => {
       const outcomes = new Array<AttemptHandoffFinalizationOutcome>(1);
 
       expect(() =>
@@ -285,9 +283,7 @@ describe("selection handoff-finalization-explanation helpers", () => {
       ).toThrow(
         "Attempt handoff finalization explanation summary requires summary.outcomes[0] to be an object."
       );
-    } finally {
-      delete Array.prototype[0];
-    }
+    });
   });
 
   it("should emit canonical trimmed outcome fields after validation", () => {
@@ -409,4 +405,18 @@ function createBlockedExplanationEntry(
     invoked: false,
     blockingReasons: ["handoff_finalization_unsupported"]
   };
+}
+
+function withInheritedArrayIndex(
+  index: number,
+  outcome: AttemptHandoffFinalizationOutcome,
+  run: () => void
+): void {
+  Array.prototype[index] = outcome;
+
+  try {
+    run();
+  } finally {
+    delete Array.prototype[index];
+  }
 }

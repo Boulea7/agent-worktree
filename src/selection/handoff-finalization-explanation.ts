@@ -111,39 +111,42 @@ function validateSummary(
   return outcomes;
 }
 
-function validateOutcome(
-  outcome: AttemptHandoffFinalizationOutcome
-): AttemptHandoffFinalizationOutcome {
+function validateOutcome(outcome: unknown): AttemptHandoffFinalizationOutcome {
   if (!isRecord(outcome)) {
     throw new ValidationError(
       "Attempt handoff finalization explanation summary requires summary.outcomes entries to be objects."
     );
   }
 
-  const taskId = normalizeRequiredString(outcome.taskId, "outcome.taskId");
+  const outcomeRecord = outcome as unknown as AttemptHandoffFinalizationOutcome;
+
+  const taskId = normalizeRequiredString(outcomeRecord.taskId, "outcome.taskId");
   const attemptId = normalizeRequiredString(
-    outcome.attemptId,
+    outcomeRecord.attemptId,
     "outcome.attemptId"
   );
-  const runtime = normalizeRequiredString(outcome.runtime, "outcome.runtime");
-  validateAttemptStatus(outcome.status, "outcome.status");
-  validateAttemptSourceKind(outcome.sourceKind, "outcome.sourceKind");
+  const runtime = normalizeRequiredString(outcomeRecord.runtime, "outcome.runtime");
+  validateAttemptStatus(outcomeRecord.status, "outcome.status");
+  validateAttemptSourceKind(outcomeRecord.sourceKind, "outcome.sourceKind");
 
-  if (typeof outcome.invoked !== "boolean") {
+  if (typeof outcomeRecord.invoked !== "boolean") {
     throw new ValidationError(
       "Attempt handoff finalization explanation summary requires outcome.invoked to be a boolean."
     );
   }
 
-  validateBlockingReasons(outcome.blockingReasons, "outcome.blockingReasons");
+  validateBlockingReasons(
+    outcomeRecord.blockingReasons,
+    "outcome.blockingReasons"
+  );
 
-  if (outcome.invoked && outcome.blockingReasons.length > 0) {
+  if (outcomeRecord.invoked && outcomeRecord.blockingReasons.length > 0) {
     throw new ValidationError(
       "Attempt handoff finalization explanation summary requires invoked outcomes to use empty blockingReasons."
     );
   }
 
-  if (!outcome.invoked && outcome.blockingReasons.length === 0) {
+  if (!outcomeRecord.invoked && outcomeRecord.blockingReasons.length === 0) {
     throw new ValidationError(
       "Attempt handoff finalization explanation summary requires blocked outcomes to keep blockingReasons."
     );
@@ -153,10 +156,10 @@ function validateOutcome(
     taskId,
     attemptId,
     runtime,
-    status: outcome.status,
-    sourceKind: outcome.sourceKind,
-    invoked: outcome.invoked,
-    blockingReasons: [...outcome.blockingReasons]
+    status: outcomeRecord.status,
+    sourceKind: outcomeRecord.sourceKind,
+    invoked: outcomeRecord.invoked,
+    blockingReasons: [...outcomeRecord.blockingReasons]
   };
 }
 
@@ -167,13 +170,15 @@ function validateOutcomeArray(
   const validatedOutcomes: AttemptHandoffFinalizationOutcome[] = [];
 
   for (let index = 0; index < outcomes.length; index += 1) {
+    const outcome = outcomes[index];
+
     if (!hasOwnIndex(outcomes, index)) {
       throw new ValidationError(
         `Attempt handoff finalization explanation summary requires ${fieldName}[${index}] to be an object.`
       );
     }
 
-    validatedOutcomes.push(validateOutcome(outcomes[index]!));
+    validatedOutcomes.push(validateOutcome(outcome));
   }
 
   return validatedOutcomes;
