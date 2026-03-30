@@ -238,7 +238,12 @@ function reportReadyEntryArraysEqual(
   }
 
   for (let index = 0; index < left.length; index += 1) {
-    if (!hasOwnIndex(left, index) || !isRecord(left[index])) {
+    if (
+      !hasOwnIndex(left, index) ||
+      !hasOwnIndex(right, index) ||
+      !isRecord(left[index]) ||
+      !isRecord(right[index])
+    ) {
       return false;
     }
 

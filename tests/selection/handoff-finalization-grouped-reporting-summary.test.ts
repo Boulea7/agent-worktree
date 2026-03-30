@@ -174,6 +174,39 @@ describe("selection handoff-finalization-grouped-reporting-summary helpers", () 
     }
   });
 
+  it("should still accept own grouped projection entries that shadow inherited array indexes", () => {
+    Array.prototype[0] = createBlockedProjectionGroup({
+      results: [createBlockedReportReadyEntry({ attemptId: "att_inherited" })]
+    });
+
+    try {
+      const summary = deriveAttemptHandoffFinalizationGroupedReportingSummary(
+        createGroupedProjectionSummary([
+          createInvokedProjectionGroup({
+            results: [createInvokedReportReadyEntry({ attemptId: "att_own" })]
+          })
+        ])
+      );
+
+      expect(summary).toEqual({
+        groupedReportingBasis: "handoff_finalization_grouped_projection_summary",
+        resultCount: 1,
+        invokedResultCount: 1,
+        blockedResultCount: 0,
+        groups: [
+          {
+            groupKey: "handoff_finalization_invoked",
+            resultCount: 1,
+            invokedResultCount: 1,
+            blockedResultCount: 0
+          }
+        ]
+      });
+    } finally {
+      delete Array.prototype[0];
+    }
+  });
+
   it("should fail loudly when a grouped projection group count drifts from the canonical result length", () => {
     const act = () =>
       deriveAttemptHandoffFinalizationGroupedReportingSummary(
