@@ -78,9 +78,7 @@ The repository now has a thin Phase 4 public compatibility baseline. `compat smo
 
 The public baseline is still intentionally narrow. Today it includes `compat list`, `compat show`, `compat probe`, `compat smoke`, `doctor`, and the thin `attempt create` / `attempt list` / `attempt cleanup` lifecycle commands, all centered on machine-readable contracts.
 
-The internal baseline is wider than the public one. `codex-cli` now covers descriptor resolution, command rendering, real headless detection, a bounded internal execution contract around `codex exec --json`, minimal canonical event parsing, structured degradation, profile-aware internal passthrough, relay-compatible env overlays, and deeper internal control-plane work around runtime-state and lifecycle-oriented composition.
-That internal baseline has also entered an early Phase 5 verification/selection chain.
-Promotion currently reaches target and target-apply composition, while handoff and handoff-finalization now extend beyond report-ready projection into additional grouped reporting-oriented internal summaries. Those helper chains remain internal-only.
+The internal baseline is wider than the public one. `codex-cli` now has a bounded internal execution path around `codex exec --json`, plus early internal continuation work across verification, selection, promotion/handoff composition, runtime-state/control-plane composition, and grouped finalization reporting. Those internal buckets remain intentionally non-public.
 
 That Phase 4 closeout does not mean full runtime orchestration exists. Other runtimes remain descriptor-only, and `resume`, MCP transport execution, public execution commands, public wait/close/spawn commands, and public manifest-backed execution or session-lifecycle semantics remain intentionally deferred. A bounded internal `session` block may still appear in the runtime manifest, but it remains non-public metadata: public CLI output does not expose it, and it is not attach/resume or lifecycle-control truth. The current public promise is compatibility-only: direct-shell verification and the env-gated Vitest smoke harness may support it locally, but the Vitest harness remains narrower and is not a default validation path.
 The current `codex-cli` executable probing policy is intentionally internal: execution helpers may resolve a different `codex` binary than shell `command -v codex` when `PATH` contains shadow binaries, but that is not a public adapter contract. The same is true for internal `--profile` passthrough and relay-compatible env overlays. The bounded parser tolerates obvious non-JSON prelude lines, including bracket-prefixed log noise, while malformed JSON-looking records still fail loudly.
@@ -113,7 +111,7 @@ Most coding-agent workflows today live somewhere between:
 
 - Public repo content should contain durable, sanitized, shared knowledge.
 - Raw research notes, transcripts, local AI state, and session handoff logs stay local and ignored.
-- The root `PROJECT_STATUS.local.md` file is the visible local handoff log for future sessions and must not be committed.
+- Local handoff files such as `PROJECT_STATUS.local.md` and `CODING_PHASE_PROMPT.local.md` are operational overlays only and must not be committed.
 
 ## Near-Term Focus
 
