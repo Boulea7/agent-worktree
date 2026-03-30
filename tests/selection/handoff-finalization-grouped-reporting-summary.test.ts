@@ -192,6 +192,32 @@ describe("selection handoff-finalization-grouped-reporting-summary helpers", () 
     );
   });
 
+  it("should fail loudly when group results rely on inherited array indexes", () => {
+    Array.prototype[0] = createBlockedReportReadyEntry();
+
+    try {
+      const sparseResults =
+        new Array<AttemptHandoffFinalizationReportReadyEntry>(1);
+      const act = () =>
+        deriveAttemptHandoffFinalizationGroupedReportingSummary(
+          createGroupedProjectionSummary([
+            createBlockedProjectionGroup({
+              resultCount: 1,
+              blockedResultCount: 1,
+              results: sparseResults
+            })
+          ])
+        );
+
+      expect(act).toThrow(ValidationError);
+      expect(act).toThrow(
+        "Attempt handoff finalization grouped reporting summary requires group.results entries to be objects."
+      );
+    } finally {
+      delete Array.prototype[0];
+    }
+  });
+
   it("should fail loudly when a group key drifts from the grouped entry explanation code", () => {
     const act = () =>
       deriveAttemptHandoffFinalizationGroupedReportingSummary(
