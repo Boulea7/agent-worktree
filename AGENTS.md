@@ -1,6 +1,6 @@
 # agent-worktree Shared Instructions
 
-This file is the repository-specific execution-rules and boundary companion for coding agents. For canonical repository truth, start with `SPEC.md`, then `README.md`, then `docs/index.md`.
+This file is the repository-specific execution rules and boundary companion for coding agents. For canonical repository truth, start with `SPEC.md`, then `README.md`, then `docs/index.md`.
 
 ## Project Purpose
 
