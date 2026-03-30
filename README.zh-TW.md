@@ -49,12 +49,18 @@
 這個 P4 收口只代表相容性承諾，不代表 general execution 或 lifecycle 承諾。更深的 `codex-cli` execution、profile/env 傳遞、runtime-state、spawn/wait/close helper chain 目前仍屬於 internal-only 實作，不應解讀為公開 lifecycle 能力。
 更複雜的 runtime adapter、verification ranking 與高階編排能力仍然延後。
 
-## 重要文件
+## 參照順序
 
-- [README.md](README.md)
+已提交文件的規範入口順序是：[SPEC.md](SPEC.md) -> [README.md](README.md) -> [docs/index.md](docs/index.md)。
+[AGENTS.md](AGENTS.md) 用作倉庫級執行規則與邊界補充，不取代已提交的 spec/doc 文件集。
+
 - [SPEC.md](SPEC.md)
-- [AGENTS.md](AGENTS.md)
+- [README.md](README.md)
 - [docs/index.md](docs/index.md)
+- [AGENTS.md](AGENTS.md)
+
+## 補充參考
+
 - [docs/compat/tooling-matrix.md](docs/compat/tooling-matrix.md)
 - [docs/research/vision-synthesis.md](docs/research/vision-synthesis.md)
 

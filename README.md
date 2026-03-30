@@ -98,17 +98,21 @@ Most coding-agent workflows today live somewhere between:
 - keep the controller deterministic where it matters
 - stay explicit about what is verified, experimental, or deferred
 
-## Canonical Documents
+## Start Here
+
+The committed documentation order starts with [SPEC.md](SPEC.md), then this `README.md`, then [docs/index.md](docs/index.md).
+Use [AGENTS.md](AGENTS.md) as the repository-specific execution rules and boundary companion, not as a replacement for the committed spec/doc set.
 
 - [SPEC.md](SPEC.md)
+- [README.md](README.md)
 - [docs/index.md](docs/index.md)
+- [AGENTS.md](AGENTS.md)
+
+## Key References
+
 - [ROADMAP.md](ROADMAP.md)
 - [docs/compat/tooling-matrix.md](docs/compat/tooling-matrix.md)
 - [docs/research/vision-synthesis.md](docs/research/vision-synthesis.md)
-
-Repository-specific agent guidance:
-
-- [AGENTS.md](AGENTS.md)
 
 ## Documentation Policy
 

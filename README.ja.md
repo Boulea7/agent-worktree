@@ -49,12 +49,18 @@
 この P4 closeout は compatibility promise だけを意味し、general execution や lifecycle promise を意味しません。より深い `codex-cli` execution、profile/env の受け渡し、runtime-state、spawn/wait/close helper chain は今も internal-only 実装であり、公開 lifecycle 機能として解釈すべきではありません。
 より高度な runtime adapter、verification ranking、複雑なオーケストレーション機能はまだ先送りです。
 
-## 重要ドキュメント
+## 参照順序
 
-- [README.md](README.md)
+コミット済みドキュメントの規範的な入口順は [SPEC.md](SPEC.md) -> [README.md](README.md) -> [docs/index.md](docs/index.md) です。
+[AGENTS.md](AGENTS.md) はリポジトリ固有の実行ルールと境界補助であり、コミット済み spec/doc セットの代替ではありません。
+
 - [SPEC.md](SPEC.md)
-- [AGENTS.md](AGENTS.md)
+- [README.md](README.md)
 - [docs/index.md](docs/index.md)
+- [AGENTS.md](AGENTS.md)
+
+## 補足参照
+
 - [docs/compat/tooling-matrix.md](docs/compat/tooling-matrix.md)
 - [docs/research/vision-synthesis.md](docs/research/vision-synthesis.md)
 
