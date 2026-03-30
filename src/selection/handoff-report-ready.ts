@@ -255,10 +255,12 @@ function validateReadiness(
   }
 
   for (let index = 0; index < readiness.blockingReasons.length; index += 1) {
+    const blockingReason = readiness.blockingReasons[index];
+
     if (
       !hasOwnIndex(readiness.blockingReasons, index) ||
-      typeof readiness.blockingReasons[index] !== "string" ||
-      !validBlockingReasons.has(readiness.blockingReasons[index]!)
+      typeof blockingReason !== "string" ||
+      !validBlockingReasons.has(blockingReason)
     ) {
       throw new ValidationError(
         `Attempt handoff report-ready requires ${fieldName}.blockingReasons to use the existing handoff consumer blocker vocabulary.`
@@ -495,8 +497,8 @@ function validateBoolean(value: unknown, fieldName: string): void {
   }
 }
 
-function hasOwnIndex(values: readonly unknown[], index: number): boolean {
-  return Object.prototype.hasOwnProperty.call(values, index);
+function hasOwnIndex(array: readonly unknown[], index: number): boolean {
+  return Object.prototype.hasOwnProperty.call(array, index);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
