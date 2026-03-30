@@ -291,6 +291,113 @@ describe("selection handoff-finalization-outcome-summary helpers", () => {
     );
   });
 
+  it("should fail loudly when consumer readiness blockingReasons contains sparse array holes", () => {
+    const sparseBlockingReasons = new Array<
+      AttemptHandoffFinalizationApply["consumer"]["readiness"]["blockingReasons"][number]
+    >(1);
+
+    expect(() =>
+      selection.deriveAttemptHandoffFinalizationOutcomeSummary({
+        results: [
+          createApplyResult({
+            request: {
+              taskId: "task_shared",
+              attemptId: "att_blocked",
+              runtime: "blocked-cli",
+              status: "created",
+              sourceKind: undefined
+            },
+            readiness: {
+              blockingReasons: sparseBlockingReasons,
+              canConsumeHandoffFinalization: false,
+              hasBlockingReasons: true,
+              handoffFinalizationSupported: false
+            },
+            invoked: false
+          })
+        ]
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      selection.deriveAttemptHandoffFinalizationOutcomeSummary({
+        results: [
+          createApplyResult({
+            request: {
+              taskId: "task_shared",
+              attemptId: "att_blocked",
+              runtime: "blocked-cli",
+              status: "created",
+              sourceKind: undefined
+            },
+            readiness: {
+              blockingReasons: sparseBlockingReasons,
+              canConsumeHandoffFinalization: false,
+              hasBlockingReasons: true,
+              handoffFinalizationSupported: false
+            },
+            invoked: false
+          })
+        ]
+      })
+    ).toThrow(
+      "Attempt handoff finalization outcome summary requires entry.consumer.readiness.blockingReasons to use the existing handoff-finalization blocker vocabulary."
+    );
+  });
+
+  it("should fail loudly when consumer readiness blockingReasons relies on inherited array indexes", () => {
+    const inheritedBlockingReasons = createInheritedIndexBlockingReasonArray(
+      0,
+      "handoff_finalization_unsupported"
+    );
+
+    expect(() =>
+      selection.deriveAttemptHandoffFinalizationOutcomeSummary({
+        results: [
+          createApplyResult({
+            request: {
+              taskId: "task_shared",
+              attemptId: "att_blocked",
+              runtime: "blocked-cli",
+              status: "created",
+              sourceKind: undefined
+            },
+            readiness: {
+              blockingReasons: inheritedBlockingReasons,
+              canConsumeHandoffFinalization: false,
+              hasBlockingReasons: true,
+              handoffFinalizationSupported: false
+            },
+            invoked: false
+          })
+        ]
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      selection.deriveAttemptHandoffFinalizationOutcomeSummary({
+        results: [
+          createApplyResult({
+            request: {
+              taskId: "task_shared",
+              attemptId: "att_blocked",
+              runtime: "blocked-cli",
+              status: "created",
+              sourceKind: undefined
+            },
+            readiness: {
+              blockingReasons: inheritedBlockingReasons,
+              canConsumeHandoffFinalization: false,
+              hasBlockingReasons: true,
+              handoffFinalizationSupported: false
+            },
+            invoked: false
+          })
+        ]
+      })
+    ).toThrow(
+      "Attempt handoff finalization outcome summary requires entry.consumer.readiness.blockingReasons to use the existing handoff-finalization blocker vocabulary."
+    );
+  });
+
   it("should fail with ValidationError when a request shape is missing", () => {
     expect(() =>
       selection.deriveAttemptHandoffFinalizationOutcomeSummary({
@@ -485,4 +592,24 @@ function createInheritedIndexApplyArray(
   const results = new Array<AttemptHandoffFinalizationApply>(index + 1);
   Object.setPrototypeOf(results, inheritedIndexPrototype);
   return results;
+}
+
+function createInheritedIndexBlockingReasonArray(
+  index: number,
+  value: AttemptHandoffFinalizationApply["consumer"]["readiness"]["blockingReasons"][number]
+): AttemptHandoffFinalizationApply["consumer"]["readiness"]["blockingReasons"] {
+  const inheritedIndexPrototype = Object.create(Array.prototype, {
+    [index]: {
+      value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    }
+  });
+  const blockingReasons =
+    new Array<
+      AttemptHandoffFinalizationApply["consumer"]["readiness"]["blockingReasons"][number]
+    >(index + 1);
+  Object.setPrototypeOf(blockingReasons, inheritedIndexPrototype);
+  return blockingReasons;
 }
