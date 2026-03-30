@@ -258,32 +258,30 @@ describe("selection handoff-finalization-explanation helpers", () => {
       attemptId: "att_inherited"
     });
 
-    withInheritedArrayIndex(0, inheritedOutcome, () => {
-      const outcomes = new Array<AttemptHandoffFinalizationOutcome>(1);
+    const outcomes = createInheritedIndexOutcomeArray(0, inheritedOutcome);
 
-      expect(() =>
-        deriveAttemptHandoffFinalizationExplanationSummary({
-          outcomeBasis: "handoff_finalization_apply_batch",
-          resultCount: 1,
-          invokedResultCount: 0,
-          blockedResultCount: 1,
-          blockingReasons: ["handoff_finalization_unsupported"],
-          outcomes
-        })
-      ).toThrow(ValidationError);
-      expect(() =>
-        deriveAttemptHandoffFinalizationExplanationSummary({
-          outcomeBasis: "handoff_finalization_apply_batch",
-          resultCount: 1,
-          invokedResultCount: 0,
-          blockedResultCount: 1,
-          blockingReasons: ["handoff_finalization_unsupported"],
-          outcomes
-        })
-      ).toThrow(
-        "Attempt handoff finalization explanation summary requires summary.outcomes[0] to be an object."
-      );
-    });
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary({
+        outcomeBasis: "handoff_finalization_apply_batch",
+        resultCount: 1,
+        invokedResultCount: 0,
+        blockedResultCount: 1,
+        blockingReasons: ["handoff_finalization_unsupported"],
+        outcomes
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary({
+        outcomeBasis: "handoff_finalization_apply_batch",
+        resultCount: 1,
+        invokedResultCount: 0,
+        blockedResultCount: 1,
+        blockingReasons: ["handoff_finalization_unsupported"],
+        outcomes
+      })
+    ).toThrow(
+      "Attempt handoff finalization explanation summary requires summary.outcomes[0] to be an object."
+    );
   });
 
   it("should emit canonical trimmed outcome fields after validation", () => {
@@ -407,16 +405,19 @@ function createBlockedExplanationEntry(
   };
 }
 
-function withInheritedArrayIndex(
+function createInheritedIndexOutcomeArray(
   index: number,
-  outcome: AttemptHandoffFinalizationOutcome,
-  run: () => void
-): void {
-  Array.prototype[index] = outcome;
+  outcome: AttemptHandoffFinalizationOutcome
+): AttemptHandoffFinalizationOutcome[] {
+  const outcomes = new Array<AttemptHandoffFinalizationOutcome>(index + 1);
+  const inheritedIndexPrototype = Object.create(Array.prototype, {
+    [index]: {
+      value: outcome,
+      configurable: true
+    }
+  });
 
-  try {
-    run();
-  } finally {
-    delete Array.prototype[index];
-  }
+  Object.setPrototypeOf(outcomes, inheritedIndexPrototype);
+
+  return outcomes;
 }
