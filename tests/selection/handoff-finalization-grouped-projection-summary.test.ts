@@ -325,6 +325,48 @@ describe("selection handoff-finalization-grouped-projection-summary helpers", ()
     );
   });
 
+  it("should fail loudly when report-ready entries contain sparse blockingReasons arrays", () => {
+    const sparseBlockingReasons =
+      new Array<AttemptHandoffFinalizationConsumerBlockingReason>(1);
+    const act = () =>
+      deriveAttemptHandoffFinalizationGroupedProjectionSummary(
+        createReportReadySummary([
+          createBlockedReportReadyEntry({
+            blockingReasons: sparseBlockingReasons
+          })
+        ])
+      );
+
+    expect(act).toThrow(ValidationError);
+    expect(act).toThrow(
+      "Attempt handoff finalization grouped projection summary requires entry.blockingReasons to use the existing handoff-finalization blocker vocabulary."
+    );
+  });
+
+  it("should fail loudly when report-ready entries rely on inherited blockingReasons indexes", () => {
+    Array.prototype[0] = "handoff_finalization_unsupported";
+
+    try {
+      const inheritedBlockingReasons =
+        new Array<AttemptHandoffFinalizationConsumerBlockingReason>(1);
+      const act = () =>
+        deriveAttemptHandoffFinalizationGroupedProjectionSummary(
+          createReportReadySummary([
+            createBlockedReportReadyEntry({
+              blockingReasons: inheritedBlockingReasons
+            })
+          ])
+        );
+
+      expect(act).toThrow(ValidationError);
+      expect(act).toThrow(
+        "Attempt handoff finalization grouped projection summary requires entry.blockingReasons to use the existing handoff-finalization blocker vocabulary."
+      );
+    } finally {
+      delete Array.prototype[0];
+    }
+  });
+
   it("should keep the grouped projection summary shape minimal without leaking subgroup mirrors", () => {
     const summary = deriveAttemptHandoffFinalizationGroupedProjectionSummary(
       createReportReadySummary([createInvokedReportReadyEntry()])

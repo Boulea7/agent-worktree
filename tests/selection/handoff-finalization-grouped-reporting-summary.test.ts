@@ -268,6 +268,56 @@ describe("selection handoff-finalization-grouped-reporting-summary helpers", () 
     );
   });
 
+  it("should fail loudly when grouped entries contain sparse blockingReasons arrays", () => {
+    const sparseBlockingReasons =
+      new Array<AttemptHandoffFinalizationConsumerBlockingReason>(1);
+    const act = () =>
+      deriveAttemptHandoffFinalizationGroupedReportingSummary(
+        createGroupedProjectionSummary([
+          createBlockedProjectionGroup({
+            results: [
+              createBlockedReportReadyEntry({
+                blockingReasons: sparseBlockingReasons
+              })
+            ]
+          })
+        ])
+      );
+
+    expect(act).toThrow(ValidationError);
+    expect(act).toThrow(
+      "Attempt handoff finalization grouped reporting summary requires entry.blockingReasons to use the existing handoff-finalization blocker vocabulary."
+    );
+  });
+
+  it("should fail loudly when grouped entries rely on inherited blockingReasons indexes", () => {
+    Array.prototype[0] = "handoff_finalization_unsupported";
+
+    try {
+      const inheritedBlockingReasons =
+        new Array<AttemptHandoffFinalizationConsumerBlockingReason>(1);
+      const act = () =>
+        deriveAttemptHandoffFinalizationGroupedReportingSummary(
+          createGroupedProjectionSummary([
+            createBlockedProjectionGroup({
+              results: [
+                createBlockedReportReadyEntry({
+                  blockingReasons: inheritedBlockingReasons
+                })
+              ]
+            })
+          ])
+        );
+
+      expect(act).toThrow(ValidationError);
+      expect(act).toThrow(
+        "Attempt handoff finalization grouped reporting summary requires entry.blockingReasons to use the existing handoff-finalization blocker vocabulary."
+      );
+    } finally {
+      delete Array.prototype[0];
+    }
+  });
+
   it("should fail loudly when grouped projection input contains duplicate explanation-code groups", () => {
     const act = () =>
       deriveAttemptHandoffFinalizationGroupedReportingSummary(
