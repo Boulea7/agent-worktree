@@ -59,7 +59,15 @@ function validateBatch(batch: AttemptPromotionTargetApplyBatch): void {
     );
   }
 
-  batch.results.forEach(validatePromotionTargetApplyEntry);
+  for (let index = 0; index < batch.results.length; index += 1) {
+    if (!hasOwnIndex(batch.results, index)) {
+      throw new ValidationError(
+        "Attempt handoff report-ready requires each batch result to be an object."
+      );
+    }
+
+    validatePromotionTargetApplyEntry(batch.results[index]!);
+  }
 }
 
 function validatePromotionTargetApplyEntry(
@@ -246,14 +254,16 @@ function validateReadiness(
     );
   }
 
-  if (
-    readiness.blockingReasons.some(
-      (reason) => typeof reason !== "string" || !validBlockingReasons.has(reason)
-    )
-  ) {
-    throw new ValidationError(
-      `Attempt handoff report-ready requires ${fieldName}.blockingReasons to use the existing handoff consumer blocker vocabulary.`
-    );
+  for (let index = 0; index < readiness.blockingReasons.length; index += 1) {
+    if (
+      !hasOwnIndex(readiness.blockingReasons, index) ||
+      typeof readiness.blockingReasons[index] !== "string" ||
+      !validBlockingReasons.has(readiness.blockingReasons[index]!)
+    ) {
+      throw new ValidationError(
+        `Attempt handoff report-ready requires ${fieldName}.blockingReasons to use the existing handoff consumer blocker vocabulary.`
+      );
+    }
   }
 
   validateBoolean(
@@ -483,6 +493,10 @@ function validateBoolean(value: unknown, fieldName: string): void {
       `Attempt handoff report-ready requires ${fieldName} to be a boolean.`
     );
   }
+}
+
+function hasOwnIndex(values: readonly unknown[], index: number): boolean {
+  return Object.prototype.hasOwnProperty.call(values, index);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

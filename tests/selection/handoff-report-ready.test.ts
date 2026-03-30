@@ -197,6 +197,33 @@ describe("selection handoff-report-ready helpers", () => {
     );
   });
 
+  it("should fail loudly when batch.results contains sparse array holes", () => {
+    const results = createSparseArray<AttemptPromotionTargetApply>(1);
+
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires each batch result to be an object."
+    );
+  });
+
+  it("should fail loudly when batch.results relies on inherited array indexes", () => {
+    const results = createInheritedIndexArray(
+      0,
+      createSupportedPromotionTargetApply()
+    );
+
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires each batch result to be an object."
+    );
+  });
+
   it("should fail loudly when entry.handoffTarget.taskId is undefined", () => {
     const invalidEntry = createSupportedPromotionTargetApply();
 
@@ -296,6 +323,86 @@ describe("selection handoff-report-ready helpers", () => {
       })
     ).toThrow(
       "Attempt handoff report-ready requires entry.targetApply.apply.consume.request.runtime to be a non-empty string."
+    );
+  });
+
+  it("should fail loudly when consumer readiness blockingReasons contains sparse array holes", () => {
+    const invalidEntry = createBlockedPromotionTargetApply();
+
+    invalidEntry.targetApply.apply.consumer.readiness = {
+      ...invalidEntry.targetApply.apply.consumer.readiness,
+      blockingReasons:
+        createSparseArray<AttemptHandoffConsumerReadiness["blockingReasons"][number]>(
+          1
+        ) as AttemptHandoffConsumerReadiness["blockingReasons"]
+    };
+
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [invalidEntry]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires targetApply.apply.consumer.readiness.blockingReasons to use the existing handoff consumer blocker vocabulary."
+    );
+  });
+
+  it("should fail loudly when consumer readiness blockingReasons relies on inherited array indexes", () => {
+    const invalidEntry = createBlockedPromotionTargetApply();
+
+    invalidEntry.targetApply.apply.consumer.readiness = {
+      ...invalidEntry.targetApply.apply.consumer.readiness,
+      blockingReasons: createInheritedIndexArray(
+        0,
+        "handoff_unsupported" as AttemptHandoffConsumerReadiness["blockingReasons"][number]
+      ) as AttemptHandoffConsumerReadiness["blockingReasons"]
+    };
+
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [invalidEntry]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires targetApply.apply.consumer.readiness.blockingReasons to use the existing handoff consumer blocker vocabulary."
+    );
+  });
+
+  it("should fail loudly when consume readiness blockingReasons contains sparse array holes", () => {
+    const invalidEntry = createBlockedPromotionTargetApply();
+
+    invalidEntry.targetApply.apply.consume.readiness = {
+      ...invalidEntry.targetApply.apply.consume.readiness,
+      blockingReasons:
+        createSparseArray<AttemptHandoffConsumerReadiness["blockingReasons"][number]>(
+          1
+        ) as AttemptHandoffConsumerReadiness["blockingReasons"]
+    };
+
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [invalidEntry]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires targetApply.apply.consume.readiness.blockingReasons to use the existing handoff consumer blocker vocabulary."
+    );
+  });
+
+  it("should fail loudly when consume readiness blockingReasons relies on inherited array indexes", () => {
+    const invalidEntry = createBlockedPromotionTargetApply();
+
+    invalidEntry.targetApply.apply.consume.readiness = {
+      ...invalidEntry.targetApply.apply.consume.readiness,
+      blockingReasons: createInheritedIndexArray(
+        0,
+        "handoff_unsupported" as AttemptHandoffConsumerReadiness["blockingReasons"][number]
+      ) as AttemptHandoffConsumerReadiness["blockingReasons"]
+    };
+
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [invalidEntry]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires targetApply.apply.consume.readiness.blockingReasons to use the existing handoff consumer blocker vocabulary."
     );
   });
 
@@ -545,6 +652,25 @@ function createSupportedReadiness(): AttemptHandoffConsumerReadiness {
     hasBlockingReasons: false,
     handoffSupported: true
   };
+}
+
+function createSparseArray<T>(length: number): T[] {
+  return new Array<T>(length);
+}
+
+function createInheritedIndexArray<T>(index: number, value: T): T[] {
+  const array = new Array<T>(index + 1);
+  const inheritedIndexPrototype = Object.create(Array.prototype, {
+    [index]: {
+      configurable: true,
+      enumerable: true,
+      value,
+      writable: true
+    }
+  });
+
+  Object.setPrototypeOf(array, inheritedIndexPrototype);
+  return array;
 }
 
 function createPromotionTarget(
