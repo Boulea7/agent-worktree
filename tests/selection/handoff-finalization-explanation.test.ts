@@ -226,6 +226,64 @@ describe("selection handoff-finalization-explanation helpers", () => {
     );
   });
 
+  it("should fail loudly when summary.outcomes contains sparse array holes", () => {
+    const outcomes = new Array<AttemptHandoffFinalizationOutcome>(1);
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary({
+        outcomeBasis: "handoff_finalization_apply_batch",
+        resultCount: 1,
+        invokedResultCount: 0,
+        blockedResultCount: 1,
+        blockingReasons: ["handoff_finalization_unsupported"],
+        outcomes
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary({
+        outcomeBasis: "handoff_finalization_apply_batch",
+        resultCount: 1,
+        invokedResultCount: 0,
+        blockedResultCount: 1,
+        blockingReasons: ["handoff_finalization_unsupported"],
+        outcomes
+      })
+    ).toThrow(
+      "Attempt handoff finalization explanation summary requires summary.outcomes[0] to be an object."
+    );
+  });
+
+  it("should fail loudly when summary.outcomes relies on inherited array indexes", () => {
+    const inheritedOutcome = createBlockedOutcome({
+      attemptId: "att_inherited"
+    });
+
+    const outcomes = createInheritedIndexOutcomeArray(0, inheritedOutcome);
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary({
+        outcomeBasis: "handoff_finalization_apply_batch",
+        resultCount: 1,
+        invokedResultCount: 0,
+        blockedResultCount: 1,
+        blockingReasons: ["handoff_finalization_unsupported"],
+        outcomes
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary({
+        outcomeBasis: "handoff_finalization_apply_batch",
+        resultCount: 1,
+        invokedResultCount: 0,
+        blockedResultCount: 1,
+        blockingReasons: ["handoff_finalization_unsupported"],
+        outcomes
+      })
+    ).toThrow(
+      "Attempt handoff finalization explanation summary requires summary.outcomes[0] to be an object."
+    );
+  });
+
   it("should emit canonical trimmed outcome fields after validation", () => {
     expect(
       deriveAttemptHandoffFinalizationExplanationSummary(
@@ -345,4 +403,21 @@ function createBlockedExplanationEntry(
     invoked: false,
     blockingReasons: ["handoff_finalization_unsupported"]
   };
+}
+
+function createInheritedIndexOutcomeArray(
+  index: number,
+  outcome: AttemptHandoffFinalizationOutcome
+): AttemptHandoffFinalizationOutcome[] {
+  const outcomes = new Array<AttemptHandoffFinalizationOutcome>(index + 1);
+  const inheritedIndexPrototype = Object.create(Array.prototype, {
+    [index]: {
+      value: outcome,
+      configurable: true
+    }
+  });
+
+  Object.setPrototypeOf(outcomes, inheritedIndexPrototype);
+
+  return outcomes;
 }
