@@ -77,7 +77,7 @@ function validateSummary(
     );
   }
 
-  const outcomes = summary.outcomes.map((outcome) => validateOutcome(outcome));
+  const outcomes = validateOutcomeArray(summary.outcomes, "summary.outcomes");
 
   if (summary.resultCount !== outcomes.length) {
     throw new ValidationError(
@@ -158,6 +158,25 @@ function validateOutcome(
     invoked: outcome.invoked,
     blockingReasons: [...outcome.blockingReasons]
   };
+}
+
+function validateOutcomeArray(
+  outcomes: readonly AttemptHandoffFinalizationOutcome[],
+  fieldName: string
+): AttemptHandoffFinalizationOutcome[] {
+  const validatedOutcomes: AttemptHandoffFinalizationOutcome[] = [];
+
+  for (let index = 0; index < outcomes.length; index += 1) {
+    if (!hasOwnIndex(outcomes, index)) {
+      throw new ValidationError(
+        `Attempt handoff finalization explanation summary requires ${fieldName}[${index}] to be an object.`
+      );
+    }
+
+    validatedOutcomes.push(validateOutcome(outcomes[index]!));
+  }
+
+  return validatedOutcomes;
 }
 
 function deriveExplanationEntry(
@@ -277,6 +296,10 @@ function stringArraysEqual(
     left.length === right.length &&
     left.every((value, index) => value === right[index])
   );
+}
+
+function hasOwnIndex(values: readonly unknown[], index: number): boolean {
+  return Object.prototype.hasOwnProperty.call(values, index);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
