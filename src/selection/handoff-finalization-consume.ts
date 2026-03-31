@@ -43,18 +43,18 @@ function validateReadiness(
     );
   }
 
-  if (
-    value.blockingReasons.some(
-      (reason) =>
-        typeof reason !== "string" ||
-        !validBlockingReasons.has(
-          reason as AttemptHandoffFinalizationConsumerBlockingReason
-        )
-    )
-  ) {
-    throw new ValidationError(
-      "Attempt handoff finalization consume requires consumer.readiness.blockingReasons to contain only known blocking reasons."
-    );
+  for (let index = 0; index < value.blockingReasons.length; index += 1) {
+    if (
+      !hasOwnIndex(value.blockingReasons, index) ||
+      typeof value.blockingReasons[index] !== "string" ||
+      !validBlockingReasons.has(
+        value.blockingReasons[index] as AttemptHandoffFinalizationConsumerBlockingReason
+      )
+    ) {
+      throw new ValidationError(
+        "Attempt handoff finalization consume requires consumer.readiness.blockingReasons to contain only known blocking reasons."
+      );
+    }
   }
 
   if (typeof value.canConsumeHandoffFinalization !== "boolean") {
@@ -97,4 +97,8 @@ function validateReadiness(
       "Attempt handoff finalization consume requires consumer.readiness.handoffFinalizationSupported to match consumer.readiness.canConsumeHandoffFinalization."
     );
   }
+}
+
+function hasOwnIndex(values: readonly unknown[], index: number): boolean {
+  return Object.prototype.hasOwnProperty.call(values, index);
 }
