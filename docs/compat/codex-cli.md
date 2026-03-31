@@ -32,7 +32,8 @@ Codex CLI is a natural baseline for:
 
 ## Current Implementation Boundary
 
-The current `codex-cli` adapter is intentionally limited.
+The current `codex-cli` adapter is intentionally limited to a public read-only
+compatibility surface plus bounded internal execution helpers.
 
 Current public compatibility truth:
 
@@ -69,7 +70,11 @@ Additional bounded internal details:
 - malformed JSON-looking records, including malformed bracket-prefixed array-like lines, still fail loudly
 - `executeHeadless()` may return an internal observation summary such as thread identifier, final turn status, last agent message, usage, and error counts derived from canonical events
 - `executeHeadless()` may also attach an internal session snapshot when the caller supplies attempt lineage metadata; that snapshot is derived from lineage plus canonical observation only
-- the runtime manifest schema may still carry a bounded internal `session` block for execution metadata, but public CLI output does not expose it and it does not imply attach/resume or lifecycle-control truth
+- the runtime manifest schema may still carry a bounded internal `session`
+  block for execution metadata
+- public CLI output does not expose that internal `session` metadata
+- that internal `session` metadata does not imply attach/resume or
+  lifecycle-control truth
 - beyond that execution path, current internal continuation work is intentionally described by capability bucket rather than by fixed helper or module topology:
   - execution-derived state and read models built from attempt lineage, bounded execution observation, and optional internal session snapshots
   - runtime context and lifecycle-disposition metadata built from those existing internal read models
