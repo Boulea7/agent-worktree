@@ -221,6 +221,23 @@ describe("control-plane runtime-state context helpers", () => {
       hasChildren: false
     });
   });
+
+  it("should surface blank attempt identifiers before deriving a sessionId-selected context", () => {
+    expect(() =>
+      deriveExecutionSessionContext({
+        view: buildExecutionSessionView([
+          createRecord({
+            attemptId: "   ",
+            sessionId: "thr_blank_context",
+            sourceKind: "direct"
+          })
+        ]),
+        selector: {
+          sessionId: "thr_blank_context"
+        }
+      })
+    ).toThrow(ValidationError);
+  });
 });
 
 function createRecord(

@@ -214,6 +214,18 @@ describe("control-plane runtime-state view helpers", () => {
       ])
     ).toThrow(ValidationError);
   });
+
+  it("should reject blank record attempt identifiers when building a view", () => {
+    expect(() =>
+      buildExecutionSessionView([
+        createRecord({
+          attemptId: "   ",
+          sessionId: "thr_blank",
+          sourceKind: "direct"
+        })
+      ])
+    ).toThrow(ValidationError);
+  });
 });
 
 function createRecord(
