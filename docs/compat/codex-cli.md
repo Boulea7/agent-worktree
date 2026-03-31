@@ -45,15 +45,16 @@ Current public compatibility truth:
 
 Implemented now:
 
+- a public read-only `doctor` slice for compatibility diagnostics
 - a public read-only `compat probe codex-cli` slice for bounded compatibility diagnostics
 - a public read-only `compat smoke codex-cli` slice for bounded env-gated live smoke
 - real detection for the `codex exec --json` path
 - machine-checkable command rendering
+- structured degradation for unsupported capabilities
 - bounded internal execution through `codex exec --json`
 - bounded internal profile-aware execution passthrough for explicit Codex `--profile` selection
 - minimal canonical event parsing for the headless JSONL output
 - internal execution observation summaries derived from canonical events
-- structured degradation for unsupported capabilities
 - an env-gated smoke scaffold for narrow compatibility probing
 
 Additional bounded internal details:
@@ -68,6 +69,7 @@ Additional bounded internal details:
 - malformed JSON-looking records, including malformed bracket-prefixed array-like lines, still fail loudly
 - `executeHeadless()` may return an internal observation summary such as thread identifier, final turn status, last agent message, usage, and error counts derived from canonical events
 - `executeHeadless()` may also attach an internal session snapshot when the caller supplies attempt lineage metadata; that snapshot is derived from lineage plus canonical observation only
+- the runtime manifest schema may still carry a bounded internal `session` block for execution metadata, but public CLI output does not expose it and it does not imply attach/resume or lifecycle-control truth
 - beyond that execution path, current internal continuation work is intentionally described by capability bucket rather than by fixed helper or module topology:
   - execution-derived state and read models built from attempt lineage, bounded execution observation, and optional internal session snapshots
   - runtime context and lifecycle-disposition metadata built from those existing internal read models
