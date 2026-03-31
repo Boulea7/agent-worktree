@@ -162,7 +162,7 @@ Must test:
 
 ## Internal Capability Buckets
 
-The remaining internal-only sections group coverage by capability bucket, even when a bucket still uses a few short helper-oriented section labels for readability. Tests in this part of the repo should continue to prove boundaries, failure modes, and deterministic derivation without turning internal helper chains into documentation contracts.
+The remaining internal-only sections describe coverage at the capability-bucket level rather than as helper-by-helper topology. Tests in this part of the repo should continue to prove boundaries, failure modes, and deterministic derivation without turning internal helper chains into documentation contracts.
 
 Current buckets to preserve are:
 
@@ -175,6 +175,7 @@ Current buckets to preserve are:
 Representative expectations across those buckets:
 
 - derived records, contexts, and lifecycle classifications remain non-persistent, non-public, and deterministic
+- supplied inputs remain immutable across these derived internal buckets unless a later spec explicitly promotes a mutable contract
 - selectors fail loudly for invalid or conflicting input and return `undefined` for legitimate misses without producing partial objects
 - parent/child traversal preserves input order and tolerates unresolved ancestry unless an explicit guardrail requires a blocker
 - delegated-child preflight keeps inherited guardrails, readiness blockers, and capability checks stable without implying actual spawn support
@@ -182,532 +183,55 @@ Representative expectations across those buckets:
 - wait and close paths preserve the same bounded behavior: blocked entries stay blocked, supported entries invoke only the injected request, and no helper becomes lifecycle truth
 - every internal bucket continues to prove that public CLI payloads, runtime manifests, and durable state stay unchanged unless a separate spec promotes that surface
 
-## Internal Spawn Request
+## Execution-Derived State And Read Models
 
 Must test:
 
-- helper immutability for the supplied spawn-candidate input
-- explicit confirmation that spawn-request output does not seed child attempt lineage, child worktree or branch planning, child runtime mode, or prompt/task payloads
-- explicit confirmation that internal spawn-request helpers do not decide child attempt identifiers, child branches, child worktrees, child runtime mode, child prompts, delegated-runtime approvals, or other actual spawn semantics
-- explicit confirmation that internal spawn-request helpers do not widen public CLI payloads, manifest persistence, or lifecycle semantics
+- execution-derived records and read models remain pure derivations from attempt lineage, bounded execution observation, and any optional internal session snapshot already produced by the bounded execution path
+- selector validation, lookup-by-attempt, lookup-by-session, and parent/child traversal stay deterministic, return `undefined` for legitimate misses, and fail loudly for invalid or conflicting selectors without creating partial objects
+- parent/child indexing preserves input order and tolerates unresolved ancestry unless an explicit guardrail requires a blocker
+- derived records, indexes, and views remain internal-only, non-public, non-persistent, non-manifest-backed, and separate from mutable registry or lifecycle-manager semantics
+- execution-derived state and read-model tests continue to prove that public CLI payloads, runtime manifests, and durable state do not widen while these internal buckets evolve
 
-## Internal Spawn Lineage
-
-Must test:
-
-- spawn-lineage derivation from an existing internal spawn-request plus an explicit child attempt identifier without introducing a second parent-session selector contract
-- successful projection of a minimal `{ attemptId, parentAttemptId, sourceKind }` lineage object from a valid spawn request
-- normalized guardrail carry-through from inherited request guardrails into lineage `guardrails`
-- omission of lineage `guardrails` when the source request has no inherited guardrails
-- loud failures for blank child attempt identifiers
-- loud failures when the explicit child attempt identifier matches the parent attempt identifier
-- sourceKind carry-through from the supplied spawn-request without widening it into parent runtime/session truth or child-planning semantics
-- helper immutability for the supplied spawn-request input
-- explicit confirmation that internal spawn-lineage helpers do not preserve parent runtime or parent session fields and do not widen public CLI payloads, manifest persistence, or lifecycle semantics
-- explicit confirmation that internal spawn-lineage helpers do not decide child branches, child worktrees, child runtime mode, prompt/task payloads, or delegated-runtime approvals
-
-## Internal Spawn Requested Event
+## Runtime Context And Lifecycle Disposition
 
 Must test:
 
-- spawn-requested-event derivation from an existing internal spawn-request without introducing a second selector contract
-- successful projection of a minimal `{ attemptId, runtime, sessionId, lifecycleEventKind: "spawn_requested" }` marker from the existing parent-session fields on spawn-request
-- helper immutability for the supplied spawn-request input
-- explicit confirmation that internal spawn-requested-event helpers do not reintroduce request, selector, view, context, readiness, child-lineage, child branch/worktree planning, manifest, or outcome data
-- explicit confirmation that internal spawn-requested-event helpers do not imply child creation, child lineage truth, terminal lifecycle truth, or actual spawn support
+- runtime-context and lifecycle-disposition metadata derive only from the existing internal read models and remain deterministic, bounded, and non-public
+- selector-driven context assembly preserves the same loud-failure behavior for invalid selectors and the same `undefined` behavior for legitimate misses without reopening selector topology as a public contract
+- shared lifecycle-disposition extraction preserves stable classification and blocker ordering for session-known, terminal, descendant-impact, and related readiness facts without becoming mutable lifecycle truth
+- runtime-context and lifecycle-disposition helpers do not widen public CLI payloads, manifest persistence, or durable runtime-state semantics
 
-## Internal Spawn Recorded Event
-
-Must test:
-
-- spawn-recorded-event derivation from an existing internal spawn-requested-event without introducing a second selector contract
-- successful projection of a minimal `{ attemptId, runtime, sessionId, lifecycleEventKind: "spawn_recorded" }` marker from an existing parent-session spawn-requested-event
-- helper immutability for the supplied spawn-requested-event input
-- explicit confirmation that internal spawn-recorded-event helpers do not reintroduce requestedEvent, request, selector, view, context, readiness, child-lineage, child branch/worktree planning, manifest, or outcome data
-- explicit confirmation that internal spawn-recorded-event helpers do not imply child creation, child lineage truth, terminal lifecycle truth, or actual spawn support
-
-## Internal Spawn Effects
+## Delegated-Child Or Spawn-Oriented Preflight And Composition
 
 Must test:
 
-- spawn-effects derivation from an existing internal spawn-request plus an explicit child attempt identifier without introducing a second selector contract
-- successful composition of minimal `lineage`, `requestedEvent`, and `recordedEvent` outputs by reusing the existing single-purpose helpers only
-- explicit confirmation that `childAttemptId` affects only `lineage` and does not alter the parent-session markers
-- helper immutability for the supplied spawn-request input
-- explicit confirmation that internal spawn-effects helpers do not reintroduce request, selector, view, context, readiness, consume, apply, manifest, or branch/worktree planning data
-- explicit confirmation that internal spawn-effects helpers do not imply child creation, child lineage truth beyond the explicit projection, terminal lifecycle truth, real runtime side effects, or actual spawn support
-- loud-failure propagation for invalid `childAttemptId`, matching parent/child attempt identifiers, or invalid spawn `sourceKind` without wrapper error shapes
+- delegated-child preflight remains a bounded internal composition over existing context, lineage, inherited guardrails, capability checks, and explicit child inputs; it must not decide child branches, child worktrees, child runtime mode, prompt/task payloads, delegated-runtime approvals, or other actual spawn semantics
+- spawn-oriented composition keeps request shaping, additive lineage or marker projection, and any derived effects metadata minimal and internal-only; no helper becomes child-creation truth or terminal lifecycle truth
+- when a delegated-child composition step combines injected consumption with derived effects metadata, it must consume first and must not surface partial effects if the consume step fails
+- invalid delegated-child inputs such as blank child attempt identifiers, parent/child identity collisions, invalid selector state, or invalid `sourceKind` fail loudly without wrapper error contracts
+- injected spawn invokers are called only through the bounded delegated-child consume or apply surfaces, exactly once per supported request; failures surface directly, empty batches do not synthesize work, ordered batches preserve input order, and supported batches fail fast on the first injected or derivation error without partial aggregation or summary-policy output
+- delegated-child and spawn-oriented tests continue to prove that request/readiness composition, branch/worktree planning boundaries, and public CLI or manifest contracts remain non-widening
 
-## Internal Spawn Effects Batch
-
-Must test:
-
-- spawn-effects-batch derivation from an explicit ordered list of existing spawn-effects inputs without introducing a second selector contract
-- preservation of input order while sequentially composing the single-request spawn-effects helper
-- empty-input behavior that returns `{ results: [] }`
-- fail-fast behavior on the first derivation error without partial-result aggregation or summary-policy output
-- helper immutability for the supplied spawn-effects input list
-- explicit confirmation that internal spawn-effects-batch helpers do not reintroduce request, selector, view, context, readiness, consume, apply, manifest, or branch/worktree planning data
-- explicit confirmation that internal spawn-effects-batch helpers do not imply child creation, child lineage truth, terminal lifecycle truth, real runtime side effects, or actual spawn support
-
-## Internal Spawn Consume
+## Delegated Or Headless Execution Bridges
 
 Must test:
 
-- spawn-consume consumption from an existing internal spawn-request without introducing a second selector contract
-- invocation of the injected spawn invoker exactly once with the existing spawn-request
-- helper immutability for the supplied spawn-request input
-- injected invoker failures surface directly without synthetic success truth, lifecycle markers, or summary data
-- explicit confirmation that internal spawn-consume helpers do not reintroduce selector, view, context, readiness, child-lineage, child branch/worktree planning, manifest, or outcome truth
-- explicit confirmation that internal spawn-consume helpers do not imply child creation, child lineage truth, terminal lifecycle truth, branch/worktree creation, prompt planning, adapter-driven spawn success, or a public session-lifecycle API
+- delegated or headless bridge metadata derives only from existing internal delegated-child composition metadata plus explicit execution seeds or injected bounded executors, without reopening selectors, views, runtime launch, or planning topology as new contracts
+- bounded execution shaping continues to derive `attempt` from child lineage only, whitelist only the explicit execution-seed fields this phase already allows, and reject dynamic or unexpected payload carry-through
+- record/view/context bridge steps remain pure derivations over existing internal execution results and shared generic derivation helpers; missing required execution data fails loudly instead of producing synthetic record or context truth
+- ordered bridge batches preserve input order, keep shared derived inputs reusable where applicable, return minimal empty results for empty input, and fail fast on the first bridge, executor, selector, readiness, or record-derivation error without per-item summary contracts
+- delegated or headless bridge tests continue to prove that these helpers remain internal-only, non-public, non-manifest-backed, not child-creation truth, not runtime truth, not terminal lifecycle truth, and not delegated runtime support
 
-## Internal Spawn Consume Batch
-
-Must test:
-
-- spawn-consume-batch consumption from an explicit ordered list of existing internal spawn-request values without introducing a second selector contract
-- preservation of input order while sequentially composing the single-request spawn-consume helper
-- empty-input behavior that does not invoke the injected spawn invoker
-- fail-fast behavior on the first injected invoker error without partial-failure aggregation or summary-policy output
-- helper immutability for the supplied spawn-request list input
-- explicit confirmation that internal spawn-consume-batch helpers do not reintroduce selector, view, context, readiness, child-lineage, child branch/worktree planning, manifest, or outcome truth
-- explicit confirmation that internal spawn-consume-batch helpers do not imply child creation, child lineage truth, terminal lifecycle truth, branch/worktree creation, prompt planning, adapter-driven spawn success, or a public session-lifecycle API
-
-## Internal Spawn Apply
+## Wait- And Close-Oriented Preflight Or Consume Paths
 
 Must test:
 
-- spawn-apply composition from an existing internal spawn-request plus an explicit child attempt identifier without introducing a second selector contract
-- successful composition of existing spawn-consume metadata plus existing spawn-effects metadata only
-- explicit confirmation that the helper consumes first and derives effects only after the consume step succeeds
-- helper immutability for the supplied spawn-request input
-- injected invoker failures surface directly without synthetic success truth, lifecycle markers, or partial `effects`
-- loud-failure propagation for invalid `childAttemptId` after the consume step succeeds, without wrapper error shapes
-- explicit confirmation that internal spawn-apply helpers do not reintroduce selector, view, context, readiness, manifest, branch/worktree planning, or outcome truth
-- explicit confirmation that internal spawn-apply helpers do not imply child creation, child lineage truth, terminal lifecycle truth, real spawn success, or a public session-lifecycle API
-
-## Internal Spawn Apply Batch
-
-Must test:
-
-- spawn-apply-batch composition from an explicit ordered list of existing spawn-effects inputs without introducing a second selector contract
-- preservation of input order while sequentially composing the single-request spawn-apply helper
-- empty-input behavior that returns `{ results: [] }` without invoking the injected spawn invoker
-- fail-fast behavior on the first invoker or effects-derivation error without partial-result aggregation or summary-policy output
-- helper immutability for the supplied spawn-apply input list
-- explicit confirmation that internal spawn-apply-batch helpers do not reintroduce selector, view, context, readiness, manifest, branch/worktree planning, or outcome truth
-- explicit confirmation that internal spawn-apply-batch helpers do not imply child creation, child lineage truth, terminal lifecycle truth, real spawn success, or a public session-lifecycle API
-
-## Internal Spawn Headless Input
-
-Must test:
-
-- spawn-headless-input derivation from existing internal spawn-effects metadata plus a minimal headless-execution seed without introducing a second selector contract
-- successful projection of `attempt` from `effects.lineage` only while whitelisting explicit execution fields such as `prompt`, `cwd`, `timeoutMs`, and `abortSignal`
-- explicit confirmation that dynamic or unexpected execution fields such as `attempt`, `effects`, `requestedEvent`, or `recordedEvent` are not preserved in the shaped output
-- helper immutability for the supplied spawn-effects metadata and execution seed inputs
-- explicit confirmation that internal spawn-headless-input helpers do not reintroduce selector, view, context, readiness, manifest, branch/worktree planning, runtime launch, or outcome truth
-- explicit confirmation that internal spawn-headless-input helpers do not imply child creation, child runtime execution, terminal lifecycle truth, real spawn success, or a public session-lifecycle API
-
-## Internal Spawn Headless Input Batch
-
-Must test:
-
-- spawn-headless-input-batch derivation from an explicit ordered list of existing spawn-effects metadata plus execution seeds without introducing a second selector contract
-- preservation of input order while sequentially composing the single-request spawn-headless-input helper
-- empty-input behavior that returns `{ results: [] }`
-- helper immutability for the supplied spawn-headless-input item list
-- explicit confirmation that internal spawn-headless-input-batch helpers do not reintroduce selector, view, context, readiness, manifest, branch/worktree planning, runtime launch, or outcome truth
-- explicit confirmation that internal spawn-headless-input-batch helpers do not imply child creation, child runtime execution, terminal lifecycle truth, real spawn success, or summary-policy contracts
-
-## Internal Spawn Headless Apply
-
-Must test:
-
-- spawn-headless-apply composition from existing internal spawn-apply metadata plus a minimal headless-execution seed without introducing a second selector contract
-- successful projection of `attempt` from `apply.effects.lineage` only while whitelisting explicit execution fields such as `prompt`, `cwd`, `timeoutMs`, and `abortSignal`
-- explicit confirmation that dynamic or unexpected execution fields such as `attempt`, `apply`, `effects`, `requestedEvent`, or `recordedEvent` are not preserved in the shaped execution payload
-- helper immutability for the supplied spawn-apply metadata and execution seed inputs
-- explicit confirmation that internal spawn-headless-apply helpers do not reintroduce selector, view, context, readiness, manifest, branch/worktree planning, runtime launch, or outcome truth
-- explicit confirmation that internal spawn-headless-apply helpers remain internal-only, non-public, non-manifest-backed, not lifecycle truth, and not delegated runtime support
-
-## Internal Spawn Headless Apply Batch
-
-Must test:
-
-- spawn-headless-apply-batch composition from an explicit ordered list of existing spawn-apply inputs without introducing a second selector contract
-- preservation of input order while sequentially composing the single-request spawn-headless-apply helper
-- empty-input behavior that returns `{ results: [] }`
-- helper immutability for the supplied spawn-headless-apply item list
-- explicit confirmation that internal spawn-headless-apply-batch helpers do not reintroduce selector, view, context, readiness, manifest, branch/worktree planning, runtime launch, or outcome truth
-- explicit confirmation that internal spawn-headless-apply-batch helpers remain internal-only, non-public, non-manifest-backed, not lifecycle truth, and not delegated runtime support
-
-## Internal Spawn Headless Execute
-
-Must test:
-
-- spawn-headless-execute consumption from an existing internal spawn-headless-apply result without introducing a second selector contract
-- invocation of the injected bounded headless executor exactly once with the already-shaped internal execution payload
-- helper immutability for the supplied spawn-headless-apply input
-- injected executor failures surface directly without synthetic lifecycle truth, delegated-runtime truth, or summary-policy output
-- explicit confirmation that internal spawn-headless-execute helpers do not reintroduce selector, view, context, readiness, manifest, branch/worktree planning, or public outcome truth
-- explicit confirmation that internal spawn-headless-execute helpers remain internal-only, non-public, non-manifest-backed, not lifecycle truth, and not delegated runtime support
-
-## Internal Spawn Headless Execute Batch
-
-Must test:
-
-- spawn-headless-execute-batch composition from an explicit ordered list of existing spawn-headless-apply items without introducing a second selector contract
-- preservation of input order while sequentially composing the single-request spawn-headless-execute helper
-- empty-input behavior that returns `{ results: [] }`
-- helper immutability for the supplied spawn-headless-execute item list
-- injected executor failures surface directly without summary-policy output or delegated-runtime truth
-- explicit confirmation that internal spawn-headless-execute-batch helpers remain internal-only, non-public, non-manifest-backed, not lifecycle truth, and not delegated runtime support
-
-## Internal Spawn Headless Record
-
-Must test:
-
-- spawn-headless-record derivation from an existing internal spawn-headless-execute result without introducing a second selector contract
-- composition of the existing spawn-headless-execute result plus the generic `deriveExecutionSessionRecord(...)` helper only
-- helper immutability for the supplied spawn-headless-execute input
-- missing-attempt behavior that throws a `ValidationError` rather than returning synthetic record metadata
-- underlying execution-session derivation failures surface directly without wrapper errors or summary-policy output
-- explicit confirmation that internal spawn-headless-record helpers do not reintroduce selector, view, context, readiness, index, manifest, branch/worktree planning, or public outcome truth
-- explicit confirmation that internal spawn-headless-record helpers remain internal-only, non-public, non-manifest-backed, not lifecycle truth, and not delegated runtime support
-
-## Internal Spawn Headless Record Batch
-
-Must test:
-
-- spawn-headless-record-batch composition from an explicit ordered list of existing spawn-headless-execute items without introducing a second selector contract
-- preservation of input order while sequentially composing the single-request spawn-headless-record helper
-- empty-input behavior that returns `{ results: [] }`
-- helper immutability for the supplied spawn-headless-record item list
-- fail-fast behavior on the first record-derivation error without partial-result aggregation or summary-policy output
-- explicit confirmation that internal spawn-headless-record-batch helpers do not reintroduce selector, view, context, readiness, index, manifest, branch/worktree planning, or public outcome truth
-- explicit confirmation that internal spawn-headless-record-batch helpers remain internal-only, non-public, non-manifest-backed, not lifecycle truth, and not delegated runtime support
-
-## Internal Spawn Headless Context
-
-Must test:
-
-- spawn-headless-context derivation from an existing internal spawn-headless-view result plus an internal attempt-based selector derived from the existing headless record without introducing a public selector contract
-- composition of the existing spawn-headless-view result plus the generic `deriveExecutionSessionContext(...)` helper only
-- helper immutability for the supplied spawn-headless-view input
-- underlying selector-validation or context-derivation failures surface directly without wrapper errors or summary-policy output
-- explicit confirmation that internal spawn-headless-context helpers do not reintroduce selector surfaces beyond the generic helper, view rebuilding, readiness, manifest, branch/worktree planning, or public outcome truth
-- explicit confirmation that internal spawn-headless-context helpers remain internal-only, non-public, non-manifest-backed, not child-creation truth, not runtime truth, not terminal lifecycle truth, and not delegated runtime support
-
-## Internal Spawn Headless Context Batch
-
-Must test:
-
-- spawn-headless-context-batch derivation from an existing internal spawn-headless-view-batch result plus internally derived ordered attempt-based selectors without introducing a public selector contract
-- composition of the existing batch headless-view output plus the generic `deriveExecutionSessionContext(...)` helper only
-- reuse of the existing shared `headlessViewBatch.view` across the whole batch
-- empty-input behavior that returns the existing batch object plus an empty ordered context result list
-- preservation of input ordering semantics across the batch
-- helper immutability for the supplied spawn-headless-view-batch input
-- fail-fast behavior on the first selector-validation or context-derivation error without per-item summary output
-- explicit confirmation that internal spawn-headless-context-batch helpers do not reintroduce selector surfaces beyond the generic helper, view rebuilding, readiness, manifest, branch/worktree planning, or public outcome truth
-- explicit confirmation that internal spawn-headless-context-batch helpers remain internal-only, non-public, non-manifest-backed, not child-creation truth, not runtime truth, not terminal lifecycle truth, and not delegated runtime support
-
-## Internal Spawn Headless Wait Candidate
-
-Must test:
-
-- spawn-headless-wait-candidate derivation from an existing internal spawn-headless-context result without introducing a public selector contract
-- composition of the existing spawn-headless-context result plus the generic `deriveExecutionSessionWaitReadiness(...)` helper only
-- helper immutability for the supplied spawn-headless-context input
-- underlying wait-readiness derivation failures surface directly without wrapper errors or summary-policy output
-- explicit confirmation that internal spawn-headless-wait-candidate helpers do not call the generic selector-driven `deriveExecutionSessionWaitCandidate(...)` helper and do not reintroduce selectors, views, context derivation, `wait-target`, `wait-request`, `wait-consumer`, `wait-consume`, manifest, branch/worktree planning, or public outcome truth
-- explicit confirmation that internal spawn-headless-wait-candidate helpers remain internal-only, non-public, non-manifest-backed, not child-creation truth, not runtime truth, not terminal lifecycle truth, not polling truth, not timeout scheduling truth, and not actual wait support
-
-## Internal Spawn Headless Wait Candidate Batch
-
-Must test:
-
-- spawn-headless-wait-candidate-batch derivation from an existing internal spawn-headless-context-batch result without introducing a public selector contract
-- composition of the existing batch headless-context output by reusing the single-request spawn-headless-wait-candidate helper only
-- empty-input behavior that returns the existing batch object plus an empty ordered wait-candidate result list
-- preservation of input ordering semantics across the batch
-- helper immutability for the supplied spawn-headless-context-batch input
-- fail-fast behavior on the first wait-readiness derivation error without per-item summary output
-- explicit confirmation that internal spawn-headless-wait-candidate-batch helpers do not call the generic selector-driven `deriveExecutionSessionWaitCandidate(...)` helper and do not reintroduce selectors, views, context derivation, `wait-target`, `wait-request`, `wait-consumer`, `wait-consume`, manifest, branch/worktree planning, or public outcome truth
-- explicit confirmation that internal spawn-headless-wait-candidate-batch helpers remain internal-only, non-public, non-manifest-backed, not child-creation truth, not runtime truth, not terminal lifecycle truth, not polling truth, not timeout scheduling truth, and not actual wait support
-
-## Internal Spawn Headless Wait Target
-
-Must test:
-
-- spawn-headless-wait-target derivation from an existing internal spawn-headless-wait-candidate result without introducing a second selector contract
-- composition of the existing `headlessWaitCandidate.candidate` plus the generic `deriveExecutionSessionWaitTarget(...)` helper only
-- helper immutability for the supplied spawn-headless-wait-candidate input
-- blocked wait-candidate results remain wrapped and omit `target` output rather than being filtered or widened into wait-request semantics
-- explicit confirmation that internal spawn-headless-wait-target helpers do not reintroduce selector surfaces, view rebuilding, context rebuilding, wait-request/event/consumer/consume expansion, manifest persistence, or public outcome truth
-- explicit confirmation that internal spawn-headless-wait-target helpers remain internal-only, non-public, non-manifest-backed, not actual wait support, not child-creation truth, not runtime truth, not terminal lifecycle truth, and not delegated runtime support
-
-## Internal Spawn Headless Wait Target Batch
-
-Must test:
-
-- spawn-headless-wait-target-batch derivation from an existing internal spawn-headless-wait-candidate-batch result without introducing a second selector contract
-- sequential composition of the existing ordered headless wait-candidate results plus the single-request `spawn-headless-wait-target` helper only
-- empty-input behavior that returns the existing batch object plus an empty ordered wait-target result list
-- preservation of input ordering semantics across the batch
-- helper immutability for the supplied spawn-headless-wait-candidate-batch input
-- blocked items remain in-place and omit `target` output rather than being filtered, aggregated, or widened into wait-request semantics
-- fail-fast behavior on the first wait-target derivation error without partial-result aggregation or summary-policy output
-- explicit confirmation that internal spawn-headless-wait-target-batch helpers do not reintroduce selector surfaces, view rebuilding, context rebuilding, wait-request/event/consumer/consume expansion, manifest persistence, or public outcome truth
-- explicit confirmation that internal spawn-headless-wait-target-batch helpers remain internal-only, non-public, non-manifest-backed, not actual wait support, not child-creation truth, not runtime truth, not terminal lifecycle truth, and not delegated runtime support
-
-## Internal Spawn Headless Close Candidate
-
-Must test:
-
-- spawn-headless-close-candidate derivation from an existing internal spawn-headless-context result without introducing a second selector contract
-- composition of the existing `headlessContext.context` plus the generic `deriveExecutionSessionCloseReadiness(...)` helper only
-- default close-readiness behavior remains intact when no explicit `resolveSessionLifecycleCapability` is supplied
-- explicit passthrough of `resolveSessionLifecycleCapability` when the caller provides one
-- helper immutability for the supplied spawn-headless-context input
-- explicit confirmation that internal spawn-headless-close-candidate helpers do not reintroduce selector surfaces, view rebuilding, context rebuilding, close-target/request/event/consumer/consume expansion, manifest persistence, or public outcome truth
-- explicit confirmation that internal spawn-headless-close-candidate helpers remain internal-only, non-public, non-manifest-backed, not actual close support, not child-creation truth, not runtime truth, not terminal lifecycle truth, and not delegated runtime support
-
-## Internal Spawn Headless Close Candidate Batch
-
-Must test:
-
-- spawn-headless-close-candidate-batch derivation from an existing internal spawn-headless-context-batch result without introducing a second selector contract
-- sequential composition of the existing ordered headless-context results plus the single-request `spawn-headless-close-candidate` helper only
-- shared `resolveSessionLifecycleCapability` passthrough across every batch item when the caller provides one
-- empty-input behavior that returns the existing batch object plus an empty ordered close-candidate result list
-- preservation of input ordering semantics across the batch
-- helper immutability for the supplied spawn-headless-context-batch input
-- fail-fast behavior on the first readiness-derivation error without partial-result aggregation or summary-policy output
-- explicit confirmation that internal spawn-headless-close-candidate-batch helpers do not reintroduce selector surfaces, view rebuilding, context rebuilding, close-target/request/event/consumer/consume expansion, manifest persistence, or public outcome truth
-- explicit confirmation that internal spawn-headless-close-candidate-batch helpers remain internal-only, non-public, non-manifest-backed, not actual close support, not child-creation truth, not runtime truth, not terminal lifecycle truth, and not delegated runtime support
-
-## Internal Spawn Headless Close Target
-
-Must test:
-
-- spawn-headless-close-target derivation from an existing internal spawn-headless-close-candidate result without introducing a second selector contract
-- composition of the existing `headlessCloseCandidate.candidate` plus the generic `deriveExecutionSessionCloseTarget(...)` helper only
-- helper immutability for the supplied spawn-headless-close-candidate input
-- blocked close-candidate results remain wrapped and omit `target` output rather than being filtered or widened into close-request semantics
-- explicit confirmation that internal spawn-headless-close-target helpers do not reintroduce selector surfaces, view rebuilding, context rebuilding, close-request/event/consumer/consume expansion, manifest persistence, or public outcome truth
-- explicit confirmation that internal spawn-headless-close-target helpers remain internal-only, non-public, non-manifest-backed, not actual close support, not child-creation truth, not runtime truth, not terminal lifecycle truth, and not delegated runtime support
-
-## Internal Spawn Headless Close Target Batch
-
-Must test:
-
-- spawn-headless-close-target-batch derivation from an existing internal spawn-headless-close-candidate-batch result without introducing a second selector contract
-- sequential composition of the existing ordered headless close-candidate results plus the single-request `spawn-headless-close-target` helper only
-- empty-input behavior that returns the existing batch object plus an empty ordered close-target result list
-- preservation of input ordering semantics across the batch
-- helper immutability for the supplied spawn-headless-close-candidate-batch input
-- blocked items remain in-place and omit `target` output rather than being filtered, aggregated, or widened into close-request semantics
-- fail-fast behavior on the first close-target derivation error without partial-result aggregation or summary-policy output
-- explicit confirmation that internal spawn-headless-close-target-batch helpers do not reintroduce selector surfaces, view rebuilding, context rebuilding, close-request/event/consumer/consume expansion, manifest persistence, or public outcome truth
-- explicit confirmation that internal spawn-headless-close-target-batch helpers remain internal-only, non-public, non-manifest-backed, not actual close support, not child-creation truth, not runtime truth, not terminal lifecycle truth, and not delegated runtime support
-
-## Internal Wait Readiness
-
-Must test:
-
-- wait-readiness derivation from an existing internal runtime-context
-- deterministic blocking-reason ordering when multiple wait blockers are present
-- readiness success when the selected context is non-terminal, has a known session, and has no child attempts
-- wait blockers for terminal lifecycle state, unknown session identity, and present child attempts
-- behavior and blocker ordering remain unchanged after shared lifecycle-disposition extraction
-- explicit confirmation that internal wait-readiness helpers do not imply actual wait support, close support, public selectors, or mutable lifecycle state
-
-## Internal Wait Candidate
-
-Must test:
-
-- wait-candidate derivation from an existing read model plus selector without introducing a second selector contract
-- successful composition of an existing internal runtime-context and internal wait-readiness object
-- `undefined` results for selector misses without creating partial candidate objects
-- loud failures for invalid selectors inherited from the runtime-context/read-model contract
-- deterministic preservation of the existing wait-readiness blocking-reason ordering inside the composed candidate object
-- explicit confirmation that internal wait-candidate helpers do not widen public CLI payloads, manifest persistence, or lifecycle semantics
-
-## Internal Wait Target
-
-Must test:
-
-- wait-target derivation from an existing internal wait-candidate without introducing a second selector contract
-- successful projection of a minimal `{ attemptId, runtime, sessionId }` target from a waitable candidate
-- `undefined` results when wait blockers remain present or when the selected session identity is unknown
-- equivalent target derivation through both existing `attemptId` and `sessionId` selection paths upstream of the candidate
-- explicit confirmation that internal wait-target helpers do not widen public CLI payloads, manifest persistence, or lifecycle semantics
-
-## Internal Wait Request
-
-Must test:
-
-- wait-request derivation from an existing internal wait-target without introducing a second selector contract
-- target-based request shaping only, without reintroducing candidate-, selector-, or view-driven entry points
-- successful projection of a minimal `{ attemptId, runtime, sessionId }` request from a valid wait target
-- optional `timeoutMs` carry-through when the caller supplies a valid positive integer
-- omission of `timeoutMs` when it is not provided explicitly
-- loud failures for invalid `timeoutMs` inputs such as non-integer, non-finite, `0`, or negative values
-- helper immutability for the supplied wait-target input
-- explicit confirmation that internal wait-request helpers do not re-run readiness, do not reintroduce selectors or views, do not seed manifests, and do not widen public CLI payloads, manifest persistence, or lifecycle semantics
-- explicit confirmation that internal wait-request helpers do not introduce polling, timeout scheduling, settle policy, child policy, close coupling, or lifecycle truth
-
-## Internal Wait Consumer Preflight
-
-Must test:
-
-- wait-consumer-readiness derivation from an existing internal wait-request without introducing a second selector contract
-- explicit capability-aware allow behavior when `resolveSessionLifecycleCapability` reports support
-- default blocked behavior for shipped runtimes whose adapter descriptor still marks `sessionLifecycle` as unsupported
-- blocked behavior for unknown runtimes when capability lookup fails or resolves to unsupported
-- stable blocking-reason vocabulary limited to `session_lifecycle_unsupported`
-- helper immutability for the supplied wait-request input
-- wait-consumer composition that returns the original wait-request plus capability-aware readiness
-- explicit confirmation that internal wait-consumer helpers do not reintroduce selectors, views, contexts, candidates, targets, readiness recomputation, polling, timeout scheduling, event subscription, adapter invocation, manifest seeds, or lifecycle truth
-
-## Internal Wait Consume
-
-Must test:
-
-- wait-consume derivation from an existing internal wait-consumer plus an explicitly injected wait invoker without introducing a second selector contract
-- blocked behavior when wait-consumer readiness reports `canConsumeWait: false`
-- explicit confirmation that blocked wait-consume results do not invoke the injected wait invoker
-- supported behavior when wait-consumer readiness reports `canConsumeWait: true`
-- explicit confirmation that supported wait-consume results invoke the injected wait invoker exactly once
-- explicit confirmation that the injected wait invoker receives exactly the original wait-request object
-- explicit confirmation that injected wait-invoker failures surface directly rather than being wrapped into wait-consume output metadata
-- helper immutability for the supplied wait-consumer input
-- explicit confirmation that internal wait-consume helpers do not reintroduce selectors, views, contexts, candidates, targets, readiness recomputation, capability recomputation, lifecycle projection, manifest seeds, polling metadata, scheduling metadata, public CLI payloads, or lifecycle truth
-
-## Internal Wait Consume Batch
-
-Must test:
-
-- wait-consume-batch derivation from an explicit ordered list of existing internal wait-consumers plus an explicitly injected wait invoker without introducing a second selector contract
-- empty consumer lists returning a minimal `{ results: [] }` batch shape
-- blocked entries remaining visible in order with `invoked: false`
-- supported entries invoking the injected wait invoker in input order
-- explicit confirmation that blocked entries do not prevent later supported entries from being consumed
-- helper immutability for the supplied wait-consumer list and each supplied wait-consumer input
-- explicit confirmation that supported-entry invoker failures stop the batch immediately and do not execute later supported entries
-- explicit confirmation that internal wait-consume-batch helpers do not reintroduce selectors, views, contexts, candidates, targets, readiness recomputation, capability recomputation, lifecycle projection, manifest seeds, polling metadata, scheduling metadata, per-item error aggregation, summary metadata, public CLI payloads, or lifecycle truth
-
-## Internal Close Readiness
-
-Must test:
-
-- close-readiness derivation from an existing internal runtime-context
-- capability-aware close-readiness that may block when the selected runtime does not expose internal `sessionLifecycle` support
-- deterministic blocking-reason ordering when multiple close blockers are present
-- readiness success when the selected context is non-terminal, has a known session, and has no child attempts
-- close blockers for unsupported session lifecycle capability, terminal lifecycle state, unknown session identity, and present child attempts
-- readiness booleans such as `alreadyFinal`, `wouldAffectDescendants`, and `sessionLifecycleSupported`
-- capability-aware semantics remain local to close-readiness after shared lifecycle-disposition extraction
-- explicit confirmation that internal close-readiness helpers do not imply actual close support, public selectors, manifest persistence, or mutable lifecycle state
-
-## Internal Close Candidate
-
-Must test:
-
-- close-candidate derivation from an existing read model plus selector without introducing a second selector contract
-- successful composition of an existing internal runtime-context and internal close-readiness object
-- `undefined` results for selector misses without creating partial candidate objects
-- loud failures for invalid selectors inherited from the runtime-context/read-model contract
-- deterministic preservation of the existing close-readiness blocking-reason ordering inside the composed candidate object
-- explicit confirmation that internal close-candidate helpers do not widen public CLI payloads, manifest persistence, or actual close semantics
-
-## Internal Close Target
-
-Must test:
-
-- close-target derivation from an existing internal close-candidate without introducing a second selector contract
-- successful projection of a minimal `{ attemptId, runtime, sessionId }` target from a closable candidate
-- `undefined` results when close blockers remain present or when the selected session identity is unknown
-- equivalent target derivation through both existing `attemptId` and `sessionId` selection paths upstream of the candidate
-- explicit confirmation that internal close-target helpers do not widen public CLI payloads, manifest persistence, or actual close semantics
-
-## Internal Close Request
-
-Must test:
-
-- close-request derivation from an existing internal close-target without introducing a second selector contract
-- target-based request shaping only, without reintroducing candidate-, selector-, view-, or readiness-driven entry points
-- successful projection of a minimal `{ attemptId, runtime, sessionId }` request from a valid close target
-- loud failures for blank identifier inputs such as empty or whitespace-only `attemptId`, `runtime`, or `sessionId`
-- helper immutability for the supplied close-target input
-- explicit confirmation that internal close-request helpers do not re-run readiness, do not reintroduce selectors or views, do not seed manifests, and do not widen public CLI payloads, manifest persistence, or lifecycle semantics
-- explicit confirmation that internal close-request helpers do not introduce close-consumer preflight, actual close support, force or cascade semantics, settle policy, child policy, or lifecycle truth
-
-## Internal Close Requested Event
-
-Must test:
-
-- close-requested-event derivation from an existing internal close-request without introducing a second selector contract
-- request-based event projection only, without reintroducing target-, candidate-, selector-, or readiness-driven entry points
-- successful projection of a minimal `{ attemptId, runtime, sessionId, lifecycleEventKind: "close_requested" }` event from a valid close request
-- helper immutability for the supplied close-request input
-- explicit confirmation that internal close-requested-event helpers do not re-run readiness, do not reintroduce selectors or views, do not seed manifests, and do not widen public CLI payloads, manifest persistence, or lifecycle semantics
-- explicit confirmation that internal close-requested-event helpers do not introduce actual close support, close-consumer preflight, close success truth, or `close_recorded` semantics
-- explicit confirmation that shared lifecycle-state derivation continues to treat `close_requested` as a recorded marker rather than an immediate `closed` state
-
-## Internal Close Recorded Event
-
-Must test:
-
-- close-recorded-event derivation from an existing internal close-requested-event without introducing a second selector contract
-- requested-event-based event projection only, without reintroducing request-, target-, candidate-, selector-, or readiness-driven entry points
-- successful projection of a minimal `{ attemptId, runtime, sessionId, lifecycleEventKind: "close_recorded" }` event from a valid close-requested-event
-- helper immutability for the supplied close-requested-event input
-- explicit confirmation that internal close-recorded-event helpers do not re-run readiness, do not reintroduce selectors or views, do not seed manifests, and do not widen public CLI payloads, manifest persistence, or lifecycle semantics
-- explicit confirmation that internal close-recorded-event helpers do not introduce actual close support, close-consumer preflight, adapter-driven close results, or public close success truth
-- explicit confirmation that shared lifecycle-state derivation continues to treat `close_requested` as a marker and `close_recorded` as the close-side event that maps to `closed`
-
-## Internal Close Consumer Preflight
-
-Must test:
-
-- close-consumer-readiness derivation from an existing internal close-request without introducing a second selector contract
-- explicit capability-aware allow behavior when `resolveSessionLifecycleCapability` reports support
-- default blocked behavior for shipped runtimes whose adapter descriptor still marks `sessionLifecycle` as unsupported
-- blocked behavior for unknown runtimes when capability lookup fails or resolves to unsupported
-- stable blocking-reason vocabulary limited to `session_lifecycle_unsupported`
-- helper immutability for the supplied close-request input
-- close-consumer composition that returns the original close-request plus capability-aware readiness
-- explicit confirmation that internal close-consumer helpers do not reintroduce selectors, views, contexts, candidates, targets, requested-event or recorded-event inputs, readiness recomputation, adapter invocation, event subscription, manifest seeds, or lifecycle truth
-
-## Internal Close Consume
-
-Must test:
-
-- close-consume derivation from an existing internal close-consumer plus an explicitly injected close invoker without introducing a second selector contract
-- blocked behavior when close-consumer readiness reports `canConsumeClose: false`
-- explicit confirmation that blocked close-consume results do not invoke the injected close invoker
-- supported behavior when close-consumer readiness reports `canConsumeClose: true`
-- explicit confirmation that supported close-consume results invoke the injected close invoker exactly once
-- explicit confirmation that the injected close invoker receives exactly the original close-request object
-- explicit confirmation that injected close-invoker failures surface directly rather than being wrapped into close-consume output metadata
-- helper immutability for the supplied close-consumer input
-- explicit confirmation that internal close-consume helpers do not reintroduce selectors, views, contexts, candidates, targets, readiness recomputation, capability recomputation, requested-event or recorded-event projection, manifest seeds, adapter results, polling metadata, or lifecycle truth
-
-## Internal Close Consume Batch
-
-Must test:
-
-- close-consume-batch derivation from an explicit ordered list of existing internal close-consumers plus an explicitly injected close invoker without introducing a second selector contract
-- empty consumer lists returning a minimal `{ results: [] }` batch shape
-- blocked entries remaining visible in order with `invoked: false`
-- supported entries invoking the injected close invoker in input order
-- explicit confirmation that blocked entries do not prevent later supported entries from being consumed
-- helper immutability for the supplied close-consumer list and each supplied close-consumer input
-- explicit confirmation that supported-entry invoker failures stop the batch immediately and do not execute later supported entries
-- explicit confirmation that internal close-consume-batch helpers do not reintroduce selectors, views, contexts, candidates, targets, readiness recomputation, capability recomputation, requested-event or recorded-event projection, manifest seeds, per-item error aggregation, summary metadata, or lifecycle truth
+- wait- and close-oriented preflight, minimal target/request shaping, bounded lifecycle markers, capability-aware consumer preflight, and consume paths remain bounded derivations over existing internal context, read models, requests, and capability checks rather than new public selector or lifecycle surfaces
+- readiness and candidate composition preserves deterministic blocker ordering, selector validation, and `undefined` behavior for legitimate misses; target and request shaping stays minimal, including the existing positive-integer-only `timeoutMs` contract for wait requests
+- capability-aware preflight remains stable for shipped and unknown runtimes: unsupported `sessionLifecycle` capability stays blocked with the existing bounded vocabulary, supported entries remain eligible, and blocked entries never invoke injected wait or close invokers
+- consume paths invoke only the original injected request exactly once for supported entries, keep blocked entries visible, preserve ordered batch execution, continue past blocked entries, and fail fast on the first supported-entry invoker error without per-item aggregation or summary-policy output
+- close-side event projection remains bounded: `close_requested` stays a marker rather than close-success truth, `close_recorded` remains the first close-side marker that maps to shared `closed`, and neither wait nor close helpers become adapter-driven success truth, public lifecycle truth, manifest persistence, or durable state
 
 ## Verification Layer
 
