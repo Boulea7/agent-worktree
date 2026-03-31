@@ -140,6 +140,60 @@ describe("selection handoff-finalization-consume helpers", () => {
     expect(invokeHandoffFinalization).not.toHaveBeenCalled();
   });
 
+  it("should fail before invoking handoff finalization when readiness blockingReasons contains sparse array holes", async () => {
+    const consumer = createFinalizationConsumer({
+      readiness: {
+        blockingReasons: new Array<string>(1) as never,
+        canConsumeHandoffFinalization: false,
+        hasBlockingReasons: true,
+        handoffFinalizationSupported: false
+      }
+    });
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      consumeAttemptHandoffFinalization({
+        consumer,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(ValidationError);
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
+  it("should fail before invoking handoff finalization when readiness blockingReasons relies on inherited array indexes", async () => {
+    const blockingReasons = new Array<string>(1);
+
+    Object.setPrototypeOf(
+      blockingReasons,
+      Object.create(Array.prototype, {
+        0: {
+          value: "handoff_finalization_unsupported",
+          configurable: true,
+          enumerable: true,
+          writable: true
+        }
+      })
+    );
+
+    const consumer = createFinalizationConsumer({
+      readiness: {
+        blockingReasons: blockingReasons as never,
+        canConsumeHandoffFinalization: false,
+        hasBlockingReasons: true,
+        handoffFinalizationSupported: false
+      }
+    });
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      consumeAttemptHandoffFinalization({
+        consumer,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(ValidationError);
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
   it("should fail before invoking handoff finalization when canConsumeHandoffFinalization is true but blockingReasons is non-empty", async () => {
     const consumer = createFinalizationConsumer({
       readiness: {
