@@ -1,4 +1,5 @@
 import { ValidationError } from "../core/errors.js";
+import { normalizeRequiredAttemptId } from "./derive.js";
 import { buildExecutionSessionIndex } from "./runtime-state.js";
 import type {
   ExecutionSessionRecord,
@@ -12,6 +13,10 @@ export function buildExecutionSessionView(
   const childAttemptIdsByParent = new Map<string, string[]>();
 
   for (const record of records) {
+    const attemptId = normalizeRequiredAttemptId(
+      record.attemptId,
+      "Execution session view attemptId must be a non-empty string."
+    );
     const parentAttemptId = normalizeOptionalIdentifier(
       record.parentAttemptId,
       "Execution session view parentAttemptId must be a non-empty string when present."
@@ -22,7 +27,7 @@ export function buildExecutionSessionView(
     }
 
     const childAttemptIds = childAttemptIdsByParent.get(parentAttemptId) ?? [];
-    childAttemptIds.push(record.attemptId);
+    childAttemptIds.push(attemptId);
     childAttemptIdsByParent.set(parentAttemptId, childAttemptIds);
   }
 

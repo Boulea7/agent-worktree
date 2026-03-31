@@ -9,6 +9,7 @@ import {
 import {
   classifySessionLifecycleState,
   deriveSessionNodeRef,
+  normalizeRequiredAttemptId,
   normalizeSessionGuardrails
 } from "./derive.js";
 
@@ -88,13 +89,18 @@ export function buildExecutionSessionIndex(
   const bySessionId = new Map<string, ExecutionSessionRecord>();
 
   for (const record of records) {
-    if (byAttemptId.has(record.attemptId)) {
+    const attemptId = normalizeRequiredAttemptId(
+      record.attemptId,
+      "Execution session index attemptId must be a non-empty string."
+    );
+
+    if (byAttemptId.has(attemptId)) {
       throw new ValidationError(
-        `Duplicate execution session record for attempt ${record.attemptId}.`
+        `Duplicate execution session record for attempt ${attemptId}.`
       );
     }
 
-    byAttemptId.set(record.attemptId, record);
+    byAttemptId.set(attemptId, record);
 
     const sessionId = validateIndexedSessionId(record.sessionId);
 

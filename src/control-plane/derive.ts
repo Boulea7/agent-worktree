@@ -13,6 +13,10 @@ import type {
 export function deriveSessionNodeRef(
   input: SessionNodeRefInput
 ): SessionNodeRef {
+  const attemptId = normalizeRequiredAttemptId(
+    input.attemptId,
+    "attemptId must be a non-empty string."
+  );
   const sourceKind = input.sourceKind ?? "direct";
   const parentAttemptId = normalizeParentAttemptId(input.parentAttemptId);
 
@@ -28,12 +32,12 @@ export function deriveSessionNodeRef(
     );
   }
 
-  if (parentAttemptId === input.attemptId) {
+  if (parentAttemptId === attemptId) {
     throw new ValidationError("parentAttemptId must not match attemptId.");
   }
 
   return {
-    attemptId: input.attemptId,
+    attemptId,
     nodeKind: parentAttemptId === undefined ? "root" : "child",
     sourceKind,
     ...(parentAttemptId === undefined ? {} : { parentAttemptId })
@@ -140,13 +144,18 @@ export function buildSessionTreeIndex(
   const childAttemptIdsByParent = new Map<string, string[]>();
 
   for (const snapshot of snapshots) {
-    if (byAttemptId.has(snapshot.node.attemptId)) {
+    const attemptId = normalizeRequiredAttemptId(
+      snapshot.node.attemptId,
+      "Session snapshot attemptId must be a non-empty string."
+    );
+
+    if (byAttemptId.has(attemptId)) {
       throw new ValidationError(
-        `Duplicate session snapshot for attempt ${snapshot.node.attemptId}.`
+        `Duplicate session snapshot for attempt ${attemptId}.`
       );
     }
 
-    byAttemptId.set(snapshot.node.attemptId, snapshot);
+    byAttemptId.set(attemptId, snapshot);
 
     if (snapshot.node.parentAttemptId === undefined) {
       continue;
@@ -154,7 +163,7 @@ export function buildSessionTreeIndex(
 
     const existingChildren =
       childAttemptIdsByParent.get(snapshot.node.parentAttemptId) ?? [];
-    existingChildren.push(snapshot.node.attemptId);
+    existingChildren.push(attemptId);
     childAttemptIdsByParent.set(
       snapshot.node.parentAttemptId,
       existingChildren
@@ -202,6 +211,17 @@ function validatePositiveInteger(value: number, field: string): number {
   }
 
   return value;
+}
+
+export function normalizeRequiredAttemptId(
+  attemptId: string,
+  message: string
+): string {
+  if (attemptId.trim().length === 0) {
+    throw new ValidationError(message);
+  }
+
+  return attemptId;
 }
 
 function normalizeParentAttemptId(

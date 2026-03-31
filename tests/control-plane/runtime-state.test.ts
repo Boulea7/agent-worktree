@@ -168,6 +168,17 @@ describe("control-plane runtime-state helpers", () => {
     });
   });
 
+  it("should reject blank attempt identifiers when deriving an execution session record", () => {
+    expect(() =>
+      deriveExecutionSessionRecord({
+        attempt: {
+          attemptId: "   "
+        },
+        result: createHeadlessExecutionResult()
+      })
+    ).toThrow(ValidationError);
+  });
+
   it("should build an execution session index by attempt and by session", () => {
     const withSession = deriveExecutionSessionRecord({
       attempt: {
@@ -273,6 +284,22 @@ describe("control-plane runtime-state helpers", () => {
           attemptId: "att_blank",
           runtime: "codex-cli",
           sessionId: "   ",
+          sourceKind: "direct",
+          lifecycleState: "created",
+          runCompleted: false,
+          errorEventCount: 0,
+          origin: "headless_result"
+        }
+      ])
+    ).toThrow(ValidationError);
+  });
+
+  it("should reject blank attempt identifiers when building an execution session index", () => {
+    expect(() =>
+      buildExecutionSessionIndex([
+        {
+          attemptId: "   ",
+          runtime: "codex-cli",
           sourceKind: "direct",
           lifecycleState: "created",
           runCompleted: false,

@@ -62,6 +62,14 @@ describe("control-plane derive helpers", () => {
     ).toThrow(ValidationError);
   });
 
+  it("should reject blank attempt identifiers", () => {
+    expect(() =>
+      deriveSessionNodeRef({
+        attemptId: "   "
+      })
+    ).toThrow(ValidationError);
+  });
+
   it("should classify lifecycle states from bounded internal signals", () => {
     expect(classifySessionLifecycleState()).toBe("created");
 
@@ -427,6 +435,23 @@ describe("control-plane derive helpers", () => {
           attemptId: "att_duplicate",
           runtime: "codex-cli"
         })
+      ])
+    ).toThrow(ValidationError);
+  });
+
+  it("should reject blank attempt identifiers when building a session-tree index", () => {
+    expect(() =>
+      buildSessionTreeIndex([
+        {
+          node: {
+            attemptId: "   ",
+            nodeKind: "root",
+            sourceKind: "direct"
+          },
+          lifecycleState: "created",
+          runCompleted: false,
+          errorEventCount: 0
+        }
       ])
     ).toThrow(ValidationError);
   });
