@@ -315,6 +315,73 @@ describe("selection handoff-consume helpers", () => {
     ).rejects.toThrow(ValidationError);
     expect(invokeHandoff).not.toHaveBeenCalled();
   });
+
+  it("should fail before invoking handoff when readiness blockingReasons contains sparse array holes", async () => {
+    const consumer = createHandoffConsumer({
+      readiness: {
+        blockingReasons: new Array<string>(1) as never,
+        canConsumeHandoff: false,
+        hasBlockingReasons: true,
+        handoffSupported: false
+      }
+    });
+    const invokeHandoff = vi.fn(async () => {});
+
+    await expect(
+      consumeAttemptHandoff({
+        consumer,
+        invokeHandoff
+      })
+    ).rejects.toThrow(ValidationError);
+    expect(invokeHandoff).not.toHaveBeenCalled();
+  });
+
+  it("should fail before invoking handoff when readiness blockingReasons relies on inherited array indexes", async () => {
+    const blockingReasons = new Array<string>(1);
+
+    Object.setPrototypeOf(blockingReasons, {
+      ...Array.prototype,
+      0: "handoff_unsupported"
+    });
+
+    const consumer = createHandoffConsumer({
+      readiness: {
+        blockingReasons: blockingReasons as never,
+        canConsumeHandoff: false,
+        hasBlockingReasons: true,
+        handoffSupported: false
+      }
+    });
+    const invokeHandoff = vi.fn(async () => {});
+
+    await expect(
+      consumeAttemptHandoff({
+        consumer,
+        invokeHandoff
+      })
+    ).rejects.toThrow(ValidationError);
+    expect(invokeHandoff).not.toHaveBeenCalled();
+  });
+
+  it("should fail before invoking handoff when readiness blockingReasons contains an unknown reason", async () => {
+    const consumer = createHandoffConsumer({
+      readiness: {
+        blockingReasons: ["unexpected_reason"] as never,
+        canConsumeHandoff: false,
+        hasBlockingReasons: true,
+        handoffSupported: false
+      }
+    });
+    const invokeHandoff = vi.fn(async () => {});
+
+    await expect(
+      consumeAttemptHandoff({
+        consumer,
+        invokeHandoff
+      })
+    ).rejects.toThrow(ValidationError);
+    expect(invokeHandoff).not.toHaveBeenCalled();
+  });
 });
 
 function createHandoffConsumer(
