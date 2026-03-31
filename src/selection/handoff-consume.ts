@@ -1,9 +1,14 @@
 import { ValidationError } from "../core/errors.js";
 import type {
   AttemptHandoffConsume,
+  AttemptHandoffConsumerBlockingReason,
   AttemptHandoffConsumerReadiness,
   AttemptHandoffConsumeInput
 } from "./types.js";
+
+const validBlockingReasons = new Set<AttemptHandoffConsumerBlockingReason>([
+  "handoff_unsupported"
+]);
 
 export async function consumeAttemptHandoff(
   input: AttemptHandoffConsumeInput
@@ -33,6 +38,20 @@ function validateReadiness(value: AttemptHandoffConsumerReadiness): void {
     throw new ValidationError(
       "Attempt handoff consume requires consumer.readiness.blockingReasons to be an array."
     );
+  }
+
+  for (let index = 0; index < value.blockingReasons.length; index += 1) {
+    if (
+      !hasOwnIndex(value.blockingReasons, index) ||
+      typeof value.blockingReasons[index] !== "string" ||
+      !validBlockingReasons.has(
+        value.blockingReasons[index] as AttemptHandoffConsumerBlockingReason
+      )
+    ) {
+      throw new ValidationError(
+        "Attempt handoff consume requires consumer.readiness.blockingReasons to use the existing handoff consumer blocker vocabulary."
+      );
+    }
   }
 
   if (typeof value.canConsumeHandoff !== "boolean") {
@@ -72,4 +91,8 @@ function validateReadiness(value: AttemptHandoffConsumerReadiness): void {
       "Attempt handoff consume requires consumer.readiness.handoffSupported to match consumer.readiness.canConsumeHandoff."
     );
   }
+}
+
+function hasOwnIndex(values: readonly unknown[], index: number): boolean {
+  return Object.prototype.hasOwnProperty.call(values, index);
 }
