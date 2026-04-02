@@ -129,6 +129,7 @@ function createHeadlessContext(overrides: {
       : { sessionId: overrides.sessionId })
   });
   const headlessView = {
+    descendantCoverage: "complete",
     headlessRecord,
     view: buildExecutionSessionView([parentRecord, headlessRecord.record])
   } satisfies ExecutionSessionSpawnHeadlessView;

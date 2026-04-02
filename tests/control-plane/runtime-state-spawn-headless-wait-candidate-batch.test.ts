@@ -17,6 +17,7 @@ describe(
     it("should return an empty ordered result list for an empty headless-context batch", () => {
       const headlessContextBatch = deriveExecutionSessionSpawnHeadlessContextBatch({
         headlessViewBatch: {
+          descendantCoverage: "complete",
           headlessRecordBatch: {
             results: []
           },
@@ -62,6 +63,7 @@ describe(
       });
       const headlessContextBatch = deriveExecutionSessionSpawnHeadlessContextBatch({
         headlessViewBatch: {
+          descendantCoverage: "complete",
           headlessRecordBatch: {
             results: [childRecordA, childRecordB]
           },

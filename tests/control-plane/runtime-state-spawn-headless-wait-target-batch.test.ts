@@ -242,6 +242,70 @@ describe(
       expect(result.results[0]).not.toHaveProperty("target");
       expect(result.results[1]).not.toHaveProperty("target");
     });
+
+    it("should keep every manual batch entry blocked when descendant coverage is omitted", () => {
+      const manualHeadlessViewBatch = {
+        headlessRecordBatch: {
+          results: [
+            createHeadlessRecord({
+              attemptId: "att_child_wait_target_batch_manual_missing_a",
+              parentAttemptId: "att_root_wait_target_batch_manual_missing",
+              sessionId: "thr_child_wait_target_batch_manual_missing_a",
+              sourceKind: "fork"
+            }),
+            createHeadlessRecord({
+              attemptId: "att_child_wait_target_batch_manual_missing_b",
+              parentAttemptId: "att_root_wait_target_batch_manual_missing",
+              sessionId: "thr_child_wait_target_batch_manual_missing_b",
+              sourceKind: "delegated"
+            })
+          ]
+        },
+        view: buildExecutionSessionView([
+          createRecord({
+            attemptId: "att_root_wait_target_batch_manual_missing",
+            sessionId: "thr_root_wait_target_batch_manual_missing",
+            sourceKind: "direct"
+          }),
+          createRecord({
+            attemptId: "att_child_wait_target_batch_manual_missing_a",
+            parentAttemptId: "att_root_wait_target_batch_manual_missing",
+            sessionId: "thr_child_wait_target_batch_manual_missing_a",
+            sourceKind: "fork"
+          }),
+          createRecord({
+            attemptId: "att_child_wait_target_batch_manual_missing_b",
+            parentAttemptId: "att_root_wait_target_batch_manual_missing",
+            sessionId: "thr_child_wait_target_batch_manual_missing_b",
+            sourceKind: "delegated"
+          })
+        ])
+      } satisfies ExecutionSessionSpawnHeadlessViewBatch;
+      const headlessContextBatch = deriveExecutionSessionSpawnHeadlessContextBatch({
+        headlessViewBatch: manualHeadlessViewBatch
+      });
+      const headlessWaitCandidateBatch =
+        deriveExecutionSessionSpawnHeadlessWaitCandidateBatch({
+          headlessContextBatch
+        });
+      const result = deriveExecutionSessionSpawnHeadlessWaitTargetBatch({
+        headlessWaitCandidateBatch
+      });
+
+      expect(result.results).toHaveLength(2);
+      expect(result.results[0]?.headlessWaitCandidate.candidate.readiness).toEqual({
+        blockingReasons: ["descendant_coverage_incomplete"],
+        canWait: false,
+        hasBlockingReasons: true
+      });
+      expect(result.results[1]?.headlessWaitCandidate.candidate.readiness).toEqual({
+        blockingReasons: ["descendant_coverage_incomplete"],
+        canWait: false,
+        hasBlockingReasons: true
+      });
+      expect(result.results[0]).not.toHaveProperty("target");
+      expect(result.results[1]).not.toHaveProperty("target");
+    });
   }
 );
 
@@ -295,6 +359,7 @@ function buildHeadlessViewBatch(
   );
 
   return {
+    descendantCoverage: "complete",
     headlessRecordBatch: {
       results: headlessRecords
     },
@@ -422,6 +487,7 @@ function createHeadlessContext(overrides: {
       : { sessionId: overrides.sessionId })
   });
   const headlessView = {
+    descendantCoverage: "complete",
     headlessRecord,
     view: buildExecutionSessionView([parentRecord, headlessRecord.record])
   } satisfies ExecutionSessionSpawnHeadlessView;

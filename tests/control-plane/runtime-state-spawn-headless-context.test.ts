@@ -29,6 +29,7 @@ describe("control-plane runtime-state spawn-headless-context helpers", () => {
       sourceKind: "fork"
     });
     const headlessView = {
+      descendantCoverage: "complete",
       headlessRecord: childRecord,
       view: buildExecutionSessionView([
         rootRecord,
@@ -68,6 +69,7 @@ describe("control-plane runtime-state spawn-headless-context helpers", () => {
 
   it("should fail when the supplied headless view cannot select the headless record", () => {
     const headlessView = {
+      descendantCoverage: "complete",
       headlessRecord: createHeadlessRecord({
         attemptId: "att_missing_context",
         parentAttemptId: "att_parent_context",
