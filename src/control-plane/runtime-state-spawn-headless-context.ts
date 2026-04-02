@@ -8,11 +8,18 @@ import type {
 export function deriveExecutionSessionSpawnHeadlessContext(
   input: ExecutionSessionSpawnHeadlessContextInput
 ): ExecutionSessionSpawnHeadlessContext {
+  const headlessView =
+    input.headlessView.descendantCoverage === undefined
+      ? {
+          ...input.headlessView,
+          descendantCoverage: "incomplete" as const
+        }
+      : input.headlessView;
   const context = deriveExecutionSessionContext({
     selector: {
-      attemptId: input.headlessView.headlessRecord.record.attemptId
+      attemptId: headlessView.headlessRecord.record.attemptId
     },
-    view: input.headlessView.view
+    view: headlessView.view
   });
 
   if (context === undefined) {
@@ -22,7 +29,7 @@ export function deriveExecutionSessionSpawnHeadlessContext(
   }
 
   return {
-    headlessView: input.headlessView,
+    headlessView,
     context
   };
 }

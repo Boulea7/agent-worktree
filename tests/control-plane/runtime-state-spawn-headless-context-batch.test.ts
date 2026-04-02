@@ -16,6 +16,7 @@ describe(
   () => {
     it("should return an empty ordered result list for an empty headless-view batch", () => {
       const headlessViewBatch = {
+        descendantCoverage: "complete",
         headlessRecordBatch: {
           results: []
         },
@@ -59,6 +60,7 @@ describe(
         sourceKind: "delegated"
       });
       const headlessViewBatch = {
+        descendantCoverage: "complete",
         headlessRecordBatch: {
           results: [childRecordA, childRecordB]
         },
@@ -133,6 +135,7 @@ describe(
         sourceKind: "delegated"
       });
       const headlessViewBatch = {
+        descendantCoverage: "complete",
         headlessRecordBatch: {
           results: [invalidFirstRecord, validSecondRecord]
         },

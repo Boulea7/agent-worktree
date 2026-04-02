@@ -148,6 +148,7 @@ describe(
 function deriveEmptyHeadlessContextBatch() {
   return deriveExecutionSessionSpawnHeadlessContextBatch({
     headlessViewBatch: {
+      descendantCoverage: "complete",
       headlessRecordBatch: {
         results: []
       },
@@ -174,6 +175,7 @@ function createHeadlessContextBatch(input: {
     createHeadlessRecord(record)
   );
   const headlessViewBatch = {
+    descendantCoverage: "complete",
     headlessRecordBatch: {
       results: headlessRecords
     },

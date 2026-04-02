@@ -27,6 +27,7 @@ describe(
         sourceKind: "delegated"
       });
       const headlessView = {
+        descendantCoverage: "complete",
         headlessRecord: childRecord,
         view: buildExecutionSessionView([rootRecord, childRecord.record])
       } satisfies ExecutionSessionSpawnHeadlessView;
@@ -81,6 +82,7 @@ describe(
       });
       const headlessContext = deriveExecutionSessionSpawnHeadlessContext({
         headlessView: {
+          descendantCoverage: "complete",
           headlessRecord: childRecord,
           view: buildExecutionSessionView([
             parentRecord,
@@ -130,6 +132,48 @@ describe(
         })
       ).toEqual({
         headlessContext,
+        candidate: {
+          context: headlessContext.context,
+          readiness: {
+            blockingReasons: ["descendant_coverage_incomplete"],
+            canWait: false,
+            hasBlockingReasons: true
+          }
+        }
+      });
+    });
+
+    it("should fail closed when a manually constructed headless view omits descendant coverage", () => {
+      const parentRecord = createRecord({
+        attemptId: "att_parent_wait_candidate_manual_missing",
+        sessionId: "thr_parent_wait_candidate_manual_missing",
+        sourceKind: "direct"
+      });
+      const childRecord = createHeadlessRecord({
+        attemptId: "att_child_wait_candidate_manual_missing",
+        parentAttemptId: "att_parent_wait_candidate_manual_missing",
+        sessionId: "thr_child_wait_candidate_manual_missing",
+        sourceKind: "delegated"
+      });
+      const headlessContext = deriveExecutionSessionSpawnHeadlessContext({
+        headlessView: {
+          headlessRecord: childRecord,
+          view: buildExecutionSessionView([parentRecord, childRecord.record])
+        }
+      });
+
+      expect(
+        deriveExecutionSessionSpawnHeadlessWaitCandidate({
+          headlessContext
+        })
+      ).toEqual({
+        headlessContext: {
+          ...headlessContext,
+          headlessView: {
+            ...headlessContext.headlessView,
+            descendantCoverage: "incomplete"
+          }
+        },
         candidate: {
           context: headlessContext.context,
           readiness: {

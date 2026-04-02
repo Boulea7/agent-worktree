@@ -110,6 +110,52 @@ describe(
         }
       });
     });
+
+    it("should fail closed when a manually constructed headless view omits descendant coverage", () => {
+      const parentRecord = createRecord({
+        attemptId: "att_parent_close_candidate_manual_missing",
+        sessionId: "thr_parent_close_candidate_manual_missing",
+        sourceKind: "direct"
+      });
+      const childRecord = createHeadlessRecord({
+        attemptId: "att_child_close_candidate_manual_missing",
+        parentAttemptId: "att_parent_close_candidate_manual_missing",
+        sessionId: "thr_child_close_candidate_manual_missing",
+        sourceKind: "fork"
+      });
+      const headlessContext = deriveExecutionSessionSpawnHeadlessContext({
+        headlessView: {
+          headlessRecord: childRecord,
+          view: buildExecutionSessionView([parentRecord, childRecord.record])
+        }
+      });
+
+      expect(
+        deriveExecutionSessionSpawnHeadlessCloseCandidate({
+          headlessContext,
+          resolveSessionLifecycleCapability: () => true
+        })
+      ).toEqual({
+        headlessContext: {
+          ...headlessContext,
+          headlessView: {
+            ...headlessContext.headlessView,
+            descendantCoverage: "incomplete"
+          }
+        },
+        candidate: {
+          context: headlessContext.context,
+          readiness: {
+            blockingReasons: ["descendant_coverage_incomplete"],
+            sessionLifecycleSupported: true,
+            alreadyFinal: false,
+            wouldAffectDescendants: false,
+            canClose: false,
+            hasBlockingReasons: true
+          }
+        }
+      });
+    });
   }
 );
 
@@ -133,6 +179,7 @@ function createHeadlessContext(overrides: {
     sourceKind: overrides.sourceKind
   });
   const headlessView = {
+    descendantCoverage: "complete",
     headlessRecord,
     view: buildExecutionSessionView([parentRecord, headlessRecord.record])
   } satisfies ExecutionSessionSpawnHeadlessView;
