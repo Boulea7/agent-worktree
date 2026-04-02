@@ -34,6 +34,7 @@ export const executionSessionRecordSources = ["headless_result"] as const;
 export const executionSessionWaitBlockingReasons = [
   "lifecycle_terminal",
   "session_unknown",
+  "descendant_coverage_incomplete",
   "child_attempts_present"
 ] as const;
 export const executionSessionWaitConsumerBlockingReasons = [
@@ -43,6 +44,7 @@ export const executionSessionCloseBlockingReasons = [
   "session_lifecycle_unsupported",
   "lifecycle_terminal",
   "session_unknown",
+  "descendant_coverage_incomplete",
   "child_attempts_present"
 ] as const;
 export const executionSessionCloseConsumerBlockingReasons = [
@@ -79,6 +81,7 @@ export type ExecutionSessionSpawnBlockingReason =
   (typeof executionSessionSpawnBlockingReasons)[number];
 export type ExecutionSessionSpawnRequestSourceKind =
   (typeof executionSessionSpawnRequestSourceKinds)[number];
+export type ExecutionSessionDescendantCoverage = "complete" | "incomplete";
 
 export interface SessionLifecycleCapabilityResolver {
   (runtime: string): boolean;
@@ -655,6 +658,7 @@ export interface ExecutionSessionSpawnHeadlessViewInput {
 }
 
 export interface ExecutionSessionSpawnHeadlessView {
+  descendantCoverage?: ExecutionSessionDescendantCoverage;
   headlessRecord: ExecutionSessionSpawnHeadlessRecord;
   view: ExecutionSessionView;
 }
@@ -664,6 +668,7 @@ export interface ExecutionSessionSpawnHeadlessViewBatchInput {
 }
 
 export interface ExecutionSessionSpawnHeadlessViewBatch {
+  descendantCoverage?: ExecutionSessionDescendantCoverage;
   headlessRecordBatch: ExecutionSessionSpawnHeadlessRecordBatch;
   view: ExecutionSessionView;
 }

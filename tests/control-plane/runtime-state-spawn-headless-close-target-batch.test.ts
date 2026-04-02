@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  deriveExecutionSessionSpawnHeadlessRecordBatch,
   buildExecutionSessionView,
   deriveExecutionSessionSpawnHeadlessCloseCandidate,
   deriveExecutionSessionSpawnHeadlessContext,
   deriveExecutionSessionSpawnHeadlessContextBatch,
+  deriveExecutionSessionSpawnHeadlessViewBatch,
+  deriveExecutionSessionSpawnHeadlessCloseCandidateBatch,
   deriveExecutionSessionSpawnHeadlessCloseTargetBatch,
   type ExecutionSessionRecord,
+  type ExecutionSessionSpawnHeadlessExecute,
   type ExecutionSessionSpawnHeadlessCloseCandidateBatch,
   type ExecutionSessionSpawnHeadlessRecord,
   type ExecutionSessionSpawnHeadlessView,
@@ -144,6 +148,115 @@ describe(
       ).toThrow("close target derivation failed");
       expect(tailCandidateAccessed).toBe(false);
     });
+
+    it("should keep every sparse real-builder batch entry blocked when descendant coverage is incomplete", () => {
+      const headlessRecordBatch = deriveExecutionSessionSpawnHeadlessRecordBatch({
+        items: [
+          createHeadlessExecute({
+            attemptId: "att_child_close_target_batch_sparse_a",
+            parentAttemptId: "att_root_close_target_batch_sparse",
+            sessionId: "thr_child_close_target_batch_sparse_a",
+            sourceKind: "fork"
+          }),
+          createHeadlessExecute({
+            attemptId: "att_child_close_target_batch_sparse_b",
+            parentAttemptId: "att_root_close_target_batch_sparse",
+            sessionId: "thr_child_close_target_batch_sparse_b",
+            sourceKind: "delegated"
+          })
+        ]
+      });
+      const headlessViewBatch = deriveExecutionSessionSpawnHeadlessViewBatch({
+        headlessRecordBatch
+      });
+      const headlessContextBatch = deriveExecutionSessionSpawnHeadlessContextBatch({
+        headlessViewBatch
+      });
+      const headlessCloseCandidateBatch =
+        deriveExecutionSessionSpawnHeadlessCloseCandidateBatch({
+          headlessContextBatch,
+          resolveSessionLifecycleCapability: () => true
+        });
+
+      const result = deriveExecutionSessionSpawnHeadlessCloseTargetBatch({
+        headlessCloseCandidateBatch
+      });
+
+      expect(result.results).toHaveLength(2);
+      expect(result.results[0]?.headlessCloseCandidate.candidate.readiness).toEqual({
+        blockingReasons: ["descendant_coverage_incomplete"],
+        sessionLifecycleSupported: true,
+        alreadyFinal: false,
+        wouldAffectDescendants: false,
+        canClose: false,
+        hasBlockingReasons: true
+      });
+      expect(result.results[1]?.headlessCloseCandidate.candidate.readiness).toEqual({
+        blockingReasons: ["descendant_coverage_incomplete"],
+        sessionLifecycleSupported: true,
+        alreadyFinal: false,
+        wouldAffectDescendants: false,
+        canClose: false,
+        hasBlockingReasons: true
+      });
+      expect(result.results[0]).not.toHaveProperty("target");
+      expect(result.results[1]).not.toHaveProperty("target");
+    });
+
+    it("should keep incomplete-coverage blockers ahead of child blockers for parent items in default batch views", () => {
+      const headlessRecordBatch = deriveExecutionSessionSpawnHeadlessRecordBatch({
+        items: [
+          createHeadlessExecute({
+            attemptId: "att_parent_close_target_batch_nested",
+            parentAttemptId: "att_external_close_target_batch_nested",
+            sessionId: "thr_parent_close_target_batch_nested",
+            sourceKind: "fork"
+          }),
+          createHeadlessExecute({
+            attemptId: "att_child_close_target_batch_nested",
+            parentAttemptId: "att_parent_close_target_batch_nested",
+            sessionId: "thr_child_close_target_batch_nested",
+            sourceKind: "delegated"
+          })
+        ]
+      });
+      const headlessViewBatch = deriveExecutionSessionSpawnHeadlessViewBatch({
+        headlessRecordBatch
+      });
+      const headlessContextBatch = deriveExecutionSessionSpawnHeadlessContextBatch({
+        headlessViewBatch
+      });
+      const headlessCloseCandidateBatch =
+        deriveExecutionSessionSpawnHeadlessCloseCandidateBatch({
+          headlessContextBatch,
+          resolveSessionLifecycleCapability: () => true
+        });
+      const result = deriveExecutionSessionSpawnHeadlessCloseTargetBatch({
+        headlessCloseCandidateBatch
+      });
+
+      expect(result.results[0]?.headlessCloseCandidate.candidate.readiness).toEqual({
+        blockingReasons: [
+          "descendant_coverage_incomplete",
+          "child_attempts_present"
+        ],
+        sessionLifecycleSupported: true,
+        alreadyFinal: false,
+        wouldAffectDescendants: true,
+        canClose: false,
+        hasBlockingReasons: true
+      });
+      expect(result.results[1]?.headlessCloseCandidate.candidate.readiness).toEqual({
+        blockingReasons: ["descendant_coverage_incomplete"],
+        sessionLifecycleSupported: true,
+        alreadyFinal: false,
+        wouldAffectDescendants: false,
+        canClose: false,
+        hasBlockingReasons: true
+      });
+      expect(result.results[0]).not.toHaveProperty("target");
+      expect(result.results[1]).not.toHaveProperty("target");
+    });
   }
 );
 
@@ -241,6 +354,79 @@ function createHeadlessCloseCandidate(overrides: {
             overrides.resolveSessionLifecycleCapability
         })
   });
+}
+
+function createHeadlessExecute(overrides: {
+  attemptId: string;
+  parentAttemptId: string;
+  sessionId: string;
+  sourceKind: "fork" | "delegated";
+}): ExecutionSessionSpawnHeadlessExecute {
+  return {
+    headlessApply: {
+      apply: {
+        consume: {
+          request: {
+            parentAttemptId: overrides.parentAttemptId,
+            parentRuntime: "codex-cli",
+            parentSessionId: `parent_${overrides.sessionId}`,
+            sourceKind: overrides.sourceKind
+          },
+          invoked: true
+        },
+        effects: {
+          lineage: {
+            attemptId: overrides.attemptId,
+            parentAttemptId: overrides.parentAttemptId,
+            sourceKind: overrides.sourceKind
+          },
+          requestedEvent: {
+            attemptId: overrides.parentAttemptId,
+            runtime: "codex-cli",
+            sessionId: `parent_${overrides.sessionId}`,
+            lifecycleEventKind: "spawn_requested"
+          },
+          recordedEvent: {
+            attemptId: overrides.parentAttemptId,
+            runtime: "codex-cli",
+            sessionId: `parent_${overrides.sessionId}`,
+            lifecycleEventKind: "spawn_recorded"
+          }
+        }
+      },
+      headlessInput: {
+        prompt: "Reply with exactly: ok",
+        attempt: {
+          attemptId: overrides.attemptId,
+          parentAttemptId: overrides.parentAttemptId,
+          sourceKind: overrides.sourceKind
+        }
+      }
+    },
+    executionResult: {
+      command: {
+        runtime: "codex-cli",
+        executable: "codex",
+        args: ["exec", "--json", "Reply with exactly: ok"],
+        metadata: {
+          executionMode: "headless_event_stream",
+          machineReadable: true,
+          promptIncluded: true,
+          resumeRequested: false,
+          safetyIntent: "workspace_write_with_approval"
+        }
+      },
+      events: [],
+      exitCode: 0,
+      observation: {
+        threadId: overrides.sessionId,
+        runCompleted: false,
+        errorEventCount: 0
+      },
+      stderr: "",
+      stdout: ""
+    }
+  };
 }
 
 function createHeadlessContext(overrides: {

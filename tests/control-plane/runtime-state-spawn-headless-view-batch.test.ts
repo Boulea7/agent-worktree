@@ -59,6 +59,7 @@ describe("control-plane runtime-state spawn-headless-view-batch helpers", () => 
       "att_child_view_a",
       "att_child_view_b"
     ]);
+    expect(result.descendantCoverage).toBe("incomplete");
     expect(result).not.toHaveProperty("record");
     expect(result).not.toHaveProperty("records");
     expect(result).not.toHaveProperty("selector");

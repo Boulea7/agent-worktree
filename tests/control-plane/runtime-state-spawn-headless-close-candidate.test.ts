@@ -4,6 +4,7 @@ import {
   buildExecutionSessionView,
   deriveExecutionSessionSpawnHeadlessCloseCandidate,
   deriveExecutionSessionSpawnHeadlessContext,
+  deriveExecutionSessionSpawnHeadlessView,
   type ExecutionSessionRecord,
   type ExecutionSessionSpawnHeadlessRecord,
   type ExecutionSessionSpawnHeadlessView
@@ -73,6 +74,40 @@ describe(
         wouldAffectDescendants: false,
         canClose: true,
         hasBlockingReasons: false
+      });
+    });
+
+    it("should fail closed when the headless context comes from an incomplete default headless view", () => {
+      const headlessRecord = createHeadlessRecord({
+        attemptId: "att_child_close_candidate_incomplete",
+        parentAttemptId: "att_parent_close_candidate_incomplete",
+        sessionId: "thr_child_close_candidate_incomplete",
+        sourceKind: "fork"
+      });
+      const headlessContext = deriveExecutionSessionSpawnHeadlessContext({
+        headlessView: deriveExecutionSessionSpawnHeadlessView({
+          headlessRecord
+        })
+      });
+
+      expect(
+        deriveExecutionSessionSpawnHeadlessCloseCandidate({
+          headlessContext,
+          resolveSessionLifecycleCapability: () => true
+        })
+      ).toEqual({
+        headlessContext,
+        candidate: {
+          context: headlessContext.context,
+          readiness: {
+            blockingReasons: ["descendant_coverage_incomplete"],
+            sessionLifecycleSupported: true,
+            alreadyFinal: false,
+            wouldAffectDescendants: false,
+            canClose: false,
+            hasBlockingReasons: true
+          }
+        }
       });
     });
   }

@@ -33,6 +33,7 @@ describe("control-plane runtime-state spawn-headless-view helpers", () => {
     expect(view.childAttemptIdsByParent.get("att_parent_view")).toEqual([
       "att_child_view"
     ]);
+    expect(result.descendantCoverage).toBe("incomplete");
     expect(result).not.toHaveProperty("record");
     expect(result).not.toHaveProperty("results");
     expect(result).not.toHaveProperty("selector");
