@@ -15,6 +15,9 @@ export function deriveExecutionSessionSpawnHeadlessContextBatch(
     results.push(
       deriveExecutionSessionSpawnHeadlessContext({
         headlessView: {
+          ...(input.headlessViewBatch.descendantCoverage === undefined
+            ? {}
+            : { descendantCoverage: input.headlessViewBatch.descendantCoverage }),
           headlessRecord,
           view: input.headlessViewBatch.view
         }

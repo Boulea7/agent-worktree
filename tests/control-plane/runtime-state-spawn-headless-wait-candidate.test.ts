@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildExecutionSessionView,
   deriveExecutionSessionSpawnHeadlessContext,
+  deriveExecutionSessionSpawnHeadlessView,
   deriveExecutionSessionSpawnHeadlessWaitCandidate,
   deriveExecutionSessionWaitReadiness,
   type ExecutionSessionRecord,
@@ -103,6 +104,36 @@ describe(
               "session_unknown",
               "child_attempts_present"
             ],
+            canWait: false,
+            hasBlockingReasons: true
+          }
+        }
+      });
+    });
+
+    it("should fail closed when the headless context comes from an incomplete default headless view", () => {
+      const headlessRecord = createHeadlessRecord({
+        attemptId: "att_child_wait_candidate_incomplete",
+        parentAttemptId: "att_parent_wait_candidate_incomplete",
+        sessionId: "thr_child_wait_candidate_incomplete",
+        sourceKind: "delegated"
+      });
+      const headlessContext = deriveExecutionSessionSpawnHeadlessContext({
+        headlessView: deriveExecutionSessionSpawnHeadlessView({
+          headlessRecord
+        })
+      });
+
+      expect(
+        deriveExecutionSessionSpawnHeadlessWaitCandidate({
+          headlessContext
+        })
+      ).toEqual({
+        headlessContext,
+        candidate: {
+          context: headlessContext.context,
+          readiness: {
+            blockingReasons: ["descendant_coverage_incomplete"],
             canWait: false,
             hasBlockingReasons: true
           }

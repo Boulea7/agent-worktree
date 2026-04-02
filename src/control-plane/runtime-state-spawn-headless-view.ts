@@ -8,6 +8,7 @@ export function deriveExecutionSessionSpawnHeadlessView(
   input: ExecutionSessionSpawnHeadlessViewInput
 ): ExecutionSessionSpawnHeadlessView {
   return {
+    descendantCoverage: "incomplete",
     headlessRecord: input.headlessRecord,
     view: buildExecutionSessionView([input.headlessRecord.record])
   };
