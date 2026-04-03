@@ -499,6 +499,230 @@ describe("selection promotion-decision helpers", () => {
     );
   });
 
+  it("should fail loudly when the selected candidate explanationCode is not selected", () => {
+    const summary = createPromotionExplanationSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "verified",
+          checks: []
+        })
+      })
+    ]);
+
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...summary,
+        selected: {
+          ...summary.selected!,
+          explanationCode: "promotion_ready"
+        },
+        candidates: [
+          {
+            ...summary.candidates[0]!,
+            explanationCode: "promotion_ready"
+          }
+        ]
+      })
+    ).toThrow(
+      "Attempt promotion decision summary requires candidate.explanationCode to match the canonical explanation derived from candidate state."
+    );
+  });
+
+  it("should fail loudly when a non-selected ready candidate does not use promotion_ready", () => {
+    const summary = createPromotionExplanationSummary([
+      createPromotionCandidate({
+        attemptId: "att_b",
+        verification: createVerification({
+          state: "verified",
+          checks: []
+        })
+      }),
+      createPromotionCandidate({
+        attemptId: "att_a",
+        verification: createVerification({
+          state: "verified",
+          checks: []
+        })
+      })
+    ]);
+
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...summary,
+        candidates: [
+          summary.candidates[0]!,
+          {
+            ...summary.candidates[1]!,
+            explanationCode: "verification_incomplete"
+          }
+        ]
+      })
+    ).toThrow(
+      "Attempt promotion decision summary requires candidate.explanationCode to match the canonical explanation derived from candidate state."
+    );
+  });
+
+  it("should fail loudly when required failed blockers do not use required_checks_failed", () => {
+    const summary = createPromotionExplanationSummary([
+      createPromotionCandidate({
+        attemptId: "att_selected",
+        verification: createVerification({
+          state: "verified",
+          checks: []
+        })
+      }),
+      createPromotionCandidate({
+        attemptId: "att_failed",
+        verification: createVerification({
+          state: "failed",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "failed"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...summary,
+        candidates: [
+          summary.candidates[0]!,
+          {
+            ...summary.candidates[1]!,
+            explanationCode: "verification_incomplete"
+          }
+        ]
+      })
+    ).toThrow(
+      "Attempt promotion decision summary requires candidate.explanationCode to match the canonical explanation derived from candidate state."
+    );
+  });
+
+  it("should fail loudly when required skipped blockers do not use required_checks_failed", () => {
+    const summary = createPromotionExplanationSummary([
+      createPromotionCandidate({
+        attemptId: "att_selected",
+        verification: createVerification({
+          state: "verified",
+          checks: []
+        })
+      }),
+      createPromotionCandidate({
+        attemptId: "att_skipped",
+        verification: createVerification({
+          state: "failed",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "skipped"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...summary,
+        candidates: [
+          summary.candidates[0]!,
+          {
+            ...summary.candidates[1]!,
+            explanationCode: "verification_incomplete"
+          }
+        ]
+      })
+    ).toThrow(
+      "Attempt promotion decision summary requires candidate.explanationCode to match the canonical explanation derived from candidate state."
+    );
+  });
+
+  it("should fail loudly when required pending blockers do not use required_checks_pending", () => {
+    const summary = createPromotionExplanationSummary([
+      createPromotionCandidate({
+        attemptId: "att_selected",
+        verification: createVerification({
+          state: "verified",
+          checks: []
+        })
+      }),
+      createPromotionCandidate({
+        attemptId: "att_pending",
+        verification: createVerification({
+          state: "pending",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...summary,
+        candidates: [
+          summary.candidates[0]!,
+          {
+            ...summary.candidates[1]!,
+            explanationCode: "required_checks_failed"
+          }
+        ]
+      })
+    ).toThrow(
+      "Attempt promotion decision summary requires candidate.explanationCode to match the canonical explanation derived from candidate state."
+    );
+  });
+
+  it("should fail loudly when verification-incomplete candidates use a blocker-specific explanation code", () => {
+    const summary = createPromotionExplanationSummary([
+      createPromotionCandidate({
+        attemptId: "att_selected",
+        verification: createVerification({
+          state: "verified",
+          checks: []
+        })
+      }),
+      createPromotionCandidate({
+        attemptId: "att_optional_failed",
+        verification: createVerification({
+          state: "failed",
+          checks: [
+            {
+              name: "docs",
+              required: false,
+              status: "failed"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...summary,
+        candidates: [
+          summary.candidates[0]!,
+          {
+            ...summary.candidates[1]!,
+            explanationCode: "required_checks_failed"
+          }
+        ]
+      })
+    ).toThrow(
+      "Attempt promotion decision summary requires candidate.explanationCode to match the canonical explanation derived from candidate state."
+    );
+  });
+
   it("should not mutate the supplied explanation summary or reuse selected references", () => {
     const summary = Object.freeze(
       createPromotionExplanationSummary([

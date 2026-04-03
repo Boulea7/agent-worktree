@@ -122,6 +122,17 @@ function validatePromotionExplanationSummary(
         "Attempt promotion decision summary requires non-first candidates to be unselected."
       );
     }
+
+    const canonicalExplanationCode = deriveCanonicalExplanationCode(
+      candidate,
+      index
+    );
+
+    if (candidate.explanationCode !== canonicalExplanationCode) {
+      throw new ValidationError(
+        "Attempt promotion decision summary requires candidate.explanationCode to match the canonical explanation derived from candidate state."
+      );
+    }
   });
 
   if (
@@ -237,15 +248,11 @@ function deriveBlockingReasons(
   }
 
   const blockingReasons: AttemptPromotionDecisionBlockingReason[] = [];
-  const hasRequiredSkipped = selected.blockingRequiredCheckNames.some((name) =>
-    selected.skippedCheckNames.includes(name)
-  );
-  const hasRequiredFailure = selected.blockingRequiredCheckNames.some((name) =>
-    selected.failedOrErrorCheckNames.includes(name)
-  );
-  const hasRequiredPending = selected.blockingRequiredCheckNames.some((name) =>
-    selected.pendingCheckNames.includes(name)
-  );
+  const {
+    hasRequiredSkipped,
+    hasRequiredFailure,
+    hasRequiredPending
+  } = deriveBlockingCheckFlags(selected);
 
   if (
     hasRequiredFailure ||
@@ -264,6 +271,59 @@ function deriveBlockingReasons(
   }
 
   return blockingReasons;
+}
+
+function deriveCanonicalExplanationCode(
+  candidate: AttemptPromotionExplanationCandidate,
+  index: number
+): AttemptPromotionExplanationCode {
+  if (index === 0) {
+    return "selected";
+  }
+
+  if (candidate.recommendedForPromotion) {
+    return "promotion_ready";
+  }
+
+  const {
+    hasRequiredSkipped,
+    hasRequiredFailure,
+    hasRequiredPending
+  } = deriveBlockingCheckFlags(candidate);
+
+  if (
+    hasRequiredFailure ||
+    hasRequiredSkipped ||
+    (candidate.blockingRequiredCheckNames.length > 0 && !hasRequiredPending)
+  ) {
+    return "required_checks_failed";
+  }
+
+  if (hasRequiredPending) {
+    return "required_checks_pending";
+  }
+
+  return "verification_incomplete";
+}
+
+function deriveBlockingCheckFlags(
+  candidate: AttemptPromotionExplanationCandidate
+): {
+  hasRequiredSkipped: boolean;
+  hasRequiredFailure: boolean;
+  hasRequiredPending: boolean;
+} {
+  return {
+    hasRequiredSkipped: candidate.blockingRequiredCheckNames.some((name) =>
+      candidate.skippedCheckNames.includes(name)
+    ),
+    hasRequiredFailure: candidate.blockingRequiredCheckNames.some((name) =>
+      candidate.failedOrErrorCheckNames.includes(name)
+    ),
+    hasRequiredPending: candidate.blockingRequiredCheckNames.some((name) =>
+      candidate.pendingCheckNames.includes(name)
+    )
+  };
 }
 
 function countPromotionReadyCandidates(
