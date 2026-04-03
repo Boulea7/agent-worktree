@@ -122,6 +122,17 @@ function validatePromotionExplanationSummary(
         "Attempt promotion decision summary requires non-first candidates to be unselected."
       );
     }
+
+    const canonicalExplanationCode = deriveCanonicalExplanationCode(
+      candidate,
+      index
+    );
+
+    if (candidate.explanationCode !== canonicalExplanationCode) {
+      throw new ValidationError(
+        "Attempt promotion decision summary requires candidate.explanationCode to match the canonical explanation derived from candidate state."
+      );
+    }
   });
 
   if (
@@ -264,6 +275,43 @@ function deriveBlockingReasons(
   }
 
   return blockingReasons;
+}
+
+function deriveCanonicalExplanationCode(
+  candidate: AttemptPromotionExplanationCandidate,
+  index: number
+): AttemptPromotionExplanationCode {
+  if (index === 0) {
+    return "selected";
+  }
+
+  if (candidate.recommendedForPromotion) {
+    return "promotion_ready";
+  }
+
+  const hasRequiredSkipped = candidate.blockingRequiredCheckNames.some((name) =>
+    candidate.skippedCheckNames.includes(name)
+  );
+  const hasRequiredFailure = candidate.blockingRequiredCheckNames.some((name) =>
+    candidate.failedOrErrorCheckNames.includes(name)
+  );
+  const hasRequiredPending = candidate.blockingRequiredCheckNames.some((name) =>
+    candidate.pendingCheckNames.includes(name)
+  );
+
+  if (
+    hasRequiredFailure ||
+    hasRequiredSkipped ||
+    (candidate.blockingRequiredCheckNames.length > 0 && !hasRequiredPending)
+  ) {
+    return "required_checks_failed";
+  }
+
+  if (hasRequiredPending) {
+    return "required_checks_pending";
+  }
+
+  return "verification_incomplete";
 }
 
 function countPromotionReadyCandidates(
