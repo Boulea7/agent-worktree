@@ -248,15 +248,11 @@ function deriveBlockingReasons(
   }
 
   const blockingReasons: AttemptPromotionDecisionBlockingReason[] = [];
-  const hasRequiredSkipped = selected.blockingRequiredCheckNames.some((name) =>
-    selected.skippedCheckNames.includes(name)
-  );
-  const hasRequiredFailure = selected.blockingRequiredCheckNames.some((name) =>
-    selected.failedOrErrorCheckNames.includes(name)
-  );
-  const hasRequiredPending = selected.blockingRequiredCheckNames.some((name) =>
-    selected.pendingCheckNames.includes(name)
-  );
+  const {
+    hasRequiredSkipped,
+    hasRequiredFailure,
+    hasRequiredPending
+  } = deriveBlockingCheckFlags(selected);
 
   if (
     hasRequiredFailure ||
@@ -289,15 +285,11 @@ function deriveCanonicalExplanationCode(
     return "promotion_ready";
   }
 
-  const hasRequiredSkipped = candidate.blockingRequiredCheckNames.some((name) =>
-    candidate.skippedCheckNames.includes(name)
-  );
-  const hasRequiredFailure = candidate.blockingRequiredCheckNames.some((name) =>
-    candidate.failedOrErrorCheckNames.includes(name)
-  );
-  const hasRequiredPending = candidate.blockingRequiredCheckNames.some((name) =>
-    candidate.pendingCheckNames.includes(name)
-  );
+  const {
+    hasRequiredSkipped,
+    hasRequiredFailure,
+    hasRequiredPending
+  } = deriveBlockingCheckFlags(candidate);
 
   if (
     hasRequiredFailure ||
@@ -312,6 +304,26 @@ function deriveCanonicalExplanationCode(
   }
 
   return "verification_incomplete";
+}
+
+function deriveBlockingCheckFlags(
+  candidate: AttemptPromotionExplanationCandidate
+): {
+  hasRequiredSkipped: boolean;
+  hasRequiredFailure: boolean;
+  hasRequiredPending: boolean;
+} {
+  return {
+    hasRequiredSkipped: candidate.blockingRequiredCheckNames.some((name) =>
+      candidate.skippedCheckNames.includes(name)
+    ),
+    hasRequiredFailure: candidate.blockingRequiredCheckNames.some((name) =>
+      candidate.failedOrErrorCheckNames.includes(name)
+    ),
+    hasRequiredPending: candidate.blockingRequiredCheckNames.some((name) =>
+      candidate.pendingCheckNames.includes(name)
+    )
+  };
 }
 
 function countPromotionReadyCandidates(
