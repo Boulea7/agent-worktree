@@ -55,6 +55,8 @@ export { deriveExecutionSessionCloseRequest } from "./runtime-state-close-reques
 export { deriveExecutionSessionCloseRequestedEvent } from "./runtime-state-close-requested-event.js";
 export { deriveExecutionSessionCloseTarget } from "./runtime-state-close-target.js";
 export { deriveExecutionSessionWaitCandidate } from "./runtime-state-wait-candidate.js";
+export { applyExecutionSessionWait } from "./runtime-state-wait-apply.js";
+export { applyExecutionSessionWaitBatch } from "./runtime-state-wait-apply-batch.js";
 export { consumeExecutionSessionWait } from "./runtime-state-wait-consume.js";
 export { consumeExecutionSessionWaitBatch } from "./runtime-state-wait-consume-batch.js";
 export { deriveExecutionSessionWaitConsumer } from "./runtime-state-wait-consumer.js";
@@ -62,6 +64,7 @@ export { deriveExecutionSessionWaitConsumerReadiness } from "./runtime-state-wai
 export { deriveExecutionSessionWaitReadiness } from "./runtime-state-readiness.js";
 export { deriveExecutionSessionWaitRequest } from "./runtime-state-wait-request.js";
 export { deriveExecutionSessionWaitTarget } from "./runtime-state-wait-target.js";
+export { applyExecutionSessionWaitTarget } from "./runtime-state-wait-target-apply.js";
 export {
   buildExecutionSessionView,
   listChildExecutionSessions,
@@ -184,6 +187,10 @@ export {
   type ExecutionSessionView,
   type ExecutionSessionWaitCandidate,
   type ExecutionSessionWaitCandidateInput,
+  type ExecutionSessionWaitApply,
+  type ExecutionSessionWaitApplyBatch,
+  type ExecutionSessionWaitApplyBatchInput,
+  type ExecutionSessionWaitApplyInput,
   type ExecutionSessionWaitBlockingReason,
   type ExecutionSessionWaitConsumer,
   type ExecutionSessionWaitConsumerBlockingReason,
@@ -200,6 +207,8 @@ export {
   type ExecutionSessionWaitReadiness,
   type ExecutionSessionWaitReadinessInput,
   type ExecutionSessionWaitTarget,
+  type ExecutionSessionWaitTargetApply,
+  type ExecutionSessionWaitTargetApplyInput,
   type ExecutionSessionWaitTargetInput,
   sessionLifecycleEventKinds,
   sessionLifecycleStates,

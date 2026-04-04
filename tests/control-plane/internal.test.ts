@@ -7,6 +7,8 @@ import type {
   ExecutionSessionRecord,
   ExecutionSessionSpawnHeadlessInput,
   ExecutionSessionSpawnRequest,
+  ExecutionSessionWaitApply,
+  ExecutionSessionWaitApplyBatch,
   ExecutionSessionWaitConsume
 } from "../../src/control-plane/internal.js";
 
@@ -50,6 +52,9 @@ describe("control-plane internal exports", () => {
 
     for (const key of [
       "deriveExecutionSessionWaitTarget",
+      "applyExecutionSessionWait",
+      "applyExecutionSessionWaitBatch",
+      "applyExecutionSessionWaitTarget",
       "consumeExecutionSessionWait",
       "deriveExecutionSessionCloseTarget",
       "consumeExecutionSessionClose"
@@ -71,6 +76,8 @@ describe("control-plane internal exports", () => {
       context: ExecutionSessionContext;
       spawnRequest: ExecutionSessionSpawnRequest;
       spawnHeadlessInput: ExecutionSessionSpawnHeadlessInput;
+      waitApply: ExecutionSessionWaitApply;
+      waitApplyBatch: ExecutionSessionWaitApplyBatch;
       waitConsume: ExecutionSessionWaitConsume;
       closeConsume: ExecutionSessionCloseConsume;
     };

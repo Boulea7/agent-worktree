@@ -275,7 +275,7 @@ Must test:
 - execution observation, lineage carry-through, and internal session/control-plane derivation tests that stay non-public
 - runtime-state, runtime-context, and lifecycle-disposition tests that prove deterministic derived behavior without introducing mutable lifecycle truth
 - delegated-child or spawn-oriented preflight, request, lineage, event, consume, apply, and headless-bridge tests that preserve input order, fail fast on injected errors, and avoid widening into public spawn semantics
-- wait- and close-oriented readiness, target, request, consumer, and consume tests that keep blocked entries blocked, invoke only the injected request when supported, and avoid widening into public lifecycle semantics
+- wait- and close-oriented readiness, target, request, consumer, consume, apply, and target-apply tests that keep blocked entries blocked, invoke only the injected request when supported, preserve ordered fail-fast batch behavior, and avoid widening into public lifecycle semantics
 - explicit non-widening assertions that public CLI payloads, runtime manifests, and durable state stay unchanged while these internal buckets evolve
 
 Later execution-expansion phases can add broader multi-runtime smoke coverage, public execution or lifecycle surfaces, and any durable runtime-state or session-tree persistence. Until a later spec or RFC promotes those ideas, tests in this phase should treat them as deferred rather than as current contracts.
