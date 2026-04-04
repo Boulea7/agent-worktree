@@ -378,6 +378,124 @@ describe("selection promotion-result helpers", () => {
     );
   });
 
+  it("should fail loudly when candidate.summary and candidate.artifactSummary.summary drift together from candidate.artifactSummary.checks", () => {
+    const baseCandidate = createPromotionCandidate({
+      attemptId: "att_summary_checks_drift",
+      verification: createVerification({
+        state: "passed",
+        checks: [
+          {
+            name: "lint",
+            required: true,
+            status: "passed"
+          }
+        ]
+      })
+    });
+    const driftedSummary = deriveAttemptVerificationSummary(
+      createVerification({
+        state: "failed",
+        checks: [
+          {
+            name: "lint",
+            required: true,
+            status: "failed"
+          }
+        ]
+      })
+    );
+    const candidate = {
+      ...baseCandidate,
+      summary: driftedSummary,
+      artifactSummary: {
+        ...baseCandidate.artifactSummary,
+        summary: driftedSummary,
+        recommendedForPromotion: false
+      },
+      recommendedForPromotion: false
+    };
+
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      "Attempt promotion result requires candidate.artifactSummary.summary to match the summary derived from candidate.artifactSummary.checks."
+    );
+  });
+
+  it("should fail loudly when candidate.artifactSummary.checks contain malformed entries even if candidate.summary and candidate.artifactSummary.summary still agree", () => {
+    const baseCandidate = createPromotionCandidate({
+      attemptId: "att_malformed_artifact_check_result",
+      verification: createVerification({
+        state: "passed",
+        checks: [
+          {
+            name: "lint",
+            required: true,
+            status: "passed"
+          }
+        ]
+      })
+    });
+    const candidate = {
+      ...baseCandidate,
+      artifactSummary: {
+        ...baseCandidate.artifactSummary,
+        checks: [
+          {
+            name: "lint",
+            required: true,
+            status: "bogus"
+          }
+        ]
+      }
+    } as unknown as AttemptPromotionCandidate;
+
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      "Attempt promotion result requires candidate.artifactSummary.checks to use the existing verification check vocabulary."
+    );
+  });
+
+  it("should fail loudly when candidate.artifactSummary.checks contain names with surrounding whitespace", () => {
+    const baseCandidate = createPromotionCandidate({
+      attemptId: "att_spaced_artifact_check_result",
+      verification: createVerification({
+        state: "passed",
+        checks: [
+          {
+            name: "lint",
+            required: true,
+            status: "passed"
+          }
+        ]
+      })
+    });
+    const candidate = {
+      ...baseCandidate,
+      artifactSummary: {
+        ...baseCandidate.artifactSummary,
+        checks: [
+          {
+            name: " lint ",
+            required: true,
+            status: "passed"
+          }
+        ],
+        passedCheckNames: ["lint"]
+      }
+    } as unknown as AttemptPromotionCandidate;
+
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      "Attempt promotion result requires candidate.artifactSummary.checks to use the existing verification check vocabulary."
+    );
+  });
+
   it("should not mutate candidates or the supplied candidate array", () => {
     const firstCandidate = Object.freeze(
       createPromotionCandidate({
@@ -460,13 +578,13 @@ function createIncomparablePromotionCandidate(input: {
   // This helper intentionally synthesizes an incomplete-but-consistent candidate
   // so aggregation tests can lock comparator behavior for non-comparable inputs.
   const summary: AttemptVerificationSummary = {
-    sourceState: "pending",
+    sourceState: "unknown",
     overallOutcome: "incomplete",
     requiredOutcome: "incomplete",
     counts: {
-      total: 1,
+      total: 0,
       valid: 0,
-      invalid: 1,
+      invalid: 0,
       required: 0,
       optional: 0,
       passed: 0,
@@ -475,7 +593,7 @@ function createIncomparablePromotionCandidate(input: {
       skipped: 0,
       error: 0
     },
-    hasInvalidChecks: true,
+    hasInvalidChecks: false,
     hasComparablePayload: false,
     isSelectionReady: false
   };
