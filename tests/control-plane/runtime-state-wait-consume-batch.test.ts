@@ -271,6 +271,86 @@ describe("control-plane runtime-state wait-consume-batch helpers", () => {
     ).rejects.toThrow(ValidationError);
     expect(invokeWait).not.toHaveBeenCalled();
   });
+
+  it("should fail fast when the first consumer request is malformed", async () => {
+    const consumers = [
+      createWaitConsumer({
+        request: createWaitRequest({
+          attemptId: "   ",
+          sessionId: "thr_malformed"
+        }),
+        readiness: createReadiness({
+          blockingReasons: [],
+          canConsumeWait: true,
+          hasBlockingReasons: false,
+          sessionLifecycleSupported: true
+        })
+      }),
+      createWaitConsumer({
+        request: createWaitRequest({
+          attemptId: "att_supported",
+          sessionId: "thr_supported"
+        }),
+        readiness: createReadiness({
+          blockingReasons: [],
+          canConsumeWait: true,
+          hasBlockingReasons: false,
+          sessionLifecycleSupported: true
+        })
+      })
+    ] satisfies ExecutionSessionWaitConsumer[];
+    const invokeWait = vi.fn(async () => {});
+
+    await expect(
+      consumeExecutionSessionWaitBatch({
+        consumers,
+        invokeWait
+      })
+    ).rejects.toThrow(
+      "Execution session wait request attemptId must be a non-empty string."
+    );
+    expect(invokeWait).not.toHaveBeenCalled();
+  });
+
+  it("should fail fast when the first consumer request uses non-string identifiers", async () => {
+    const consumers = [
+      createWaitConsumer({
+        request: createWaitRequest({
+          runtime: null as never,
+          sessionId: "thr_malformed"
+        }),
+        readiness: createReadiness({
+          blockingReasons: [],
+          canConsumeWait: true,
+          hasBlockingReasons: false,
+          sessionLifecycleSupported: true
+        })
+      }),
+      createWaitConsumer({
+        request: createWaitRequest({
+          attemptId: "att_supported",
+          sessionId: "thr_supported"
+        }),
+        readiness: createReadiness({
+          blockingReasons: [],
+          canConsumeWait: true,
+          hasBlockingReasons: false,
+          sessionLifecycleSupported: true
+        })
+      })
+    ] satisfies ExecutionSessionWaitConsumer[];
+    const invokeWait = vi.fn(async () => {});
+
+    await expect(
+      consumeExecutionSessionWaitBatch({
+        consumers,
+        invokeWait
+      })
+    ).rejects.toThrow(
+      "Execution session wait request runtime must be a non-empty string."
+    );
+    expect(invokeWait).not.toHaveBeenCalled();
+  });
 });
 
 function createReadiness(

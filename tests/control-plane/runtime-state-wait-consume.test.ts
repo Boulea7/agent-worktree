@@ -10,6 +10,11 @@ import {
 describe("control-plane runtime-state wait-consume helpers", () => {
   it("should invoke wait exactly once for a supported wait consumer", async () => {
     const consumer = createWaitConsumer({
+      request: createWaitRequest({
+        attemptId: "  att_active  ",
+        runtime: "  codex-cli  ",
+        sessionId: "  thr_active  "
+      }),
       readiness: {
         blockingReasons: [],
         canConsumeWait: true,
@@ -42,8 +47,17 @@ describe("control-plane runtime-state wait-consume helpers", () => {
       invoked: true
     });
     expect(invokeWait).toHaveBeenCalledTimes(1);
-    expect(invokeWait).toHaveBeenCalledWith(consumer.request);
-    expect(seenRequest).toBe(consumer.request);
+    expect(invokeWait).toHaveBeenCalledWith({
+      attemptId: "att_active",
+      runtime: "codex-cli",
+      sessionId: "thr_active"
+    });
+    expect(seenRequest).toEqual({
+      attemptId: "att_active",
+      runtime: "codex-cli",
+      sessionId: "thr_active"
+    });
+    expect(seenRequest).not.toBe(consumer.request);
   });
 
   it("should not invoke wait for a blocked wait consumer", async () => {
@@ -147,6 +161,11 @@ describe("control-plane runtime-state wait-consume helpers", () => {
   it("should surface invoker failures without wrapping them into consume metadata", async () => {
     const expectedError = new Error("wait failed");
     const consumer = createWaitConsumer({
+      request: createWaitRequest({
+        attemptId: "  att_active  ",
+        runtime: "  codex-cli  ",
+        sessionId: "  thr_active  "
+      }),
       readiness: {
         blockingReasons: [],
         canConsumeWait: true,
@@ -159,11 +178,102 @@ describe("control-plane runtime-state wait-consume helpers", () => {
       consumeExecutionSessionWait({
         consumer,
         invokeWait: async (request: ExecutionSessionWaitRequest) => {
-          expect(request).toBe(consumer.request);
+          expect(request).toEqual({
+            attemptId: "att_active",
+            runtime: "codex-cli",
+            sessionId: "thr_active"
+          });
           throw expectedError;
         }
       })
     ).rejects.toThrow(expectedError);
+  });
+
+  it("should fail loudly when consumer.request does not satisfy the canonical wait request contract", async () => {
+    const consumer = createWaitConsumer({
+      request: createWaitRequest({
+        attemptId: "   "
+      }),
+      readiness: {
+        blockingReasons: [],
+        canConsumeWait: true,
+        hasBlockingReasons: false,
+        sessionLifecycleSupported: true
+      }
+    });
+    const invokeWait = vi.fn(async () => {});
+
+    await expect(
+      consumeExecutionSessionWait({
+        consumer,
+        invokeWait
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeExecutionSessionWait({
+        consumer,
+        invokeWait
+      })
+    ).rejects.toThrow(
+      "Execution session wait request attemptId must be a non-empty string."
+    );
+    expect(invokeWait).not.toHaveBeenCalled();
+  });
+
+  it("should fail loudly with a validation error when consumer.request uses non-string identifiers", async () => {
+    const consumer = createWaitConsumer({
+      request: createWaitRequest({
+        runtime: null as never
+      }),
+      readiness: {
+        blockingReasons: [],
+        canConsumeWait: true,
+        hasBlockingReasons: false,
+        sessionLifecycleSupported: true
+      }
+    });
+    const invokeWait = vi.fn(async () => {});
+
+    await expect(
+      consumeExecutionSessionWait({
+        consumer,
+        invokeWait
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeExecutionSessionWait({
+        consumer,
+        invokeWait
+      })
+    ).rejects.toThrow(
+      "Execution session wait request runtime must be a non-empty string."
+    );
+    expect(invokeWait).not.toHaveBeenCalled();
+  });
+
+  it("should fail loudly when consumer.request.timeoutMs is invalid", async () => {
+    const consumer = createWaitConsumer({
+      request: createWaitRequest({
+        timeoutMs: 0
+      }),
+      readiness: {
+        blockingReasons: [],
+        canConsumeWait: true,
+        hasBlockingReasons: false,
+        sessionLifecycleSupported: true
+      }
+    });
+    const invokeWait = vi.fn(async () => {});
+
+    await expect(
+      consumeExecutionSessionWait({
+        consumer,
+        invokeWait
+      })
+    ).rejects.toThrow(
+      "Execution session wait request timeoutMs must be a finite integer greater than 0."
+    );
+    expect(invokeWait).not.toHaveBeenCalled();
   });
 
   it("should fail loudly when readiness.canConsumeWait is not a boolean", async () => {

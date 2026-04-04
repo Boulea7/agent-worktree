@@ -94,6 +94,49 @@ describe("control-plane runtime-state wait-request helpers", () => {
     ).toThrow(ValidationError);
   });
 
+  it("should reject non-string identifiers on the provided wait target with canonical validation errors", () => {
+    expect(() =>
+      deriveExecutionSessionWaitRequest({
+        target: createWaitTarget({
+          attemptId: 123 as never
+        })
+      })
+    ).toThrow(
+      "Execution session wait request attemptId must be a non-empty string."
+    );
+    expect(() =>
+      deriveExecutionSessionWaitRequest({
+        target: createWaitTarget({
+          runtime: null as never
+        })
+      })
+    ).toThrow(
+      "Execution session wait request runtime must be a non-empty string."
+    );
+    expect(() =>
+      deriveExecutionSessionWaitRequest({
+        target: createWaitTarget({
+          sessionId: {} as never
+        })
+      })
+    ).toThrow(
+      "Execution session wait request sessionId must be a non-empty string."
+    );
+  });
+
+  it("should reject non-object wait targets before reading any fields", () => {
+    expect(() =>
+      deriveExecutionSessionWaitRequest({
+        target: undefined as never
+      })
+    ).toThrow("Execution session wait request must be an object.");
+    expect(() =>
+      deriveExecutionSessionWaitRequest({
+        target: null as never
+      })
+    ).toThrow("Execution session wait request must be an object.");
+  });
+
   it("should derive the request without mutating the supplied wait target", () => {
     const target = createWaitTarget();
     const targetSnapshot = JSON.parse(JSON.stringify(target));

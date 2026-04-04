@@ -47,6 +47,13 @@ The current thin Phase 5 internal verification and selection slice now spans the
 - delegated/headless bridge work plus wait- and close-oriented preflight or consume paths
 - intentionally narrow default barrels, with wider repo-internal staging surfaces kept separate
 
+Recent thin-slice follow-ups inside those buckets now also include:
+
+- canonical wait/close consume request-contract guardrails, so malformed internal requests fail before injected wait/close invokers see them
+- a single repo-internal handoff-finalization closeout compositor that chains request-summary apply through closure-summary derivation without widening public surfaces
+- a narrow closeout-decision gate above that closeout composer, so later repo-internal consumers can derive blockers from closure results without widening public review, merge, or lifecycle policy
+- bucket-level repo-internal barrel coverage for `selection`, `control-plane`, and `verification`, so internal tests keep proving boundaries without freezing helper-by-helper topology as a docs contract
+
 That Phase 5 foundation remains internal-only. It does not introduce public verification, ranking, promotion, handoff, report, explanation, decision, target, consumer, queue, persistence, or broader lifecycle surfaces.
 Required verification checks that end in `skipped` remain blocking for Phase 5 selection and promotion semantics; they must not be treated as satisfied gates.
 When repo-internal code needs wider helper access, prefer dedicated internal barrels or concrete module paths instead of widening the default entry points into a de facto public helper surface.

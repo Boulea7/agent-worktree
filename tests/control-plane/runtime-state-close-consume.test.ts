@@ -10,6 +10,11 @@ import {
 describe("control-plane runtime-state close-consume helpers", () => {
   it("should invoke close exactly once for a supported close consumer", async () => {
     const consumer = createCloseConsumer({
+      request: createCloseRequest({
+        attemptId: "  att_active  ",
+        runtime: "  codex-cli  ",
+        sessionId: "  thr_active  "
+      }),
       readiness: {
         blockingReasons: [],
         canConsumeClose: true,
@@ -42,8 +47,17 @@ describe("control-plane runtime-state close-consume helpers", () => {
       invoked: true
     });
     expect(invokeClose).toHaveBeenCalledTimes(1);
-    expect(invokeClose).toHaveBeenCalledWith(consumer.request);
-    expect(seenRequest).toBe(consumer.request);
+    expect(invokeClose).toHaveBeenCalledWith({
+      attemptId: "att_active",
+      runtime: "codex-cli",
+      sessionId: "thr_active"
+    });
+    expect(seenRequest).toEqual({
+      attemptId: "att_active",
+      runtime: "codex-cli",
+      sessionId: "thr_active"
+    });
+    expect(seenRequest).not.toBe(consumer.request);
   });
 
   it("should not invoke close for a blocked close consumer", async () => {
@@ -150,6 +164,11 @@ describe("control-plane runtime-state close-consume helpers", () => {
   it("should surface invoker failures without wrapping them into consume metadata", async () => {
     const expectedError = new Error("close failed");
     const consumer = createCloseConsumer({
+      request: createCloseRequest({
+        attemptId: "  att_active  ",
+        runtime: "  codex-cli  ",
+        sessionId: "  thr_active  "
+      }),
       readiness: {
         blockingReasons: [],
         canConsumeClose: true,
@@ -162,11 +181,71 @@ describe("control-plane runtime-state close-consume helpers", () => {
       consumeExecutionSessionClose({
         consumer,
         invokeClose: async (request: ExecutionSessionCloseRequest) => {
-          expect(request).toBe(consumer.request);
+          expect(request).toEqual({
+            attemptId: "att_active",
+            runtime: "codex-cli",
+            sessionId: "thr_active"
+          });
           throw expectedError;
         }
       })
     ).rejects.toThrow(expectedError);
+  });
+
+  it("should fail loudly when consumer.request does not satisfy the canonical close request contract", async () => {
+    const consumer = createCloseConsumer({
+      request: createCloseRequest({
+        runtime: "   "
+      }),
+      readiness: {
+        blockingReasons: [],
+        canConsumeClose: true,
+        hasBlockingReasons: false,
+        sessionLifecycleSupported: true
+      }
+    });
+    const invokeClose = vi.fn(async () => {});
+
+    await expect(
+      consumeExecutionSessionClose({
+        consumer,
+        invokeClose
+      })
+    ).rejects.toThrow(
+      "Execution session close request runtime must be a non-empty string."
+    );
+    expect(invokeClose).not.toHaveBeenCalled();
+  });
+
+  it("should fail loudly with a validation error when consumer.request uses non-string identifiers", async () => {
+    const consumer = createCloseConsumer({
+      request: createCloseRequest({
+        attemptId: 123 as never
+      }),
+      readiness: {
+        blockingReasons: [],
+        canConsumeClose: true,
+        hasBlockingReasons: false,
+        sessionLifecycleSupported: true
+      }
+    });
+    const invokeClose = vi.fn(async () => {});
+
+    await expect(
+      consumeExecutionSessionClose({
+        consumer,
+        invokeClose
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeExecutionSessionClose({
+        consumer,
+        invokeClose
+      })
+    ).rejects.toThrow(
+      "Execution session close request attemptId must be a non-empty string."
+    );
+    expect(invokeClose).not.toHaveBeenCalled();
   });
 
   it("should fail loudly when readiness.canConsumeClose is not a boolean", async () => {
@@ -205,6 +284,17 @@ function createCloseConsumer(
       hasBlockingReasons: true,
       sessionLifecycleSupported: false
     },
+    ...overrides
+  };
+}
+
+function createCloseRequest(
+  overrides: Partial<ExecutionSessionCloseRequest> = {}
+): ExecutionSessionCloseRequest {
+  return {
+    attemptId: "att_active",
+    runtime: "codex-cli",
+    sessionId: "thr_active",
     ...overrides
   };
 }
