@@ -41,6 +41,9 @@ describe("control-plane index exports", () => {
     expect(controlPlane).not.toHaveProperty("executionSessionSpawnBlockingReasons");
     expect(controlPlane).not.toHaveProperty("executionSessionSpawnRequestSourceKinds");
     expect(controlPlane).not.toHaveProperty("deriveExecutionSessionWaitTarget");
+    expect(controlPlane).not.toHaveProperty("applyExecutionSessionWait");
+    expect(controlPlane).not.toHaveProperty("applyExecutionSessionWaitBatch");
+    expect(controlPlane).not.toHaveProperty("applyExecutionSessionWaitTarget");
     expect(controlPlane).not.toHaveProperty("consumeExecutionSessionWait");
     expect(controlPlane).not.toHaveProperty("executionSessionWaitBlockingReasons");
     expect(controlPlane).not.toHaveProperty("executionSessionWaitConsumerBlockingReasons");
@@ -57,6 +60,12 @@ type ControlPlaneIndexShouldNotExportSpawnTarget = import("../../src/control-pla
 
 // @ts-expect-error control-plane index must not export wait targets
 type ControlPlaneIndexShouldNotExportWaitTarget = import("../../src/control-plane/index.js").ExecutionSessionWaitTarget;
+
+// @ts-expect-error control-plane index must not export wait apply results
+type ControlPlaneIndexShouldNotExportWaitApply = import("../../src/control-plane/index.js").ExecutionSessionWaitApply;
+
+// @ts-expect-error control-plane index must not export wait apply batch results
+type ControlPlaneIndexShouldNotExportWaitApplyBatch = import("../../src/control-plane/index.js").ExecutionSessionWaitApplyBatch;
 
 // @ts-expect-error control-plane index must not export close targets
 type ControlPlaneIndexShouldNotExportCloseTarget = import("../../src/control-plane/index.js").ExecutionSessionCloseTarget;

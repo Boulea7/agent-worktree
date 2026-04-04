@@ -300,6 +300,39 @@ export interface ExecutionSessionWaitConsumeBatch {
   results: ExecutionSessionWaitConsume[];
 }
 
+export interface ExecutionSessionWaitApplyInput {
+  invokeWait: ExecutionSessionWaitInvoker;
+  request: ExecutionSessionWaitRequest;
+  resolveSessionLifecycleCapability?: SessionLifecycleCapabilityResolver;
+}
+
+export interface ExecutionSessionWaitApply {
+  consumer: ExecutionSessionWaitConsumer;
+  consume: ExecutionSessionWaitConsume;
+}
+
+export interface ExecutionSessionWaitApplyBatchInput {
+  invokeWait: ExecutionSessionWaitInvoker;
+  requests: readonly ExecutionSessionWaitRequest[];
+  resolveSessionLifecycleCapability?: SessionLifecycleCapabilityResolver;
+}
+
+export interface ExecutionSessionWaitApplyBatch {
+  results: ExecutionSessionWaitApply[];
+}
+
+export interface ExecutionSessionWaitTargetApplyInput {
+  invokeWait: ExecutionSessionWaitInvoker;
+  target: ExecutionSessionWaitTarget;
+  timeoutMs?: number;
+  resolveSessionLifecycleCapability?: SessionLifecycleCapabilityResolver;
+}
+
+export interface ExecutionSessionWaitTargetApply {
+  apply: ExecutionSessionWaitApply;
+  request: ExecutionSessionWaitRequest;
+}
+
 export interface ExecutionSessionCloseReadinessInput {
   context: ExecutionSessionContext;
   resolveSessionLifecycleCapability?: SessionLifecycleCapabilityResolver;
