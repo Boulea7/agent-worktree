@@ -8,6 +8,9 @@ import type {
   AttemptVerificationSummary
 } from "../verification/types.js";
 import { attemptVerificationCheckStatuses } from "../verification/types.js";
+import {
+  validatePromotionArtifactSummaryCheckNameLists
+} from "./promotion-artifact-summary-guardrails.js";
 import { deriveAttemptPromotionResult } from "./promotion-result.js";
 import type {
   AttemptPromotionAuditCandidate,
@@ -172,64 +175,14 @@ function validateArtifactSummaryNameLists(
 ): void {
   const checks = artifactSummary.checks.map(normalizeArtifactCheck);
 
-  const blockingRequiredCheckNames = collectCheckNames(
-    checks,
-    (check) =>
-      check.required &&
-      (check.status === "failed" ||
-        check.status === "error" ||
-        check.status === "pending" ||
-        check.status === "skipped")
-  );
-
-  if (
-    !stringArraysEqual(
-      artifactSummary.blockingRequiredCheckNames,
-      blockingRequiredCheckNames
-    )
-  ) {
-    throw new ValidationError(
-      "Attempt promotion audit summary requires candidate.artifactSummary.blockingRequiredCheckNames to match candidate.artifactSummary.checks."
-    );
-  }
-
-  const failedOrErrorCheckNames = collectCheckNames(
-    checks,
-    (check) => check.status === "failed" || check.status === "error"
-  );
-
-  if (
-    !stringArraysEqual(
-      artifactSummary.failedOrErrorCheckNames,
-      failedOrErrorCheckNames
-    )
-  ) {
-    throw new ValidationError(
-      "Attempt promotion audit summary requires candidate.artifactSummary.failedOrErrorCheckNames to match candidate.artifactSummary.checks."
-    );
-  }
-
-  const pendingCheckNames = collectCheckNames(
-    checks,
-    (check) => check.status === "pending"
-  );
-
-  if (!stringArraysEqual(artifactSummary.pendingCheckNames, pendingCheckNames)) {
-    throw new ValidationError(
-      "Attempt promotion audit summary requires candidate.artifactSummary.pendingCheckNames to match candidate.artifactSummary.checks."
-    );
-  }
-
-  const skippedCheckNames = collectCheckNames(
-    checks,
-    (check) => check.status === "skipped"
-  );
-
-  if (!stringArraysEqual(artifactSummary.skippedCheckNames, skippedCheckNames)) {
-    throw new ValidationError(
-      "Attempt promotion audit summary requires candidate.artifactSummary.skippedCheckNames to match candidate.artifactSummary.checks."
-    );
-  }
+  validatePromotionArtifactSummaryCheckNameLists({
+    artifactSummary: {
+      ...artifactSummary,
+      checks
+    },
+    errorPrefix: "Attempt promotion audit summary requires",
+    summaryField: "candidate.artifactSummary"
+  });
 }
 
 function cloneAttemptVerificationSummary(
@@ -398,11 +351,4 @@ function stringArraysEqual(
     left.length === right.length &&
     left.every((value, index) => value === right[index])
   );
-}
-
-function collectCheckNames(
-  checks: readonly AttemptVerificationArtifactCheck[],
-  predicate: (check: AttemptVerificationArtifactCheck) => boolean
-): string[] {
-  return checks.filter(predicate).map((check) => check.name);
 }

@@ -360,7 +360,7 @@ describe("selection promotion-audit helpers", () => {
     );
   });
 
-  it("should fail loudly when audit-visible artifact-summary name lists do not match artifactSummary.checks", () => {
+  it("should fail loudly before audit derivation when artifact-summary name lists already drift from artifactSummary.checks", () => {
     const candidate = createPromotionCandidate({
       attemptId: "att_blocked",
       verification: createVerification({
@@ -374,21 +374,19 @@ describe("selection promotion-audit helpers", () => {
         ]
       })
     });
-    const result = deriveAttemptPromotionResult([
-      {
-        ...candidate,
-        artifactSummary: {
-          ...candidate.artifactSummary,
-          blockingRequiredCheckNames: ["unit"]
-        }
+    const invalidCandidate = {
+      ...candidate,
+      artifactSummary: {
+        ...candidate.artifactSummary,
+        blockingRequiredCheckNames: ["unit"]
       }
-    ]);
+    };
 
-    expect(() => deriveAttemptPromotionAuditSummary(result)).toThrow(
+    expect(() => deriveAttemptPromotionResult([invalidCandidate])).toThrow(
       ValidationError
     );
-    expect(() => deriveAttemptPromotionAuditSummary(result)).toThrow(
-      "Attempt promotion audit summary requires candidate.artifactSummary.blockingRequiredCheckNames to match candidate.artifactSummary.checks."
+    expect(() => deriveAttemptPromotionResult([invalidCandidate])).toThrow(
+      "Attempt promotion result requires candidate.artifactSummary.blockingRequiredCheckNames to match candidate.artifactSummary.checks."
     );
   });
 

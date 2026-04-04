@@ -318,6 +318,66 @@ describe("selection promotion-result helpers", () => {
     );
   });
 
+  it("should fail loudly when candidate.artifactSummary.blockingRequiredCheckNames drifts from candidate.artifactSummary.checks", () => {
+    const baseCandidate = createPromotionCandidate({
+      attemptId: "att_blocking_required_drift",
+      verification: createVerification({
+        state: "failed",
+        checks: [
+          {
+            name: "lint",
+            required: true,
+            status: "failed"
+          }
+        ]
+      })
+    });
+    const candidate = {
+      ...baseCandidate,
+      artifactSummary: {
+        ...baseCandidate.artifactSummary,
+        blockingRequiredCheckNames: []
+      }
+    };
+
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      "Attempt promotion result requires candidate.artifactSummary.blockingRequiredCheckNames to match candidate.artifactSummary.checks."
+    );
+  });
+
+  it("should fail loudly when candidate.artifactSummary.pendingCheckNames drifts from candidate.artifactSummary.checks", () => {
+    const baseCandidate = createPromotionCandidate({
+      attemptId: "att_pending_name_drift",
+      verification: createVerification({
+        state: "pending",
+        checks: [
+          {
+            name: "lint",
+            required: true,
+            status: "pending"
+          }
+        ]
+      })
+    });
+    const candidate = {
+      ...baseCandidate,
+      artifactSummary: {
+        ...baseCandidate.artifactSummary,
+        pendingCheckNames: []
+      }
+    };
+
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      "Attempt promotion result requires candidate.artifactSummary.pendingCheckNames to match candidate.artifactSummary.checks."
+    );
+  });
+
   it("should not mutate candidates or the supplied candidate array", () => {
     const firstCandidate = Object.freeze(
       createPromotionCandidate({
