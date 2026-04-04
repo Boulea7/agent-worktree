@@ -530,3 +530,19 @@ export interface AttemptHandoffFinalizationClosureSummary {
   allResultsBlocked: boolean;
   hasMixedDisposition: boolean;
 }
+
+export type AttemptHandoffFinalizationCloseoutDecisionBlockingReason =
+  | "no_results"
+  | "handoff_finalization_unsupported";
+
+export interface AttemptHandoffFinalizationCloseoutDecisionSummary {
+  decisionBasis: "handoff_finalization_closure_summary";
+  resultCount: number;
+  invokedResultCount: number;
+  blockedResultCount: number;
+  groupCount: number;
+  reportingDisposition: "empty" | "all_invoked" | "all_blocked" | "mixed";
+  blockingReasons: AttemptHandoffFinalizationCloseoutDecisionBlockingReason[];
+  canAdvanceFromCloseout: boolean;
+  hasBlockingReasons: boolean;
+}

@@ -1,4 +1,5 @@
 import { ValidationError } from "../core/errors.js";
+import { normalizeExecutionSessionWaitRequest } from "./runtime-state-wait-request.js";
 import type {
   ExecutionSessionWaitConsumerBlockingReason,
   ExecutionSessionWaitConsume,
@@ -15,20 +16,21 @@ export async function consumeExecutionSessionWait(
   input: ExecutionSessionWaitConsumeInput
 ): Promise<ExecutionSessionWaitConsume> {
   const { consumer, invokeWait } = input;
+  const request = normalizeExecutionSessionWaitRequest(consumer.request);
   validateReadiness(consumer.readiness);
 
   if (!consumer.readiness.canConsumeWait) {
     return {
-      request: consumer.request,
+      request,
       readiness: consumer.readiness,
       invoked: false
     };
   }
 
-  await invokeWait(consumer.request);
+  await invokeWait(request);
 
   return {
-    request: consumer.request,
+    request,
     readiness: consumer.readiness,
     invoked: true
   };

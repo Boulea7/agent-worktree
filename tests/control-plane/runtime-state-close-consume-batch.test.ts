@@ -273,6 +273,85 @@ describe("control-plane runtime-state close-consume-batch helpers", () => {
     ).rejects.toThrow(ValidationError);
     expect(invokeClose).not.toHaveBeenCalled();
   });
+
+  it("should fail fast when the first consumer request is malformed", async () => {
+    const consumers = [
+      createCloseConsumer({
+        request: createCloseRequest({
+          runtime: "   ",
+          sessionId: "thr_malformed"
+        }),
+        readiness: createReadiness({
+          blockingReasons: [],
+          canConsumeClose: true,
+          hasBlockingReasons: false,
+          sessionLifecycleSupported: true
+        })
+      }),
+      createCloseConsumer({
+        request: createCloseRequest({
+          attemptId: "att_supported",
+          sessionId: "thr_supported"
+        }),
+        readiness: createReadiness({
+          blockingReasons: [],
+          canConsumeClose: true,
+          hasBlockingReasons: false,
+          sessionLifecycleSupported: true
+        })
+      })
+    ] satisfies ExecutionSessionCloseConsumer[];
+    const invokeClose = vi.fn(async () => {});
+
+    await expect(
+      consumeExecutionSessionCloseBatch({
+        consumers,
+        invokeClose
+      })
+    ).rejects.toThrow(
+      "Execution session close request runtime must be a non-empty string."
+    );
+    expect(invokeClose).not.toHaveBeenCalled();
+  });
+
+  it("should fail fast when the first consumer request uses non-string identifiers", async () => {
+    const consumers = [
+      createCloseConsumer({
+        request: createCloseRequest({
+          sessionId: {} as never
+        }),
+        readiness: createReadiness({
+          blockingReasons: [],
+          canConsumeClose: true,
+          hasBlockingReasons: false,
+          sessionLifecycleSupported: true
+        })
+      }),
+      createCloseConsumer({
+        request: createCloseRequest({
+          attemptId: "att_supported",
+          sessionId: "thr_supported"
+        }),
+        readiness: createReadiness({
+          blockingReasons: [],
+          canConsumeClose: true,
+          hasBlockingReasons: false,
+          sessionLifecycleSupported: true
+        })
+      })
+    ] satisfies ExecutionSessionCloseConsumer[];
+    const invokeClose = vi.fn(async () => {});
+
+    await expect(
+      consumeExecutionSessionCloseBatch({
+        consumers,
+        invokeClose
+      })
+    ).rejects.toThrow(
+      "Execution session close request sessionId must be a non-empty string."
+    );
+    expect(invokeClose).not.toHaveBeenCalled();
+  });
 });
 
 function createReadiness(

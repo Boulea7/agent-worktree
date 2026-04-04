@@ -141,6 +141,12 @@ type SelectionIndexShouldNotExportHandoffFinalizationGroupedReportingDisposition
 // @ts-expect-error selection index must not export handoff finalization closure summary types
 type SelectionIndexShouldNotExportHandoffFinalizationClosureSummary = import("../../src/selection/index.js").AttemptHandoffFinalizationClosureSummary;
 
+// @ts-expect-error selection index must not export handoff finalization closeout decision blocking reason types
+type SelectionIndexShouldNotExportHandoffFinalizationCloseoutDecisionBlockingReason = import("../../src/selection/index.js").AttemptHandoffFinalizationCloseoutDecisionBlockingReason;
+
+// @ts-expect-error selection index must not export handoff finalization closeout decision summary types
+type SelectionIndexShouldNotExportHandoffFinalizationCloseoutDecisionSummary = import("../../src/selection/index.js").AttemptHandoffFinalizationCloseoutDecisionSummary;
+
 // @ts-expect-error selection index must not export handoff finalization report-ready types
 type SelectionIndexShouldNotExportHandoffFinalizationReportReady = import("../../src/selection/index.js").AttemptHandoffFinalizationReportReady;
 
@@ -215,6 +221,9 @@ type SelectionIndexShouldNotExportDeriveAttemptHandoffFinalizationGroupedReporti
 
 // @ts-expect-error selection index must not export handoff finalization closure summary helpers
 type SelectionIndexShouldNotExportDeriveAttemptHandoffFinalizationClosureSummary = typeof import("../../src/selection/index.js").deriveAttemptHandoffFinalizationClosureSummary;
+
+// @ts-expect-error selection index must not export handoff finalization closeout decision helpers
+type SelectionIndexShouldNotExportDeriveAttemptHandoffFinalizationCloseoutDecisionSummary = typeof import("../../src/selection/index.js").deriveAttemptHandoffFinalizationCloseoutDecisionSummary;
 
 // @ts-expect-error selection index must not export handoff finalization report-ready helpers
 type SelectionIndexShouldNotExportDeriveAttemptHandoffFinalizationReportReady = typeof import("../../src/selection/index.js").deriveAttemptHandoffFinalizationReportReady;

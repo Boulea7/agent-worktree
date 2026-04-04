@@ -149,6 +149,9 @@ Current closeout status:
 - downstream canonicalization and blocker projection are covered by the current promotion report, explanation, decision, and target test families without widening ranking policy
 - `verification state can be derived coherently` is currently anchored by `tests/verification/derive.test.ts`, `tests/verification/execute.test.ts`, and `tests/verification/artifact-summary.test.ts`
 - cross-attempt verification comparison is currently anchored by `tests/verification/compare.test.ts` and `tests/selection/derive.test.ts`
+- the current handoff-finalization closeout chain is now anchored end-to-end by `tests/selection/handoff-finalization-closeout-summary.test.ts` without widening public lifecycle, execution, or reporting contracts
+- the current closeout-decision gate above that chain is now anchored by `tests/selection/handoff-finalization-closeout-decision.test.ts` without widening public review, merge, or lifecycle contracts
+- repo-internal bucket boundary coverage is now explicitly anchored by `tests/selection/internal.test.ts`, `tests/control-plane/internal.test.ts`, and `tests/verification/internal.test.ts`, which preserve internal/private staging boundaries without freezing helper-by-helper topology as maintainer policy
 - required checks that end in `skipped` remain blocking for verification summaries and downstream promotion semantics, while env-gated `codex-cli` smoke remains a separate compatibility concern rather than a Phase 5 closeout gate
 - if those test files are renamed or reorganized, maintainers should update these traceability anchors in the same change
 - the next implementation windows should prefer maintainer traceability or new evidence-backed internal follow-ups rather than expanding public lifecycle or execution contracts

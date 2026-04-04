@@ -7,19 +7,30 @@ import type {
 export function deriveExecutionSessionWaitRequest(
   input: ExecutionSessionWaitRequestInput
 ): ExecutionSessionWaitRequest {
+  return normalizeExecutionSessionWaitRequest({
+    attemptId: input.target.attemptId,
+    runtime: input.target.runtime,
+    sessionId: input.target.sessionId,
+    ...(input.timeoutMs === undefined ? {} : { timeoutMs: input.timeoutMs })
+  });
+}
+
+export function normalizeExecutionSessionWaitRequest(
+  value: ExecutionSessionWaitRequest
+): ExecutionSessionWaitRequest {
   const attemptId = normalizeRequiredIdentifier(
-    input.target.attemptId,
+    value.attemptId,
     "Execution session wait request attemptId must be a non-empty string."
   );
   const runtime = normalizeRequiredIdentifier(
-    input.target.runtime,
+    value.runtime,
     "Execution session wait request runtime must be a non-empty string."
   );
   const sessionId = normalizeRequiredIdentifier(
-    input.target.sessionId,
+    value.sessionId,
     "Execution session wait request sessionId must be a non-empty string."
   );
-  const timeoutMs = normalizeTimeoutMs(input.timeoutMs);
+  const timeoutMs = normalizeTimeoutMs(value.timeoutMs);
 
   return {
     attemptId,
@@ -29,7 +40,11 @@ export function deriveExecutionSessionWaitRequest(
   };
 }
 
-function normalizeRequiredIdentifier(value: string, message: string): string {
+function normalizeRequiredIdentifier(value: unknown, message: string): string {
+  if (typeof value !== "string") {
+    throw new ValidationError(message);
+  }
+
   const normalized = value.trim();
 
   if (normalized.length === 0) {

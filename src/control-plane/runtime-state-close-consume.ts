@@ -1,4 +1,5 @@
 import { ValidationError } from "../core/errors.js";
+import { normalizeExecutionSessionCloseRequest } from "./runtime-state-close-request.js";
 import type {
   ExecutionSessionCloseConsumerBlockingReason,
   ExecutionSessionCloseConsume,
@@ -15,20 +16,21 @@ export async function consumeExecutionSessionClose(
   input: ExecutionSessionCloseConsumeInput
 ): Promise<ExecutionSessionCloseConsume> {
   const { consumer, invokeClose } = input;
+  const request = normalizeExecutionSessionCloseRequest(consumer.request);
   validateReadiness(consumer.readiness);
 
   if (!consumer.readiness.canConsumeClose) {
     return {
-      request: consumer.request,
+      request,
       readiness: consumer.readiness,
       invoked: false
     };
   }
 
-  await invokeClose(consumer.request);
+  await invokeClose(request);
 
   return {
-    request: consumer.request,
+    request,
     readiness: consumer.readiness,
     invoked: true
   };

@@ -43,6 +43,36 @@ describe("control-plane runtime-state close-request helpers", () => {
     ).toThrow(ValidationError);
   });
 
+  it("should reject non-string identifiers on the provided close target with canonical validation errors", () => {
+    expect(() =>
+      deriveExecutionSessionCloseRequest({
+        target: createCloseTarget({
+          attemptId: 123 as never
+        })
+      })
+    ).toThrow(
+      "Execution session close request attemptId must be a non-empty string."
+    );
+    expect(() =>
+      deriveExecutionSessionCloseRequest({
+        target: createCloseTarget({
+          runtime: null as never
+        })
+      })
+    ).toThrow(
+      "Execution session close request runtime must be a non-empty string."
+    );
+    expect(() =>
+      deriveExecutionSessionCloseRequest({
+        target: createCloseTarget({
+          sessionId: {} as never
+        })
+      })
+    ).toThrow(
+      "Execution session close request sessionId must be a non-empty string."
+    );
+  });
+
   it("should derive the request without mutating the supplied close target", () => {
     const target = createCloseTarget();
     const targetSnapshot = JSON.parse(JSON.stringify(target));

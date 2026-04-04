@@ -7,16 +7,26 @@ import type {
 export function deriveExecutionSessionCloseRequest(
   input: ExecutionSessionCloseRequestInput
 ): ExecutionSessionCloseRequest {
+  return normalizeExecutionSessionCloseRequest({
+    attemptId: input.target.attemptId,
+    runtime: input.target.runtime,
+    sessionId: input.target.sessionId
+  });
+}
+
+export function normalizeExecutionSessionCloseRequest(
+  value: ExecutionSessionCloseRequest
+): ExecutionSessionCloseRequest {
   const attemptId = normalizeRequiredIdentifier(
-    input.target.attemptId,
+    value.attemptId,
     "Execution session close request attemptId must be a non-empty string."
   );
   const runtime = normalizeRequiredIdentifier(
-    input.target.runtime,
+    value.runtime,
     "Execution session close request runtime must be a non-empty string."
   );
   const sessionId = normalizeRequiredIdentifier(
-    input.target.sessionId,
+    value.sessionId,
     "Execution session close request sessionId must be a non-empty string."
   );
 
@@ -27,7 +37,11 @@ export function deriveExecutionSessionCloseRequest(
   };
 }
 
-function normalizeRequiredIdentifier(value: string, message: string): string {
+function normalizeRequiredIdentifier(value: unknown, message: string): string {
+  if (typeof value !== "string") {
+    throw new ValidationError(message);
+  }
+
   const normalized = value.trim();
 
   if (normalized.length === 0) {
