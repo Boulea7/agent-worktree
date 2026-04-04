@@ -741,13 +741,13 @@ function createIncomparablePromotionCandidate(input: {
   sourceKind: AttemptManifest["sourceKind"];
 }): AttemptPromotionCandidate {
   const summary: AttemptVerificationSummary = {
-    sourceState: "pending",
+    sourceState: "unknown",
     overallOutcome: "incomplete",
     requiredOutcome: "incomplete",
     counts: {
-      total: 1,
+      total: 0,
       valid: 0,
-      invalid: 1,
+      invalid: 0,
       required: 0,
       optional: 0,
       passed: 0,
@@ -756,7 +756,7 @@ function createIncomparablePromotionCandidate(input: {
       skipped: 0,
       error: 0
     },
-    hasInvalidChecks: true,
+    hasInvalidChecks: false,
     hasComparablePayload: false,
     isSelectionReady: false
   };

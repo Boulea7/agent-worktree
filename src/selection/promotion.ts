@@ -41,7 +41,8 @@ export function deriveAttemptPromotionCandidate(
   validatePromotionArtifactSummaryCheckNameLists({
     artifactSummary,
     errorPrefix: "Attempt promotion candidate requires",
-    summaryField: "artifactSummary"
+    summaryField: "artifactSummary",
+    verification: manifest.verification
   });
 
   return {

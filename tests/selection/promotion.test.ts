@@ -350,6 +350,150 @@ describe("selection promotion helpers", () => {
     );
   });
 
+  it("should fail loudly when artifactSummary.checks drift from manifest.verification.checks even when artifactSummary.summary is rewritten to match the manifest", () => {
+    const artifactVerification = createVerification({
+      state: "passed",
+      checks: [
+        {
+          name: "unit",
+          required: true,
+          status: "passed"
+        }
+      ]
+    });
+    const manifestVerification = createVerification({
+      state: "passed",
+      checks: [
+        {
+          name: "lint",
+          required: true,
+          status: "passed"
+        }
+      ]
+    });
+    const manifest = createManifest({
+      attemptId: "att_checks_manifest_drift",
+      verification: manifestVerification
+    });
+    const artifactSummary = {
+      ...createArtifactSummary(artifactVerification),
+      summary: deriveAttemptVerificationSummary(manifestVerification),
+      recommendedForPromotion: true
+    };
+
+    expect(() =>
+      deriveAttemptPromotionCandidate(manifest, artifactSummary)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionCandidate(manifest, artifactSummary)
+    ).toThrow(
+      "Attempt promotion candidate requires artifactSummary.checks to match manifest.verification.checks."
+    );
+  });
+
+  it("should fail loudly when artifactSummary.passedCheckNames drifts from artifactSummary.checks", () => {
+    const verification = createVerification({
+      state: "passed",
+      checks: [
+        {
+          name: "lint",
+          required: true,
+          status: "passed"
+        }
+      ]
+    });
+    const manifest = createManifest({
+      attemptId: "att_passed_name_drift",
+      verification
+    });
+    const artifactSummary = {
+      ...createArtifactSummary(verification),
+      passedCheckNames: []
+    };
+
+    expect(() =>
+      deriveAttemptPromotionCandidate(manifest, artifactSummary)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionCandidate(manifest, artifactSummary)
+    ).toThrow(
+      "Attempt promotion candidate requires artifactSummary.passedCheckNames to match artifactSummary.checks."
+    );
+  });
+
+  it("should fail loudly when artifactSummary.checks contain malformed check entries even if the summary remains self-consistent", () => {
+    const verification = createVerification({
+      state: "passed",
+      checks: [
+        {
+          name: "lint",
+          required: true,
+          status: "passed"
+        }
+      ]
+    });
+    const manifest = createManifest({
+      attemptId: "att_malformed_artifact_check",
+      verification
+    });
+    const artifactSummary = {
+      ...createArtifactSummary(verification),
+      checks: [
+        {
+          name: "lint",
+          required: true,
+          status: "bogus"
+        }
+      ]
+    } as unknown as AttemptVerificationArtifactSummary;
+
+    expect(() =>
+      deriveAttemptPromotionCandidate(manifest, artifactSummary)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionCandidate(manifest, artifactSummary)
+    ).toThrow(
+      "Attempt promotion candidate requires artifactSummary.checks to use the existing verification check vocabulary."
+    );
+  });
+
+  it("should fail loudly when artifactSummary.checks contain names with surrounding whitespace", () => {
+    const verification = createVerification({
+      state: "passed",
+      checks: [
+        {
+          name: "lint",
+          required: true,
+          status: "passed"
+        }
+      ]
+    });
+    const manifest = createManifest({
+      attemptId: "att_spaced_artifact_check",
+      verification
+    });
+    const artifactSummary = {
+      ...createArtifactSummary(verification),
+      checks: [
+        {
+          name: " lint ",
+          required: true,
+          status: "passed"
+        }
+      ],
+      passedCheckNames: ["lint"]
+    } as unknown as AttemptVerificationArtifactSummary;
+
+    expect(() =>
+      deriveAttemptPromotionCandidate(manifest, artifactSummary)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionCandidate(manifest, artifactSummary)
+    ).toThrow(
+      "Attempt promotion candidate requires artifactSummary.checks to use the existing verification check vocabulary."
+    );
+  });
+
   it("should fail loudly when manifest metadata is missing or invalid", () => {
     const verification = createVerification({
       state: "passed",
