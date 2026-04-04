@@ -7,6 +7,16 @@ import type {
 export function deriveExecutionSessionCloseRequest(
   input: ExecutionSessionCloseRequestInput
 ): ExecutionSessionCloseRequest {
+  if (
+    typeof input.target !== "object" ||
+    input.target === null ||
+    Array.isArray(input.target)
+  ) {
+    throw new ValidationError(
+      "Execution session close request must be an object."
+    );
+  }
+
   return normalizeExecutionSessionCloseRequest({
     attemptId: input.target.attemptId,
     runtime: input.target.runtime,
@@ -17,6 +27,12 @@ export function deriveExecutionSessionCloseRequest(
 export function normalizeExecutionSessionCloseRequest(
   value: ExecutionSessionCloseRequest
 ): ExecutionSessionCloseRequest {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new ValidationError(
+      "Execution session close request must be an object."
+    );
+  }
+
   const attemptId = normalizeRequiredIdentifier(
     value.attemptId,
     "Execution session close request attemptId must be a non-empty string."

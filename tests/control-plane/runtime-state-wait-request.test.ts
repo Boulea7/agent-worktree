@@ -124,6 +124,19 @@ describe("control-plane runtime-state wait-request helpers", () => {
     );
   });
 
+  it("should reject non-object wait targets before reading any fields", () => {
+    expect(() =>
+      deriveExecutionSessionWaitRequest({
+        target: undefined as never
+      })
+    ).toThrow("Execution session wait request must be an object.");
+    expect(() =>
+      deriveExecutionSessionWaitRequest({
+        target: null as never
+      })
+    ).toThrow("Execution session wait request must be an object.");
+  });
+
   it("should derive the request without mutating the supplied wait target", () => {
     const target = createWaitTarget();
     const targetSnapshot = JSON.parse(JSON.stringify(target));

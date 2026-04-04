@@ -7,6 +7,16 @@ import type {
 export function deriveExecutionSessionWaitRequest(
   input: ExecutionSessionWaitRequestInput
 ): ExecutionSessionWaitRequest {
+  if (
+    typeof input.target !== "object" ||
+    input.target === null ||
+    Array.isArray(input.target)
+  ) {
+    throw new ValidationError(
+      "Execution session wait request must be an object."
+    );
+  }
+
   return normalizeExecutionSessionWaitRequest({
     attemptId: input.target.attemptId,
     runtime: input.target.runtime,
@@ -18,6 +28,12 @@ export function deriveExecutionSessionWaitRequest(
 export function normalizeExecutionSessionWaitRequest(
   value: ExecutionSessionWaitRequest
 ): ExecutionSessionWaitRequest {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new ValidationError(
+      "Execution session wait request must be an object."
+    );
+  }
+
   const attemptId = normalizeRequiredIdentifier(
     value.attemptId,
     "Execution session wait request attemptId must be a non-empty string."
