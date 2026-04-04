@@ -20,6 +20,53 @@ import type {
 describe("selection internal exports", () => {
   it("should expose representative helpers for the current internal-only capability buckets", () => {
     const exportKeys = new Set(Object.keys(selection));
+    const allowedKeys = new Set([
+      "deriveAttemptSelectionCandidate",
+      "deriveAttemptSelectionResult",
+      "deriveAttemptPromotionAuditSummary",
+      "deriveAttemptPromotionCandidate",
+      "deriveAttemptPromotionExplanationSummary",
+      "deriveAttemptPromotionReport",
+      "deriveAttemptPromotionResult",
+      "deriveAttemptPromotionDecisionSummary",
+      "deriveAttemptPromotionTarget",
+      "deriveAttemptHandoffTarget",
+      "deriveAttemptHandoffRequest",
+      "deriveAttemptHandoffConsumer",
+      "consumeAttemptHandoff",
+      "consumeAttemptHandoffBatch",
+      "applyAttemptHandoff",
+      "applyAttemptHandoffBatch",
+      "applyAttemptHandoffTarget",
+      "applyAttemptHandoffTargetBatch",
+      "applyAttemptPromotionTarget",
+      "applyAttemptPromotionTargetBatch",
+      "deriveAttemptHandoffReportReady",
+      "deriveAttemptHandoffExplanationSummary",
+      "deriveAttemptHandoffDecisionSummary",
+      "deriveAttemptHandoffFinalizationTargetSummary",
+      "deriveAttemptHandoffFinalizationRequestSummary",
+      "applyAttemptHandoffFinalizationRequestSummary",
+      "deriveAttemptHandoffFinalizationConsumer",
+      "consumeAttemptHandoffFinalization",
+      "consumeAttemptHandoffFinalizationBatch",
+      "deriveAttemptHandoffFinalizationOutcomeSummary",
+      "deriveAttemptHandoffFinalizationExplanationSummary",
+      "deriveAttemptHandoffFinalizationReportReady",
+      "deriveAttemptHandoffFinalizationGroupedProjectionSummary",
+      "deriveAttemptHandoffFinalizationGroupedReportingSummary",
+      "deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary",
+      "deriveAttemptHandoffFinalizationClosureSummary",
+      "deriveAttemptHandoffFinalizationCloseoutSummary",
+      "deriveAttemptHandoffFinalizationCloseoutDecisionSummary"
+    ]);
+    const denylistKeys = new Set([
+      "buildExecutionSessionIndex",
+      "consumeExecutionSessionWait",
+      "consumeExecutionSessionClose",
+      "deriveAttemptVerificationPayload",
+      "executeAttemptVerification"
+    ]);
 
     for (const key of [
       "deriveAttemptSelectionCandidate",
@@ -61,6 +108,12 @@ describe("selection internal exports", () => {
     ]) {
       expect(exportKeys.has(key)).toBe(true);
     }
+
+    const unexpectedKeys = [...exportKeys].filter(
+      (key) => !allowedKeys.has(key) && !denylistKeys.has(key)
+    );
+
+    expect(unexpectedKeys).toEqual([]);
   });
 
   it("should keep selection internals free of unrelated control-plane and verification helpers", () => {
@@ -72,22 +125,18 @@ describe("selection internal exports", () => {
   });
 
   it("should continue exporting representative internal-only type surfaces across the current buckets", () => {
-    type SelectionInternalExports = {
-      selectionCandidate: AttemptSelectionCandidate;
-      selectionResult: AttemptSelectionResult;
-      promotionAuditSummary: AttemptPromotionAuditSummary;
-      promotionReport: AttemptPromotionReport;
-      promotionDecisionSummary: AttemptPromotionDecisionSummary;
-      handoffApply: AttemptHandoffApply;
-      handoffExplanationSummary: AttemptHandoffExplanationSummary;
-      handoffDecisionSummary: AttemptHandoffDecisionSummary;
-      handoffFinalizationRequestSummaryApplyInput: AttemptHandoffFinalizationRequestSummaryApplyInput;
-      handoffFinalizationGroupedReportingDispositionSummary: AttemptHandoffFinalizationGroupedReportingDispositionSummary;
-      handoffFinalizationClosureSummary: AttemptHandoffFinalizationClosureSummary;
-      handoffFinalizationCloseoutDecisionBlockingReason: AttemptHandoffFinalizationCloseoutDecisionBlockingReason;
-      handoffFinalizationCloseoutDecisionSummary: AttemptHandoffFinalizationCloseoutDecisionSummary;
-    };
-
-    expectTypeOf<SelectionInternalExports>().not.toBeAny();
+    expectTypeOf<AttemptSelectionCandidate>().not.toBeAny();
+    expectTypeOf<AttemptSelectionResult>().not.toBeAny();
+    expectTypeOf<AttemptPromotionAuditSummary>().not.toBeAny();
+    expectTypeOf<AttemptPromotionReport>().not.toBeAny();
+    expectTypeOf<AttemptPromotionDecisionSummary>().not.toBeAny();
+    expectTypeOf<AttemptHandoffApply>().not.toBeAny();
+    expectTypeOf<AttemptHandoffExplanationSummary>().not.toBeAny();
+    expectTypeOf<AttemptHandoffDecisionSummary>().not.toBeAny();
+    expectTypeOf<AttemptHandoffFinalizationRequestSummaryApplyInput>().not.toBeAny();
+    expectTypeOf<AttemptHandoffFinalizationGroupedReportingDispositionSummary>().not.toBeAny();
+    expectTypeOf<AttemptHandoffFinalizationClosureSummary>().not.toBeAny();
+    expectTypeOf<AttemptHandoffFinalizationCloseoutDecisionBlockingReason>().not.toBeAny();
+    expectTypeOf<AttemptHandoffFinalizationCloseoutDecisionSummary>().not.toBeAny();
   });
 });
