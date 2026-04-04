@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   consumeExecutionSessionClose,
   type ExecutionSessionCloseConsumer,
@@ -166,6 +167,26 @@ describe("control-plane runtime-state close-consume helpers", () => {
         }
       })
     ).rejects.toThrow(expectedError);
+  });
+
+  it("should fail loudly when readiness.canConsumeClose is not a boolean", async () => {
+    const consumer = createCloseConsumer({
+      readiness: {
+        blockingReasons: [],
+        canConsumeClose: "yes" as unknown as boolean,
+        hasBlockingReasons: false,
+        sessionLifecycleSupported: true
+      }
+    });
+    const invokeClose = vi.fn(async () => {});
+
+    await expect(
+      consumeExecutionSessionClose({
+        consumer,
+        invokeClose
+      })
+    ).rejects.toThrow(ValidationError);
+    expect(invokeClose).not.toHaveBeenCalled();
   });
 });
 

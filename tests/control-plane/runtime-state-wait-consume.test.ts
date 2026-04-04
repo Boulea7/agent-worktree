@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   consumeExecutionSessionWait,
   type ExecutionSessionWaitConsumer,
@@ -163,6 +164,26 @@ describe("control-plane runtime-state wait-consume helpers", () => {
         }
       })
     ).rejects.toThrow(expectedError);
+  });
+
+  it("should fail loudly when readiness.canConsumeWait is not a boolean", async () => {
+    const consumer = createWaitConsumer({
+      readiness: {
+        blockingReasons: [],
+        canConsumeWait: "yes" as unknown as boolean,
+        hasBlockingReasons: false,
+        sessionLifecycleSupported: true
+      }
+    });
+    const invokeWait = vi.fn(async () => {});
+
+    await expect(
+      consumeExecutionSessionWait({
+        consumer,
+        invokeWait
+      })
+    ).rejects.toThrow(ValidationError);
+    expect(invokeWait).not.toHaveBeenCalled();
   });
 });
 

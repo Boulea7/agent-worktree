@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   consumeExecutionSessionCloseBatch,
   type ExecutionSessionCloseConsumer,
@@ -233,6 +234,44 @@ describe("control-plane runtime-state close-consume-batch helpers", () => {
       })
     ).rejects.toThrow(expectedError);
     expect(invokedSessionIds).toEqual(["thr_supported_1", "thr_supported_2"]);
+  });
+
+  it("should fail fast when the first consumer readiness is malformed", async () => {
+    const consumers = [
+      createCloseConsumer({
+        request: createCloseRequest({
+          attemptId: "att_malformed",
+          sessionId: "thr_malformed"
+        }),
+        readiness: {
+          blockingReasons: [],
+          canConsumeClose: "yes" as unknown as boolean,
+          hasBlockingReasons: false,
+          sessionLifecycleSupported: true
+        }
+      }),
+      createCloseConsumer({
+        request: createCloseRequest({
+          attemptId: "att_supported",
+          sessionId: "thr_supported"
+        }),
+        readiness: createReadiness({
+          blockingReasons: [],
+          canConsumeClose: true,
+          hasBlockingReasons: false,
+          sessionLifecycleSupported: true
+        })
+      })
+    ] satisfies ExecutionSessionCloseConsumer[];
+    const invokeClose = vi.fn(async () => {});
+
+    await expect(
+      consumeExecutionSessionCloseBatch({
+        consumers,
+        invokeClose
+      })
+    ).rejects.toThrow(ValidationError);
+    expect(invokeClose).not.toHaveBeenCalled();
   });
 });
 

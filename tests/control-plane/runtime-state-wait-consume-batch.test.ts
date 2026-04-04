@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   consumeExecutionSessionWaitBatch,
   type ExecutionSessionWaitConsumer,
@@ -231,6 +232,44 @@ describe("control-plane runtime-state wait-consume-batch helpers", () => {
       })
     ).rejects.toThrow(expectedError);
     expect(invokedSessionIds).toEqual(["thr_supported_1", "thr_supported_2"]);
+  });
+
+  it("should fail fast when the first consumer readiness is malformed", async () => {
+    const consumers = [
+      createWaitConsumer({
+        request: createWaitRequest({
+          attemptId: "att_malformed",
+          sessionId: "thr_malformed"
+        }),
+        readiness: {
+          blockingReasons: [],
+          canConsumeWait: "yes" as unknown as boolean,
+          hasBlockingReasons: false,
+          sessionLifecycleSupported: true
+        }
+      }),
+      createWaitConsumer({
+        request: createWaitRequest({
+          attemptId: "att_supported",
+          sessionId: "thr_supported"
+        }),
+        readiness: createReadiness({
+          blockingReasons: [],
+          canConsumeWait: true,
+          hasBlockingReasons: false,
+          sessionLifecycleSupported: true
+        })
+      })
+    ] satisfies ExecutionSessionWaitConsumer[];
+    const invokeWait = vi.fn(async () => {});
+
+    await expect(
+      consumeExecutionSessionWaitBatch({
+        consumers,
+        invokeWait
+      })
+    ).rejects.toThrow(ValidationError);
+    expect(invokeWait).not.toHaveBeenCalled();
   });
 });
 
