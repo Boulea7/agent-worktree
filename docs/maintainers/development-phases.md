@@ -140,6 +140,16 @@ Exit criteria:
 - ranking logic is tested
 - verification state can be derived and compared coherently across attempts
 
+Current closeout status:
+
+- the current thin Phase 5 chain now satisfies these exit criteria at the maintainer level through internal-only verification, selection, promotion, handoff, and handoff-finalization coverage while preserving non-public, non-persistent, and non-manifest-backed boundaries
+- `multiple attempts can be compared by validation outcome` is currently anchored by `tests/verification/compare.test.ts`, `tests/selection/derive.test.ts`, and `tests/selection/promotion-result.test.ts`
+- `ranking logic is tested` is currently anchored by `tests/verification/compare.test.ts`, `tests/selection/derive.test.ts`, and `tests/selection/promotion-result.test.ts`, which keep ranking on the current verification-comparator-only path
+- downstream canonicalization and blocker projection are covered by the current promotion report, explanation, decision, and target test families without widening ranking policy
+- `verification state can be derived and compared coherently across attempts` is currently anchored by `tests/verification/derive.test.ts`, `tests/verification/execute.test.ts`, and `tests/verification/artifact-summary.test.ts` for single-attempt derivation consistency, plus `tests/verification/compare.test.ts` and `tests/selection/derive.test.ts` for cross-attempt comparison
+- required checks that end in `skipped` remain blocking for verification summaries and downstream promotion semantics, while env-gated `codex-cli` smoke remains a separate compatibility concern rather than a Phase 5 closeout gate
+- the next implementation windows should prefer maintainer traceability or new evidence-backed internal follow-ups rather than widening public lifecycle or execution surfaces
+
 ## Phase 6: Harden and Expand
 
 Objective:
