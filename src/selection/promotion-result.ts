@@ -10,6 +10,9 @@ import type {
   AttemptVerificationCounts,
   AttemptVerificationSummary
 } from "../verification/types.js";
+import {
+  validatePromotionArtifactSummaryCheckNameLists
+} from "./promotion-artifact-summary-guardrails.js";
 import type {
   AttemptPromotionCandidate,
   AttemptPromotionResult
@@ -110,6 +113,11 @@ function validatePromotionCandidate(
 
   validateRecommendationConsistency(candidate);
   validateSummaryConsistency(candidate.summary, candidate.artifactSummary.summary);
+  validatePromotionArtifactSummaryCheckNameLists({
+    artifactSummary: candidate.artifactSummary,
+    errorPrefix: "Attempt promotion result requires",
+    summaryField: "candidate.artifactSummary"
+  });
 }
 
 function validateTaskBoundary(

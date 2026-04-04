@@ -260,6 +260,96 @@ describe("selection promotion helpers", () => {
     );
   });
 
+  it("should fail loudly when artifactSummary.blockingRequiredCheckNames drifts from artifactSummary.checks", () => {
+    const verification = createVerification({
+      state: "failed",
+      checks: [
+        {
+          name: "lint",
+          required: true,
+          status: "failed"
+        }
+      ]
+    });
+    const manifest = createManifest({
+      attemptId: "att_blocking_required_drift",
+      verification
+    });
+    const artifactSummary = {
+      ...createArtifactSummary(verification),
+      blockingRequiredCheckNames: []
+    };
+
+    expect(() =>
+      deriveAttemptPromotionCandidate(manifest, artifactSummary)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionCandidate(manifest, artifactSummary)
+    ).toThrow(
+      "Attempt promotion candidate requires artifactSummary.blockingRequiredCheckNames to match artifactSummary.checks."
+    );
+  });
+
+  it("should fail loudly when artifactSummary.skippedCheckNames drifts from artifactSummary.checks", () => {
+    const verification = createVerification({
+      state: "failed",
+      checks: [
+        {
+          name: "lint",
+          required: true,
+          status: "skipped"
+        }
+      ]
+    });
+    const manifest = createManifest({
+      attemptId: "att_skipped_name_drift",
+      verification
+    });
+    const artifactSummary = {
+      ...createArtifactSummary(verification),
+      skippedCheckNames: []
+    };
+
+    expect(() =>
+      deriveAttemptPromotionCandidate(manifest, artifactSummary)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionCandidate(manifest, artifactSummary)
+    ).toThrow(
+      "Attempt promotion candidate requires artifactSummary.skippedCheckNames to match artifactSummary.checks."
+    );
+  });
+
+  it("should fail loudly when artifactSummary.failedOrErrorCheckNames drifts from artifactSummary.checks", () => {
+    const verification = createVerification({
+      state: "failed",
+      checks: [
+        {
+          name: "lint",
+          required: true,
+          status: "error"
+        }
+      ]
+    });
+    const manifest = createManifest({
+      attemptId: "att_failed_or_error_name_drift",
+      verification
+    });
+    const artifactSummary = {
+      ...createArtifactSummary(verification),
+      failedOrErrorCheckNames: []
+    };
+
+    expect(() =>
+      deriveAttemptPromotionCandidate(manifest, artifactSummary)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionCandidate(manifest, artifactSummary)
+    ).toThrow(
+      "Attempt promotion candidate requires artifactSummary.failedOrErrorCheckNames to match artifactSummary.checks."
+    );
+  });
+
   it("should fail loudly when manifest metadata is missing or invalid", () => {
     const verification = createVerification({
       state: "passed",

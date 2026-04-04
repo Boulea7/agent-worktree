@@ -12,6 +12,9 @@ import type {
   AttemptVerificationCounts,
   AttemptVerificationSummary
 } from "../verification/types.js";
+import {
+  validatePromotionArtifactSummaryCheckNameLists
+} from "./promotion-artifact-summary-guardrails.js";
 import type { AttemptPromotionCandidate } from "./types.js";
 
 const ATTEMPT_PROMOTION_BASIS = "verification_artifact_summary" as const;
@@ -35,6 +38,11 @@ export function deriveAttemptPromotionCandidate(
 
   validateRecommendationConsistency(artifactSummary, summary);
   validateSummaryConsistency(summary, artifactSummary.summary);
+  validatePromotionArtifactSummaryCheckNameLists({
+    artifactSummary,
+    errorPrefix: "Attempt promotion candidate requires",
+    summaryField: "artifactSummary"
+  });
 
   return {
     promotionBasis: ATTEMPT_PROMOTION_BASIS,
