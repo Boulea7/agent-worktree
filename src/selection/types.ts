@@ -517,3 +517,16 @@ export interface AttemptHandoffFinalizationGroupedReportingDispositionSummary {
   groupCount: number;
   reportingDisposition: "empty" | "all_invoked" | "all_blocked" | "mixed";
 }
+
+export interface AttemptHandoffFinalizationClosureSummary {
+  closureBasis: "handoff_finalization_grouped_reporting_disposition_summary";
+  resultCount: number;
+  invokedResultCount: number;
+  blockedResultCount: number;
+  groupCount: number;
+  reportingDisposition: "empty" | "all_invoked" | "all_blocked" | "mixed";
+  hasResults: boolean;
+  allResultsInvoked: boolean;
+  allResultsBlocked: boolean;
+  hasMixedDisposition: boolean;
+}
