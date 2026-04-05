@@ -241,6 +241,11 @@ describe("control-plane runtime-state close-apply-batch helpers", () => {
             attemptId: "att_supported_2",
             runtime: "supported-cli",
             sessionId: "thr_supported_2"
+          }),
+          createCloseRequest({
+            attemptId: "att_supported_3",
+            runtime: "supported-cli",
+            sessionId: "thr_supported_3"
           })
         ],
         invokeClose,
@@ -248,10 +253,15 @@ describe("control-plane runtime-state close-apply-batch helpers", () => {
       })
     ).rejects.toThrow(expectedError);
     expect(invokeClose).toHaveBeenCalledTimes(2);
+    expect(invokeClose).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: "thr_supported_3"
+      })
+    );
   });
 
   it("should surface invalid request failures directly without wrapping them", async () => {
-    await expect(
+    const makeInvalidBatchCall = () =>
       applyExecutionSessionCloseBatch({
         requests: [
           createCloseRequest(),
@@ -264,23 +274,10 @@ describe("control-plane runtime-state close-apply-batch helpers", () => {
         ],
         invokeClose: async () => undefined,
         resolveSessionLifecycleCapability: () => true
-      })
-    ).rejects.toThrow(ValidationError);
-    await expect(
-      applyExecutionSessionCloseBatch({
-        requests: [
-          createCloseRequest(),
-          {
-            ...createCloseRequest({
-              attemptId: "att_invalid"
-            }),
-            runtime: "   "
-          } as ExecutionSessionCloseRequest
-        ],
-        invokeClose: async () => undefined,
-        resolveSessionLifecycleCapability: () => true
-      })
-    ).rejects.toThrow(
+      });
+
+    await expect(makeInvalidBatchCall()).rejects.toThrow(ValidationError);
+    await expect(makeInvalidBatchCall()).rejects.toThrow(
       "Execution session close request runtime must be a non-empty string."
     );
   });
