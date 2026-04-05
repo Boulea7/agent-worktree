@@ -395,6 +395,51 @@ describe("control-plane runtime-state spawn-headless-apply-batch helpers", () =>
     ).rejects.toThrow("bridge failed");
     expect(invokedSessionIds).toEqual(["thr_parent_1"]);
   });
+
+  it("should stop before invoking the invalid spawn item when local spawn derivation fails", async () => {
+    const invokedSessionIds: string[] = [];
+
+    await expect(
+      applyExecutionSessionSpawnHeadlessInputBatch({
+        items: [
+          {
+            childAttemptId: "att_child_1",
+            request: createSpawnRequest({
+              parentAttemptId: "att_parent_1",
+              parentSessionId: "thr_parent_1"
+            }),
+            execution: {
+              prompt: "child one"
+            }
+          },
+          {
+            childAttemptId: "  ",
+            request: createSpawnRequest({
+              parentAttemptId: "att_parent_2",
+              parentSessionId: "thr_parent_2"
+            }),
+            execution: {
+              prompt: "child two"
+            }
+          },
+          {
+            childAttemptId: "att_child_3",
+            request: createSpawnRequest({
+              parentAttemptId: "att_parent_3",
+              parentSessionId: "thr_parent_3"
+            }),
+            execution: {
+              prompt: "child three"
+            }
+          }
+        ],
+        invokeSpawn: async (request: ExecutionSessionSpawnRequest) => {
+          invokedSessionIds.push(request.parentSessionId);
+        }
+      })
+    ).rejects.toThrow(/childAttemptId/i);
+    expect(invokedSessionIds).toEqual(["thr_parent_1"]);
+  });
 });
 
 function createSpawnRequest(

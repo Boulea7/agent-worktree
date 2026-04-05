@@ -5,16 +5,18 @@ import type {
   ExecutionSessionSpawnEffects,
   ExecutionSessionSpawnEffectsInput
 } from "./types.js";
+import { normalizeExecutionSessionSpawnRequest } from "./runtime-state-spawn-request.js";
 
 export function deriveExecutionSessionSpawnEffects(
   input: ExecutionSessionSpawnEffectsInput
 ): ExecutionSessionSpawnEffects {
+  const request = normalizeExecutionSessionSpawnRequest(input.request);
   const lineage = deriveExecutionSessionSpawnLineage({
     childAttemptId: input.childAttemptId,
-    request: input.request
+    request
   });
   const requestedEvent = deriveExecutionSessionSpawnRequestedEvent({
-    request: input.request
+    request
   });
   const recordedEvent = deriveExecutionSessionSpawnRecordedEvent({
     requestedEvent

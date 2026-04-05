@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   deriveExecutionSessionSpawnRequestedEvent,
   type ExecutionSessionSpawnRequest
@@ -34,6 +35,42 @@ describe("control-plane runtime-state spawn-requested-event helpers", () => {
       lifecycleEventKind: "spawn_requested"
     });
     expect(request).toEqual(requestSnapshot);
+  });
+
+  it("should canonicalize the request before projecting the event", () => {
+    expect(
+      deriveExecutionSessionSpawnRequestedEvent({
+        request: createSpawnRequest({
+          parentAttemptId: "  att_parent_trimmed  ",
+          parentRuntime: "  codex-cli  ",
+          parentSessionId: "  thr_parent_trimmed  "
+        })
+      })
+    ).toEqual({
+      attemptId: "att_parent_trimmed",
+      runtime: "codex-cli",
+      sessionId: "thr_parent_trimmed",
+      lifecycleEventKind: "spawn_requested"
+    });
+  });
+
+  it("should fail loudly when the request is malformed", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnRequestedEvent({
+        request: {
+          ...createSpawnRequest(),
+          parentSessionId: "   "
+        } as ExecutionSessionSpawnRequest
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnRequestedEvent({
+        request: {
+          ...createSpawnRequest(),
+          parentSessionId: "   "
+        } as ExecutionSessionSpawnRequest
+      })
+    ).toThrow(/parentSessionId/i);
   });
 
   it("should keep request, lineage, guardrail, and child-planning data out of the derived spawn_requested event", () => {

@@ -329,6 +329,32 @@ describe("control-plane runtime-state spawn-headless-execute helpers", () => {
     expect(executeHeadless).not.toHaveBeenCalled();
   });
 
+  it("should surface local spawn validation failures without invoking headless execution", async () => {
+    const executeHeadless = vi.fn(async () =>
+      createHeadlessExecutionResult({
+        observation: {
+          runCompleted: true,
+          errorEventCount: 0
+        }
+      })
+    );
+
+    await expect(
+      executeExecutionSessionSpawnHeadless({
+        childAttemptId: "   ",
+        request: createSpawnRequest({
+          sourceKind: "fork"
+        }),
+        execution: {
+          prompt: "Reply with ok"
+        },
+        invokeSpawn: async () => undefined,
+        executeHeadless
+      })
+    ).rejects.toThrow(/childAttemptId/i);
+    expect(executeHeadless).not.toHaveBeenCalled();
+  });
+
   it("should surface headless executor failures without returning partial execution output", async () => {
     const expectedError = new Error("execute failed");
 
