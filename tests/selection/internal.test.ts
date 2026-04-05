@@ -22,7 +22,7 @@ import type {
 } from "../../src/selection/internal.js";
 
 describe("selection internal exports", () => {
-  it("should expose representative helpers for the current internal-only capability buckets", () => {
+  it("should keep the current selection internal runtime export inventory explicit", () => {
     const exportKeys = new Set(Object.keys(selection));
     const allowedKeys = new Set([
       "deriveAttemptSelectionCandidate",

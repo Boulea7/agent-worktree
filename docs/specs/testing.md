@@ -162,7 +162,7 @@ Must test:
 
 ## Internal Capability Buckets
 
-The remaining internal-only sections describe coverage at the capability-bucket level rather than as helper-by-helper topology. Tests in this part of the repo should continue to prove boundaries, failure modes, and deterministic derivation without turning internal helper chains into documentation contracts.
+The remaining internal-only sections describe coverage at the capability-bucket level rather than as helper-by-helper topology. Tests in this part of the repo should continue to prove boundaries, failure modes, and deterministic derivation; where a repo-internal barrel needs stricter widening protection, tests MAY also keep the current runtime export inventory explicit without turning those internal helpers into public documentation contracts.
 
 Current buckets to preserve are:
 
