@@ -50,8 +50,11 @@ The current thin Phase 5 internal verification and selection slice now spans the
 Recent thin-slice follow-ups inside those buckets now also include:
 
 - canonical wait/close consume request-contract guardrails, so malformed internal requests fail before injected wait/close invokers see them
+- internal close-side `apply`, `apply-batch`, and `target-apply` helpers, so the current close-oriented control-plane chain now reaches the same bounded composition layer as the existing wait-side path without widening public lifecycle or execution surfaces
 - a single repo-internal handoff-finalization closeout compositor that chains request-summary apply through closure-summary derivation without widening public surfaces
 - a narrow closeout-decision gate above that closeout composer, so later repo-internal consumers can derive blockers from closure results without widening public review, merge, or lifecycle policy
+- a single repo-internal closeout-decision entry helper above that chain, so later repo-internal callers can derive the current closeout decision through one bounded composition step without inventing a broader consumer contract
+- repo-internal close-side and closeout-entry barrel assertions, so current tests explicitly prove those helpers stay available only through internal barrels and do not leak into default entry points
 - bucket-level repo-internal barrel coverage for `selection`, `control-plane`, and `verification`, so internal tests keep proving boundaries without freezing helper-by-helper topology as a docs contract
 
 That Phase 5 foundation remains internal-only. It does not introduce public verification, ranking, promotion, handoff, report, explanation, decision, target, consumer, queue, persistence, or broader lifecycle surfaces.

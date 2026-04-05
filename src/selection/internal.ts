@@ -68,8 +68,17 @@ export {
   consumeAttemptHandoffFinalizationBatch
 } from "./handoff-finalization-consume-batch.js";
 export {
+  applyAttemptHandoffFinalization
+} from "./handoff-finalization-apply.js";
+export {
+  applyAttemptHandoffFinalizationBatch
+} from "./handoff-finalization-apply-batch.js";
+export {
   applyAttemptHandoffFinalizationRequestSummary
 } from "./handoff-finalization-request-apply.js";
+export {
+  applyAttemptHandoffFinalizationCloseoutDecisionSummary
+} from "./handoff-finalization-closeout-decision-apply.js";
 export {
   deriveAttemptHandoffFinalizationOutcomeSummary
 } from "./handoff-finalization-outcome-summary.js";

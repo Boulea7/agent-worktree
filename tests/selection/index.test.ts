@@ -222,8 +222,14 @@ type SelectionIndexShouldNotExportDeriveAttemptHandoffFinalizationGroupedReporti
 // @ts-expect-error selection index must not export handoff finalization closure summary helpers
 type SelectionIndexShouldNotExportDeriveAttemptHandoffFinalizationClosureSummary = typeof import("../../src/selection/index.js").deriveAttemptHandoffFinalizationClosureSummary;
 
+// @ts-expect-error selection index must not export handoff finalization closeout summary helpers
+type SelectionIndexShouldNotExportDeriveAttemptHandoffFinalizationCloseoutSummary = typeof import("../../src/selection/index.js").deriveAttemptHandoffFinalizationCloseoutSummary;
+
 // @ts-expect-error selection index must not export handoff finalization closeout decision helpers
 type SelectionIndexShouldNotExportDeriveAttemptHandoffFinalizationCloseoutDecisionSummary = typeof import("../../src/selection/index.js").deriveAttemptHandoffFinalizationCloseoutDecisionSummary;
+
+// @ts-expect-error selection index must not export handoff finalization closeout decision apply helpers
+type SelectionIndexShouldNotExportApplyAttemptHandoffFinalizationCloseoutDecisionSummary = typeof import("../../src/selection/index.js").applyAttemptHandoffFinalizationCloseoutDecisionSummary;
 
 // @ts-expect-error selection index must not export handoff finalization report-ready helpers
 type SelectionIndexShouldNotExportDeriveAttemptHandoffFinalizationReportReady = typeof import("../../src/selection/index.js").deriveAttemptHandoffFinalizationReportReady;
