@@ -9,7 +9,11 @@ import type {
   AttemptHandoffExplanationSummary,
   AttemptHandoffFinalizationClosureSummary,
   AttemptHandoffFinalizationGroupedReportingDispositionSummary,
+  AttemptHandoffFinalizationReportReady,
+  AttemptHandoffFinalizationReportReadyEntry,
   AttemptHandoffFinalizationRequestSummaryApplyInput,
+  AttemptHandoffReportReady,
+  AttemptHandoffReportReadyEntry,
   AttemptPromotionAuditSummary,
   AttemptPromotionDecisionSummary,
   AttemptPromotionReport,
@@ -46,7 +50,10 @@ describe("selection internal exports", () => {
       "deriveAttemptHandoffDecisionSummary",
       "deriveAttemptHandoffFinalizationTargetSummary",
       "deriveAttemptHandoffFinalizationRequestSummary",
+      "applyAttemptHandoffFinalization",
+      "applyAttemptHandoffFinalizationBatch",
       "applyAttemptHandoffFinalizationRequestSummary",
+      "applyAttemptHandoffFinalizationCloseoutDecisionSummary",
       "deriveAttemptHandoffFinalizationConsumer",
       "consumeAttemptHandoffFinalization",
       "consumeAttemptHandoffFinalizationBatch",
@@ -95,7 +102,10 @@ describe("selection internal exports", () => {
     for (const key of [
       "deriveAttemptHandoffFinalizationTargetSummary",
       "deriveAttemptHandoffFinalizationRequestSummary",
+      "applyAttemptHandoffFinalization",
+      "applyAttemptHandoffFinalizationBatch",
       "applyAttemptHandoffFinalizationRequestSummary",
+      "applyAttemptHandoffFinalizationCloseoutDecisionSummary",
       "deriveAttemptHandoffFinalizationOutcomeSummary",
       "deriveAttemptHandoffFinalizationExplanationSummary",
       "deriveAttemptHandoffFinalizationReportReady",
@@ -131,9 +141,13 @@ describe("selection internal exports", () => {
     expectTypeOf<AttemptPromotionReport>().not.toBeAny();
     expectTypeOf<AttemptPromotionDecisionSummary>().not.toBeAny();
     expectTypeOf<AttemptHandoffApply>().not.toBeAny();
+    expectTypeOf<AttemptHandoffReportReady>().not.toBeAny();
+    expectTypeOf<AttemptHandoffReportReadyEntry>().not.toBeAny();
     expectTypeOf<AttemptHandoffExplanationSummary>().not.toBeAny();
     expectTypeOf<AttemptHandoffDecisionSummary>().not.toBeAny();
     expectTypeOf<AttemptHandoffFinalizationRequestSummaryApplyInput>().not.toBeAny();
+    expectTypeOf<AttemptHandoffFinalizationReportReady>().not.toBeAny();
+    expectTypeOf<AttemptHandoffFinalizationReportReadyEntry>().not.toBeAny();
     expectTypeOf<AttemptHandoffFinalizationGroupedReportingDispositionSummary>().not.toBeAny();
     expectTypeOf<AttemptHandoffFinalizationClosureSummary>().not.toBeAny();
     expectTypeOf<AttemptHandoffFinalizationCloseoutDecisionBlockingReason>().not.toBeAny();

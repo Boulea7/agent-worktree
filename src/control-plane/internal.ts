@@ -45,6 +45,8 @@ export { deriveExecutionSessionSpawnRequest } from "./runtime-state-spawn-reques
 export { deriveExecutionSessionSpawnRequestedEvent } from "./runtime-state-spawn-requested-event.js";
 export { deriveExecutionSessionSpawnTarget } from "./runtime-state-spawn-target.js";
 export { deriveExecutionSessionCloseCandidate } from "./runtime-state-close-candidate.js";
+export { applyExecutionSessionClose } from "./runtime-state-close-apply.js";
+export { applyExecutionSessionCloseBatch } from "./runtime-state-close-apply-batch.js";
 export { consumeExecutionSessionClose } from "./runtime-state-close-consume.js";
 export { consumeExecutionSessionCloseBatch } from "./runtime-state-close-consume-batch.js";
 export { deriveExecutionSessionCloseConsumer } from "./runtime-state-close-consumer.js";
@@ -54,6 +56,7 @@ export { deriveExecutionSessionCloseRecordedEvent } from "./runtime-state-close-
 export { deriveExecutionSessionCloseRequest } from "./runtime-state-close-request.js";
 export { deriveExecutionSessionCloseRequestedEvent } from "./runtime-state-close-requested-event.js";
 export { deriveExecutionSessionCloseTarget } from "./runtime-state-close-target.js";
+export { applyExecutionSessionCloseTarget } from "./runtime-state-close-target-apply.js";
 export { deriveExecutionSessionWaitCandidate } from "./runtime-state-wait-candidate.js";
 export { applyExecutionSessionWait } from "./runtime-state-wait-apply.js";
 export { applyExecutionSessionWaitBatch } from "./runtime-state-wait-apply-batch.js";
@@ -80,6 +83,10 @@ export {
   executionSessionWaitBlockingReasons,
   executionSessionWaitConsumerBlockingReasons,
   type ExecutionSessionCloseBlockingReason,
+  type ExecutionSessionCloseApply,
+  type ExecutionSessionCloseApplyBatch,
+  type ExecutionSessionCloseApplyBatchInput,
+  type ExecutionSessionCloseApplyInput,
   type ExecutionSessionCloseCandidate,
   type ExecutionSessionCloseCandidateInput,
   type ExecutionSessionCloseConsume,
@@ -101,6 +108,8 @@ export {
   type ExecutionSessionCloseRequestedEvent,
   type ExecutionSessionCloseRequestedEventInput,
   type ExecutionSessionCloseTarget,
+  type ExecutionSessionCloseTargetApply,
+  type ExecutionSessionCloseTargetApplyInput,
   type ExecutionSessionCloseTargetInput,
   type ExecutionSessionContext,
   type ExecutionSessionContextInput,

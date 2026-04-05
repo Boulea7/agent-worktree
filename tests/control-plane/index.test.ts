@@ -47,11 +47,34 @@ describe("control-plane index exports", () => {
     expect(controlPlane).not.toHaveProperty("consumeExecutionSessionWait");
     expect(controlPlane).not.toHaveProperty("executionSessionWaitBlockingReasons");
     expect(controlPlane).not.toHaveProperty("executionSessionWaitConsumerBlockingReasons");
+    expect(controlPlane).not.toHaveProperty("deriveExecutionSessionCloseCandidate");
+    expect(controlPlane).not.toHaveProperty("deriveExecutionSessionCloseReadiness");
+    expect(controlPlane).not.toHaveProperty("deriveExecutionSessionCloseRequest");
+    expect(controlPlane).not.toHaveProperty("deriveExecutionSessionCloseRequestedEvent");
+    expect(controlPlane).not.toHaveProperty("deriveExecutionSessionCloseRecordedEvent");
+    expect(controlPlane).not.toHaveProperty("deriveExecutionSessionCloseConsumerReadiness");
+    expect(controlPlane).not.toHaveProperty("deriveExecutionSessionCloseConsumer");
     expect(controlPlane).not.toHaveProperty("deriveExecutionSessionCloseTarget");
+    expect(controlPlane).not.toHaveProperty("applyExecutionSessionClose");
+    expect(controlPlane).not.toHaveProperty("applyExecutionSessionCloseBatch");
+    expect(controlPlane).not.toHaveProperty("applyExecutionSessionCloseTarget");
     expect(controlPlane).not.toHaveProperty("consumeExecutionSessionClose");
+    expect(controlPlane).not.toHaveProperty("consumeExecutionSessionCloseBatch");
     expect(controlPlane).not.toHaveProperty("executionSessionCloseBlockingReasons");
     expect(controlPlane).not.toHaveProperty("executionSessionCloseConsumerBlockingReasons");
     expect(controlPlane).not.toHaveProperty("deriveExecutionSessionSpawnHeadlessInput");
+    expect(controlPlane).not.toHaveProperty(
+      "deriveExecutionSessionSpawnHeadlessCloseCandidate"
+    );
+    expect(controlPlane).not.toHaveProperty(
+      "deriveExecutionSessionSpawnHeadlessCloseCandidateBatch"
+    );
+    expect(controlPlane).not.toHaveProperty(
+      "deriveExecutionSessionSpawnHeadlessCloseTarget"
+    );
+    expect(controlPlane).not.toHaveProperty(
+      "deriveExecutionSessionSpawnHeadlessCloseTargetBatch"
+    );
   });
 });
 
@@ -70,8 +93,38 @@ type ControlPlaneIndexShouldNotExportWaitApplyBatch = import("../../src/control-
 // @ts-expect-error control-plane index must not export close targets
 type ControlPlaneIndexShouldNotExportCloseTarget = import("../../src/control-plane/index.js").ExecutionSessionCloseTarget;
 
+// @ts-expect-error control-plane index must not export close apply results
+type ControlPlaneIndexShouldNotExportCloseApply = import("../../src/control-plane/index.js").ExecutionSessionCloseApply;
+
+// @ts-expect-error control-plane index must not export close apply batch results
+type ControlPlaneIndexShouldNotExportCloseApplyBatch = import("../../src/control-plane/index.js").ExecutionSessionCloseApplyBatch;
+
+// @ts-expect-error control-plane index must not export close candidates
+type ControlPlaneIndexShouldNotExportCloseCandidate = import("../../src/control-plane/index.js").ExecutionSessionCloseCandidate;
+
+// @ts-expect-error control-plane index must not export close requests
+type ControlPlaneIndexShouldNotExportCloseRequest = import("../../src/control-plane/index.js").ExecutionSessionCloseRequest;
+
+// @ts-expect-error control-plane index must not export close requested events
+type ControlPlaneIndexShouldNotExportCloseRequestedEvent = import("../../src/control-plane/index.js").ExecutionSessionCloseRequestedEvent;
+
+// @ts-expect-error control-plane index must not export close recorded events
+type ControlPlaneIndexShouldNotExportCloseRecordedEvent = import("../../src/control-plane/index.js").ExecutionSessionCloseRecordedEvent;
+
+// @ts-expect-error control-plane index must not export close consumers
+type ControlPlaneIndexShouldNotExportCloseConsumer = import("../../src/control-plane/index.js").ExecutionSessionCloseConsumer;
+
+// @ts-expect-error control-plane index must not export close consume batch results
+type ControlPlaneIndexShouldNotExportCloseConsumeBatch = import("../../src/control-plane/index.js").ExecutionSessionCloseConsumeBatch;
+
 // @ts-expect-error control-plane index must not export headless spawn inputs
 type ControlPlaneIndexShouldNotExportSpawnHeadlessInput = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessInput;
+
+// @ts-expect-error control-plane index must not export headless close candidates
+type ControlPlaneIndexShouldNotExportSpawnHeadlessCloseCandidate = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessCloseCandidate;
+
+// @ts-expect-error control-plane index must not export headless close targets
+type ControlPlaneIndexShouldNotExportSpawnHeadlessCloseTarget = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessCloseTarget;
 
 // @ts-expect-error control-plane index must not export spawn blocking vocabularies
 type ControlPlaneIndexShouldNotExportSpawnBlockingReasons = typeof import("../../src/control-plane/index.js").executionSessionSpawnBlockingReasons;
@@ -81,3 +134,24 @@ type ControlPlaneIndexShouldNotExportWaitConsumerBlockingReasons = typeof import
 
 // @ts-expect-error control-plane index must not export close consumer blocking vocabularies
 type ControlPlaneIndexShouldNotExportCloseConsumerBlockingReasons = typeof import("../../src/control-plane/index.js").executionSessionCloseConsumerBlockingReasons;
+
+// @ts-expect-error control-plane index must not export close request helpers
+type ControlPlaneIndexShouldNotExportDeriveExecutionSessionCloseRequest = typeof import("../../src/control-plane/index.js").deriveExecutionSessionCloseRequest;
+
+// @ts-expect-error control-plane index must not export close consumer helpers
+type ControlPlaneIndexShouldNotExportDeriveExecutionSessionCloseConsumer = typeof import("../../src/control-plane/index.js").deriveExecutionSessionCloseConsumer;
+
+// @ts-expect-error control-plane index must not export close apply helpers
+type ControlPlaneIndexShouldNotExportApplyExecutionSessionClose = typeof import("../../src/control-plane/index.js").applyExecutionSessionClose;
+
+// @ts-expect-error control-plane index must not export close apply batch helpers
+type ControlPlaneIndexShouldNotExportApplyExecutionSessionCloseBatch = typeof import("../../src/control-plane/index.js").applyExecutionSessionCloseBatch;
+
+// @ts-expect-error control-plane index must not export close target apply helpers
+type ControlPlaneIndexShouldNotExportApplyExecutionSessionCloseTarget = typeof import("../../src/control-plane/index.js").applyExecutionSessionCloseTarget;
+
+// @ts-expect-error control-plane index must not export close consume batch helpers
+type ControlPlaneIndexShouldNotExportConsumeExecutionSessionCloseBatch = typeof import("../../src/control-plane/index.js").consumeExecutionSessionCloseBatch;
+
+// @ts-expect-error control-plane index must not export headless close target helpers
+type ControlPlaneIndexShouldNotExportDeriveExecutionSessionSpawnHeadlessCloseTarget = typeof import("../../src/control-plane/index.js").deriveExecutionSessionSpawnHeadlessCloseTarget;

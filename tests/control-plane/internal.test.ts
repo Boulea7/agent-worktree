@@ -2,9 +2,19 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 
 import * as controlPlane from "../../src/control-plane/internal.js";
 import type {
+  ExecutionSessionCloseApply,
+  ExecutionSessionCloseApplyBatch,
+  ExecutionSessionCloseCandidate,
   ExecutionSessionCloseConsume,
+  ExecutionSessionCloseConsumeBatch,
+  ExecutionSessionCloseConsumer,
   ExecutionSessionContext,
+  ExecutionSessionCloseRecordedEvent,
+  ExecutionSessionCloseRequest,
+  ExecutionSessionCloseRequestedEvent,
   ExecutionSessionRecord,
+  ExecutionSessionSpawnHeadlessCloseCandidate,
+  ExecutionSessionSpawnHeadlessCloseTarget,
   ExecutionSessionSpawnHeadlessInput,
   ExecutionSessionSpawnRequest,
   ExecutionSessionWaitApply,
@@ -13,54 +23,90 @@ import type {
 } from "../../src/control-plane/internal.js";
 
 describe("control-plane internal exports", () => {
-  it("should expose representative helpers for the current internal capability buckets", () => {
-    const exportKeys = new Set(Object.keys(controlPlane));
-
-    for (const key of [
-      "buildExecutionSessionIndex",
-      "deriveExecutionSessionRecord",
-      "buildExecutionSessionView"
-    ]) {
-      expect(exportKeys.has(key)).toBe(true);
-    }
-
-    for (const key of [
-      "deriveExecutionSessionContext",
-      "deriveExecutionSessionLifecycleDisposition"
-    ]) {
-      expect(exportKeys.has(key)).toBe(true);
-    }
-
-    for (const key of [
-      "deriveExecutionSessionSpawnReadiness",
-      "deriveExecutionSessionSpawnCandidate",
-      "deriveExecutionSessionSpawnTarget",
-      "deriveExecutionSessionSpawnRequest"
-    ]) {
-      expect(exportKeys.has(key)).toBe(true);
-    }
-
-    for (const key of [
-      "deriveExecutionSessionSpawnHeadlessInput",
+  it("should keep the internal barrel on an explicit repo-internal allowlist", () => {
+    expect(Object.keys(controlPlane).sort()).toEqual([
+      "applyExecutionSessionClose",
+      "applyExecutionSessionCloseBatch",
+      "applyExecutionSessionCloseTarget",
+      "applyExecutionSessionSpawn",
+      "applyExecutionSessionSpawnBatch",
       "applyExecutionSessionSpawnHeadlessInput",
-      "executeExecutionSessionSpawnHeadless",
-      "deriveExecutionSessionSpawnHeadlessRecord",
-      "deriveExecutionSessionSpawnHeadlessView"
-    ]) {
-      expect(exportKeys.has(key)).toBe(true);
-    }
-
-    for (const key of [
-      "deriveExecutionSessionWaitTarget",
+      "applyExecutionSessionSpawnHeadlessInputBatch",
       "applyExecutionSessionWait",
       "applyExecutionSessionWaitBatch",
       "applyExecutionSessionWaitTarget",
+      "buildExecutionSessionIndex",
+      "buildExecutionSessionView",
+      "buildSessionTreeIndex",
+      "classifySessionLifecycleState",
+      "consumeExecutionSessionClose",
+      "consumeExecutionSessionCloseBatch",
+      "consumeExecutionSessionSpawn",
+      "consumeExecutionSessionSpawnBatch",
       "consumeExecutionSessionWait",
+      "consumeExecutionSessionWaitBatch",
+      "deriveExecutionSessionCloseCandidate",
+      "deriveExecutionSessionCloseConsumer",
+      "deriveExecutionSessionCloseConsumerReadiness",
+      "deriveExecutionSessionCloseReadiness",
+      "deriveExecutionSessionCloseRecordedEvent",
+      "deriveExecutionSessionCloseRequest",
+      "deriveExecutionSessionCloseRequestedEvent",
       "deriveExecutionSessionCloseTarget",
-      "consumeExecutionSessionClose"
-    ]) {
-      expect(exportKeys.has(key)).toBe(true);
-    }
+      "deriveExecutionSessionContext",
+      "deriveExecutionSessionLifecycleDisposition",
+      "deriveExecutionSessionRecord",
+      "deriveExecutionSessionSpawnCandidate",
+      "deriveExecutionSessionSpawnEffects",
+      "deriveExecutionSessionSpawnEffectsBatch",
+      "deriveExecutionSessionSpawnHeadlessCloseCandidate",
+      "deriveExecutionSessionSpawnHeadlessCloseCandidateBatch",
+      "deriveExecutionSessionSpawnHeadlessCloseTarget",
+      "deriveExecutionSessionSpawnHeadlessCloseTargetBatch",
+      "deriveExecutionSessionSpawnHeadlessContext",
+      "deriveExecutionSessionSpawnHeadlessContextBatch",
+      "deriveExecutionSessionSpawnHeadlessInput",
+      "deriveExecutionSessionSpawnHeadlessInputBatch",
+      "deriveExecutionSessionSpawnHeadlessRecord",
+      "deriveExecutionSessionSpawnHeadlessRecordBatch",
+      "deriveExecutionSessionSpawnHeadlessView",
+      "deriveExecutionSessionSpawnHeadlessViewBatch",
+      "deriveExecutionSessionSpawnHeadlessWaitCandidate",
+      "deriveExecutionSessionSpawnHeadlessWaitCandidateBatch",
+      "deriveExecutionSessionSpawnHeadlessWaitTarget",
+      "deriveExecutionSessionSpawnHeadlessWaitTargetBatch",
+      "deriveExecutionSessionSpawnLineage",
+      "deriveExecutionSessionSpawnReadiness",
+      "deriveExecutionSessionSpawnRecordedEvent",
+      "deriveExecutionSessionSpawnRequest",
+      "deriveExecutionSessionSpawnRequestedEvent",
+      "deriveExecutionSessionSpawnTarget",
+      "deriveExecutionSessionWaitCandidate",
+      "deriveExecutionSessionWaitConsumer",
+      "deriveExecutionSessionWaitConsumerReadiness",
+      "deriveExecutionSessionWaitReadiness",
+      "deriveExecutionSessionWaitRequest",
+      "deriveExecutionSessionWaitTarget",
+      "deriveSessionNodeRef",
+      "deriveSessionSnapshot",
+      "executeExecutionSessionSpawnHeadless",
+      "executeExecutionSessionSpawnHeadlessBatch",
+      "executionSessionCloseBlockingReasons",
+      "executionSessionCloseConsumerBlockingReasons",
+      "executionSessionContextSelectionKinds",
+      "executionSessionRecordSources",
+      "executionSessionSpawnBlockingReasons",
+      "executionSessionSpawnRequestSourceKinds",
+      "executionSessionWaitBlockingReasons",
+      "executionSessionWaitConsumerBlockingReasons",
+      "listChildExecutionSessions",
+      "normalizeSessionGuardrails",
+      "resolveExecutionSessionRecord",
+      "sessionLifecycleEventKinds",
+      "sessionLifecycleStates",
+      "sessionNodeKinds",
+      "sessionSourceKinds"
+    ]);
   });
 
   it("should keep control-plane internals free of unrelated selection and verification helpers", () => {
@@ -76,10 +122,20 @@ describe("control-plane internal exports", () => {
       context: ExecutionSessionContext;
       spawnRequest: ExecutionSessionSpawnRequest;
       spawnHeadlessInput: ExecutionSessionSpawnHeadlessInput;
+      spawnHeadlessCloseCandidate: ExecutionSessionSpawnHeadlessCloseCandidate;
+      spawnHeadlessCloseTarget: ExecutionSessionSpawnHeadlessCloseTarget;
       waitApply: ExecutionSessionWaitApply;
       waitApplyBatch: ExecutionSessionWaitApplyBatch;
       waitConsume: ExecutionSessionWaitConsume;
+      closeApply: ExecutionSessionCloseApply;
+      closeApplyBatch: ExecutionSessionCloseApplyBatch;
+      closeCandidate: ExecutionSessionCloseCandidate;
+      closeRequest: ExecutionSessionCloseRequest;
+      closeRequestedEvent: ExecutionSessionCloseRequestedEvent;
+      closeRecordedEvent: ExecutionSessionCloseRecordedEvent;
+      closeConsumer: ExecutionSessionCloseConsumer;
       closeConsume: ExecutionSessionCloseConsume;
+      closeConsumeBatch: ExecutionSessionCloseConsumeBatch;
     };
 
     expectTypeOf<ControlPlaneInternalExports>().not.toBeAny();

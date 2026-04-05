@@ -424,6 +424,38 @@ export interface ExecutionSessionCloseConsumeBatch {
   results: ExecutionSessionCloseConsume[];
 }
 
+export interface ExecutionSessionCloseApplyInput {
+  invokeClose: ExecutionSessionCloseInvoker;
+  request: ExecutionSessionCloseRequest;
+  resolveSessionLifecycleCapability?: SessionLifecycleCapabilityResolver;
+}
+
+export interface ExecutionSessionCloseApply {
+  consumer: ExecutionSessionCloseConsumer;
+  consume: ExecutionSessionCloseConsume;
+}
+
+export interface ExecutionSessionCloseApplyBatchInput {
+  invokeClose: ExecutionSessionCloseInvoker;
+  requests: readonly ExecutionSessionCloseRequest[];
+  resolveSessionLifecycleCapability?: SessionLifecycleCapabilityResolver;
+}
+
+export interface ExecutionSessionCloseApplyBatch {
+  results: ExecutionSessionCloseApply[];
+}
+
+export interface ExecutionSessionCloseTargetApplyInput {
+  invokeClose: ExecutionSessionCloseInvoker;
+  target: ExecutionSessionCloseTarget;
+  resolveSessionLifecycleCapability?: SessionLifecycleCapabilityResolver;
+}
+
+export interface ExecutionSessionCloseTargetApply {
+  apply: ExecutionSessionCloseApply;
+  request: ExecutionSessionCloseRequest;
+}
+
 export interface ExecutionSessionCloseRequestedEventInput {
   request: ExecutionSessionCloseRequest;
 }
