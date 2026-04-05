@@ -329,6 +329,62 @@ describe("control-plane runtime-state spawn-headless-execute helpers", () => {
     expect(executeHeadless).not.toHaveBeenCalled();
   });
 
+  it("should invoke spawn before surfacing local spawn validation failures", async () => {
+    const invokeSpawn = vi.fn(async () => undefined);
+    const executeHeadless = vi.fn(async () =>
+      createHeadlessExecutionResult({
+        observation: {
+          runCompleted: true,
+          errorEventCount: 0
+        }
+      })
+    );
+
+    await expect(
+      executeExecutionSessionSpawnHeadless({
+        childAttemptId: "   ",
+        request: createSpawnRequest({
+          sourceKind: "fork"
+        }),
+        execution: {
+          prompt: "Reply with ok"
+        },
+        invokeSpawn,
+        executeHeadless
+      })
+    ).rejects.toThrow(/childAttemptId/i);
+    expect(invokeSpawn).toHaveBeenCalledTimes(1);
+    expect(executeHeadless).not.toHaveBeenCalled();
+  });
+
+  it("should invoke spawn before surfacing execution-seed bridge failures", async () => {
+    const invokeSpawn = vi.fn(async () => undefined);
+    const executeHeadless = vi.fn(async () =>
+      createHeadlessExecutionResult({
+        observation: {
+          runCompleted: true,
+          errorEventCount: 0
+        }
+      })
+    );
+
+    await expect(
+      executeExecutionSessionSpawnHeadless({
+        childAttemptId: "att_child_bridge_failed",
+        request: createSpawnRequest({
+          sourceKind: "delegated"
+        }),
+        get execution(): never {
+          throw new Error("bridge failed");
+        },
+        invokeSpawn,
+        executeHeadless
+      } as const)
+    ).rejects.toThrow("bridge failed");
+    expect(invokeSpawn).toHaveBeenCalledTimes(1);
+    expect(executeHeadless).not.toHaveBeenCalled();
+  });
+
   it("should surface headless executor failures without returning partial execution output", async () => {
     const expectedError = new Error("execute failed");
 

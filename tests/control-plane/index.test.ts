@@ -44,6 +44,7 @@ describe("control-plane index exports", () => {
     expect(controlPlane).not.toHaveProperty("applyExecutionSessionWait");
     expect(controlPlane).not.toHaveProperty("applyExecutionSessionWaitBatch");
     expect(controlPlane).not.toHaveProperty("applyExecutionSessionWaitTarget");
+    expect(controlPlane).not.toHaveProperty("applyExecutionSessionWaitTargetBatch");
     expect(controlPlane).not.toHaveProperty("consumeExecutionSessionWait");
     expect(controlPlane).not.toHaveProperty("executionSessionWaitBlockingReasons");
     expect(controlPlane).not.toHaveProperty("executionSessionWaitConsumerBlockingReasons");
@@ -58,6 +59,7 @@ describe("control-plane index exports", () => {
     expect(controlPlane).not.toHaveProperty("applyExecutionSessionClose");
     expect(controlPlane).not.toHaveProperty("applyExecutionSessionCloseBatch");
     expect(controlPlane).not.toHaveProperty("applyExecutionSessionCloseTarget");
+    expect(controlPlane).not.toHaveProperty("applyExecutionSessionCloseTargetBatch");
     expect(controlPlane).not.toHaveProperty("consumeExecutionSessionClose");
     expect(controlPlane).not.toHaveProperty("consumeExecutionSessionCloseBatch");
     expect(controlPlane).not.toHaveProperty("executionSessionCloseBlockingReasons");
@@ -90,6 +92,12 @@ type ControlPlaneIndexShouldNotExportWaitApply = import("../../src/control-plane
 // @ts-expect-error control-plane index must not export wait apply batch results
 type ControlPlaneIndexShouldNotExportWaitApplyBatch = import("../../src/control-plane/index.js").ExecutionSessionWaitApplyBatch;
 
+// @ts-expect-error control-plane index must not export wait target apply results
+type ControlPlaneIndexShouldNotExportWaitTargetApply = import("../../src/control-plane/index.js").ExecutionSessionWaitTargetApply;
+
+// @ts-expect-error control-plane index must not export wait target apply batch results
+type ControlPlaneIndexShouldNotExportWaitTargetApplyBatch = import("../../src/control-plane/index.js").ExecutionSessionWaitTargetApplyBatch;
+
 // @ts-expect-error control-plane index must not export close targets
 type ControlPlaneIndexShouldNotExportCloseTarget = import("../../src/control-plane/index.js").ExecutionSessionCloseTarget;
 
@@ -98,6 +106,12 @@ type ControlPlaneIndexShouldNotExportCloseApply = import("../../src/control-plan
 
 // @ts-expect-error control-plane index must not export close apply batch results
 type ControlPlaneIndexShouldNotExportCloseApplyBatch = import("../../src/control-plane/index.js").ExecutionSessionCloseApplyBatch;
+
+// @ts-expect-error control-plane index must not export close target apply results
+type ControlPlaneIndexShouldNotExportCloseTargetApply = import("../../src/control-plane/index.js").ExecutionSessionCloseTargetApply;
+
+// @ts-expect-error control-plane index must not export close target apply batch results
+type ControlPlaneIndexShouldNotExportCloseTargetApplyBatch = import("../../src/control-plane/index.js").ExecutionSessionCloseTargetApplyBatch;
 
 // @ts-expect-error control-plane index must not export close candidates
 type ControlPlaneIndexShouldNotExportCloseCandidate = import("../../src/control-plane/index.js").ExecutionSessionCloseCandidate;
@@ -149,6 +163,12 @@ type ControlPlaneIndexShouldNotExportApplyExecutionSessionCloseBatch = typeof im
 
 // @ts-expect-error control-plane index must not export close target apply helpers
 type ControlPlaneIndexShouldNotExportApplyExecutionSessionCloseTarget = typeof import("../../src/control-plane/index.js").applyExecutionSessionCloseTarget;
+
+// @ts-expect-error control-plane index must not export wait target apply batch helpers
+type ControlPlaneIndexShouldNotExportApplyExecutionSessionWaitTargetBatch = typeof import("../../src/control-plane/index.js").applyExecutionSessionWaitTargetBatch;
+
+// @ts-expect-error control-plane index must not export close target apply batch helpers
+type ControlPlaneIndexShouldNotExportApplyExecutionSessionCloseTargetBatch = typeof import("../../src/control-plane/index.js").applyExecutionSessionCloseTargetBatch;
 
 // @ts-expect-error control-plane index must not export close consume batch helpers
 type ControlPlaneIndexShouldNotExportConsumeExecutionSessionCloseBatch = typeof import("../../src/control-plane/index.js").consumeExecutionSessionCloseBatch;

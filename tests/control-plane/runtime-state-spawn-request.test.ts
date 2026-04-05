@@ -98,6 +98,35 @@ describe("control-plane runtime-state spawn-request helpers", () => {
     ).toBeUndefined();
   });
 
+  it("should reject invalid source kinds even when the candidate is blocked", () => {
+    const blockedCandidate = deriveExecutionSessionSpawnCandidate({
+      view: buildExecutionSessionView([
+        createRecord({
+          attemptId: "att_terminal",
+          sessionId: "thr_terminal",
+          sourceKind: "direct",
+          lifecycleState: "failed"
+        })
+      ]),
+      selector: {
+        attemptId: "att_terminal"
+      }
+    })!;
+
+    expect(() =>
+      deriveExecutionSessionSpawnRequest({
+        candidate: blockedCandidate,
+        sourceKind: "resume" as unknown as ExecutionSessionSpawnRequestSourceKind
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnRequest({
+        candidate: blockedCandidate,
+        sourceKind: "resume" as unknown as ExecutionSessionSpawnRequestSourceKind
+      })
+    ).toThrow(/sourceKind/i);
+  });
+
   it("should return undefined when the candidate has an unknown session", () => {
     const candidate = deriveExecutionSessionSpawnCandidate({
       view: buildExecutionSessionView([

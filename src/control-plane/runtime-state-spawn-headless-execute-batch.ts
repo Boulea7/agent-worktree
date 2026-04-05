@@ -15,7 +15,9 @@ export async function executeExecutionSessionSpawnHeadlessBatch(
       await executeExecutionSessionSpawnHeadless({
         childAttemptId: item.childAttemptId,
         request: item.request,
-        execution: item.execution,
+        get execution() {
+          return item.execution;
+        },
         invokeSpawn: input.invokeSpawn,
         executeHeadless: input.executeHeadless
       })

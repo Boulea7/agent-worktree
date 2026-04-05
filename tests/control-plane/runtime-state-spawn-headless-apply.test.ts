@@ -203,6 +203,7 @@ describe("control-plane runtime-state spawn-headless-apply helpers", () => {
     ).rejects.toThrow(expectedError);
     expect(invokeSpawn).toHaveBeenCalledTimes(1);
   });
+
 });
 
 function createSpawnRequest(

@@ -10,7 +10,9 @@ export async function executeExecutionSessionSpawnHeadless(
   const headlessApply = await applyExecutionSessionSpawnHeadlessInput({
     childAttemptId: input.childAttemptId,
     request: input.request,
-    execution: input.execution,
+    get execution() {
+      return input.execution;
+    },
     invokeSpawn: input.invokeSpawn
   });
   const executionResult = await input.executeHeadless(headlessApply.headlessInput);

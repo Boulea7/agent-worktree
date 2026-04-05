@@ -323,6 +323,70 @@ describe("control-plane runtime-state spawn-headless-execute-batch helpers", () 
     expect(invokedAttemptIds).toEqual(["att_child_1", "att_child_2"]);
   });
 
+  it("should invoke spawn for the failing item before surfacing execution-seed bridge failures", async () => {
+    const invokedSessionIds: string[] = [];
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      executeExecutionSessionSpawnHeadlessBatch({
+        items: [
+          {
+            childAttemptId: "att_child_1",
+            request: createSpawnRequest({
+              parentAttemptId: "att_parent_1",
+              parentSessionId: "thr_parent_1"
+            }),
+            execution: {
+              prompt: "child one"
+            }
+          },
+          {
+            childAttemptId: "att_child_2",
+            request: createSpawnRequest({
+              parentAttemptId: "att_parent_2",
+              parentSessionId: "thr_parent_2"
+            }),
+            get execution(): never {
+              throw new Error("bridge failed");
+            }
+          },
+          {
+            childAttemptId: "att_child_3",
+            request: createSpawnRequest({
+              parentAttemptId: "att_parent_3",
+              parentSessionId: "thr_parent_3"
+            }),
+            execution: {
+              prompt: "child three"
+            }
+          }
+        ] as const,
+        invokeSpawn: async (request: ExecutionSessionSpawnRequest) => {
+          invokedSessionIds.push(request.parentSessionId);
+        },
+        executeHeadless: async (input: HeadlessExecutionInput) => {
+          const attemptId = input.attempt?.attemptId;
+
+          if (attemptId === undefined) {
+            throw new Error("missing attempt");
+          }
+
+          invokedAttemptIds.push(attemptId);
+
+          return createHeadlessExecutionResult({
+            observation: {
+              threadId: `thr_${attemptId}`,
+              runCompleted: true,
+              errorEventCount: 0
+            }
+          });
+        }
+      })
+    ).rejects.toThrow("bridge failed");
+    expect(invokedSessionIds).toEqual(["thr_parent_1", "thr_parent_2"]);
+    expect(invokedAttemptIds).toEqual(["att_child_1"]);
+  });
+
   it("should keep the batch result minimal and leave inputs untouched", async () => {
     const items = [
       {

@@ -86,6 +86,32 @@ describe("control-plane runtime-state spawn-lineage helpers", () => {
     expect(request).toEqual(requestSnapshot);
   });
 
+  it("should canonicalize the spawn request before deriving lineage", () => {
+    expect(
+      deriveExecutionSessionSpawnLineage({
+        request: createSpawnRequest({
+          parentAttemptId: "  att_parent_trimmed  ",
+          parentRuntime: "  codex-cli  ",
+          parentSessionId: "  thr_parent_trimmed  ",
+          sourceKind: "  delegated  ",
+          inheritedGuardrails: {
+            maxChildren: 2,
+            maxDepth: 3
+          }
+        }),
+        childAttemptId: "att_child_trimmed"
+      })
+    ).toEqual({
+      attemptId: "att_child_trimmed",
+      parentAttemptId: "att_parent_trimmed",
+      sourceKind: "delegated",
+      guardrails: {
+        maxChildren: 2,
+        maxDepth: 3
+      }
+    });
+  });
+
   it("should reject blank child attempt identifiers", () => {
     for (const childAttemptId of ["", "   "]) {
       expect(() =>
@@ -145,6 +171,26 @@ describe("control-plane runtime-state spawn-lineage helpers", () => {
         })
       ).toThrow(/sourceKind/i);
     }
+  });
+
+  it("should reject malformed parent runtime and parent session inputs", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnLineage({
+        request: createSpawnRequest({
+          parentRuntime: "   "
+        }),
+        childAttemptId: "att_child_invalid_runtime"
+      })
+    ).toThrow(/parentRuntime/i);
+
+    expect(() =>
+      deriveExecutionSessionSpawnLineage({
+        request: createSpawnRequest({
+          parentSessionId: "   "
+        }),
+        childAttemptId: "att_child_invalid_session"
+      })
+    ).toThrow(/parentSessionId/i);
   });
 
   it("should keep parent runtime, parent session, and planning fields out of the derived lineage", () => {

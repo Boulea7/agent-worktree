@@ -184,6 +184,33 @@ describe("control-plane runtime-state spawn-consume-batch helpers", () => {
     ).rejects.toThrow(expectedError);
     expect(invokedSessionIds).toEqual(["thr_parent_1", "thr_parent_2"]);
   });
+
+  it("should fail before invoking the invalid request item and stop later requests", async () => {
+    const invokedSessionIds: string[] = [];
+
+    await expect(
+      consumeExecutionSessionSpawnBatch({
+        requests: [
+          createSpawnRequest({
+            parentAttemptId: "att_parent_1",
+            parentSessionId: "thr_parent_1"
+          }),
+          createSpawnRequest({
+            parentAttemptId: "att_parent_2",
+            parentSessionId: "   "
+          }),
+          createSpawnRequest({
+            parentAttemptId: "att_parent_3",
+            parentSessionId: "thr_parent_3"
+          })
+        ],
+        invokeSpawn: async (request: ExecutionSessionSpawnRequest) => {
+          invokedSessionIds.push(request.parentSessionId);
+        }
+      })
+    ).rejects.toThrow(/parentSessionId/i);
+    expect(invokedSessionIds).toEqual(["thr_parent_1"]);
+  });
 });
 
 function createSpawnRequest(

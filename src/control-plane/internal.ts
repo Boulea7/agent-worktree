@@ -57,6 +57,7 @@ export { deriveExecutionSessionCloseRequest } from "./runtime-state-close-reques
 export { deriveExecutionSessionCloseRequestedEvent } from "./runtime-state-close-requested-event.js";
 export { deriveExecutionSessionCloseTarget } from "./runtime-state-close-target.js";
 export { applyExecutionSessionCloseTarget } from "./runtime-state-close-target-apply.js";
+export { applyExecutionSessionCloseTargetBatch } from "./runtime-state-close-target-apply-batch.js";
 export { deriveExecutionSessionWaitCandidate } from "./runtime-state-wait-candidate.js";
 export { applyExecutionSessionWait } from "./runtime-state-wait-apply.js";
 export { applyExecutionSessionWaitBatch } from "./runtime-state-wait-apply-batch.js";
@@ -68,6 +69,7 @@ export { deriveExecutionSessionWaitReadiness } from "./runtime-state-readiness.j
 export { deriveExecutionSessionWaitRequest } from "./runtime-state-wait-request.js";
 export { deriveExecutionSessionWaitTarget } from "./runtime-state-wait-target.js";
 export { applyExecutionSessionWaitTarget } from "./runtime-state-wait-target-apply.js";
+export { applyExecutionSessionWaitTargetBatch } from "./runtime-state-wait-target-apply-batch.js";
 export {
   buildExecutionSessionView,
   listChildExecutionSessions,
@@ -109,6 +111,8 @@ export {
   type ExecutionSessionCloseRequestedEventInput,
   type ExecutionSessionCloseTarget,
   type ExecutionSessionCloseTargetApply,
+  type ExecutionSessionCloseTargetApplyBatch,
+  type ExecutionSessionCloseTargetApplyBatchInput,
   type ExecutionSessionCloseTargetApplyInput,
   type ExecutionSessionCloseTargetInput,
   type ExecutionSessionContext,
@@ -217,6 +221,8 @@ export {
   type ExecutionSessionWaitReadinessInput,
   type ExecutionSessionWaitTarget,
   type ExecutionSessionWaitTargetApply,
+  type ExecutionSessionWaitTargetApplyBatch,
+  type ExecutionSessionWaitTargetApplyBatchInput,
   type ExecutionSessionWaitTargetApplyInput,
   type ExecutionSessionWaitTargetInput,
   sessionLifecycleEventKinds,

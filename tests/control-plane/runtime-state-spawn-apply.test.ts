@@ -62,7 +62,16 @@ describe("control-plane runtime-state spawn-apply helpers", () => {
       }
     });
     expect(invokeSpawn).toHaveBeenCalledTimes(1);
-    expect(invokeSpawn).toHaveBeenCalledWith(request);
+    expect(invokeSpawn).toHaveBeenCalledWith({
+      parentAttemptId: "att_parent",
+      parentRuntime: "codex-cli",
+      parentSessionId: "thr_parent",
+      sourceKind: "delegated",
+      inheritedGuardrails: {
+        maxChildren: 2,
+        maxDepth: 3
+      }
+    });
   });
 
   it("should keep the apply result minimal and leave the request untouched", async () => {
@@ -179,21 +188,86 @@ describe("control-plane runtime-state spawn-apply helpers", () => {
     expect(invokeSpawn).toHaveBeenCalledTimes(1);
   });
 
-  it("should pass the original request reference into the consume step", async () => {
-    const request = createSpawnRequest({
+  it("should normalize the request before deriving effects and invoking spawn", async () => {
+    const invokeSpawn = vi.fn(async () => undefined);
+
+    await expect(
+      applyExecutionSessionSpawn({
+        childAttemptId: "att_child_trimmed",
+        request: {
+          ...createSpawnRequest({
+            sourceKind: "delegated"
+          }),
+          parentAttemptId: "  att_parent_trimmed  ",
+          parentRuntime: "  codex-cli  ",
+          parentSessionId: "  thr_parent_trimmed  ",
+          sourceKind: "  delegated  "
+        } as unknown as ExecutionSessionSpawnRequest,
+        invokeSpawn
+      })
+    ).resolves.toEqual({
+      consume: {
+        request: {
+          parentAttemptId: "att_parent_trimmed",
+          parentRuntime: "codex-cli",
+          parentSessionId: "thr_parent_trimmed",
+          sourceKind: "delegated"
+        },
+        invoked: true
+      },
+      effects: {
+        lineage: {
+          attemptId: "att_child_trimmed",
+          parentAttemptId: "att_parent_trimmed",
+          sourceKind: "delegated"
+        },
+        requestedEvent: {
+          attemptId: "att_parent_trimmed",
+          runtime: "codex-cli",
+          sessionId: "thr_parent_trimmed",
+          lifecycleEventKind: "spawn_requested"
+        },
+        recordedEvent: {
+          attemptId: "att_parent_trimmed",
+          runtime: "codex-cli",
+          sessionId: "thr_parent_trimmed",
+          lifecycleEventKind: "spawn_recorded"
+        }
+      }
+    });
+    expect(invokeSpawn).toHaveBeenCalledWith({
+      parentAttemptId: "att_parent_trimmed",
+      parentRuntime: "codex-cli",
+      parentSessionId: "thr_parent_trimmed",
       sourceKind: "delegated"
     });
+  });
+
+  it("should pass the canonical request into the consume step", async () => {
     let seenRequest: ExecutionSessionSpawnRequest | undefined;
 
     await applyExecutionSessionSpawn({
       childAttemptId: "att_child_reference",
-      request,
+      request: {
+        ...createSpawnRequest({
+          sourceKind: "delegated"
+        }),
+        parentAttemptId: "  att_parent  ",
+        parentRuntime: "  codex-cli  ",
+        parentSessionId: "  thr_parent  ",
+        sourceKind: "  delegated  "
+      } as unknown as ExecutionSessionSpawnRequest,
       invokeSpawn: async (suppliedRequest: ExecutionSessionSpawnRequest) => {
         seenRequest = suppliedRequest;
       }
     });
 
-    expect(seenRequest).toBe(request);
+    expect(seenRequest).toEqual({
+      parentAttemptId: "att_parent",
+      parentRuntime: "codex-cli",
+      parentSessionId: "thr_parent",
+      sourceKind: "delegated"
+    });
   });
 });
 

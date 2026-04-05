@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   consumeExecutionSessionSpawn,
   type ExecutionSessionSpawnRequest
@@ -28,8 +29,19 @@ describe("control-plane runtime-state spawn-consume helpers", () => {
       invoked: true
     });
     expect(invokeSpawn).toHaveBeenCalledTimes(1);
-    expect(invokeSpawn).toHaveBeenCalledWith(request);
-    expect(seenRequest).toBe(request);
+    expect(invokeSpawn).toHaveBeenCalledWith({
+      parentAttemptId: "att_parent",
+      parentRuntime: "codex-cli",
+      parentSessionId: "thr_parent",
+      sourceKind: "fork"
+    });
+    expect(seenRequest).toEqual({
+      parentAttemptId: "att_parent",
+      parentRuntime: "codex-cli",
+      parentSessionId: "thr_parent",
+      sourceKind: "fork"
+    });
+    expect(seenRequest).not.toBe(request);
   });
 
   it("should preserve the minimal consume result shape without adding child or lifecycle side effects", async () => {
@@ -117,17 +129,66 @@ describe("control-plane runtime-state spawn-consume helpers", () => {
     expect(request).toEqual(requestSnapshot);
   });
 
-  it("should surface invoker failures without wrapping them into consume metadata", async () => {
-    const expectedError = new Error("spawn failed");
-    const request = createSpawnRequest({
-      sourceKind: "delegated"
-    });
+  it("should normalize the request before invoking spawn", async () => {
+    const invokeSpawn = vi.fn(async () => undefined);
 
     await expect(
       consumeExecutionSessionSpawn({
-        request,
+        request: createSpawnRequest({
+          parentAttemptId: "  att_parent_trimmed  ",
+          parentRuntime: "  codex-cli  ",
+          parentSessionId: "  thr_parent_trimmed  ",
+          sourceKind: "delegated"
+        }),
+        invokeSpawn
+      })
+    ).resolves.toEqual({
+      request: {
+        parentAttemptId: "att_parent_trimmed",
+        parentRuntime: "codex-cli",
+        parentSessionId: "thr_parent_trimmed",
+        sourceKind: "delegated"
+      },
+      invoked: true
+    });
+    expect(invokeSpawn).toHaveBeenCalledWith({
+      parentAttemptId: "att_parent_trimmed",
+      parentRuntime: "codex-cli",
+      parentSessionId: "thr_parent_trimmed",
+      sourceKind: "delegated"
+    });
+  });
+
+  it("should fail before invoking spawn when the request is malformed", async () => {
+    const invokeSpawn = vi.fn(async () => undefined);
+
+    await expect(
+      consumeExecutionSessionSpawn({
+        request: {
+          ...createSpawnRequest(),
+          parentSessionId: "   "
+        } as ExecutionSessionSpawnRequest,
+        invokeSpawn
+      })
+    ).rejects.toThrow(ValidationError);
+    expect(invokeSpawn).not.toHaveBeenCalled();
+  });
+
+  it("should surface invoker failures without wrapping them into consume metadata", async () => {
+    const expectedError = new Error("spawn failed");
+
+    await expect(
+      consumeExecutionSessionSpawn({
+        request: createSpawnRequest({
+          sourceKind: "delegated"
+        }),
         invokeSpawn: async (suppliedRequest: ExecutionSessionSpawnRequest) => {
-          expect(suppliedRequest).toBe(request);
+          expect(suppliedRequest).toEqual({
+            parentAttemptId: "att_parent",
+            parentRuntime: "codex-cli",
+            parentSessionId: "thr_parent",
+            sourceKind: "delegated"
+          });
           throw expectedError;
         }
       })

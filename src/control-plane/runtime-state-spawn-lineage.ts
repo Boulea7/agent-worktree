@@ -1,5 +1,5 @@
 import { ValidationError } from "../core/errors.js";
-import { normalizeSessionGuardrails } from "./derive.js";
+import { normalizeExecutionSessionSpawnRequest } from "./runtime-state-spawn-request.js";
 import type {
   ExecutionSessionSpawnLineage,
   ExecutionSessionSpawnLineageInput,
@@ -9,15 +9,16 @@ import type {
 export function deriveExecutionSessionSpawnLineage(
   input: ExecutionSessionSpawnLineageInput
 ): ExecutionSessionSpawnLineage {
+  const request = normalizeExecutionSessionSpawnRequest(input.request);
   const attemptId = normalizeRequiredIdentifier(
     input.childAttemptId,
     "Execution session spawn lineage childAttemptId must be a non-empty string."
   );
   const parentAttemptId = normalizeRequiredIdentifier(
-    input.request.parentAttemptId,
+    request.parentAttemptId,
     "Execution session spawn lineage parentAttemptId must be a non-empty string."
   );
-  const sourceKind = normalizeSpawnLineageSourceKind(input.request.sourceKind);
+  const sourceKind = normalizeSpawnLineageSourceKind(request.sourceKind);
 
   if (attemptId === parentAttemptId) {
     throw new ValidationError(
@@ -25,9 +26,7 @@ export function deriveExecutionSessionSpawnLineage(
     );
   }
 
-  const guardrails = normalizeSessionGuardrails(
-    input.request.inheritedGuardrails
-  );
+  const guardrails = request.inheritedGuardrails;
 
   return {
     attemptId,
@@ -37,7 +36,11 @@ export function deriveExecutionSessionSpawnLineage(
   };
 }
 
-function normalizeRequiredIdentifier(value: string, message: string): string {
+function normalizeRequiredIdentifier(value: unknown, message: string): string {
+  if (typeof value !== "string") {
+    throw new ValidationError(message);
+  }
+
   const normalized = value.trim();
 
   if (normalized.length === 0) {
@@ -48,8 +51,14 @@ function normalizeRequiredIdentifier(value: string, message: string): string {
 }
 
 function normalizeSpawnLineageSourceKind(
-  sourceKind: string
+  sourceKind: unknown
 ): ExecutionSessionSpawnRequestSourceKind {
+  if (typeof sourceKind !== "string") {
+    throw new ValidationError(
+      'Execution session spawn lineage sourceKind must be "fork" or "delegated".'
+    );
+  }
+
   const normalized = sourceKind.trim();
 
   if (normalized === "fork" || normalized === "delegated") {
