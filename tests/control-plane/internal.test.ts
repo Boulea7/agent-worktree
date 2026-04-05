@@ -12,6 +12,7 @@ import type {
   ExecutionSessionCloseRecordedEvent,
   ExecutionSessionCloseRequest,
   ExecutionSessionCloseRequestedEvent,
+  ExecutionSessionCloseTargetApplyBatch,
   ExecutionSessionRecord,
   ExecutionSessionSpawnHeadlessCloseCandidate,
   ExecutionSessionSpawnHeadlessCloseTarget,
@@ -19,7 +20,8 @@ import type {
   ExecutionSessionSpawnRequest,
   ExecutionSessionWaitApply,
   ExecutionSessionWaitApplyBatch,
-  ExecutionSessionWaitConsume
+  ExecutionSessionWaitConsume,
+  ExecutionSessionWaitTargetApplyBatch
 } from "../../src/control-plane/internal.js";
 
 describe("control-plane internal exports", () => {
@@ -28,6 +30,7 @@ describe("control-plane internal exports", () => {
       "applyExecutionSessionClose",
       "applyExecutionSessionCloseBatch",
       "applyExecutionSessionCloseTarget",
+      "applyExecutionSessionCloseTargetBatch",
       "applyExecutionSessionSpawn",
       "applyExecutionSessionSpawnBatch",
       "applyExecutionSessionSpawnHeadlessInput",
@@ -35,6 +38,7 @@ describe("control-plane internal exports", () => {
       "applyExecutionSessionWait",
       "applyExecutionSessionWaitBatch",
       "applyExecutionSessionWaitTarget",
+      "applyExecutionSessionWaitTargetBatch",
       "buildExecutionSessionIndex",
       "buildExecutionSessionView",
       "buildSessionTreeIndex",
@@ -126,9 +130,11 @@ describe("control-plane internal exports", () => {
       spawnHeadlessCloseTarget: ExecutionSessionSpawnHeadlessCloseTarget;
       waitApply: ExecutionSessionWaitApply;
       waitApplyBatch: ExecutionSessionWaitApplyBatch;
+      waitTargetApplyBatch: ExecutionSessionWaitTargetApplyBatch;
       waitConsume: ExecutionSessionWaitConsume;
       closeApply: ExecutionSessionCloseApply;
       closeApplyBatch: ExecutionSessionCloseApplyBatch;
+      closeTargetApplyBatch: ExecutionSessionCloseTargetApplyBatch;
       closeCandidate: ExecutionSessionCloseCandidate;
       closeRequest: ExecutionSessionCloseRequest;
       closeRequestedEvent: ExecutionSessionCloseRequestedEvent;

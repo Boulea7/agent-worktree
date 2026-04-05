@@ -333,6 +333,17 @@ export interface ExecutionSessionWaitTargetApply {
   request: ExecutionSessionWaitRequest;
 }
 
+export interface ExecutionSessionWaitTargetApplyBatchInput {
+  invokeWait: ExecutionSessionWaitInvoker;
+  targets: readonly ExecutionSessionWaitTarget[];
+  timeoutMs?: number;
+  resolveSessionLifecycleCapability?: SessionLifecycleCapabilityResolver;
+}
+
+export interface ExecutionSessionWaitTargetApplyBatch {
+  results: ExecutionSessionWaitTargetApply[];
+}
+
 export interface ExecutionSessionCloseReadinessInput {
   context: ExecutionSessionContext;
   resolveSessionLifecycleCapability?: SessionLifecycleCapabilityResolver;
@@ -454,6 +465,16 @@ export interface ExecutionSessionCloseTargetApplyInput {
 export interface ExecutionSessionCloseTargetApply {
   apply: ExecutionSessionCloseApply;
   request: ExecutionSessionCloseRequest;
+}
+
+export interface ExecutionSessionCloseTargetApplyBatchInput {
+  invokeClose: ExecutionSessionCloseInvoker;
+  targets: readonly ExecutionSessionCloseTarget[];
+  resolveSessionLifecycleCapability?: SessionLifecycleCapabilityResolver;
+}
+
+export interface ExecutionSessionCloseTargetApplyBatch {
+  results: ExecutionSessionCloseTargetApply[];
 }
 
 export interface ExecutionSessionCloseRequestedEventInput {
