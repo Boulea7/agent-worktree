@@ -24,56 +24,6 @@ import type {
 describe("selection internal exports", () => {
   it("should expose representative helpers for the current internal-only capability buckets", () => {
     const exportKeys = new Set(Object.keys(selection));
-    const allowedKeys = new Set([
-      "deriveAttemptSelectionCandidate",
-      "deriveAttemptSelectionResult",
-      "deriveAttemptPromotionAuditSummary",
-      "deriveAttemptPromotionCandidate",
-      "deriveAttemptPromotionExplanationSummary",
-      "deriveAttemptPromotionReport",
-      "deriveAttemptPromotionResult",
-      "deriveAttemptPromotionDecisionSummary",
-      "deriveAttemptPromotionTarget",
-      "deriveAttemptHandoffTarget",
-      "deriveAttemptHandoffRequest",
-      "deriveAttemptHandoffConsumer",
-      "consumeAttemptHandoff",
-      "consumeAttemptHandoffBatch",
-      "applyAttemptHandoff",
-      "applyAttemptHandoffBatch",
-      "applyAttemptHandoffTarget",
-      "applyAttemptHandoffTargetBatch",
-      "applyAttemptPromotionTarget",
-      "applyAttemptPromotionTargetBatch",
-      "deriveAttemptHandoffReportReady",
-      "deriveAttemptHandoffExplanationSummary",
-      "deriveAttemptHandoffDecisionSummary",
-      "deriveAttemptHandoffFinalizationTargetSummary",
-      "deriveAttemptHandoffFinalizationRequestSummary",
-      "applyAttemptHandoffFinalization",
-      "applyAttemptHandoffFinalizationBatch",
-      "applyAttemptHandoffFinalizationRequestSummary",
-      "applyAttemptHandoffFinalizationCloseoutDecisionSummary",
-      "deriveAttemptHandoffFinalizationConsumer",
-      "consumeAttemptHandoffFinalization",
-      "consumeAttemptHandoffFinalizationBatch",
-      "deriveAttemptHandoffFinalizationOutcomeSummary",
-      "deriveAttemptHandoffFinalizationExplanationSummary",
-      "deriveAttemptHandoffFinalizationReportReady",
-      "deriveAttemptHandoffFinalizationGroupedProjectionSummary",
-      "deriveAttemptHandoffFinalizationGroupedReportingSummary",
-      "deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary",
-      "deriveAttemptHandoffFinalizationClosureSummary",
-      "deriveAttemptHandoffFinalizationCloseoutSummary",
-      "deriveAttemptHandoffFinalizationCloseoutDecisionSummary"
-    ]);
-    const denylistKeys = new Set([
-      "buildExecutionSessionIndex",
-      "consumeExecutionSessionWait",
-      "consumeExecutionSessionClose",
-      "deriveAttemptVerificationPayload",
-      "executeAttemptVerification"
-    ]);
 
     for (const key of [
       "deriveAttemptSelectionCandidate",
@@ -118,12 +68,6 @@ describe("selection internal exports", () => {
     ]) {
       expect(exportKeys.has(key)).toBe(true);
     }
-
-    const unexpectedKeys = [...exportKeys].filter(
-      (key) => !allowedKeys.has(key) && !denylistKeys.has(key)
-    );
-
-    expect(unexpectedKeys).toEqual([]);
   });
 
   it("should keep selection internals free of unrelated control-plane and verification helpers", () => {

@@ -7,7 +7,7 @@ import {
 } from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-apply helpers", () => {
-  it("should derive effects before invoking spawn", async () => {
+  it("should compose consume first and then derive effects", async () => {
     const request = createSpawnRequest({
       sourceKind: "delegated",
       inheritedGuardrails: {
@@ -173,7 +173,7 @@ describe("control-plane runtime-state spawn-apply helpers", () => {
     ).rejects.toThrow(expectedError);
   });
 
-  it("should fail before invoking spawn when childAttemptId is invalid", async () => {
+  it("should invoke consume before surfacing invalid childAttemptId failures", async () => {
     const invokeSpawn = vi.fn(async () => undefined);
 
     await expect(
@@ -185,7 +185,7 @@ describe("control-plane runtime-state spawn-apply helpers", () => {
         invokeSpawn
       })
     ).rejects.toThrow(ValidationError);
-    expect(invokeSpawn).not.toHaveBeenCalled();
+    expect(invokeSpawn).toHaveBeenCalledTimes(1);
   });
 
   it("should normalize the request before deriving effects and invoking spawn", async () => {

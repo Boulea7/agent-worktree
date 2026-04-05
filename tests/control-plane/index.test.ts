@@ -92,6 +92,9 @@ type ControlPlaneIndexShouldNotExportWaitApply = import("../../src/control-plane
 // @ts-expect-error control-plane index must not export wait apply batch results
 type ControlPlaneIndexShouldNotExportWaitApplyBatch = import("../../src/control-plane/index.js").ExecutionSessionWaitApplyBatch;
 
+// @ts-expect-error control-plane index must not export wait target apply results
+type ControlPlaneIndexShouldNotExportWaitTargetApply = import("../../src/control-plane/index.js").ExecutionSessionWaitTargetApply;
+
 // @ts-expect-error control-plane index must not export wait target apply batch results
 type ControlPlaneIndexShouldNotExportWaitTargetApplyBatch = import("../../src/control-plane/index.js").ExecutionSessionWaitTargetApplyBatch;
 
@@ -103,6 +106,9 @@ type ControlPlaneIndexShouldNotExportCloseApply = import("../../src/control-plan
 
 // @ts-expect-error control-plane index must not export close apply batch results
 type ControlPlaneIndexShouldNotExportCloseApplyBatch = import("../../src/control-plane/index.js").ExecutionSessionCloseApplyBatch;
+
+// @ts-expect-error control-plane index must not export close target apply results
+type ControlPlaneIndexShouldNotExportCloseTargetApply = import("../../src/control-plane/index.js").ExecutionSessionCloseTargetApply;
 
 // @ts-expect-error control-plane index must not export close target apply batch results
 type ControlPlaneIndexShouldNotExportCloseTargetApplyBatch = import("../../src/control-plane/index.js").ExecutionSessionCloseTargetApplyBatch;

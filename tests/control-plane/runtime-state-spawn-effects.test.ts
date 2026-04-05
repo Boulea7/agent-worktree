@@ -100,6 +100,46 @@ describe("control-plane runtime-state spawn-effects helpers", () => {
     expect(first.recordedEvent).toEqual(second.recordedEvent);
   });
 
+  it("should canonicalize the spawn request before deriving effects", () => {
+    expect(
+      deriveExecutionSessionSpawnEffects({
+        childAttemptId: "att_child_trimmed",
+        request: createSpawnRequest({
+          parentAttemptId: "  att_parent_trimmed  ",
+          parentRuntime: "  codex-cli  ",
+          parentSessionId: "  thr_parent_trimmed  ",
+          sourceKind: "  delegated  ",
+          inheritedGuardrails: {
+            maxChildren: 2,
+            maxDepth: 3
+          }
+        })
+      })
+    ).toEqual({
+      lineage: {
+        attemptId: "att_child_trimmed",
+        parentAttemptId: "att_parent_trimmed",
+        sourceKind: "delegated",
+        guardrails: {
+          maxChildren: 2,
+          maxDepth: 3
+        }
+      },
+      requestedEvent: {
+        attemptId: "att_parent_trimmed",
+        runtime: "codex-cli",
+        sessionId: "thr_parent_trimmed",
+        lifecycleEventKind: "spawn_requested"
+      },
+      recordedEvent: {
+        attemptId: "att_parent_trimmed",
+        runtime: "codex-cli",
+        sessionId: "thr_parent_trimmed",
+        lifecycleEventKind: "spawn_recorded"
+      }
+    });
+  });
+
   it("should keep the result shape minimal and leave the request untouched", () => {
     const request = createSpawnRequest({
       sourceKind: "delegated",
@@ -206,6 +246,26 @@ describe("control-plane runtime-state spawn-effects helpers", () => {
         }) as never
       })
     ).toThrow(/sourceKind/i);
+  });
+
+  it("should reject malformed parent runtime and parent session inputs", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnEffects({
+        childAttemptId: "att_child_invalid_runtime",
+        request: createSpawnRequest({
+          parentRuntime: "   "
+        })
+      })
+    ).toThrow(/parentRuntime/i);
+
+    expect(() =>
+      deriveExecutionSessionSpawnEffects({
+        childAttemptId: "att_child_invalid_session",
+        request: createSpawnRequest({
+          parentSessionId: "   "
+        })
+      })
+    ).toThrow(/parentSessionId/i);
   });
 });
 

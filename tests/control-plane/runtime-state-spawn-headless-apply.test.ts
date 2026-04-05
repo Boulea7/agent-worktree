@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { ValidationError } from "../../src/core/errors.js";
 import {
   applyExecutionSessionSpawnHeadlessInput,
   type ExecutionSessionSpawnRequest
@@ -186,25 +185,7 @@ describe("control-plane runtime-state spawn-headless-apply helpers", () => {
     ).rejects.toThrow(expectedError);
   });
 
-  it("should fail before invoking spawn when childAttemptId is invalid", async () => {
-    const invokeSpawn = vi.fn(async () => undefined);
-
-    await expect(
-      applyExecutionSessionSpawnHeadlessInput({
-        childAttemptId: "   ",
-        request: createSpawnRequest({
-          sourceKind: "fork"
-        }),
-        execution: {
-          prompt: "Reply with ok"
-        },
-        invokeSpawn
-      })
-    ).rejects.toThrow(ValidationError);
-    expect(invokeSpawn).not.toHaveBeenCalled();
-  });
-
-  it("should keep bridge failures after spawn apply", async () => {
+  it("should invoke spawn before surfacing bridge failures from the execution seed", async () => {
     const invokeSpawn = vi.fn(async () => undefined);
     const expectedError = new Error("bridge failed");
 

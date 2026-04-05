@@ -329,7 +329,8 @@ describe("control-plane runtime-state spawn-headless-execute helpers", () => {
     expect(executeHeadless).not.toHaveBeenCalled();
   });
 
-  it("should surface local spawn validation failures without invoking headless execution", async () => {
+  it("should invoke spawn before surfacing local spawn validation failures", async () => {
+    const invokeSpawn = vi.fn(async () => undefined);
     const executeHeadless = vi.fn(async () =>
       createHeadlessExecutionResult({
         observation: {
@@ -348,10 +349,11 @@ describe("control-plane runtime-state spawn-headless-execute helpers", () => {
         execution: {
           prompt: "Reply with ok"
         },
-        invokeSpawn: async () => undefined,
+        invokeSpawn,
         executeHeadless
       })
     ).rejects.toThrow(/childAttemptId/i);
+    expect(invokeSpawn).toHaveBeenCalledTimes(1);
     expect(executeHeadless).not.toHaveBeenCalled();
   });
 

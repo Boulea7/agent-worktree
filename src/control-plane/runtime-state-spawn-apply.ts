@@ -10,13 +10,13 @@ export async function applyExecutionSessionSpawn(
   input: ExecutionSessionSpawnApplyInput
 ): Promise<ExecutionSessionSpawnApply> {
   const request = normalizeExecutionSessionSpawnRequest(input.request);
-  const effects = deriveExecutionSessionSpawnEffects({
-    childAttemptId: input.childAttemptId,
-    request
-  });
   const consume = await consumeExecutionSessionSpawn({
     request,
     invokeSpawn: input.invokeSpawn
+  });
+  const effects = deriveExecutionSessionSpawnEffects({
+    childAttemptId: input.childAttemptId,
+    request
   });
 
   return {
