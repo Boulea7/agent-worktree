@@ -6,6 +6,8 @@ import type {
 } from "../../src/adapters/types.js";
 import {
   applyExecutionSessionSpawnBatchHeadlessApply,
+  applyExecutionSessionSpawnHeadlessCloseTargetBatch,
+  applyExecutionSessionSpawnHeadlessWaitTargetBatch,
   applyExecutionSessionSpawnHeadlessInputBatch,
   buildExecutionSessionView,
   deriveExecutionSessionSpawnBatchHeadlessApplyItems,
@@ -288,6 +290,135 @@ describe("control-plane runtime-state spawn-batch-headless-apply helpers", () =>
     }
   });
 
+  it("should preserve traceability from record batches through wait and close target-apply batches when descendant coverage is complete", async () => {
+    const headlessRecordBatch = deriveExecutionSessionSpawnHeadlessRecordBatch({
+      items: [
+        createHeadlessExecute({
+          attemptId: "att_trace_apply_child_1",
+          parentAttemptId: "att_trace_apply_parent",
+          sessionId: "thr_trace_apply_child_1",
+          sourceKind: "delegated"
+        }),
+        createHeadlessExecute({
+          attemptId: "att_trace_apply_child_2",
+          parentAttemptId: "att_trace_apply_parent",
+          sessionId: "thr_trace_apply_child_2",
+          sourceKind: "delegated"
+        })
+      ]
+    });
+    const headlessViewBatch = {
+      descendantCoverage: "complete" as const,
+      headlessRecordBatch,
+      view: buildExecutionSessionView(
+        headlessRecordBatch.results.map((result) => result.record)
+      )
+    };
+    const headlessContextBatch = deriveExecutionSessionSpawnHeadlessContextBatch({
+      headlessViewBatch
+    });
+    const headlessWaitCandidateBatch =
+      deriveExecutionSessionSpawnHeadlessWaitCandidateBatch({
+        headlessContextBatch
+      });
+    const headlessWaitTargetBatch = deriveExecutionSessionSpawnHeadlessWaitTargetBatch({
+      headlessWaitCandidateBatch
+    });
+    const waitInvokedSessionIds: string[] = [];
+    const headlessWaitTargetApplyBatch =
+      await applyExecutionSessionSpawnHeadlessWaitTargetBatch({
+        headlessWaitTargetBatch,
+        timeoutMs: 1_500,
+        invokeWait: async ({ sessionId }) => {
+          waitInvokedSessionIds.push(sessionId);
+        },
+        resolveSessionLifecycleCapability: () => true
+      });
+    const headlessCloseCandidateBatch =
+      deriveExecutionSessionSpawnHeadlessCloseCandidateBatch({
+        headlessContextBatch,
+        resolveSessionLifecycleCapability: () => true
+      });
+    const headlessCloseTargetBatch =
+      deriveExecutionSessionSpawnHeadlessCloseTargetBatch({
+        headlessCloseCandidateBatch
+      });
+    const closeInvokedSessionIds: string[] = [];
+    const headlessCloseTargetApplyBatch =
+      await applyExecutionSessionSpawnHeadlessCloseTargetBatch({
+        headlessCloseTargetBatch,
+        invokeClose: async ({ sessionId }) => {
+          closeInvokedSessionIds.push(sessionId);
+        },
+        resolveSessionLifecycleCapability: () => true
+      });
+
+    expect(
+      headlessWaitTargetBatch.results.map((result) => result.target?.attemptId)
+    ).toEqual(["att_trace_apply_child_1", "att_trace_apply_child_2"]);
+    expect(
+      headlessCloseTargetBatch.results.map((result) => result.target?.attemptId)
+    ).toEqual(["att_trace_apply_child_1", "att_trace_apply_child_2"]);
+    expect(
+      headlessWaitTargetApplyBatch.results.map((result) => ({
+        lineageAttemptId:
+          result.headlessWaitTarget.headlessWaitCandidate.headlessContext.context
+            .record.attemptId,
+        requestAttemptId: result.apply?.request.attemptId,
+        requestSessionId: result.apply?.request.sessionId
+      }))
+    ).toEqual([
+      {
+        lineageAttemptId: "att_trace_apply_child_1",
+        requestAttemptId: "att_trace_apply_child_1",
+        requestSessionId: "thr_trace_apply_child_1"
+      },
+      {
+        lineageAttemptId: "att_trace_apply_child_2",
+        requestAttemptId: "att_trace_apply_child_2",
+        requestSessionId: "thr_trace_apply_child_2"
+      }
+    ]);
+    expect(
+      headlessCloseTargetApplyBatch.results.map((result) => ({
+        lineageAttemptId:
+          result.headlessCloseTarget.headlessCloseCandidate.headlessContext.context
+            .record.attemptId,
+        requestAttemptId: result.apply?.request.attemptId,
+        requestSessionId: result.apply?.request.sessionId
+      }))
+    ).toEqual([
+      {
+        lineageAttemptId: "att_trace_apply_child_1",
+        requestAttemptId: "att_trace_apply_child_1",
+        requestSessionId: "thr_trace_apply_child_1"
+      },
+      {
+        lineageAttemptId: "att_trace_apply_child_2",
+        requestAttemptId: "att_trace_apply_child_2",
+        requestSessionId: "thr_trace_apply_child_2"
+      }
+    ]);
+    expect(waitInvokedSessionIds).toEqual([
+      "thr_trace_apply_child_1",
+      "thr_trace_apply_child_2"
+    ]);
+    expect(closeInvokedSessionIds).toEqual([
+      "thr_trace_apply_child_1",
+      "thr_trace_apply_child_2"
+    ]);
+  });
+
+  it("should reject explicit empty record fixtures instead of silently falling back to defaults", () => {
+    expect(() =>
+      createPlan({
+        requestedCount: 1,
+        canPlan: true,
+        records: []
+      })
+    ).toThrow("records must include at least one record when provided");
+  });
+
   it("should reject malformed projected headless apply items before invoking spawn", async () => {
     const invokeSpawn = vi.fn(async () => undefined);
 
@@ -391,6 +522,10 @@ function createPlan(input: {
   requestedCount: number;
   records?: ExecutionSessionRecord[];
 }) {
+  if (input.records !== undefined && input.records.length === 0) {
+    throw new Error("records must include at least one record when provided");
+  }
+
   const candidate = deriveExecutionSessionSpawnCandidate({
     view: buildExecutionSessionView(
       input.records ?? [
@@ -471,6 +606,63 @@ function createRecord(
     errorEventCount: 0,
     origin: "headless_result",
     ...rest
+  };
+}
+
+function createHeadlessExecute(overrides: {
+  attemptId: string;
+  parentAttemptId: string;
+  sessionId: string;
+  sourceKind: "fork" | "delegated";
+}) {
+  return {
+    headlessApply: {
+      apply: {
+        consume: {
+          request: {
+            parentAttemptId: overrides.parentAttemptId,
+            parentRuntime: "codex-cli",
+            parentSessionId: `parent_${overrides.sessionId}`,
+            sourceKind: overrides.sourceKind
+          },
+          invoked: true as const
+        },
+        effects: {
+          lineage: {
+            attemptId: overrides.attemptId,
+            parentAttemptId: overrides.parentAttemptId,
+            sourceKind: overrides.sourceKind
+          },
+          requestedEvent: {
+            attemptId: overrides.parentAttemptId,
+            runtime: "codex-cli",
+            sessionId: `parent_${overrides.sessionId}`,
+            lifecycleEventKind: "spawn_requested" as const
+          },
+          recordedEvent: {
+            attemptId: overrides.parentAttemptId,
+            runtime: "codex-cli",
+            sessionId: `parent_${overrides.sessionId}`,
+            lifecycleEventKind: "spawn_recorded" as const
+          }
+        }
+      },
+      headlessInput: {
+        prompt: "Reply with exactly: ok",
+        attempt: {
+          attemptId: overrides.attemptId,
+          parentAttemptId: overrides.parentAttemptId,
+          sourceKind: overrides.sourceKind
+        }
+      }
+    },
+    executionResult: createHeadlessExecutionResult({
+      observation: {
+        threadId: overrides.sessionId,
+        runCompleted: false,
+        errorEventCount: 0
+      }
+    })
   };
 }
 

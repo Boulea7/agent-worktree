@@ -11,12 +11,19 @@ import type {
 } from "../../src/verification/internal.js";
 
 describe("verification internal exports", () => {
-  it("should expose representative helpers for the current internal verification buckets", () => {
-    expect(verification).toHaveProperty("compareAttemptVerificationCandidates");
-    expect(verification).toHaveProperty("deriveAttemptVerificationArtifactSummary");
-    expect(verification).toHaveProperty("deriveAttemptVerificationSummary");
-    expect(verification).toHaveProperty("deriveAttemptVerificationPayload");
-    expect(verification).toHaveProperty("executeAttemptVerification");
+  it("should keep the current internal verification runtime export inventory explicit", () => {
+    expect(Object.keys(verification).sort()).toEqual(
+      [
+        "attemptVerificationCheckStatuses",
+        "attemptVerificationOverallOutcomes",
+        "attemptVerificationRequiredOutcomes",
+        "compareAttemptVerificationCandidates",
+        "deriveAttemptVerificationArtifactSummary",
+        "deriveAttemptVerificationPayload",
+        "deriveAttemptVerificationSummary",
+        "executeAttemptVerification"
+      ].sort()
+    );
   });
 
   it("should keep verification internals free of unrelated control-plane and selection helpers", () => {

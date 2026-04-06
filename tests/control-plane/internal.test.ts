@@ -23,8 +23,12 @@ import type {
   ExecutionSessionSpawnBudget,
   ExecutionSessionSpawnCandidate,
   ExecutionSessionSpawnHeadlessCloseCandidate,
+  ExecutionSessionSpawnHeadlessCloseTargetApply,
+  ExecutionSessionSpawnHeadlessCloseTargetApplyBatch,
   ExecutionSessionSpawnHeadlessCloseTarget,
   ExecutionSessionSpawnHeadlessInput,
+  ExecutionSessionSpawnHeadlessWaitTargetApply,
+  ExecutionSessionSpawnHeadlessWaitTargetApplyBatch,
   ExecutionSessionSpawnRequest,
   ExecutionSessionWaitApply,
   ExecutionSessionWaitApplyBatch,
@@ -44,8 +48,12 @@ describe("control-plane internal exports", () => {
       "applyExecutionSessionSpawnBatch",
       "applyExecutionSessionSpawnBatchHeadlessApply",
       "applyExecutionSessionSpawnBatchItems",
+      "applyExecutionSessionSpawnHeadlessCloseTarget",
+      "applyExecutionSessionSpawnHeadlessCloseTargetBatch",
       "applyExecutionSessionSpawnHeadlessInput",
       "applyExecutionSessionSpawnHeadlessInputBatch",
+      "applyExecutionSessionSpawnHeadlessWaitTarget",
+      "applyExecutionSessionSpawnHeadlessWaitTargetBatch",
       "applyExecutionSessionWait",
       "applyExecutionSessionWaitBatch",
       "applyExecutionSessionWaitTarget",
@@ -150,6 +158,10 @@ describe("control-plane internal exports", () => {
       spawnHeadlessInput: ExecutionSessionSpawnHeadlessInput;
       spawnHeadlessCloseCandidate: ExecutionSessionSpawnHeadlessCloseCandidate;
       spawnHeadlessCloseTarget: ExecutionSessionSpawnHeadlessCloseTarget;
+      spawnHeadlessCloseTargetApply: ExecutionSessionSpawnHeadlessCloseTargetApply;
+      spawnHeadlessCloseTargetApplyBatch: ExecutionSessionSpawnHeadlessCloseTargetApplyBatch;
+      spawnHeadlessWaitTargetApply: ExecutionSessionSpawnHeadlessWaitTargetApply;
+      spawnHeadlessWaitTargetApplyBatch: ExecutionSessionSpawnHeadlessWaitTargetApplyBatch;
       waitApply: ExecutionSessionWaitApply;
       waitApplyBatch: ExecutionSessionWaitApplyBatch;
       waitTargetApply: ExecutionSessionWaitTargetApply;
