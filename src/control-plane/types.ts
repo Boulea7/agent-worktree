@@ -578,6 +578,16 @@ export interface ExecutionSessionSpawnBatchItemsApply {
   batchItems: ExecutionSessionSpawnBatchItems;
 }
 
+export interface ExecutionSessionSpawnBatchHeadlessApplyItemsInput {
+  batchItems: ExecutionSessionSpawnBatchItems;
+  executions: readonly ExecutionSessionSpawnHeadlessInputSeed[];
+}
+
+export interface ExecutionSessionSpawnBatchHeadlessApplyItems {
+  batchItems: ExecutionSessionSpawnBatchItems;
+  items?: ExecutionSessionSpawnHeadlessApplyItem[];
+}
+
 export interface ExecutionSessionSpawnTargetInput {
   candidate: ExecutionSessionSpawnCandidate;
 }

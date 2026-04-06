@@ -46,7 +46,7 @@
 当前仓库已经形成一个极薄的 Phase 4 public compatibility baseline：`compat smoke codex-cli` 提供了第一个 Tier 1 runtime 的有界、公开、端到端兼容性证明，而 `doctor` 与 `compat probe` 让其余 Tier 1 runtime 继续停留在明确的 descriptor-only 边界内。
 
 当前公开基线仍然很窄：`doctor`、`compat list/show/probe/smoke`、以及 `attempt create/list/cleanup` 是主要 public surface。
-这个 P4 收口只代表兼容性承诺，不代表 general execution 或 lifecycle 承诺。更深的 `codex-cli` execution、profile/env 透传、runtime-state、以及当前 internal-only 的 `spawn-budget`、budget-aware `spawn-candidate`、spawn batch planning、spawn batch item projection 与 bounded spawn batch apply convenience seam 仍属于内部实现，不应解读为公开生命周期能力。
+这个 P4 收口只代表兼容性承诺，不代表 general execution 或 lifecycle 承诺。更深的 `codex-cli` execution、profile/env 透传、runtime-state，以及当前 internal-only 的 bounded-parallelism Phase 6 prep 仍属于内部实现，不应解读为公开生命周期能力；这条内部链路目前已经推进到 `spawn-budget`、budget-aware `spawn-candidate`、spawn batch planning、spawn batch item projection、bounded spawn batch apply convenience seam、bounded spawn batch headless-apply-items projection seam，以及当前通过 wait/close target batch 收口的 headless batch bridge。
 更复杂的 runtime adapter、verification ranking 和高级编排能力仍然延后。
 
 ## 阅读顺序

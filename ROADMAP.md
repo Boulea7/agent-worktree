@@ -10,7 +10,7 @@
 
 ## Next
 
-- Keep maintainer docs and local handoff guidance aligned with the current bounded-parallelism prep chain, including the new spawn batch apply convenience seam, as follow-up helpers land
+- Keep maintainer docs and local handoff guidance aligned with the current bounded-parallelism prep chain, including the spawn batch apply and spawn batch headless projection seams, as follow-up helpers land
 - Refine cleanup, manifest, and compatibility contracts where docs and implementation still diverge
 - Continue bounded internal lifecycle helpers without exposing public spawn, wait, close, or execution commands
 - Consider the next internal-only consumer above the current handoff-finalization grouped reporting-oriented layers rather than widening public surfaces
