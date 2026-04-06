@@ -1,11 +1,25 @@
 import { describe, expect, it, vi } from "vitest";
 
+import type {
+  HeadlessExecutionInput,
+  HeadlessExecutionResult
+} from "../../src/adapters/types.js";
 import {
   applyExecutionSessionSpawnBatchHeadlessApply,
   applyExecutionSessionSpawnHeadlessInputBatch,
   buildExecutionSessionView,
+  deriveExecutionSessionSpawnBatchHeadlessApplyItems,
+  deriveExecutionSessionSpawnBatchItems,
   deriveExecutionSessionSpawnBatchPlan,
   deriveExecutionSessionSpawnCandidate,
+  deriveExecutionSessionSpawnHeadlessCloseCandidateBatch,
+  deriveExecutionSessionSpawnHeadlessCloseTargetBatch,
+  deriveExecutionSessionSpawnHeadlessContextBatch,
+  deriveExecutionSessionSpawnHeadlessRecordBatch,
+  deriveExecutionSessionSpawnHeadlessViewBatch,
+  deriveExecutionSessionSpawnHeadlessWaitCandidateBatch,
+  deriveExecutionSessionSpawnHeadlessWaitTargetBatch,
+  executeExecutionSessionSpawnHeadlessBatch,
   type ExecutionSessionSpawnBatchHeadlessApplyItems,
   type ExecutionSessionSpawnHeadlessInputSeed,
   type ExecutionSessionSpawnRequest,
@@ -94,6 +108,184 @@ describe("control-plane runtime-state spawn-batch-headless-apply helpers", () =>
       apply: manualApply
     });
     expect(invokedSessionIds).toEqual(["thr_parent", "thr_parent_2"]);
+  });
+
+  it("should preserve traceability from batch projection through wait and close target batches", async () => {
+    const batchItems = deriveExecutionSessionSpawnBatchItems({
+      plan: createPlan({
+        requestedCount: 2,
+        canPlan: true,
+        records: [
+          createRecord({
+            attemptId: "att_trace_parent",
+            sessionId: "thr_trace_parent",
+            sourceKind: "direct",
+            lifecycleState: "active",
+            guardrails: {
+              maxChildren: 4,
+              maxDepth: 3
+            }
+          })
+        ]
+      }),
+      childAttemptIds: ["att_trace_child_1", "att_trace_child_2"],
+      sourceKind: "delegated"
+    });
+    const abortController = new AbortController();
+    const headlessApplyItems = deriveExecutionSessionSpawnBatchHeadlessApplyItems({
+      batchItems,
+      executions: [
+        {
+          prompt: "child one",
+          cwd: "/tmp/trace-one"
+        },
+        {
+          prompt: "child two",
+          abortSignal: abortController.signal,
+          timeoutMs: 2_000
+        }
+      ]
+    });
+    const invokedSessionIds: string[] = [];
+    const executedAttempts: Array<HeadlessExecutionInput["attempt"]> = [];
+
+    const applyResult = await applyExecutionSessionSpawnBatchHeadlessApply({
+      headlessApplyItems,
+      invokeSpawn: async (request: ExecutionSessionSpawnRequest) => {
+        invokedSessionIds.push(request.parentSessionId);
+      }
+    });
+    const headlessExecuteBatch = await executeExecutionSessionSpawnHeadlessBatch({
+      items: applyResult.headlessApplyItems.items ?? [],
+      invokeSpawn: async () => undefined,
+      executeHeadless: async (input: HeadlessExecutionInput) => {
+        executedAttempts.push(input.attempt);
+
+        return createHeadlessExecutionResult({
+          observation: {
+            threadId: `thr_exec_${input.attempt?.attemptId ?? "missing"}`,
+            runCompleted: false,
+            errorEventCount: 0
+          }
+        });
+      }
+    });
+    const headlessRecordBatch = deriveExecutionSessionSpawnHeadlessRecordBatch({
+      items: headlessExecuteBatch.results
+    });
+    const headlessViewBatch = deriveExecutionSessionSpawnHeadlessViewBatch({
+      headlessRecordBatch
+    });
+    const headlessContextBatch = deriveExecutionSessionSpawnHeadlessContextBatch({
+      headlessViewBatch
+    });
+    const headlessWaitCandidateBatch =
+      deriveExecutionSessionSpawnHeadlessWaitCandidateBatch({
+        headlessContextBatch
+      });
+    const headlessWaitTargetBatch = deriveExecutionSessionSpawnHeadlessWaitTargetBatch({
+      headlessWaitCandidateBatch
+    });
+    const headlessCloseCandidateBatch =
+      deriveExecutionSessionSpawnHeadlessCloseCandidateBatch({
+        headlessContextBatch,
+        resolveSessionLifecycleCapability: () => true
+      });
+    const headlessCloseTargetBatch =
+      deriveExecutionSessionSpawnHeadlessCloseTargetBatch({
+        headlessCloseCandidateBatch
+      });
+
+    expect(applyResult.apply?.results.map((result) => result.apply.effects.lineage)).toEqual([
+      {
+        attemptId: "att_trace_child_1",
+        parentAttemptId: "att_trace_parent",
+        sourceKind: "delegated",
+        guardrails: {
+          maxChildren: 4,
+          maxDepth: 3
+        }
+      },
+      {
+        attemptId: "att_trace_child_2",
+        parentAttemptId: "att_trace_parent",
+        sourceKind: "delegated",
+        guardrails: {
+          maxChildren: 4,
+          maxDepth: 3
+        }
+      }
+    ]);
+    expect(invokedSessionIds).toEqual(["thr_trace_parent", "thr_trace_parent"]);
+    expect(executedAttempts).toEqual([
+      {
+        attemptId: "att_trace_child_1",
+        parentAttemptId: "att_trace_parent",
+        sourceKind: "delegated",
+        guardrails: {
+          maxChildren: 4,
+          maxDepth: 3
+        }
+      },
+      {
+        attemptId: "att_trace_child_2",
+        parentAttemptId: "att_trace_parent",
+        sourceKind: "delegated",
+        guardrails: {
+          maxChildren: 4,
+          maxDepth: 3
+        }
+      }
+    ]);
+    expect(
+      headlessRecordBatch.results.map((result) => ({
+        attemptId: result.record.attemptId,
+        parentAttemptId: result.record.parentAttemptId,
+        sessionId: result.record.sessionId,
+        sourceKind: result.record.sourceKind
+      }))
+    ).toEqual([
+      {
+        attemptId: "att_trace_child_1",
+        parentAttemptId: "att_trace_parent",
+        sessionId: "thr_exec_att_trace_child_1",
+        sourceKind: "delegated"
+      },
+      {
+        attemptId: "att_trace_child_2",
+        parentAttemptId: "att_trace_parent",
+        sessionId: "thr_exec_att_trace_child_2",
+        sourceKind: "delegated"
+      }
+    ]);
+    expect(headlessViewBatch.descendantCoverage).toBe("incomplete");
+    expect(
+      headlessWaitTargetBatch.results.map(
+        (result) => result.headlessWaitCandidate.candidate.context.record.attemptId
+      )
+    ).toEqual(["att_trace_child_1", "att_trace_child_2"]);
+    expect(
+      headlessCloseTargetBatch.results.map(
+        (result) => result.headlessCloseCandidate.candidate.context.record.attemptId
+      )
+    ).toEqual(["att_trace_child_1", "att_trace_child_2"]);
+
+    for (const result of headlessWaitTargetBatch.results) {
+      expect(
+        result.headlessWaitCandidate.candidate.readiness.blockingReasons
+      ).toContain("descendant_coverage_incomplete");
+      expect(result).not.toHaveProperty("target");
+    }
+
+    for (const result of headlessCloseTargetBatch.results) {
+      expect(
+        result.headlessCloseCandidate.candidate.readiness.blockingReasons
+      ).toContain("descendant_coverage_incomplete");
+      expect(
+        result.headlessCloseCandidate.candidate.readiness.sessionLifecycleSupported
+      ).toBe(true);
+      expect(result).not.toHaveProperty("target");
+    }
   });
 
   it("should reject malformed projected headless apply items before invoking spawn", async () => {
@@ -194,18 +386,24 @@ describe("control-plane runtime-state spawn-batch-headless-apply helpers", () =>
   });
 });
 
-function createPlan(input: { canPlan: boolean; requestedCount: number }) {
+function createPlan(input: {
+  canPlan: boolean;
+  requestedCount: number;
+  records?: ExecutionSessionRecord[];
+}) {
   const candidate = deriveExecutionSessionSpawnCandidate({
-    view: buildExecutionSessionView([
-      createRecord({
-        attemptId: "att_parent",
-        sessionId: "thr_parent",
-        sourceKind: "direct",
-        lifecycleState: input.canPlan ? "active" : "failed"
-      })
-    ]),
+    view: buildExecutionSessionView(
+      input.records ?? [
+        createRecord({
+          attemptId: "att_parent",
+          sessionId: "thr_parent",
+          sourceKind: "direct",
+          lifecycleState: input.canPlan ? "active" : "failed"
+        })
+      ]
+    ),
     selector: {
-      attemptId: "att_parent"
+      attemptId: input.records?.[0]?.attemptId ?? "att_parent"
     }
   });
 
@@ -273,5 +471,33 @@ function createRecord(
     errorEventCount: 0,
     origin: "headless_result",
     ...rest
+  };
+}
+
+function createHeadlessExecutionResult(
+  overrides: Partial<HeadlessExecutionResult> = {}
+): HeadlessExecutionResult {
+  return {
+    command: {
+      runtime: "codex-cli",
+      executable: "codex",
+      args: ["exec", "--json", "Reply with exactly: ok"],
+      metadata: {
+        executionMode: "headless_event_stream",
+        machineReadable: true,
+        promptIncluded: true,
+        resumeRequested: false,
+        safetyIntent: "workspace_write_with_approval"
+      }
+    },
+    events: [],
+    exitCode: 0,
+    observation: {
+      runCompleted: true,
+      errorEventCount: 0
+    },
+    stderr: "",
+    stdout: "",
+    ...overrides
   };
 }
