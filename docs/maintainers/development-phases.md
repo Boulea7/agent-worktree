@@ -180,6 +180,14 @@ Possible deliverables:
 - dashboard or TUI exploration
 - experimental OpenClaw adapter work
 
+Current thin-slice status:
+
+- the first thin Phase 6 follow-up may stay internal-only and evidence-backed by projecting bounded spawn parallelism budget from existing guardrails rather than widening public orchestration or lifecycle surfaces
+- that prep layer should keep the current spawn-readiness vocabulary unchanged while making remaining child-slot and depth-allowance state explicit for later internal consumers
+- the next thin Phase 6 follow-up may keep the same internal-only posture by composing that budget projection directly into the current spawn-candidate seam, so later internal consumers can read context, budget, and readiness together without widening downstream request, apply, or public target contracts
+- maintainers should anchor that prep slice through repo-internal control-plane tests such as `tests/control-plane/runtime-state-spawn-budget.test.ts`, `tests/control-plane/runtime-state-spawn-readiness.test.ts`, `tests/control-plane/runtime-state-spawn-candidate.test.ts`, `tests/control-plane/internal.test.ts`, and `tests/control-plane/index.test.ts`
+- that budget projection remains internal-only, non-persistent, non-manifest-backed, and non-public; it does not imply queueing, scheduler truth, runtime enforcement, or a public parallelism contract
+
 Exit criteria:
 
 - experimental features remain clearly labeled

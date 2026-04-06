@@ -504,6 +504,26 @@ export interface ExecutionSessionSpawnReadinessInput {
   view: ExecutionSessionView;
 }
 
+export interface ExecutionSessionSpawnBudgetInput {
+  context: ExecutionSessionContext;
+  view: ExecutionSessionView;
+}
+
+export interface ExecutionSessionSpawnBudget {
+  childCount: number;
+  lineageDepth: number | undefined;
+  lineageDepthKnown: boolean;
+  maxChildren?: number;
+  maxDepth?: number;
+  remainingChildSlots?: number;
+  // This tracks headroom after consuming the next spawn at the current seam.
+  // A value of 0 still allows the next spawn, but indicates that no further
+  // depth allowance remains beyond that projected child.
+  remainingDepthAllowance?: number;
+  withinChildLimit: boolean;
+  withinDepthLimit: boolean;
+}
+
 export interface ExecutionSessionSpawnReadiness {
   blockingReasons: ExecutionSessionSpawnBlockingReason[];
   canSpawn: boolean;
@@ -520,6 +540,7 @@ export interface ExecutionSessionSpawnCandidateInput {
 }
 
 export interface ExecutionSessionSpawnCandidate {
+  budget: ExecutionSessionSpawnBudget;
   context: ExecutionSessionContext;
   readiness: ExecutionSessionSpawnReadiness;
 }

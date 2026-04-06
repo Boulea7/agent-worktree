@@ -199,6 +199,7 @@ describe("control-plane runtime-state spawn-target helpers", () => {
       runtime: "codex-cli",
       sessionId: "thr_target"
     });
+    expect(target).not.toHaveProperty("budget");
     expect(target).not.toHaveProperty("sourceKind");
     expect(target).not.toHaveProperty("parentAttemptId");
     expect(target).not.toHaveProperty("childAttemptId");

@@ -12,6 +12,7 @@ export {
 export { deriveExecutionSessionContext } from "./runtime-state-context.js";
 export { deriveExecutionSessionLifecycleDisposition } from "./runtime-state-lifecycle-disposition.js";
 export { deriveExecutionSessionSpawnCandidate } from "./runtime-state-spawn-candidate.js";
+export { deriveExecutionSessionSpawnBudget } from "./runtime-state-spawn-budget.js";
 export { consumeExecutionSessionSpawn } from "./runtime-state-spawn-consume.js";
 export { consumeExecutionSessionSpawnBatch } from "./runtime-state-spawn-consume-batch.js";
 export { applyExecutionSessionSpawn } from "./runtime-state-spawn-apply.js";
@@ -126,6 +127,8 @@ export {
   type ExecutionSessionRecordSource,
   type ExecutionSessionSelector,
   type ExecutionSessionSpawnBlockingReason,
+  type ExecutionSessionSpawnBudget,
+  type ExecutionSessionSpawnBudgetInput,
   type ExecutionSessionSpawnCandidate,
   type ExecutionSessionSpawnCandidateInput,
   type ExecutionSessionSpawnApply,
