@@ -15,7 +15,9 @@ import type {
   ExecutionSessionCloseTargetApply,
   ExecutionSessionCloseTargetApplyBatch,
   ExecutionSessionRecord,
+  ExecutionSessionSpawnBatchPlan,
   ExecutionSessionSpawnBudget,
+  ExecutionSessionSpawnCandidate,
   ExecutionSessionSpawnHeadlessCloseCandidate,
   ExecutionSessionSpawnHeadlessCloseTarget,
   ExecutionSessionSpawnHeadlessInput,
@@ -63,6 +65,7 @@ describe("control-plane internal exports", () => {
       "deriveExecutionSessionContext",
       "deriveExecutionSessionLifecycleDisposition",
       "deriveExecutionSessionRecord",
+      "deriveExecutionSessionSpawnBatchPlan",
       "deriveExecutionSessionSpawnBudget",
       "deriveExecutionSessionSpawnCandidate",
       "deriveExecutionSessionSpawnEffects",
@@ -129,6 +132,8 @@ describe("control-plane internal exports", () => {
       record: ExecutionSessionRecord;
       context: ExecutionSessionContext;
       spawnBudget: ExecutionSessionSpawnBudget;
+      spawnCandidate: ExecutionSessionSpawnCandidate;
+      spawnBatchPlan: ExecutionSessionSpawnBatchPlan;
       spawnRequest: ExecutionSessionSpawnRequest;
       spawnHeadlessInput: ExecutionSessionSpawnHeadlessInput;
       spawnHeadlessCloseCandidate: ExecutionSessionSpawnHeadlessCloseCandidate;
