@@ -109,6 +109,43 @@ describe("control-plane runtime-state spawn-batch-plan helpers", () => {
     });
   });
 
+  it("should keep slot-fit truth while blocking planning on depth readiness", () => {
+    const rootRecord = createRecord({
+      attemptId: "att_root",
+      sessionId: "thr_root",
+      sourceKind: "direct",
+      lifecycleState: "active"
+    });
+    const nestedRecord = createRecord({
+      attemptId: "att_nested",
+      parentAttemptId: "att_root",
+      sessionId: "thr_nested",
+      sourceKind: "delegated",
+      lifecycleState: "active",
+      guardrails: {
+        maxDepth: 1
+      }
+    });
+    const candidate = deriveExecutionSessionSpawnCandidate({
+      view: buildExecutionSessionView([rootRecord, nestedRecord]),
+      selector: {
+        attemptId: "att_nested"
+      }
+    });
+
+    expect(
+      deriveExecutionSessionSpawnBatchPlan({
+        candidate: candidate!,
+        requestedCount: 1
+      })
+    ).toEqual({
+      candidate,
+      requestedCount: 1,
+      fitsRemainingChildSlots: true,
+      canPlan: false
+    });
+  });
+
   it("should preserve a blocked candidate without inventing planner blockers", () => {
     const blockedCandidate = deriveExecutionSessionSpawnCandidate({
       view: buildExecutionSessionView([

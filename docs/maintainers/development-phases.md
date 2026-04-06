@@ -118,7 +118,7 @@ Exit criteria:
 Current closeout status:
 
 - the current baseline satisfies these exit criteria through `doctor`, `compat probe`, and the bounded public `compat smoke codex-cli` path
-- the current internal continuation now spans the current Phase 5 closeout checkpoints plus bounded-parallelism Phase 6 prep through spawn-budget, spawn-candidate, spawn-batch-plan, and spawn-batch-items layers
+- the current internal continuation now spans the current Phase 5 closeout checkpoints plus bounded-parallelism Phase 6 prep through spawn-budget, spawn-candidate, spawn-batch-plan, spawn-batch-items, and spawn-batch-items-apply convenience layers
 - the next implementation windows should continue that internal-only continuation rather than widening public lifecycle or execution surfaces
 
 ## Phase 5: Verification and Selection
@@ -187,7 +187,8 @@ Current thin-slice status:
 - the next thin Phase 6 follow-up now also stays internal-only by composing that budget projection directly into the current spawn-candidate seam, so later internal consumers can read context, budget, and readiness together without widening downstream request, apply, or public target contracts
 - the current follow-up above that candidate seam now also stays internal-only by composing the existing candidate plus a proposed sibling batch count into a bounded spawn batch planning projection, so later internal consumers can evaluate child-slot fit without widening spawn-target, spawn-request, spawn-apply, or public orchestration contracts
 - the current follow-up above that planning seam now also stays internal-only by composing the existing plan plus explicit child attempt identifiers and a source kind into ordered spawn batch items, so later internal consumers can bridge bounded planning into existing batch consumers without widening spawn-apply, headless execution, queue truth, or public orchestration contracts
-- maintainers should anchor these prep slices through repo-internal control-plane tests such as `tests/control-plane/runtime-state-spawn-budget.test.ts`, `tests/control-plane/runtime-state-spawn-readiness.test.ts`, `tests/control-plane/runtime-state-spawn-candidate.test.ts`, `tests/control-plane/runtime-state-spawn-batch-plan.test.ts`, `tests/control-plane/runtime-state-spawn-batch-items.test.ts`, `tests/control-plane/internal.test.ts`, and `tests/control-plane/index.test.ts`
+- the current follow-up above that batch-items seam now also stays internal-only by composing the existing batch-items result directly into the current spawn-apply-batch path, so later internal consumers can consume a bounded convenience seam without widening headless execution, queue truth, scheduler truth, or public orchestration contracts
+- maintainers should anchor these prep slices through repo-internal control-plane tests such as `tests/control-plane/runtime-state-spawn-budget.test.ts`, `tests/control-plane/runtime-state-spawn-readiness.test.ts`, `tests/control-plane/runtime-state-spawn-candidate.test.ts`, `tests/control-plane/runtime-state-spawn-batch-plan.test.ts`, `tests/control-plane/runtime-state-spawn-batch-items.test.ts`, `tests/control-plane/runtime-state-spawn-batch-items-apply.test.ts`, `tests/control-plane/internal.test.ts`, and `tests/control-plane/index.test.ts`
 - that budget projection remains internal-only, non-persistent, non-manifest-backed, and non-public; it does not imply queueing, scheduler truth, runtime enforcement, or a public parallelism contract
 
 Exit criteria:

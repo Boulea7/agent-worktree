@@ -568,6 +568,16 @@ export interface ExecutionSessionSpawnBatchItems {
   plan: ExecutionSessionSpawnBatchPlan;
 }
 
+export interface ExecutionSessionSpawnBatchItemsApplyInput {
+  batchItems: ExecutionSessionSpawnBatchItems;
+  invokeSpawn: ExecutionSessionSpawnInvoker;
+}
+
+export interface ExecutionSessionSpawnBatchItemsApply {
+  apply?: ExecutionSessionSpawnApplyBatch;
+  batchItems: ExecutionSessionSpawnBatchItems;
+}
+
 export interface ExecutionSessionSpawnTargetInput {
   candidate: ExecutionSessionSpawnCandidate;
 }
