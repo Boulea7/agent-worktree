@@ -23,107 +23,51 @@ import type {
 
 describe("selection internal exports", () => {
   it("should keep the current selection internal runtime export inventory explicit", () => {
-    const exportKeys = new Set(Object.keys(selection));
-    const allowedKeys = new Set([
-      "deriveAttemptSelectionCandidate",
-      "deriveAttemptSelectionResult",
-      "deriveAttemptPromotionAuditSummary",
-      "deriveAttemptPromotionCandidate",
-      "deriveAttemptPromotionExplanationSummary",
-      "deriveAttemptPromotionReport",
-      "deriveAttemptPromotionResult",
-      "deriveAttemptPromotionDecisionSummary",
-      "deriveAttemptPromotionTarget",
-      "deriveAttemptHandoffTarget",
-      "deriveAttemptHandoffRequest",
-      "deriveAttemptHandoffConsumer",
-      "consumeAttemptHandoff",
-      "consumeAttemptHandoffBatch",
-      "applyAttemptHandoff",
-      "applyAttemptHandoffBatch",
-      "applyAttemptHandoffTarget",
-      "applyAttemptHandoffTargetBatch",
-      "applyAttemptPromotionTarget",
-      "applyAttemptPromotionTargetBatch",
-      "deriveAttemptHandoffReportReady",
-      "deriveAttemptHandoffExplanationSummary",
-      "deriveAttemptHandoffDecisionSummary",
-      "deriveAttemptHandoffFinalizationTargetSummary",
-      "deriveAttemptHandoffFinalizationRequestSummary",
-      "applyAttemptHandoffFinalization",
-      "applyAttemptHandoffFinalizationBatch",
-      "applyAttemptHandoffFinalizationRequestSummary",
-      "applyAttemptHandoffFinalizationCloseoutDecisionSummary",
-      "deriveAttemptHandoffFinalizationConsumer",
-      "consumeAttemptHandoffFinalization",
-      "consumeAttemptHandoffFinalizationBatch",
-      "deriveAttemptHandoffFinalizationOutcomeSummary",
-      "deriveAttemptHandoffFinalizationExplanationSummary",
-      "deriveAttemptHandoffFinalizationReportReady",
-      "deriveAttemptHandoffFinalizationGroupedProjectionSummary",
-      "deriveAttemptHandoffFinalizationGroupedReportingSummary",
-      "deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary",
-      "deriveAttemptHandoffFinalizationClosureSummary",
-      "deriveAttemptHandoffFinalizationCloseoutSummary",
-      "deriveAttemptHandoffFinalizationCloseoutDecisionSummary"
-    ]);
-    const denylistKeys = new Set([
-      "buildExecutionSessionIndex",
-      "consumeExecutionSessionWait",
-      "consumeExecutionSessionClose",
-      "deriveAttemptVerificationPayload",
-      "executeAttemptVerification"
-    ]);
-
-    for (const key of [
-      "deriveAttemptSelectionCandidate",
-      "deriveAttemptSelectionResult",
-      "deriveAttemptPromotionAuditSummary",
-      "deriveAttemptPromotionReport",
-      "deriveAttemptPromotionDecisionSummary",
-      "deriveAttemptPromotionTarget"
-    ]) {
-      expect(exportKeys.has(key)).toBe(true);
-    }
-
-    for (const key of [
-      "deriveAttemptHandoffTarget",
-      "deriveAttemptHandoffRequest",
-      "deriveAttemptHandoffConsumer",
-      "consumeAttemptHandoff",
-      "applyAttemptHandoff",
-      "deriveAttemptHandoffReportReady",
-      "deriveAttemptHandoffExplanationSummary",
-      "deriveAttemptHandoffDecisionSummary"
-    ]) {
-      expect(exportKeys.has(key)).toBe(true);
-    }
-
-    for (const key of [
-      "deriveAttemptHandoffFinalizationTargetSummary",
-      "deriveAttemptHandoffFinalizationRequestSummary",
-      "applyAttemptHandoffFinalization",
-      "applyAttemptHandoffFinalizationBatch",
-      "applyAttemptHandoffFinalizationRequestSummary",
-      "applyAttemptHandoffFinalizationCloseoutDecisionSummary",
-      "deriveAttemptHandoffFinalizationOutcomeSummary",
-      "deriveAttemptHandoffFinalizationExplanationSummary",
-      "deriveAttemptHandoffFinalizationReportReady",
-      "deriveAttemptHandoffFinalizationGroupedProjectionSummary",
-      "deriveAttemptHandoffFinalizationGroupedReportingSummary",
-      "deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary",
-      "deriveAttemptHandoffFinalizationClosureSummary",
-      "deriveAttemptHandoffFinalizationCloseoutSummary",
-      "deriveAttemptHandoffFinalizationCloseoutDecisionSummary"
-    ]) {
-      expect(exportKeys.has(key)).toBe(true);
-    }
-
-    const unexpectedKeys = [...exportKeys].filter(
-      (key) => !allowedKeys.has(key) && !denylistKeys.has(key)
+    expect(Object.keys(selection).sort()).toEqual(
+      [
+        "applyAttemptHandoff",
+        "applyAttemptHandoffBatch",
+        "applyAttemptHandoffFinalization",
+        "applyAttemptHandoffFinalizationBatch",
+        "applyAttemptHandoffFinalizationCloseoutDecisionSummary",
+        "applyAttemptHandoffFinalizationRequestSummary",
+        "applyAttemptHandoffTarget",
+        "applyAttemptHandoffTargetBatch",
+        "applyAttemptPromotionTarget",
+        "applyAttemptPromotionTargetBatch",
+        "consumeAttemptHandoff",
+        "consumeAttemptHandoffBatch",
+        "consumeAttemptHandoffFinalization",
+        "consumeAttemptHandoffFinalizationBatch",
+        "deriveAttemptHandoffConsumer",
+        "deriveAttemptHandoffDecisionSummary",
+        "deriveAttemptHandoffExplanationSummary",
+        "deriveAttemptHandoffFinalizationClosureSummary",
+        "deriveAttemptHandoffFinalizationCloseoutDecisionSummary",
+        "deriveAttemptHandoffFinalizationCloseoutSummary",
+        "deriveAttemptHandoffFinalizationConsumer",
+        "deriveAttemptHandoffFinalizationExplanationSummary",
+        "deriveAttemptHandoffFinalizationGroupedProjectionSummary",
+        "deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary",
+        "deriveAttemptHandoffFinalizationGroupedReportingSummary",
+        "deriveAttemptHandoffFinalizationOutcomeSummary",
+        "deriveAttemptHandoffFinalizationReportReady",
+        "deriveAttemptHandoffFinalizationRequestSummary",
+        "deriveAttemptHandoffFinalizationTargetSummary",
+        "deriveAttemptHandoffReportReady",
+        "deriveAttemptHandoffRequest",
+        "deriveAttemptHandoffTarget",
+        "deriveAttemptPromotionAuditSummary",
+        "deriveAttemptPromotionCandidate",
+        "deriveAttemptPromotionDecisionSummary",
+        "deriveAttemptPromotionExplanationSummary",
+        "deriveAttemptPromotionReport",
+        "deriveAttemptPromotionResult",
+        "deriveAttemptPromotionTarget",
+        "deriveAttemptSelectionCandidate",
+        "deriveAttemptSelectionResult"
+      ].sort()
     );
-
-    expect(unexpectedKeys).toEqual([]);
   });
 
   it("should keep selection internals free of unrelated control-plane and verification helpers", () => {

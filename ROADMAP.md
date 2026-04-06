@@ -10,7 +10,7 @@
 
 ## Next
 
-- Keep maintainer docs and local handoff guidance aligned with the current bounded-parallelism prep chain from `spawn-budget` through the current headless batch bridge, including the spawn batch apply, spawn batch headless-apply-items projection, and spawn batch headless apply seams, as follow-up helpers land
+- Keep maintainer docs and local handoff guidance aligned with the current internal continuation from the Phase 5 closeout checkpoints through bounded-parallelism Phase 6 prep, including the current headless batch bridge through spawn-headless wait/close target-apply batches, as follow-up helpers land
 - Refine cleanup, manifest, and compatibility contracts where docs and implementation still diverge
 - Continue bounded internal lifecycle helpers without exposing public spawn, wait, close, or execution commands
 - Consider the next internal-only consumer above the current handoff-finalization grouped reporting-oriented layers rather than widening public surfaces

@@ -40,10 +40,14 @@ export { deriveExecutionSessionSpawnHeadlessWaitCandidate } from "./runtime-stat
 export { deriveExecutionSessionSpawnHeadlessWaitCandidateBatch } from "./runtime-state-spawn-headless-wait-candidate-batch.js";
 export { deriveExecutionSessionSpawnHeadlessWaitTarget } from "./runtime-state-spawn-headless-wait-target.js";
 export { deriveExecutionSessionSpawnHeadlessWaitTargetBatch } from "./runtime-state-spawn-headless-wait-target-batch.js";
+export { applyExecutionSessionSpawnHeadlessWaitTarget } from "./runtime-state-spawn-headless-wait-target-apply.js";
+export { applyExecutionSessionSpawnHeadlessWaitTargetBatch } from "./runtime-state-spawn-headless-wait-target-apply-batch.js";
 export { deriveExecutionSessionSpawnHeadlessCloseCandidate } from "./runtime-state-spawn-headless-close-candidate.js";
 export { deriveExecutionSessionSpawnHeadlessCloseCandidateBatch } from "./runtime-state-spawn-headless-close-candidate-batch.js";
 export { deriveExecutionSessionSpawnHeadlessCloseTarget } from "./runtime-state-spawn-headless-close-target.js";
 export { deriveExecutionSessionSpawnHeadlessCloseTargetBatch } from "./runtime-state-spawn-headless-close-target-batch.js";
+export { applyExecutionSessionSpawnHeadlessCloseTarget } from "./runtime-state-spawn-headless-close-target-apply.js";
+export { applyExecutionSessionSpawnHeadlessCloseTargetBatch } from "./runtime-state-spawn-headless-close-target-apply-batch.js";
 export { deriveExecutionSessionSpawnReadiness } from "./runtime-state-spawn-readiness.js";
 export { deriveExecutionSessionSpawnLineage } from "./runtime-state-spawn-lineage.js";
 export { deriveExecutionSessionSpawnRecordedEvent } from "./runtime-state-spawn-recorded-event.js";
@@ -183,6 +187,10 @@ export {
   type ExecutionSessionSpawnHeadlessWaitTarget,
   type ExecutionSessionSpawnHeadlessWaitTargetBatch,
   type ExecutionSessionSpawnHeadlessWaitTargetBatchInput,
+  type ExecutionSessionSpawnHeadlessWaitTargetApply,
+  type ExecutionSessionSpawnHeadlessWaitTargetApplyBatch,
+  type ExecutionSessionSpawnHeadlessWaitTargetApplyBatchInput,
+  type ExecutionSessionSpawnHeadlessWaitTargetApplyInput,
   type ExecutionSessionSpawnHeadlessWaitTargetInput,
   type ExecutionSessionSpawnHeadlessCloseCandidate,
   type ExecutionSessionSpawnHeadlessCloseCandidateBatch,
@@ -191,6 +199,10 @@ export {
   type ExecutionSessionSpawnHeadlessCloseTarget,
   type ExecutionSessionSpawnHeadlessCloseTargetBatch,
   type ExecutionSessionSpawnHeadlessCloseTargetBatchInput,
+  type ExecutionSessionSpawnHeadlessCloseTargetApply,
+  type ExecutionSessionSpawnHeadlessCloseTargetApplyBatch,
+  type ExecutionSessionSpawnHeadlessCloseTargetApplyBatchInput,
+  type ExecutionSessionSpawnHeadlessCloseTargetApplyInput,
   type ExecutionSessionSpawnHeadlessCloseTargetInput,
   type ExecutionSessionSpawnHeadlessView,
   type ExecutionSessionSpawnHeadlessViewBatch,

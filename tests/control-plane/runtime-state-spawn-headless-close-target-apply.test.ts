@@ -1,0 +1,317 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  applyExecutionSessionSpawnHeadlessCloseTarget,
+  applyExecutionSessionSpawnHeadlessCloseTargetBatch,
+  type ExecutionSessionCloseTarget,
+  type ExecutionSessionSpawnHeadlessCloseTarget
+} from "../../src/control-plane/internal.js";
+
+describe(
+  "control-plane runtime-state spawn-headless-close-target-apply helpers",
+  () => {
+    it("should return the original wrapper unchanged when no close target is available", async () => {
+      const headlessCloseTarget = createHeadlessCloseTarget();
+      let invoked = false;
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTarget({
+          headlessCloseTarget,
+          invokeClose: async () => {
+            invoked = true;
+          }
+        })
+      ).resolves.toEqual({
+        headlessCloseTarget
+      });
+      expect(invoked).toBe(false);
+    });
+
+    it("should compose an apply result from an available close target without widening the result shape", async () => {
+      const headlessCloseTarget = createHeadlessCloseTarget({
+        target: {
+          attemptId: "att_supported_close",
+          runtime: "supported-cli",
+          sessionId: "thr_supported_close"
+        }
+      });
+      const snapshot = structuredClone(headlessCloseTarget);
+      const result = (await applyExecutionSessionSpawnHeadlessCloseTarget({
+        headlessCloseTarget,
+        invokeClose: async () => undefined,
+        resolveSessionLifecycleCapability: (runtime) => runtime === "supported-cli"
+      })) as unknown as Record<string, unknown>;
+
+      expect(headlessCloseTarget).toEqual(snapshot);
+      expect(result).toEqual({
+        headlessCloseTarget,
+        apply: {
+          request: {
+            attemptId: "att_supported_close",
+            runtime: "supported-cli",
+            sessionId: "thr_supported_close"
+          },
+          apply: {
+            consumer: {
+              request: {
+                attemptId: "att_supported_close",
+                runtime: "supported-cli",
+                sessionId: "thr_supported_close"
+              },
+              readiness: {
+                blockingReasons: [],
+                canConsumeClose: true,
+                hasBlockingReasons: false,
+                sessionLifecycleSupported: true
+              }
+            },
+            consume: {
+              request: {
+                attemptId: "att_supported_close",
+                runtime: "supported-cli",
+                sessionId: "thr_supported_close"
+              },
+              readiness: {
+                blockingReasons: [],
+                canConsumeClose: true,
+                hasBlockingReasons: false,
+                sessionLifecycleSupported: true
+              },
+              invoked: true
+            }
+          }
+        }
+      });
+      expect(result).not.toHaveProperty("target");
+      expect(result).not.toHaveProperty("candidate");
+      expect(result).not.toHaveProperty("headlessContext");
+      expect(result).not.toHaveProperty("request");
+      expect(result).not.toHaveProperty("consumer");
+      expect(result).not.toHaveProperty("consume");
+    });
+
+    it("should preserve batch order while leaving blocked entries in place", async () => {
+      const invokedSessionIds: string[] = [];
+      const headlessCloseTargetBatch = {
+        headlessCloseCandidateBatch: {
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildEmptyView()
+            },
+            results: []
+          },
+          results: []
+        },
+        results: [
+          createHeadlessCloseTarget(),
+          createHeadlessCloseTarget({
+            target: {
+              attemptId: "att_supported_close",
+              runtime: "supported-cli",
+              sessionId: "thr_supported_close"
+            }
+          })
+        ]
+      };
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch({
+          headlessCloseTargetBatch,
+          invokeClose: async ({ sessionId }) => {
+            invokedSessionIds.push(sessionId);
+          },
+          resolveSessionLifecycleCapability: (runtime) => runtime === "supported-cli"
+        })
+      ).resolves.toEqual({
+        headlessCloseTargetBatch,
+        results: [
+          {
+            headlessCloseTarget: headlessCloseTargetBatch.results[0]
+          },
+          {
+            headlessCloseTarget: headlessCloseTargetBatch.results[1],
+            apply: {
+              request: {
+                attemptId: "att_supported_close",
+                runtime: "supported-cli",
+                sessionId: "thr_supported_close"
+              },
+              apply: {
+                consumer: {
+                  request: {
+                    attemptId: "att_supported_close",
+                    runtime: "supported-cli",
+                    sessionId: "thr_supported_close"
+                  },
+                  readiness: {
+                    blockingReasons: [],
+                    canConsumeClose: true,
+                    hasBlockingReasons: false,
+                    sessionLifecycleSupported: true
+                  }
+                },
+                consume: {
+                  request: {
+                    attemptId: "att_supported_close",
+                    runtime: "supported-cli",
+                    sessionId: "thr_supported_close"
+                  },
+                  readiness: {
+                    blockingReasons: [],
+                    canConsumeClose: true,
+                    hasBlockingReasons: false,
+                    sessionLifecycleSupported: true
+                  },
+                  invoked: true
+                }
+              }
+            }
+          }
+        ]
+      });
+      expect(invokedSessionIds).toEqual(["thr_supported_close"]);
+    });
+
+    it("should fail fast on the first supported invoker error in batch mode", async () => {
+      const expectedError = new Error("close failed");
+      const invokedSessionIds: string[] = [];
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch({
+          headlessCloseTargetBatch: {
+            headlessCloseCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            results: [
+              createHeadlessCloseTarget({
+                target: {
+                  attemptId: "att_supported_close_1",
+                  runtime: "supported-cli",
+                  sessionId: "thr_supported_close_1"
+                }
+              }),
+              createHeadlessCloseTarget({
+                target: {
+                  attemptId: "att_supported_close_2",
+                  runtime: "supported-cli",
+                  sessionId: "thr_supported_close_2"
+                }
+              }),
+              createHeadlessCloseTarget({
+                target: {
+                  attemptId: "att_supported_close_3",
+                  runtime: "supported-cli",
+                  sessionId: "thr_supported_close_3"
+                }
+              })
+            ]
+          },
+          invokeClose: async ({ sessionId }) => {
+            invokedSessionIds.push(sessionId);
+
+            if (sessionId === "thr_supported_close_2") {
+              throw expectedError;
+            }
+          },
+          resolveSessionLifecycleCapability: () => true
+        })
+      ).rejects.toThrow(expectedError);
+      expect(invokedSessionIds).toEqual([
+        "thr_supported_close_1",
+        "thr_supported_close_2"
+      ]);
+    });
+  }
+);
+
+function createHeadlessCloseTarget(
+  overrides: Partial<ExecutionSessionSpawnHeadlessCloseTarget> = {}
+): ExecutionSessionSpawnHeadlessCloseTarget {
+  const record = {
+    attemptId: "att_close_child",
+    errorEventCount: 0,
+    lifecycleState: "active",
+    origin: "headless_result",
+    runCompleted: false,
+    runtime: "codex-cli",
+    sessionId: "thr_close_child",
+    sourceKind: "delegated"
+  } as const;
+
+  return {
+    headlessCloseCandidate: {
+      headlessContext: {
+        context: {
+          childRecords: [],
+          hasChildren: false,
+          hasKnownSession: true,
+          hasParent: true,
+          hasResolvedParent: true,
+          parentRecord: {
+            ...record,
+            attemptId: "att_parent",
+            sessionId: "thr_parent",
+            sourceKind: "direct"
+          },
+          record,
+          selectedBy: "attemptId"
+        },
+        headlessView: {
+          headlessRecord: {
+            headlessExecute: {} as never,
+            record
+          },
+          view: buildEmptyView()
+        }
+      },
+      candidate: {
+        context: {
+          childRecords: [],
+          hasChildren: false,
+          hasKnownSession: true,
+          hasParent: true,
+          hasResolvedParent: true,
+          parentRecord: {
+            ...record,
+            attemptId: "att_parent",
+            sessionId: "thr_parent",
+            sourceKind: "direct"
+          },
+          record,
+          selectedBy: "attemptId"
+        },
+        readiness: {
+          alreadyFinal: false,
+          blockingReasons: ["descendant_coverage_incomplete"],
+          canClose: false,
+          hasBlockingReasons: true,
+          sessionLifecycleSupported: true,
+          wouldAffectDescendants: false
+        }
+      }
+    },
+    ...overrides
+  };
+}
+
+function buildEmptyView() {
+  return {
+    childAttemptIdsByParent: new Map<string, string[]>(),
+    index: {
+      byAttemptId: new Map<string, ExecutionSessionCloseTarget[]>(),
+      bySessionId: new Map<string, ExecutionSessionCloseTarget[]>()
+    }
+  } as never;
+}
