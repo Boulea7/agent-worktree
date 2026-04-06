@@ -14,6 +14,7 @@ export { deriveExecutionSessionLifecycleDisposition } from "./runtime-state-life
 export { deriveExecutionSessionSpawnCandidate } from "./runtime-state-spawn-candidate.js";
 export { deriveExecutionSessionSpawnBudget } from "./runtime-state-spawn-budget.js";
 export { deriveExecutionSessionSpawnBatchPlan } from "./runtime-state-spawn-batch-plan.js";
+export { deriveExecutionSessionSpawnBatchItems } from "./runtime-state-spawn-batch-items.js";
 export { consumeExecutionSessionSpawn } from "./runtime-state-spawn-consume.js";
 export { consumeExecutionSessionSpawnBatch } from "./runtime-state-spawn-consume-batch.js";
 export { applyExecutionSessionSpawn } from "./runtime-state-spawn-apply.js";
@@ -132,6 +133,8 @@ export {
   type ExecutionSessionSpawnBudgetInput,
   type ExecutionSessionSpawnBatchPlan,
   type ExecutionSessionSpawnBatchPlanInput,
+  type ExecutionSessionSpawnBatchItems,
+  type ExecutionSessionSpawnBatchItemsInput,
   type ExecutionSessionSpawnCandidate,
   type ExecutionSessionSpawnCandidateInput,
   type ExecutionSessionSpawnApply,

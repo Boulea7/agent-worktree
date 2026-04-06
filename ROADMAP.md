@@ -5,12 +5,12 @@
 - Keep build, typecheck, and test gates green on the implemented CLI and worktree baseline
 - Harden manifest, path, and runtime execution boundaries without widening the public surface
 - Keep public compatibility docs and machine-readable contracts aligned with real behavior
-- Continue thin internal helper progression for verification, selection, promotion, handoff, and handoff-finalization composition
+- Continue thin internal helper progression from the current Phase 5 closeout checkpoints into bounded-parallelism Phase 6 prep
 - Maintain a clean worktree-first handoff workflow for future sessions
 
 ## Next
 
-- Keep maintainer docs and local handoff guidance aligned with the current internal Phase 5 slice as follow-up helpers land
+- Keep maintainer docs and local handoff guidance aligned with the current bounded-parallelism prep chain as follow-up helpers land
 - Refine cleanup, manifest, and compatibility contracts where docs and implementation still diverge
 - Continue bounded internal lifecycle helpers without exposing public spawn, wait, close, or execution commands
 - Consider the next internal-only consumer above the current handoff-finalization grouped reporting-oriented layers rather than widening public surfaces

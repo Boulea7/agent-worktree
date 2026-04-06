@@ -25,6 +25,7 @@ describe("control-plane index exports", () => {
     expect(controlPlane).not.toHaveProperty("deriveExecutionSessionSpawnCandidate");
     expect(controlPlane).not.toHaveProperty("deriveExecutionSessionSpawnBudget");
     expect(controlPlane).not.toHaveProperty("deriveExecutionSessionSpawnBatchPlan");
+    expect(controlPlane).not.toHaveProperty("deriveExecutionSessionSpawnBatchItems");
     expect(controlPlane).not.toHaveProperty("consumeExecutionSessionSpawn");
     expect(controlPlane).not.toHaveProperty("applyExecutionSessionSpawn");
     expect(controlPlane).not.toHaveProperty("buildExecutionSessionIndex");
@@ -90,6 +91,9 @@ type ControlPlaneIndexShouldNotExportExecutionSessionSpawnCandidate = import("..
 
 // @ts-expect-error control-plane index must not export spawn batch plan types
 type ControlPlaneIndexShouldNotExportExecutionSessionSpawnBatchPlan = import("../../src/control-plane/index.js").ExecutionSessionSpawnBatchPlan;
+
+// @ts-expect-error control-plane index must not export spawn batch item types
+type ControlPlaneIndexShouldNotExportExecutionSessionSpawnBatchItems = import("../../src/control-plane/index.js").ExecutionSessionSpawnBatchItems;
 
 // @ts-expect-error control-plane index must not export execution-session record types
 type ControlPlaneIndexShouldNotExportExecutionSessionRecord = import("../../src/control-plane/index.js").ExecutionSessionRecord;
@@ -162,6 +166,9 @@ type ControlPlaneIndexShouldNotExportDeriveExecutionSessionSpawnBudget = typeof 
 
 // @ts-expect-error control-plane index must not export spawn batch plan helpers
 type ControlPlaneIndexShouldNotExportDeriveExecutionSessionSpawnBatchPlan = typeof import("../../src/control-plane/index.js").deriveExecutionSessionSpawnBatchPlan;
+
+// @ts-expect-error control-plane index must not export spawn batch item helpers
+type ControlPlaneIndexShouldNotExportDeriveExecutionSessionSpawnBatchItems = typeof import("../../src/control-plane/index.js").deriveExecutionSessionSpawnBatchItems;
 
 // @ts-expect-error control-plane index must not export wait consumer blocking vocabularies
 type ControlPlaneIndexShouldNotExportWaitConsumerBlockingReasons = typeof import("../../src/control-plane/index.js").executionSessionWaitConsumerBlockingReasons;
