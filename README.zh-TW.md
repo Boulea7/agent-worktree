@@ -46,7 +46,7 @@
 目前倉庫已形成一個極薄的 Phase 4 public compatibility baseline：`compat smoke codex-cli` 提供了第一個 Tier 1 runtime 的有界、公開、端到端相容性證明，而 `doctor` 與 `compat probe` 讓其餘 Tier 1 runtime 繼續停留在明確的 descriptor-only 邊界內。
 
 目前公開基線仍然很窄：`doctor`、`compat list/show/probe/smoke`，以及 `attempt create/list/cleanup` 是主要 public surface。
-這個 P4 收口只代表相容性承諾，不代表 general execution 或 lifecycle 承諾。更深的 `codex-cli` execution、profile/env 傳遞、runtime-state，以及目前 internal-only 的 bounded-parallelism Phase 6 prep 仍屬於內部實作，不應解讀為公開 lifecycle 能力；這條內部鏈路目前已經推進到 `spawn-budget`、budget-aware `spawn-candidate`、spawn batch planning、spawn batch item projection、bounded spawn batch apply convenience seam、bounded spawn batch headless-apply-items projection seam，以及目前透過 wait/close target batch 收口的 headless batch bridge。
+這個 P4 收口只代表相容性承諾，不代表 general execution 或 lifecycle 承諾。更深的 `codex-cli` execution、profile/env 傳遞、runtime-state，以及目前 internal-only 的 bounded-parallelism Phase 6 prep 仍屬於內部實作，不應解讀為公開 lifecycle 能力；這條內部鏈路目前已經推進到 `spawn-budget`、budget-aware `spawn-candidate`、spawn batch planning、spawn batch item projection、bounded spawn batch apply convenience seam、bounded spawn batch headless-apply-items projection seam、bounded spawn batch headless apply convenience seam，以及目前透過 wait/close target batch 收口的 headless batch bridge。
 更複雜的 runtime adapter、verification ranking 與高階編排能力仍然延後。
 
 ## 參照順序
@@ -62,6 +62,7 @@
 ## 補充參考
 
 - [docs/compat/tooling-matrix.md](docs/compat/tooling-matrix.md)
+- [docs/maintainers/development-phases.md](docs/maintainers/development-phases.md)
 - [docs/research/vision-synthesis.md](docs/research/vision-synthesis.md)
 
 ## 公開與私有文件
