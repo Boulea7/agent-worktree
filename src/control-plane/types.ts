@@ -516,6 +516,9 @@ export interface ExecutionSessionSpawnBudget {
   maxChildren?: number;
   maxDepth?: number;
   remainingChildSlots?: number;
+  // This tracks headroom after consuming the next spawn at the current seam.
+  // A value of 0 still allows the next spawn, but indicates that no further
+  // depth allowance remains beyond that projected child.
   remainingDepthAllowance?: number;
   withinChildLimit: boolean;
   withinDepthLimit: boolean;

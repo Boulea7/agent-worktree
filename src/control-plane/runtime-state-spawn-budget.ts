@@ -27,6 +27,9 @@ export function deriveExecutionSessionSpawnBudget(
   const remainingDepthAllowance =
     maxDepth === undefined || !lineageDepthKnown || lineageDepth === undefined
       ? undefined
+      // This is the projected depth headroom after consuming the next spawn.
+      // When one more spawn is still allowed but would fully exhaust maxDepth,
+      // the remaining allowance is intentionally 0.
       : Math.max(maxDepth - (lineageDepth + 1), 0);
 
   return {
