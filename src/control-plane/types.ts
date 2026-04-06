@@ -537,6 +537,7 @@ export interface ExecutionSessionSpawnCandidateInput {
 }
 
 export interface ExecutionSessionSpawnCandidate {
+  budget: ExecutionSessionSpawnBudget;
   context: ExecutionSessionContext;
   readiness: ExecutionSessionSpawnReadiness;
 }

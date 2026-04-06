@@ -62,6 +62,7 @@ Recent thin-slice follow-ups inside those buckets now also include:
 - a single repo-internal closeout-decision entry helper above that chain, so later repo-internal callers can derive the current closeout decision through one bounded composition step without inventing a broader consumer contract
 - stricter public compatibility and attempt serializer string-slot validation plus cloned compat-catalog reads, so additive DTO drift or repo-internal descriptor mutation does not silently widen machine-readable public output
 - a repo-internal spawn-budget projection layer above the current spawn-readiness seam, so existing guardrails now also derive explicit remaining child-slot and depth-allowance state for later internal bounded-parallelism work without widening readiness vocabulary or public surfaces
+- a repo-internal spawn-candidate follow-up that may compose existing budget projection with context and readiness into one current candidate object for later internal consumers, without widening spawn-target, spawn-request, or public orchestration contracts
 - repo-internal close-side and closeout-entry barrel assertions, so current tests explicitly prove those helpers stay available only through internal barrels and do not leak into default entry points
 - bucket-level repo-internal barrel coverage for `selection`, `control-plane`, and `verification`, plus narrower default `control-plane` / `selection` entry points, so tests keep proving boundaries without freezing helper-by-helper topology as a docs contract
 
