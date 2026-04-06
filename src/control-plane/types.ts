@@ -557,6 +557,17 @@ export interface ExecutionSessionSpawnBatchPlan {
   canPlan: boolean;
 }
 
+export interface ExecutionSessionSpawnBatchItemsInput {
+  childAttemptIds: readonly string[];
+  plan: ExecutionSessionSpawnBatchPlan;
+  sourceKind: ExecutionSessionSpawnRequestSourceKind;
+}
+
+export interface ExecutionSessionSpawnBatchItems {
+  items?: ExecutionSessionSpawnEffectsInput[];
+  plan: ExecutionSessionSpawnBatchPlan;
+}
+
 export interface ExecutionSessionSpawnTargetInput {
   candidate: ExecutionSessionSpawnCandidate;
 }
