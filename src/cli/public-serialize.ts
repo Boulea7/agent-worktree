@@ -407,13 +407,21 @@ function normalizeOptionalString(value: unknown): string | undefined {
 }
 
 function normalizeRequiredString(value: unknown, fieldName: string): string {
-  if (typeof value !== "string" || value.trim().length === 0) {
+  if (typeof value !== "string") {
     throw new ValidationError(
       `Public CLI serialization requires ${fieldName} to be a non-empty string.`
     );
   }
 
-  return value;
+  const normalized = value.trim();
+
+  if (normalized.length === 0) {
+    throw new ValidationError(
+      `Public CLI serialization requires ${fieldName} to be a non-empty string.`
+    );
+  }
+
+  return normalized;
 }
 
 function normalizeCompatibilityCapabilitySupport(

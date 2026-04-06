@@ -1,9 +1,7 @@
 import { ValidationError } from "../core/errors.js";
 import {
-  attemptSourceKinds,
   attemptStatuses,
   type AttemptManifest,
-  type AttemptSourceKind,
   type AttemptStatus
 } from "../manifest/types.js";
 import {
@@ -17,12 +15,12 @@ import type {
 import {
   validatePromotionArtifactSummaryCheckNameLists
 } from "./promotion-artifact-summary-guardrails.js";
+import { normalizePromotionAttemptSourceKind } from "./promotion-source-kind.js";
 import type { AttemptPromotionCandidate } from "./types.js";
 
 const ATTEMPT_PROMOTION_BASIS = "verification_artifact_summary" as const;
 const VERIFICATION_ARTIFACT_SUMMARY_BASIS = "verification_execution" as const;
 const validAttemptStatuses = new Set<AttemptStatus>(attemptStatuses);
-const validAttemptSourceKinds = new Set<AttemptSourceKind>(attemptSourceKinds);
 
 export function deriveAttemptPromotionCandidate(
   manifest: AttemptManifest,
@@ -37,7 +35,10 @@ export function deriveAttemptPromotionCandidate(
   const taskId = normalizeRequiredString(manifest.taskId, "manifest.taskId");
   const runtime = normalizeRequiredString(manifest.runtime, "manifest.runtime");
   const status = normalizeAttemptStatus(manifest.status);
-  const sourceKind = normalizeAttemptSourceKind(manifest.sourceKind);
+  const sourceKind = normalizePromotionAttemptSourceKind(
+    manifest.sourceKind,
+    "Attempt promotion candidate requires manifest.sourceKind to use the existing attempt source-kind vocabulary when provided."
+  );
   const summary = deriveAttemptVerificationSummary(manifest.verification);
 
   validateRecommendationConsistency(artifactSummary, summary);
@@ -101,25 +102,6 @@ function normalizeAttemptStatus(value: unknown): AttemptStatus {
   }
 
   return value as AttemptStatus;
-}
-
-function normalizeAttemptSourceKind(
-  value: unknown
-): AttemptSourceKind | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-
-  if (
-    typeof value !== "string" ||
-    !validAttemptSourceKinds.has(value as AttemptSourceKind)
-  ) {
-    throw new ValidationError(
-      "Attempt promotion candidate requires manifest.sourceKind to use the existing attempt source-kind vocabulary when provided."
-    );
-  }
-
-  return value as AttemptSourceKind;
 }
 
 function validateSummaryConsistency(

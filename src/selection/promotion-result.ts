@@ -1,8 +1,6 @@
 import { ValidationError } from "../core/errors.js";
 import {
-  attemptSourceKinds,
   attemptStatuses,
-  type AttemptSourceKind,
   type AttemptStatus
 } from "../manifest/types.js";
 import {
@@ -15,6 +13,7 @@ import type {
 import {
   validatePromotionArtifactSummaryCheckNameLists
 } from "./promotion-artifact-summary-guardrails.js";
+import { normalizePromotionAttemptSourceKind } from "./promotion-source-kind.js";
 import type {
   AttemptPromotionCandidate,
   AttemptPromotionResult
@@ -24,7 +23,6 @@ const ATTEMPT_PROMOTION_RESULT_BASIS = "promotion_candidate" as const;
 const ATTEMPT_PROMOTION_BASIS = "verification_artifact_summary" as const;
 const VERIFICATION_ARTIFACT_SUMMARY_BASIS = "verification_execution" as const;
 const validAttemptStatuses = new Set<AttemptStatus>(attemptStatuses);
-const validAttemptSourceKinds = new Set<AttemptSourceKind>(attemptSourceKinds);
 
 export function deriveAttemptPromotionResult(
   candidates: readonly AttemptPromotionCandidate[]
@@ -105,7 +103,10 @@ function validatePromotionCandidate(
   normalizeRequiredString(candidate.taskId, "candidate.taskId");
   normalizeRequiredString(candidate.runtime, "candidate.runtime");
   normalizeAttemptStatus(candidate.status);
-  normalizeAttemptSourceKind(candidate.sourceKind);
+  normalizePromotionAttemptSourceKind(
+    candidate.sourceKind,
+    "Attempt promotion result requires candidate.sourceKind to use the existing attempt source-kind vocabulary when provided."
+  );
 
   if (
     candidate.artifactSummary.summaryBasis !== VERIFICATION_ARTIFACT_SUMMARY_BASIS
@@ -209,25 +210,6 @@ function normalizeAttemptStatus(value: unknown): AttemptStatus {
   }
 
   return value as AttemptStatus;
-}
-
-function normalizeAttemptSourceKind(
-  value: unknown
-): AttemptSourceKind | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-
-  if (
-    typeof value !== "string" ||
-    !validAttemptSourceKinds.has(value as AttemptSourceKind)
-  ) {
-    throw new ValidationError(
-      "Attempt promotion result requires candidate.sourceKind to use the existing attempt source-kind vocabulary when provided."
-    );
-  }
-
-  return value as AttemptSourceKind;
 }
 
 function countsEqual(

@@ -58,12 +58,12 @@ describe("public cli serializers", () => {
       tool: {
         tool: "gemini-cli",
         tier: "tier1",
-        guidanceFile: "GEMINI.md",
-        projectConfig: ".gemini/settings.json",
+        guidanceFile: "  GEMINI.md  ",
+        projectConfig: "  .gemini/settings.json  ",
         machineReadableMode: "strong",
         resume: "unsupported",
         mcp: "unsupported",
-        note: "Catalog entry.",
+        note: "  Catalog entry.  ",
         hiddenField: "internal"
       }
     } as never);

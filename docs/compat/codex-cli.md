@@ -128,4 +128,4 @@ The public `compat probe` and `compat smoke` contract keeps that executable-reso
 - direct-shell invocation and the env-gated Vitest smoke harness MAY still be re-verified locally when they pass, but those local checks are operational evidence rather than durable public contract text
 - the Vitest smoke harness remains narrower and should still be treated as a bounded secondary probe rather than a public reliability guarantee
 - smoke output SHOULD help diagnose differences between shell-visible `codex` resolution and the final executed binary rather than assuming they are always identical
-- that bounded public smoke path is sufficient for the current Phase 4 compatibility closeout, but it remains a compatibility proof rather than a general execution or lifecycle promise
+- that bounded public smoke path is sufficient for the current Phase 4 compatibility closeout, but it remains a compatibility checkpoint rather than a general execution or lifecycle promise

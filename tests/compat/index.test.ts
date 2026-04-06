@@ -20,7 +20,9 @@ describe("compat index catalog access", () => {
   });
 
   it("should return cloned descriptors from listCompatibilityDescriptors", () => {
-    const [firstDescriptor] = listCompatibilityDescriptors();
+    const firstDescriptor = listCompatibilityDescriptors().find(
+      (descriptor) => descriptor.tool === "claude-code"
+    );
 
     expect(firstDescriptor).toBeDefined();
 
@@ -31,7 +33,9 @@ describe("compat index catalog access", () => {
     firstDescriptor.note = "Mutated note.";
     firstDescriptor.machineReadableMode = "strong";
 
-    const [nextDescriptor] = listCompatibilityDescriptors();
+    const nextDescriptor = listCompatibilityDescriptors().find(
+      (descriptor) => descriptor.tool === "claude-code"
+    );
 
     expect(nextDescriptor).toMatchObject({
       tool: "claude-code",
