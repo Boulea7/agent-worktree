@@ -12,6 +12,7 @@ import type {
   ExecutionSessionCloseRecordedEvent,
   ExecutionSessionCloseRequest,
   ExecutionSessionCloseRequestedEvent,
+  ExecutionSessionCloseTargetApply,
   ExecutionSessionCloseTargetApplyBatch,
   ExecutionSessionRecord,
   ExecutionSessionSpawnHeadlessCloseCandidate,
@@ -21,6 +22,7 @@ import type {
   ExecutionSessionWaitApply,
   ExecutionSessionWaitApplyBatch,
   ExecutionSessionWaitConsume,
+  ExecutionSessionWaitTargetApply,
   ExecutionSessionWaitTargetApplyBatch
 } from "../../src/control-plane/internal.js";
 
@@ -130,10 +132,12 @@ describe("control-plane internal exports", () => {
       spawnHeadlessCloseTarget: ExecutionSessionSpawnHeadlessCloseTarget;
       waitApply: ExecutionSessionWaitApply;
       waitApplyBatch: ExecutionSessionWaitApplyBatch;
+      waitTargetApply: ExecutionSessionWaitTargetApply;
       waitTargetApplyBatch: ExecutionSessionWaitTargetApplyBatch;
       waitConsume: ExecutionSessionWaitConsume;
       closeApply: ExecutionSessionCloseApply;
       closeApplyBatch: ExecutionSessionCloseApplyBatch;
+      closeTargetApply: ExecutionSessionCloseTargetApply;
       closeTargetApplyBatch: ExecutionSessionCloseTargetApplyBatch;
       closeCandidate: ExecutionSessionCloseCandidate;
       closeRequest: ExecutionSessionCloseRequest;

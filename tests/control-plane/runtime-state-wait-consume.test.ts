@@ -295,6 +295,52 @@ describe("control-plane runtime-state wait-consume helpers", () => {
     ).rejects.toThrow(ValidationError);
     expect(invokeWait).not.toHaveBeenCalled();
   });
+
+  it("should fail loudly when consumer is not an object", async () => {
+    const invokeWait = vi.fn(async () => {});
+
+    await expect(
+      consumeExecutionSessionWait({
+        consumer: null as unknown as ExecutionSessionWaitConsumer,
+        invokeWait
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeExecutionSessionWait({
+        consumer: null as unknown as ExecutionSessionWaitConsumer,
+        invokeWait
+      })
+    ).rejects.toThrow(
+      "Execution session wait consume requires consumer to be an object."
+    );
+    expect(invokeWait).not.toHaveBeenCalled();
+  });
+
+  it("should fail loudly when consumer.readiness is not an object", async () => {
+    const invokeWait = vi.fn(async () => {});
+
+    await expect(
+      consumeExecutionSessionWait({
+        consumer: {
+          ...createWaitConsumer(),
+          readiness: null as unknown as ExecutionSessionWaitConsumer["readiness"]
+        },
+        invokeWait
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeExecutionSessionWait({
+        consumer: {
+          ...createWaitConsumer(),
+          readiness: null as unknown as ExecutionSessionWaitConsumer["readiness"]
+        },
+        invokeWait
+      })
+    ).rejects.toThrow(
+      "Execution session wait consume requires consumer.readiness to be an object."
+    );
+    expect(invokeWait).not.toHaveBeenCalled();
+  });
 });
 
 function createWaitConsumer(

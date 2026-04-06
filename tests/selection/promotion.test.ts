@@ -520,6 +520,30 @@ describe("selection promotion helpers", () => {
     ).toThrow(ValidationError);
   });
 
+  it("should fail loudly when manifest.sourceKind uses values outside the existing vocabulary", () => {
+    const verification = createVerification({
+      state: "passed",
+      checks: []
+    });
+    const artifactSummary = createArtifactSummary(verification);
+    const invalidSourceKindManifest = {
+      ...createManifest({
+        attemptId: "att_invalid_source_kind",
+        verification
+      }),
+      sourceKind: "invalid"
+    } as unknown as AttemptManifest;
+
+    expect(() =>
+      deriveAttemptPromotionCandidate(invalidSourceKindManifest, artifactSummary)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionCandidate(invalidSourceKindManifest, artifactSummary)
+    ).toThrow(
+      "Attempt promotion candidate requires manifest.sourceKind to use the existing attempt source-kind vocabulary when provided."
+    );
+  });
+
   it("should not mutate the supplied manifest or artifact summary", () => {
     const verification = {
       state: "failed",

@@ -16,6 +16,7 @@ export async function consumeExecutionSessionClose(
   input: ExecutionSessionCloseConsumeInput
 ): Promise<ExecutionSessionCloseConsume> {
   const { consumer, invokeClose } = input;
+  validateConsumer(consumer);
   const request = normalizeExecutionSessionCloseRequest(consumer.request);
   validateReadiness(consumer.readiness);
 
@@ -34,6 +35,28 @@ export async function consumeExecutionSessionClose(
     readiness: consumer.readiness,
     invoked: true
   };
+}
+
+function validateConsumer(value: unknown): void {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new ValidationError(
+      "Execution session close consume requires consumer to be an object."
+    );
+  }
+
+  const consumer = value as {
+    readiness?: unknown;
+  };
+
+  if (
+    typeof consumer.readiness !== "object" ||
+    consumer.readiness === null ||
+    Array.isArray(consumer.readiness)
+  ) {
+    throw new ValidationError(
+      "Execution session close consume requires consumer.readiness to be an object."
+    );
+  }
 }
 
 function validateReadiness(

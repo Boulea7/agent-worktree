@@ -41,7 +41,7 @@ Current public compatibility truth:
 - `doctor` may report whether bounded `codex-cli` detection succeeds locally
 - `agent-worktree compat probe codex-cli` may report a bounded public compatibility result for local `codex exec --json` support
 - `agent-worktree compat smoke codex-cli` may report a bounded env-gated live smoke result for the fixed `codex exec --json` path
-- that bounded public smoke path is the current Phase 4 closeout proof for the first Tier 1 end-to-end compatibility promise
+- that bounded public smoke path is the current Phase 4 closeout checkpoint for the first Tier 1 end-to-end compatibility promise
 - `doctor`, `compat probe`, and `compat smoke` do not expose executable resolution, profile selection, env overlays, execution observation, or any internal control-plane metadata
 
 Implemented now:
@@ -125,7 +125,7 @@ The public `compat probe` and `compat smoke` contract keeps that executable-reso
 - smoke tests SHOULD confirm detection, bounded internal execution, and baseline parsing only
 - internal smoke harnesses MAY include observation diagnostics for debugging, but the public `compat smoke` contract must keep those diagnostics out of serialized output
 - smoke tests MUST NOT become the default validation path for the repository
-- direct-shell invocation and the env-gated Vitest smoke harness were both re-verified successfully in this workspace on 2026-03-21
+- direct-shell invocation and the env-gated Vitest smoke harness MAY still be re-verified locally when they pass, but those local checks are operational evidence rather than durable public contract text
 - the Vitest smoke harness remains narrower and should still be treated as a bounded secondary probe rather than a public reliability guarantee
 - smoke output SHOULD help diagnose differences between shell-visible `codex` resolution and the final executed binary rather than assuming they are always identical
 - that bounded public smoke path is sufficient for the current Phase 4 compatibility closeout, but it remains a compatibility proof rather than a general execution or lifecycle promise

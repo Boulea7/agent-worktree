@@ -50,14 +50,19 @@ The current thin Phase 5 internal verification and selection slice now spans the
 Recent thin-slice follow-ups inside those buckets now also include:
 
 - canonical wait/close consume request-contract guardrails, so malformed internal requests fail before injected wait/close invokers see them
+- top-level wait/close consumer guardrails, so malformed `consumer` and `consumer.readiness` containers now fail with bounded validation errors instead of leaking raw runtime `TypeError`s
 - canonical spawn request-contract guardrails and apply-side pre-invoker derivation, so malformed internal spawn requests or child-lineage inputs now fail before injected spawn invokers see them
+- direct spawn projection guardrails for `spawn_recorded_event` and `spawn_headless_input`, so malformed requested-event or execution-seed inputs now fail with bounded validation errors instead of leaking raw runtime `TypeError`s
+- stricter `spawn_headless_input` lineage, abort-signal, and guardrail normalization, so delegated child payloads keep required parent/source metadata, reject AbortSignal-shaped impostors, and collapse empty guardrails without widening internal contracts
+- earlier promotion-side `sourceKind` validation, so invalid attempt provenance now fails in the current promotion candidate/result seams instead of drifting into later explanation or audit layers
 - internal close-side `apply`, `apply-batch`, and `target-apply` helpers, so the current close-oriented control-plane chain now reaches the same bounded composition layer as the existing wait-side path without widening public lifecycle or execution surfaces
 - internal wait/close `target-apply-batch` helpers, so both target-oriented convenience paths now reach the same bounded internal batch layer without widening public lifecycle or execution surfaces
 - a single repo-internal handoff-finalization closeout compositor that chains request-summary apply through closure-summary derivation without widening public surfaces
 - a narrow closeout-decision gate above that closeout composer, so later repo-internal consumers can derive blockers from closure results without widening public review, merge, or lifecycle policy
 - a single repo-internal closeout-decision entry helper above that chain, so later repo-internal callers can derive the current closeout decision through one bounded composition step without inventing a broader consumer contract
+- stricter public compatibility and attempt serializer string-slot validation plus cloned compat-catalog reads, so additive DTO drift or repo-internal descriptor mutation does not silently widen machine-readable public output
 - repo-internal close-side and closeout-entry barrel assertions, so current tests explicitly prove those helpers stay available only through internal barrels and do not leak into default entry points
-- bucket-level repo-internal barrel coverage for `selection`, `control-plane`, and `verification`, so internal tests keep proving boundaries without freezing helper-by-helper topology as a docs contract
+- bucket-level repo-internal barrel coverage for `selection`, `control-plane`, and `verification`, plus narrower default `control-plane` / `selection` entry points, so tests keep proving boundaries without freezing helper-by-helper topology as a docs contract
 
 That Phase 5 foundation remains internal-only. It does not introduce public verification, ranking, promotion, handoff, report, explanation, decision, target, consumer, queue, persistence, or broader lifecycle surfaces.
 Required verification checks that end in `skipped` remain blocking for Phase 5 selection and promotion semantics; they must not be treated as satisfied gates.

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   deriveExecutionSessionSpawnRecordedEvent,
   type ExecutionSessionSpawnRequestedEvent
@@ -78,6 +79,44 @@ describe("control-plane runtime-state spawn-recorded-event helpers", () => {
     expect(event).not.toHaveProperty("outcome");
     expect(event).not.toHaveProperty("error");
     expect(event).not.toHaveProperty("adapterResult");
+  });
+
+  it("should fail loudly when requestedEvent is not an object", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnRecordedEvent({
+        requestedEvent: null as unknown as ExecutionSessionSpawnRequestedEvent
+      })
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      deriveExecutionSessionSpawnRecordedEvent({
+        requestedEvent: null as unknown as ExecutionSessionSpawnRequestedEvent
+      })
+    ).toThrow(
+      "Execution session spawn recorded event requires requestedEvent to be an object."
+    );
+  });
+
+  it('should fail loudly when requestedEvent.lifecycleEventKind is not "spawn_requested"', () => {
+    expect(() =>
+      deriveExecutionSessionSpawnRecordedEvent({
+        requestedEvent: createSpawnRequestedEvent({
+          lifecycleEventKind:
+            "close_requested" as unknown as ExecutionSessionSpawnRequestedEvent["lifecycleEventKind"]
+        })
+      })
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      deriveExecutionSessionSpawnRecordedEvent({
+        requestedEvent: createSpawnRequestedEvent({
+          lifecycleEventKind:
+            "close_requested" as unknown as ExecutionSessionSpawnRequestedEvent["lifecycleEventKind"]
+        })
+      })
+    ).toThrow(
+      'Execution session spawn recorded event requires requestedEvent.lifecycleEventKind to be "spawn_requested".'
+    );
   });
 });
 

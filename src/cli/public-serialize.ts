@@ -162,9 +162,15 @@ function serializeCompatibilityDoctorRuntime(
       runtime.supportTier,
       "doctor.supportTier"
     ),
-    guidanceFile: runtime.guidanceFile,
-    projectConfig: runtime.projectConfig,
-    note: runtime.note,
+    guidanceFile: normalizeRequiredString(
+      runtime.guidanceFile,
+      "doctor.guidanceFile"
+    ),
+    projectConfig: normalizeRequiredString(
+      runtime.projectConfig,
+      "doctor.projectConfig"
+    ),
+    note: normalizeRequiredString(runtime.note, "doctor.note"),
     capabilities: serializeCompatibilityCapabilities(runtime.capabilities),
     adapterStatus: normalizeDoctorAdapterStatus(
       runtime.adapterStatus,
@@ -180,8 +186,14 @@ function serializeCompatibilityCatalogRecord(
   return {
     tool: normalizeRuntimeKind(descriptor.tool, "compat.catalog.tool"),
     tier: normalizeRequiredSupportTier(descriptor.tier, "compat.catalog.tier"),
-    guidanceFile: descriptor.guidanceFile,
-    projectConfig: descriptor.projectConfig,
+    guidanceFile: normalizeRequiredString(
+      descriptor.guidanceFile,
+      "compat.catalog.guidanceFile"
+    ),
+    projectConfig: normalizeRequiredString(
+      descriptor.projectConfig,
+      "compat.catalog.projectConfig"
+    ),
     machineReadableMode: normalizeCatalogCapabilitySupport(
       descriptor.machineReadableMode,
       "compat.catalog.machineReadableMode"
@@ -194,7 +206,7 @@ function serializeCompatibilityCatalogRecord(
       descriptor.mcp,
       "compat.catalog.mcp"
     ),
-    note: descriptor.note
+    note: normalizeRequiredString(descriptor.note, "compat.catalog.note")
   };
 }
 
@@ -207,9 +219,15 @@ function serializeCompatibilityProbeRuntime(
       runtime.supportTier,
       "compat.probe.supportTier"
     ),
-    guidanceFile: runtime.guidanceFile,
-    projectConfig: runtime.projectConfig,
-    note: runtime.note,
+    guidanceFile: normalizeRequiredString(
+      runtime.guidanceFile,
+      "compat.probe.guidanceFile"
+    ),
+    projectConfig: normalizeRequiredString(
+      runtime.projectConfig,
+      "compat.probe.projectConfig"
+    ),
+    note: normalizeRequiredString(runtime.note, "compat.probe.note"),
     capabilities: serializeCompatibilityCapabilities(runtime.capabilities),
     adapterStatus: normalizeDoctorAdapterStatus(
       runtime.adapterStatus,
@@ -224,7 +242,10 @@ function serializeCompatibilityProbeRuntime(
         runtime.diagnosis.code,
         "compat.probe.diagnosis.code"
       ),
-      summary: runtime.diagnosis.summary
+      summary: normalizeRequiredString(
+        runtime.diagnosis.summary,
+        "compat.probe.diagnosis.summary"
+      )
     }
   };
 }
@@ -238,9 +259,15 @@ function serializeCompatibilitySmokeRuntime(
       runtime.supportTier,
       "compat.smoke.supportTier"
     ),
-    guidanceFile: runtime.guidanceFile,
-    projectConfig: runtime.projectConfig,
-    note: runtime.note,
+    guidanceFile: normalizeRequiredString(
+      runtime.guidanceFile,
+      "compat.smoke.guidanceFile"
+    ),
+    projectConfig: normalizeRequiredString(
+      runtime.projectConfig,
+      "compat.smoke.projectConfig"
+    ),
+    note: normalizeRequiredString(runtime.note, "compat.smoke.note"),
     capabilities: serializeCompatibilityCapabilities(runtime.capabilities),
     adapterStatus: normalizeDoctorAdapterStatus(
       runtime.adapterStatus,
@@ -255,7 +282,10 @@ function serializeCompatibilitySmokeRuntime(
         runtime.diagnosis.code,
         "compat.smoke.diagnosis.code"
       ),
-      summary: runtime.diagnosis.summary
+      summary: normalizeRequiredString(
+        runtime.diagnosis.summary,
+        "compat.smoke.diagnosis.summary"
+      )
     }
   };
 }
@@ -291,10 +321,10 @@ function serializeAttemptCreateRecord(
   manifest: AttemptManifest
 ): PublicAttemptCreateRecord {
   const serialized: PublicAttemptCreateRecord = {
-    attemptId: manifest.attemptId,
-    taskId: manifest.taskId,
+    attemptId: normalizeRequiredString(manifest.attemptId, "attempt.attemptId"),
+    taskId: normalizeRequiredString(manifest.taskId, "attempt.taskId"),
     runtime: normalizeRuntimeKind(manifest.runtime, "attempt.runtime"),
-    adapter: manifest.adapter,
+    adapter: normalizeRequiredString(manifest.adapter, "attempt.adapter"),
     status: normalizeAttemptStatus(manifest.status, "attempt.status")
   };
 
@@ -311,10 +341,10 @@ function serializeAttemptListRecord(
   manifest: AttemptManifest
 ): PublicAttemptListRecord {
   const serialized: PublicAttemptListRecord = {
-    attemptId: manifest.attemptId,
-    taskId: manifest.taskId,
+    attemptId: normalizeRequiredString(manifest.attemptId, "attempt.attemptId"),
+    taskId: normalizeRequiredString(manifest.taskId, "attempt.taskId"),
     runtime: normalizeRuntimeKind(manifest.runtime, "attempt.runtime"),
-    adapter: manifest.adapter,
+    adapter: normalizeRequiredString(manifest.adapter, "attempt.adapter"),
     status: normalizeAttemptStatus(manifest.status, "attempt.status")
   };
 
@@ -327,10 +357,10 @@ function serializeAttemptCleanupRecord(
   manifest: AttemptManifest
 ): PublicAttemptCleanupRecord {
   const serialized: PublicAttemptCleanupRecord = {
-    attemptId: manifest.attemptId,
-    taskId: manifest.taskId,
+    attemptId: normalizeRequiredString(manifest.attemptId, "attempt.attemptId"),
+    taskId: normalizeRequiredString(manifest.taskId, "attempt.taskId"),
     runtime: normalizeRuntimeKind(manifest.runtime, "attempt.runtime"),
-    adapter: manifest.adapter,
+    adapter: normalizeRequiredString(manifest.adapter, "attempt.adapter"),
     status: normalizeAttemptStatus(manifest.status, "attempt.status")
   };
 
@@ -374,6 +404,16 @@ function assignOptionalString<T extends object>(
 
 function normalizeOptionalString(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
+}
+
+function normalizeRequiredString(value: unknown, fieldName: string): string {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new ValidationError(
+      `Public CLI serialization requires ${fieldName} to be a non-empty string.`
+    );
+  }
+
+  return value;
 }
 
 function normalizeCompatibilityCapabilitySupport(

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   deriveExecutionSessionSpawnHeadlessInput,
   type ExecutionSessionSpawnEffects
@@ -147,6 +148,250 @@ describe("control-plane runtime-state spawn-headless-input helpers", () => {
     });
     expect(effects).toEqual(effectsSnapshot);
     expect(execution).toEqual(executionSnapshot);
+  });
+
+  it("should fail loudly when execution is not an object", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessInput({
+        effects: createSpawnEffects(),
+        execution: null as unknown as {
+          prompt: string;
+        }
+      } as never)
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessInput({
+        effects: createSpawnEffects(),
+        execution: null as unknown as {
+          prompt: string;
+        }
+      } as never)
+    ).toThrow(
+      "Execution session spawn headless input requires execution to be an object."
+    );
+  });
+
+  it("should fail loudly when effects.lineage is not an object", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessInput({
+        effects: {
+          ...createSpawnEffects(),
+          lineage: null as unknown as ExecutionSessionSpawnEffects["lineage"]
+        },
+        execution: {
+          prompt: "Bridge child runtime"
+        }
+      })
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessInput({
+        effects: {
+          ...createSpawnEffects(),
+          lineage: null as unknown as ExecutionSessionSpawnEffects["lineage"]
+        },
+        execution: {
+          prompt: "Bridge child runtime"
+        }
+      })
+    ).toThrow(
+      "Execution session spawn headless input requires effects.lineage to be an object."
+    );
+  });
+
+  it("should fail loudly when execution.timeoutMs is not a finite integer greater than 0", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessInput({
+        effects: createSpawnEffects(),
+        execution: {
+          prompt: "Bridge child runtime",
+          timeoutMs: 0
+        }
+      })
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessInput({
+        effects: createSpawnEffects(),
+        execution: {
+          prompt: "Bridge child runtime",
+          timeoutMs: 0
+        }
+      })
+    ).toThrow(
+      "Execution session spawn headless input timeoutMs must be a finite integer greater than 0."
+    );
+  });
+
+  it("should fail loudly when execution.abortSignal is only AbortSignal-shaped", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessInput({
+        effects: createSpawnEffects(),
+        execution: {
+          prompt: "Bridge child runtime",
+          abortSignal: {
+            aborted: false
+          } as unknown as AbortSignal
+        }
+      })
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessInput({
+        effects: createSpawnEffects(),
+        execution: {
+          prompt: "Bridge child runtime",
+          abortSignal: {
+            aborted: false
+          } as unknown as AbortSignal
+        }
+      })
+    ).toThrow(
+      "Execution session spawn headless input requires execution.abortSignal to be an AbortSignal-like object when provided."
+    );
+  });
+
+  it("should fail loudly when effects.lineage.parentAttemptId is missing", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessInput({
+        effects: {
+          ...createSpawnEffects(),
+          lineage: {
+            attemptId: "att_child",
+            sourceKind: "fork"
+          } as unknown as ExecutionSessionSpawnEffects["lineage"]
+        },
+        execution: {
+          prompt: "Bridge child runtime"
+        }
+      })
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessInput({
+        effects: {
+          ...createSpawnEffects(),
+          lineage: {
+            attemptId: "att_child",
+            sourceKind: "fork"
+          } as unknown as ExecutionSessionSpawnEffects["lineage"]
+        },
+        execution: {
+          prompt: "Bridge child runtime"
+        }
+      })
+    ).toThrow(
+      "Execution session spawn headless input requires effects.lineage.parentAttemptId to be a non-empty string."
+    );
+  });
+
+  it("should fail loudly when effects.lineage.sourceKind is missing", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessInput({
+        effects: {
+          ...createSpawnEffects(),
+          lineage: {
+            attemptId: "att_child",
+            parentAttemptId: "att_parent"
+          } as unknown as ExecutionSessionSpawnEffects["lineage"]
+        },
+        execution: {
+          prompt: "Bridge child runtime"
+        }
+      })
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessInput({
+        effects: {
+          ...createSpawnEffects(),
+          lineage: {
+            attemptId: "att_child",
+            parentAttemptId: "att_parent"
+          } as unknown as ExecutionSessionSpawnEffects["lineage"]
+        },
+        execution: {
+          prompt: "Bridge child runtime"
+        }
+      })
+    ).toThrow(
+      "Execution session spawn headless input requires effects.lineage.sourceKind to use the existing spawn source-kind vocabulary when provided."
+    );
+  });
+
+  it("should omit empty guardrails objects after canonical normalization", () => {
+    expect(
+      deriveExecutionSessionSpawnHeadlessInput({
+        effects: createSpawnEffects({
+          guardrails: {}
+        }),
+        execution: {
+          prompt: "Bridge child runtime"
+        }
+      })
+    ).toEqual({
+      prompt: "Bridge child runtime",
+      attempt: {
+        attemptId: "att_child",
+        parentAttemptId: "att_parent",
+        sourceKind: "fork"
+      }
+    });
+  });
+
+  it("should preserve prompt and cwd exactly without trimming execution seed text", () => {
+    expect(
+      deriveExecutionSessionSpawnHeadlessInput({
+        effects: createSpawnEffects(),
+        execution: {
+          prompt: "  keep deliberate whitespace  \n",
+          cwd: " /tmp/with-leading-space "
+        }
+      })
+    ).toEqual({
+      prompt: "  keep deliberate whitespace  \n",
+      cwd: " /tmp/with-leading-space ",
+      attempt: {
+        attemptId: "att_child",
+        parentAttemptId: "att_parent",
+        sourceKind: "fork"
+      }
+    });
+  });
+
+  it("should fail loudly when effects.lineage.sourceKind is outside the existing spawn source-kind vocabulary", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessInput({
+        effects: {
+          ...createSpawnEffects(),
+          lineage: {
+            ...createSpawnEffects().lineage,
+            sourceKind: "direct" as unknown as ExecutionSessionSpawnEffects["lineage"]["sourceKind"]
+          }
+        },
+        execution: {
+          prompt: "Bridge child runtime"
+        }
+      })
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessInput({
+        effects: {
+          ...createSpawnEffects(),
+          lineage: {
+            ...createSpawnEffects().lineage,
+            sourceKind: "direct" as unknown as ExecutionSessionSpawnEffects["lineage"]["sourceKind"]
+          }
+        },
+        execution: {
+          prompt: "Bridge child runtime"
+        }
+      })
+    ).toThrow(
+      "Execution session spawn headless input requires effects.lineage.sourceKind to use the existing spawn source-kind vocabulary when provided."
+    );
   });
 });
 
