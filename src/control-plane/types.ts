@@ -504,6 +504,23 @@ export interface ExecutionSessionSpawnReadinessInput {
   view: ExecutionSessionView;
 }
 
+export interface ExecutionSessionSpawnBudgetInput {
+  context: ExecutionSessionContext;
+  view: ExecutionSessionView;
+}
+
+export interface ExecutionSessionSpawnBudget {
+  childCount: number;
+  lineageDepth: number | undefined;
+  lineageDepthKnown: boolean;
+  maxChildren?: number;
+  maxDepth?: number;
+  remainingChildSlots?: number;
+  remainingDepthAllowance?: number;
+  withinChildLimit: boolean;
+  withinDepthLimit: boolean;
+}
+
 export interface ExecutionSessionSpawnReadiness {
   blockingReasons: ExecutionSessionSpawnBlockingReason[];
   canSpawn: boolean;

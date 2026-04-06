@@ -23,6 +23,7 @@ describe("control-plane index exports", () => {
     expect(controlPlane).toHaveProperty("normalizeSessionGuardrails");
 
     expect(controlPlane).not.toHaveProperty("deriveExecutionSessionSpawnCandidate");
+    expect(controlPlane).not.toHaveProperty("deriveExecutionSessionSpawnBudget");
     expect(controlPlane).not.toHaveProperty("consumeExecutionSessionSpawn");
     expect(controlPlane).not.toHaveProperty("applyExecutionSessionSpawn");
     expect(controlPlane).not.toHaveProperty("buildExecutionSessionIndex");
@@ -79,6 +80,9 @@ describe("control-plane index exports", () => {
 
 // @ts-expect-error control-plane index must not export spawn targets
 type ControlPlaneIndexShouldNotExportSpawnTarget = import("../../src/control-plane/index.js").ExecutionSessionSpawnTarget;
+
+// @ts-expect-error control-plane index must not export spawn budget types
+type ControlPlaneIndexShouldNotExportExecutionSessionSpawnBudget = import("../../src/control-plane/index.js").ExecutionSessionSpawnBudget;
 
 // @ts-expect-error control-plane index must not export execution-session record types
 type ControlPlaneIndexShouldNotExportExecutionSessionRecord = import("../../src/control-plane/index.js").ExecutionSessionRecord;
@@ -145,6 +149,9 @@ type ControlPlaneIndexShouldNotExportSpawnHeadlessCloseTarget = import("../../sr
 
 // @ts-expect-error control-plane index must not export spawn blocking vocabularies
 type ControlPlaneIndexShouldNotExportSpawnBlockingReasons = typeof import("../../src/control-plane/index.js").executionSessionSpawnBlockingReasons;
+
+// @ts-expect-error control-plane index must not export spawn budget helpers
+type ControlPlaneIndexShouldNotExportDeriveExecutionSessionSpawnBudget = typeof import("../../src/control-plane/index.js").deriveExecutionSessionSpawnBudget;
 
 // @ts-expect-error control-plane index must not export wait consumer blocking vocabularies
 type ControlPlaneIndexShouldNotExportWaitConsumerBlockingReasons = typeof import("../../src/control-plane/index.js").executionSessionWaitConsumerBlockingReasons;
