@@ -48,6 +48,10 @@ function normalizeExecutions(
     );
   }
 
+  for (const execution of value) {
+    normalizeExecutionSeed(execution);
+  }
+
   return value;
 }
 
@@ -75,4 +79,14 @@ function cloneExecution(
   return {
     ...execution
   };
+}
+
+function normalizeExecutionSeed(
+  value: ExecutionSessionSpawnHeadlessInputSeed
+): void {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new ValidationError(
+      "Execution session spawn batch headless apply items executions entries must be objects."
+    );
+  }
 }

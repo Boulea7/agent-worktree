@@ -166,6 +166,27 @@ describe(
       );
     });
 
+    it("should reject malformed execution entries before projecting headless apply items", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnBatchHeadlessApplyItems({
+          batchItems: {
+            plan: createPlan({
+              requestedCount: 1,
+              canPlan: true
+            }),
+            items: [
+              createBatchItem({
+                childAttemptId: "att_child_invalid_execution"
+              })
+            ]
+          },
+          executions: ["bad-seed"] as unknown as readonly ExecutionSessionSpawnHeadlessInputSeed[]
+        })
+      ).toThrow(
+        "Execution session spawn batch headless apply items executions entries must be objects."
+      );
+    });
+
     it("should fail fast on the first execution projection error", () => {
       let thirdExecutionAccessed = false;
 
