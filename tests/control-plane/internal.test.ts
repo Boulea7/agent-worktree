@@ -2,6 +2,7 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 
 import * as controlPlane from "../../src/control-plane/internal.js";
 import type {
+  ExecutionSessionSpawnBatchHeadlessApplyItems,
   ExecutionSessionCloseApply,
   ExecutionSessionCloseApplyBatch,
   ExecutionSessionCloseCandidate,
@@ -68,6 +69,7 @@ describe("control-plane internal exports", () => {
       "deriveExecutionSessionContext",
       "deriveExecutionSessionLifecycleDisposition",
       "deriveExecutionSessionRecord",
+      "deriveExecutionSessionSpawnBatchHeadlessApplyItems",
       "deriveExecutionSessionSpawnBatchItems",
       "deriveExecutionSessionSpawnBatchPlan",
       "deriveExecutionSessionSpawnBudget",
@@ -137,6 +139,7 @@ describe("control-plane internal exports", () => {
       context: ExecutionSessionContext;
       spawnBudget: ExecutionSessionSpawnBudget;
       spawnCandidate: ExecutionSessionSpawnCandidate;
+      spawnBatchHeadlessApplyItems: ExecutionSessionSpawnBatchHeadlessApplyItems;
       spawnBatchItemsApply: ExecutionSessionSpawnBatchItemsApply;
       spawnBatchItems: ExecutionSessionSpawnBatchItems;
       spawnBatchPlan: ExecutionSessionSpawnBatchPlan;
