@@ -5,20 +5,11 @@ import * as controlPlane from "../../src/control-plane/index.js";
 describe("control-plane index exports", () => {
   it("should keep the default barrel focused on read-only foundational helpers", () => {
     expect(Object.keys(controlPlane).sort()).toEqual([
-      "buildExecutionSessionIndex",
-      "buildExecutionSessionView",
       "buildSessionTreeIndex",
       "classifySessionLifecycleState",
-      "deriveExecutionSessionContext",
-      "deriveExecutionSessionLifecycleDisposition",
-      "deriveExecutionSessionRecord",
       "deriveSessionNodeRef",
       "deriveSessionSnapshot",
-      "executionSessionContextSelectionKinds",
-      "executionSessionRecordSources",
-      "listChildExecutionSessions",
       "normalizeSessionGuardrails",
-      "resolveExecutionSessionRecord",
       "sessionLifecycleEventKinds",
       "sessionLifecycleStates",
       "sessionNodeKinds",
@@ -27,16 +18,22 @@ describe("control-plane index exports", () => {
 
     expect(controlPlane).toHaveProperty("deriveSessionNodeRef");
     expect(controlPlane).toHaveProperty("deriveSessionSnapshot");
-    expect(controlPlane).toHaveProperty("buildExecutionSessionIndex");
-    expect(controlPlane).toHaveProperty("deriveExecutionSessionContext");
-    expect(controlPlane).toHaveProperty("deriveExecutionSessionLifecycleDisposition");
-    expect(controlPlane).toHaveProperty("buildExecutionSessionView");
-    expect(controlPlane).toHaveProperty("resolveExecutionSessionRecord");
-    expect(controlPlane).toHaveProperty("listChildExecutionSessions");
+    expect(controlPlane).toHaveProperty("buildSessionTreeIndex");
+    expect(controlPlane).toHaveProperty("classifySessionLifecycleState");
+    expect(controlPlane).toHaveProperty("normalizeSessionGuardrails");
 
     expect(controlPlane).not.toHaveProperty("deriveExecutionSessionSpawnCandidate");
     expect(controlPlane).not.toHaveProperty("consumeExecutionSessionSpawn");
     expect(controlPlane).not.toHaveProperty("applyExecutionSessionSpawn");
+    expect(controlPlane).not.toHaveProperty("buildExecutionSessionIndex");
+    expect(controlPlane).not.toHaveProperty("deriveExecutionSessionRecord");
+    expect(controlPlane).not.toHaveProperty("deriveExecutionSessionContext");
+    expect(controlPlane).not.toHaveProperty("deriveExecutionSessionLifecycleDisposition");
+    expect(controlPlane).not.toHaveProperty("buildExecutionSessionView");
+    expect(controlPlane).not.toHaveProperty("resolveExecutionSessionRecord");
+    expect(controlPlane).not.toHaveProperty("listChildExecutionSessions");
+    expect(controlPlane).not.toHaveProperty("executionSessionContextSelectionKinds");
+    expect(controlPlane).not.toHaveProperty("executionSessionRecordSources");
     expect(controlPlane).not.toHaveProperty("deriveExecutionSessionSpawnTarget");
     expect(controlPlane).not.toHaveProperty("executionSessionSpawnBlockingReasons");
     expect(controlPlane).not.toHaveProperty("executionSessionSpawnRequestSourceKinds");
@@ -82,6 +79,12 @@ describe("control-plane index exports", () => {
 
 // @ts-expect-error control-plane index must not export spawn targets
 type ControlPlaneIndexShouldNotExportSpawnTarget = import("../../src/control-plane/index.js").ExecutionSessionSpawnTarget;
+
+// @ts-expect-error control-plane index must not export execution-session record types
+type ControlPlaneIndexShouldNotExportExecutionSessionRecord = import("../../src/control-plane/index.js").ExecutionSessionRecord;
+
+// @ts-expect-error control-plane index must not export execution-session context types
+type ControlPlaneIndexShouldNotExportExecutionSessionContext = import("../../src/control-plane/index.js").ExecutionSessionContext;
 
 // @ts-expect-error control-plane index must not export wait targets
 type ControlPlaneIndexShouldNotExportWaitTarget = import("../../src/control-plane/index.js").ExecutionSessionWaitTarget;
@@ -151,6 +154,15 @@ type ControlPlaneIndexShouldNotExportCloseConsumerBlockingReasons = typeof impor
 
 // @ts-expect-error control-plane index must not export close request helpers
 type ControlPlaneIndexShouldNotExportDeriveExecutionSessionCloseRequest = typeof import("../../src/control-plane/index.js").deriveExecutionSessionCloseRequest;
+
+// @ts-expect-error control-plane index must not export execution-session index helpers
+type ControlPlaneIndexShouldNotExportBuildExecutionSessionIndex = typeof import("../../src/control-plane/index.js").buildExecutionSessionIndex;
+
+// @ts-expect-error control-plane index must not export execution-session context helpers
+type ControlPlaneIndexShouldNotExportDeriveExecutionSessionContext = typeof import("../../src/control-plane/index.js").deriveExecutionSessionContext;
+
+// @ts-expect-error control-plane index must not export execution-session vocabulary
+type ControlPlaneIndexShouldNotExportExecutionSessionRecordSources = typeof import("../../src/control-plane/index.js").executionSessionRecordSources;
 
 // @ts-expect-error control-plane index must not export close consumer helpers
 type ControlPlaneIndexShouldNotExportDeriveExecutionSessionCloseConsumer = typeof import("../../src/control-plane/index.js").deriveExecutionSessionCloseConsumer;

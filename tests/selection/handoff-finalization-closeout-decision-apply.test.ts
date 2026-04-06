@@ -39,7 +39,7 @@ const applyCloseoutDecisionSummary = applyAttemptHandoffFinalizationCloseoutDeci
 >;
 
 describe("selection handoff-finalization-closeout-decision-apply helpers", () => {
-  it("should return undefined when the supplied request summary is undefined", async () => {
+  it("should return undefined for the post-apply helper when the supplied request summary is undefined", async () => {
     await expect(
       applyCloseoutDecisionSummary({
         summary: undefined,
@@ -48,7 +48,7 @@ describe("selection handoff-finalization-closeout-decision-apply helpers", () =>
     ).resolves.toBeUndefined();
   });
 
-  it("should return undefined when the supplied request summary cannot finalize handoff", async () => {
+  it("should return undefined for the post-apply helper when the supplied request summary cannot finalize handoff", async () => {
     const invokeHandoffFinalization = vi.fn(async () => undefined);
 
     await expect(

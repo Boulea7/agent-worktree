@@ -13,6 +13,7 @@ import type {
 import {
   validatePromotionArtifactSummaryCheckNameLists
 } from "./promotion-artifact-summary-guardrails.js";
+import { normalizePromotionAttemptSourceKind } from "./promotion-source-kind.js";
 import type {
   AttemptPromotionCandidate,
   AttemptPromotionResult
@@ -102,6 +103,10 @@ function validatePromotionCandidate(
   normalizeRequiredString(candidate.taskId, "candidate.taskId");
   normalizeRequiredString(candidate.runtime, "candidate.runtime");
   normalizeAttemptStatus(candidate.status);
+  normalizePromotionAttemptSourceKind(
+    candidate.sourceKind,
+    "Attempt promotion result requires candidate.sourceKind to use the existing attempt source-kind vocabulary when provided."
+  );
 
   if (
     candidate.artifactSummary.summaryBasis !== VERIFICATION_ARTIFACT_SUMMARY_BASIS

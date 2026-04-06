@@ -267,6 +267,52 @@ describe("control-plane runtime-state close-consume helpers", () => {
     ).rejects.toThrow(ValidationError);
     expect(invokeClose).not.toHaveBeenCalled();
   });
+
+  it("should fail loudly when consumer is not an object", async () => {
+    const invokeClose = vi.fn(async () => {});
+
+    await expect(
+      consumeExecutionSessionClose({
+        consumer: null as unknown as ExecutionSessionCloseConsumer,
+        invokeClose
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeExecutionSessionClose({
+        consumer: null as unknown as ExecutionSessionCloseConsumer,
+        invokeClose
+      })
+    ).rejects.toThrow(
+      "Execution session close consume requires consumer to be an object."
+    );
+    expect(invokeClose).not.toHaveBeenCalled();
+  });
+
+  it("should fail loudly when consumer.readiness is not an object", async () => {
+    const invokeClose = vi.fn(async () => {});
+
+    await expect(
+      consumeExecutionSessionClose({
+        consumer: {
+          ...createCloseConsumer(),
+          readiness: null as unknown as ExecutionSessionCloseConsumer["readiness"]
+        },
+        invokeClose
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeExecutionSessionClose({
+        consumer: {
+          ...createCloseConsumer(),
+          readiness: null as unknown as ExecutionSessionCloseConsumer["readiness"]
+        },
+        invokeClose
+      })
+    ).rejects.toThrow(
+      "Execution session close consume requires consumer.readiness to be an object."
+    );
+    expect(invokeClose).not.toHaveBeenCalled();
+  });
 });
 
 function createCloseConsumer(

@@ -15,6 +15,7 @@ import type {
 import {
   validatePromotionArtifactSummaryCheckNameLists
 } from "./promotion-artifact-summary-guardrails.js";
+import { normalizePromotionAttemptSourceKind } from "./promotion-source-kind.js";
 import type { AttemptPromotionCandidate } from "./types.js";
 
 const ATTEMPT_PROMOTION_BASIS = "verification_artifact_summary" as const;
@@ -34,6 +35,10 @@ export function deriveAttemptPromotionCandidate(
   const taskId = normalizeRequiredString(manifest.taskId, "manifest.taskId");
   const runtime = normalizeRequiredString(manifest.runtime, "manifest.runtime");
   const status = normalizeAttemptStatus(manifest.status);
+  const sourceKind = normalizePromotionAttemptSourceKind(
+    manifest.sourceKind,
+    "Attempt promotion candidate requires manifest.sourceKind to use the existing attempt source-kind vocabulary when provided."
+  );
   const summary = deriveAttemptVerificationSummary(manifest.verification);
 
   validateRecommendationConsistency(artifactSummary, summary);
@@ -51,7 +56,7 @@ export function deriveAttemptPromotionCandidate(
     taskId,
     runtime,
     status,
-    sourceKind: manifest.sourceKind,
+    sourceKind,
     summary,
     artifactSummary,
     recommendedForPromotion: artifactSummary.recommendedForPromotion

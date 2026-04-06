@@ -239,6 +239,22 @@ describe("selection promotion-result helpers", () => {
     );
   });
 
+  it("should fail loudly when candidate.sourceKind uses values outside the existing vocabulary", () => {
+    const candidate = {
+      ...createPromotionCandidate({
+        attemptId: "att_invalid_source_kind"
+      }),
+      sourceKind: "invalid"
+    } as unknown as AttemptPromotionCandidate;
+
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      "Attempt promotion result requires candidate.sourceKind to use the existing attempt source-kind vocabulary when provided."
+    );
+  });
+
   it("should fail loudly when candidate.summary does not match candidate.artifactSummary.summary", () => {
     const baseCandidate = createPromotionCandidate({
       attemptId: "att_summary_mismatch",

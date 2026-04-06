@@ -58,12 +58,12 @@ describe("public cli serializers", () => {
       tool: {
         tool: "gemini-cli",
         tier: "tier1",
-        guidanceFile: "GEMINI.md",
-        projectConfig: ".gemini/settings.json",
+        guidanceFile: "  GEMINI.md  ",
+        projectConfig: "  .gemini/settings.json  ",
         machineReadableMode: "strong",
         resume: "unsupported",
         mcp: "unsupported",
-        note: "Catalog entry.",
+        note: "  Catalog entry.  ",
         hiddenField: "internal"
       }
     } as never);
@@ -166,6 +166,31 @@ describe("public cli serializers", () => {
             },
             adapterStatus: "implemented",
             detected: "invalid"
+          }
+        ]
+      } as unknown as CompatibilityDoctorData)
+    ).toThrow(ValidationError);
+  });
+
+  it("should fail loudly when doctor data uses non-string public text fields", () => {
+    expect(() =>
+      serializeCompatibilityDoctorData({
+        runtimes: [
+          {
+            runtime: "codex-cli",
+            supportTier: "tier1",
+            guidanceFile: "AGENTS.md",
+            projectConfig: ".codex/config.toml",
+            note: { text: "Concrete runtime." },
+            capabilities: {
+              machineReadableMode: "strong",
+              resume: "unsupported",
+              mcp: "unsupported",
+              sessionLifecycle: "unsupported",
+              eventStreamParsing: "partial"
+            },
+            adapterStatus: "implemented",
+            detected: true
           }
         ]
       } as unknown as CompatibilityDoctorData)
@@ -298,6 +323,33 @@ describe("public cli serializers", () => {
           diagnosis: {
             code: "exec_json_supported",
             summary: "Compatible."
+          }
+        }
+      } as unknown as CompatibilityProbeData)
+    ).toThrow(ValidationError);
+  });
+
+  it("should fail loudly when probe payload text fields are not strings", () => {
+    expect(() =>
+      serializeCompatibilityProbeData({
+        probe: {
+          runtime: "codex-cli",
+          supportTier: "tier1",
+          guidanceFile: "AGENTS.md",
+          projectConfig: ".codex/config.toml",
+          note: "Concrete runtime.",
+          capabilities: {
+            machineReadableMode: "strong",
+            resume: "unsupported",
+            mcp: "unsupported",
+            sessionLifecycle: "unsupported",
+            eventStreamParsing: "partial"
+          },
+          adapterStatus: "implemented",
+          probeStatus: "supported",
+          diagnosis: {
+            code: "exec_json_supported",
+            summary: ["Compatible."]
           }
         }
       } as unknown as CompatibilityProbeData)
@@ -532,6 +584,50 @@ describe("public cli serializers", () => {
     ).toThrow(ValidationError);
   });
 
+  it("should fail loudly when smoke payload text fields are not strings", () => {
+    expect(() =>
+      serializeCompatibilitySmokeData({
+        smoke: {
+          runtime: "codex-cli",
+          supportTier: "tier1",
+          guidanceFile: "AGENTS.md",
+          projectConfig: [".codex/config.toml"],
+          note: "Concrete runtime.",
+          capabilities: {
+            machineReadableMode: "strong",
+            resume: "unsupported",
+            mcp: "unsupported",
+            sessionLifecycle: "unsupported",
+            eventStreamParsing: "partial"
+          },
+          adapterStatus: "implemented",
+          smokeStatus: "passed",
+          diagnosis: {
+            code: "smoke_passed",
+            summary: "Smoke passed."
+          }
+        }
+      } as unknown as CompatibilitySmokeData)
+    ).toThrow(ValidationError);
+  });
+
+  it("should fail loudly when compatibility catalog text fields are not strings", () => {
+    expect(() =>
+      serializeCompatibilityShowData({
+        tool: {
+          tool: "gemini-cli",
+          tier: "tier1",
+          guidanceFile: ["GEMINI.md"],
+          projectConfig: ".gemini/settings.json",
+          machineReadableMode: "strong",
+          resume: "unsupported",
+          mcp: "unsupported",
+          note: "Catalog entry."
+        }
+      } as never)
+    ).toThrow(ValidationError);
+  });
+
   it("should serialize attempt create data through an explicit allow-list", () => {
     const result = serializeAttemptCreateData({
       attempt: createManifest({
@@ -614,6 +710,41 @@ describe("public cli serializers", () => {
         worktreeRemoved: true
       }
     });
+  });
+
+  it("should fail loudly when attempt public records use non-string required text fields", () => {
+    expect(() =>
+      serializeAttemptCreateData({
+        attempt: createManifest({
+          adapter: ["subprocess"] as unknown as AttemptManifest["adapter"]
+        })
+      })
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      serializeAttemptListData({
+        attempts: [
+          createManifest({
+            attemptId: {
+              value: "att_demo"
+            } as unknown as AttemptManifest["attemptId"]
+          })
+        ]
+      })
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      serializeAttemptCleanupResult({
+        attempt: createManifest({
+          status: "cleaned",
+          taskId: 123 as unknown as AttemptManifest["taskId"]
+        }),
+        cleanup: {
+          outcome: "removed",
+          worktreeRemoved: true
+        }
+      } as CleanupAttemptResult)
+    ).toThrow(ValidationError);
   });
 
   it("should fail loudly when cleanup worktreeRemoved uses values outside the public boolean contract", () => {

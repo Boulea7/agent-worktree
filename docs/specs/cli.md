@@ -92,6 +92,64 @@ Failed command:
 
 Human-readable output may vary more rapidly.
 
+## Compat List Contract
+
+`agent-worktree compat list` is a read-only compatibility catalog command.
+
+Machine-readable output SHOULD expose one `tools` array in catalog order:
+
+```json
+{
+  "ok": true,
+  "command": "compat.list",
+  "data": {
+    "tools": [
+      {
+        "tool": "codex-cli",
+        "tier": "tier1",
+        "guidanceFile": "AGENTS.md",
+        "projectConfig": ".codex/config.toml",
+        "machineReadableMode": "strong",
+        "resume": "unsupported",
+        "mcp": "unsupported",
+        "note": "Most naturally aligned with root AGENTS.md."
+      }
+    ]
+  }
+}
+```
+
+`compat list` MUST expose only the public catalog fields above.
+It MUST NOT leak internal catalog references, hidden fields, adapter internals, or control-plane metadata.
+
+## Compat Show Contract
+
+`agent-worktree compat show <tool>` is a read-only single-runtime catalog command.
+
+Machine-readable output SHOULD expose one `tool` record with the same public field set as `compat list`:
+
+```json
+{
+  "ok": true,
+  "command": "compat.show",
+  "data": {
+    "tool": {
+      "tool": "codex-cli",
+      "tier": "tier1",
+      "guidanceFile": "AGENTS.md",
+      "projectConfig": ".codex/config.toml",
+      "machineReadableMode": "strong",
+      "resume": "unsupported",
+      "mcp": "unsupported",
+      "note": "Most naturally aligned with root AGENTS.md."
+    }
+  }
+}
+```
+
+Unknown runtimes MUST fail with a structured `NOT_FOUND` error envelope.
+`compat show` MUST NOT widen into probe, smoke, execution, session, or lifecycle diagnostics.
+
 ## Doctor Contract
 
 `agent-worktree doctor` is a read-only compatibility diagnostics command.

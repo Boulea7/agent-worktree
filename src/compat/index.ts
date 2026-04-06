@@ -33,7 +33,7 @@ export {
 } from "./smoke.js";
 
 export function listCompatibilityDescriptors(): CapabilityDescriptor[] {
-  return [...compatibilityCatalog];
+  return compatibilityCatalog.map(cloneDescriptor);
 }
 
 export function getCompatibilityDescriptor(
@@ -45,5 +45,11 @@ export function getCompatibilityDescriptor(
     throw new NotFoundError(`Unknown compatibility target: ${runtime}.`);
   }
 
-  return descriptor;
+  return cloneDescriptor(descriptor);
+}
+
+function cloneDescriptor(descriptor: CapabilityDescriptor): CapabilityDescriptor {
+  return {
+    ...descriptor
+  };
 }

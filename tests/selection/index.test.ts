@@ -1,25 +1,19 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
 import * as selection from "../../src/selection/index.js";
-import type {
-  AttemptSelectionCandidate,
-  AttemptSelectionResult
-} from "../../src/selection/index.js";
 
 describe("selection index exports", () => {
-  it("should continue exporting only the narrow selection-facing types", () => {
-    type SelectionIndexExports = {
-      candidate: AttemptSelectionCandidate;
-      selection: AttemptSelectionResult;
-    };
-
-    expectTypeOf<SelectionIndexExports>().not.toBeAny();
-  });
-
   it("should keep the default barrel free of runtime exports", () => {
     expect(Object.keys(selection)).toEqual([]);
+    expectTypeOf<typeof selection>().not.toBeAny();
   });
 });
+
+// @ts-expect-error selection index must not export selection candidate types
+type SelectionIndexShouldNotExportSelectionCandidate = import("../../src/selection/index.js").AttemptSelectionCandidate;
+
+// @ts-expect-error selection index must not export selection result types
+type SelectionIndexShouldNotExportSelectionResult = import("../../src/selection/index.js").AttemptSelectionResult;
 
 // @ts-expect-error selection index must not export promotion audit types
 type SelectionIndexShouldNotExportPromotionAuditSummary = import("../../src/selection/index.js").AttemptPromotionAuditSummary;

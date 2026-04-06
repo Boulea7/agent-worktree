@@ -32,13 +32,14 @@ The currently implemented boundary is expected to cover:
 
 That baseline now satisfies the current Phase 4 exit criteria:
 
-- `compat smoke codex-cli` provides a bounded public end-to-end compatibility proof for one Tier 1 runtime
+- `compat smoke codex-cli` establishes the current bounded public compatibility checkpoint for one Tier 1 runtime
 - `doctor` and `compat probe` keep the remaining Tier 1 runtimes on explicit and accurate descriptor-only support boundaries
 
 Within that boundary, executable probing remains internal to the `codex-cli` execution helper.
 It may resolve a different executable than shell `command -v codex` when `PATH` contains same-name shadow binaries, but that behavior is not part of the public adapter surface and must not be generalized into a runtime-wide command-resolution framework.
 The public `compat probe codex-cli` surface may consume that internal policy only to emit a bounded public result such as `supported`, `unsupported`, or `error` plus a stable diagnosis code; it still must not expose executable paths or probing internals.
-The public `compat smoke codex-cli` surface may consume the same bounded execution foundation only to emit a bounded env-gated live result such as `passed`, `failed`, or `skipped`; it still must not expose prompt, execution, or session internals.
+The public `compat smoke codex-cli` surface may consume the same bounded execution foundation only to emit a bounded env-gated live result such as `passed`, `failed`, `skipped`, or `error`; it still must not expose prompt, execution, or session internals.
+Descriptor-only runtimes may still return `smokeStatus: "not_supported"` through the same read-only command surface, but that result does not apply to the current `codex-cli` implementation path.
 The bounded parser also remains intentionally narrow: obvious non-JSON prelude lines, including bracket-prefixed log noise, may normalize to `unknown`, while malformed JSON-looking records still fail loudly.
 The same boundary now allows a thin internal observation layer on top of canonical events, but that observation is still diagnostic execution metadata rather than a public session or persistence protocol.
 The merged baseline also contains a deeper internal helper chain for runtime-state, runtime-context, spawn, wait, and close composition, but those helpers remain internal-only and are not a public lifecycle promise.

@@ -401,15 +401,20 @@ describe("selection promotion-audit helpers", () => {
       }),
       sourceKind: "bogus"
     };
-    const result = deriveAttemptPromotionResult([
-      candidate as unknown as ReturnType<typeof createPromotionCandidate>
-    ]);
 
-    expect(() => deriveAttemptPromotionAuditSummary(result)).toThrow(
+    expect(() =>
+      deriveAttemptPromotionResult([
+        candidate as unknown as ReturnType<typeof createPromotionCandidate>
+      ])
+    ).toThrow(
       ValidationError
     );
-    expect(() => deriveAttemptPromotionAuditSummary(result)).toThrow(
-      "Attempt promotion audit summary requires candidate.sourceKind to use the existing attempt source-kind vocabulary when provided."
+    expect(() =>
+      deriveAttemptPromotionResult([
+        candidate as unknown as ReturnType<typeof createPromotionCandidate>
+      ])
+    ).toThrow(
+      "Attempt promotion result requires candidate.sourceKind to use the existing attempt source-kind vocabulary when provided."
     );
   });
 
