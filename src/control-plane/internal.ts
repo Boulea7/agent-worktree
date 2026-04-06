@@ -15,6 +15,7 @@ export { deriveExecutionSessionSpawnCandidate } from "./runtime-state-spawn-cand
 export { deriveExecutionSessionSpawnBudget } from "./runtime-state-spawn-budget.js";
 export { deriveExecutionSessionSpawnBatchPlan } from "./runtime-state-spawn-batch-plan.js";
 export { deriveExecutionSessionSpawnBatchItems } from "./runtime-state-spawn-batch-items.js";
+export { applyExecutionSessionSpawnBatchItems } from "./runtime-state-spawn-batch-items-apply.js";
 export { consumeExecutionSessionSpawn } from "./runtime-state-spawn-consume.js";
 export { consumeExecutionSessionSpawnBatch } from "./runtime-state-spawn-consume-batch.js";
 export { applyExecutionSessionSpawn } from "./runtime-state-spawn-apply.js";
@@ -131,6 +132,8 @@ export {
   type ExecutionSessionSpawnBlockingReason,
   type ExecutionSessionSpawnBudget,
   type ExecutionSessionSpawnBudgetInput,
+  type ExecutionSessionSpawnBatchItemsApply,
+  type ExecutionSessionSpawnBatchItemsApplyInput,
   type ExecutionSessionSpawnBatchPlan,
   type ExecutionSessionSpawnBatchPlanInput,
   type ExecutionSessionSpawnBatchItems,

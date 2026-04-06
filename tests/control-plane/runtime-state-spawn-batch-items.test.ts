@@ -113,6 +113,36 @@ describe("control-plane runtime-state spawn-batch-items helpers", () => {
     });
   });
 
+  it("should clone each projected request so batch consumers cannot share references", () => {
+    const plan = createPlan({
+      requestedCount: 2,
+      records: [
+        createRecord({
+          attemptId: "att_guarded_parent",
+          sessionId: "thr_guarded_parent",
+          sourceKind: "direct",
+          lifecycleState: "active",
+          guardrails: {
+            maxChildren: 4,
+            maxDepth: 3
+          }
+        })
+      ]
+    });
+    const result = deriveExecutionSessionSpawnBatchItems({
+      plan,
+      childAttemptIds: ["att_child_a", "att_child_b"],
+      sourceKind: "delegated"
+    });
+
+    expect(result.items).toBeDefined();
+    expect(result.items).toHaveLength(2);
+    expect(result.items?.[0]?.request).not.toBe(result.items?.[1]?.request);
+    expect(result.items?.[0]?.request.inheritedGuardrails).not.toBe(
+      result.items?.[1]?.request.inheritedGuardrails
+    );
+  });
+
   it("should preserve a blocked plan while omitting projected items", () => {
     const plan = createPlan({
       requestedCount: 1,
