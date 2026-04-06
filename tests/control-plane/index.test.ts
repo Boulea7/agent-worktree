@@ -26,6 +26,7 @@ describe("control-plane index exports", () => {
     expect(controlPlane).not.toHaveProperty("deriveExecutionSessionSpawnBudget");
     expect(controlPlane).not.toHaveProperty("deriveExecutionSessionSpawnBatchPlan");
     expect(controlPlane).not.toHaveProperty("deriveExecutionSessionSpawnBatchItems");
+    expect(controlPlane).not.toHaveProperty("applyExecutionSessionSpawnBatchHeadlessApply");
     expect(controlPlane).not.toHaveProperty("applyExecutionSessionSpawnBatchItems");
     expect(controlPlane).not.toHaveProperty("consumeExecutionSessionSpawn");
     expect(controlPlane).not.toHaveProperty("applyExecutionSessionSpawn");
@@ -95,6 +96,12 @@ type ControlPlaneIndexShouldNotExportExecutionSessionSpawnBatchPlan = import("..
 
 // @ts-expect-error control-plane index must not export spawn batch item types
 type ControlPlaneIndexShouldNotExportExecutionSessionSpawnBatchItems = import("../../src/control-plane/index.js").ExecutionSessionSpawnBatchItems;
+
+// @ts-expect-error control-plane index must not export spawn batch headless apply types
+type ControlPlaneIndexShouldNotExportExecutionSessionSpawnBatchHeadlessApply = import("../../src/control-plane/index.js").ExecutionSessionSpawnBatchHeadlessApply;
+
+// @ts-expect-error control-plane index must not export spawn batch headless apply item projection types
+type ControlPlaneIndexShouldNotExportExecutionSessionSpawnBatchHeadlessApplyItems = import("../../src/control-plane/index.js").ExecutionSessionSpawnBatchHeadlessApplyItems;
 
 // @ts-expect-error control-plane index must not export spawn batch item apply types
 type ControlPlaneIndexShouldNotExportExecutionSessionSpawnBatchItemsApply = import("../../src/control-plane/index.js").ExecutionSessionSpawnBatchItemsApply;
@@ -173,6 +180,9 @@ type ControlPlaneIndexShouldNotExportDeriveExecutionSessionSpawnBatchPlan = type
 
 // @ts-expect-error control-plane index must not export spawn batch item helpers
 type ControlPlaneIndexShouldNotExportDeriveExecutionSessionSpawnBatchItems = typeof import("../../src/control-plane/index.js").deriveExecutionSessionSpawnBatchItems;
+
+// @ts-expect-error control-plane index must not export spawn batch headless apply helpers
+type ControlPlaneIndexShouldNotExportApplyExecutionSessionSpawnBatchHeadlessApply = typeof import("../../src/control-plane/index.js").applyExecutionSessionSpawnBatchHeadlessApply;
 
 // @ts-expect-error control-plane index must not export spawn batch item apply helpers
 type ControlPlaneIndexShouldNotExportApplyExecutionSessionSpawnBatchItems = typeof import("../../src/control-plane/index.js").applyExecutionSessionSpawnBatchItems;

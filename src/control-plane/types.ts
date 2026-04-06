@@ -588,6 +588,16 @@ export interface ExecutionSessionSpawnBatchHeadlessApplyItems {
   items?: ExecutionSessionSpawnHeadlessApplyItem[];
 }
 
+export interface ExecutionSessionSpawnBatchHeadlessApplyInput {
+  headlessApplyItems: ExecutionSessionSpawnBatchHeadlessApplyItems;
+  invokeSpawn: ExecutionSessionSpawnInvoker;
+}
+
+export interface ExecutionSessionSpawnBatchHeadlessApply {
+  apply?: ExecutionSessionSpawnHeadlessApplyBatch;
+  headlessApplyItems: ExecutionSessionSpawnBatchHeadlessApplyItems;
+}
+
 export interface ExecutionSessionSpawnTargetInput {
   candidate: ExecutionSessionSpawnCandidate;
 }
