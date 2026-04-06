@@ -545,6 +545,18 @@ export interface ExecutionSessionSpawnCandidate {
   readiness: ExecutionSessionSpawnReadiness;
 }
 
+export interface ExecutionSessionSpawnBatchPlanInput {
+  candidate: ExecutionSessionSpawnCandidate;
+  requestedCount: number;
+}
+
+export interface ExecutionSessionSpawnBatchPlan {
+  candidate: ExecutionSessionSpawnCandidate;
+  requestedCount: number;
+  fitsRemainingChildSlots: boolean;
+  canPlan: boolean;
+}
+
 export interface ExecutionSessionSpawnTargetInput {
   candidate: ExecutionSessionSpawnCandidate;
 }
