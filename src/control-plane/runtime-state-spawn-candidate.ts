@@ -1,4 +1,5 @@
 import { deriveExecutionSessionContext } from "./runtime-state-context.js";
+import { deriveExecutionSessionSpawnBudget } from "./runtime-state-spawn-budget.js";
 import { deriveExecutionSessionSpawnReadiness } from "./runtime-state-spawn-readiness.js";
 import type {
   ExecutionSessionSpawnCandidate,
@@ -17,7 +18,13 @@ export function deriveExecutionSessionSpawnCandidate(
     return undefined;
   }
 
+  const budget = deriveExecutionSessionSpawnBudget({
+    context,
+    view: input.view
+  });
+
   return {
+    budget,
     context,
     readiness: deriveExecutionSessionSpawnReadiness({
       context,

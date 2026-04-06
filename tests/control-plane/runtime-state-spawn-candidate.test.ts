@@ -34,6 +34,13 @@ describe("control-plane runtime-state spawn-candidate helpers", () => {
         hasResolvedParent: false,
         hasChildren: false
       },
+      budget: {
+        childCount: 0,
+        lineageDepth: 0,
+        lineageDepthKnown: true,
+        withinDepthLimit: true,
+        withinChildLimit: true
+      },
       readiness: {
         blockingReasons: [],
         canSpawn: true,
@@ -71,6 +78,13 @@ describe("control-plane runtime-state spawn-candidate helpers", () => {
         hasParent: false,
         hasResolvedParent: false,
         hasChildren: false
+      },
+      budget: {
+        childCount: 0,
+        lineageDepth: 0,
+        lineageDepthKnown: true,
+        withinDepthLimit: true,
+        withinChildLimit: true
       },
       readiness: {
         blockingReasons: [],
@@ -181,6 +195,13 @@ describe("control-plane runtime-state spawn-candidate helpers", () => {
         hasResolvedParent: false,
         hasChildren: false
       },
+      budget: {
+        childCount: 0,
+        lineageDepth: undefined,
+        lineageDepthKnown: false,
+        withinDepthLimit: true,
+        withinChildLimit: true
+      },
       readiness: {
         blockingReasons: [],
         canSpawn: true,
@@ -228,6 +249,16 @@ describe("control-plane runtime-state spawn-candidate helpers", () => {
         hasParent: true,
         hasResolvedParent: false,
         hasChildren: true
+      },
+      budget: {
+        childCount: 1,
+        lineageDepth: undefined,
+        lineageDepthKnown: false,
+        maxChildren: 1,
+        maxDepth: 3,
+        remainingChildSlots: 0,
+        withinDepthLimit: false,
+        withinChildLimit: false
       },
       readiness: {
         blockingReasons: [
@@ -292,6 +323,17 @@ describe("control-plane runtime-state spawn-candidate helpers", () => {
         hasParent: true,
         hasResolvedParent: true,
         hasChildren: true
+      },
+      budget: {
+        childCount: 1,
+        lineageDepth: 1,
+        lineageDepthKnown: true,
+        maxChildren: 1,
+        maxDepth: 1,
+        remainingChildSlots: 0,
+        remainingDepthAllowance: 0,
+        withinDepthLimit: false,
+        withinChildLimit: false
       },
       readiness: {
         blockingReasons: [
