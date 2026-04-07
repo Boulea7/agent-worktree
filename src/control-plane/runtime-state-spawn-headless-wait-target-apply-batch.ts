@@ -9,6 +9,12 @@ import type {
 export async function applyExecutionSessionSpawnHeadlessWaitTargetBatch(
   input: ExecutionSessionSpawnHeadlessWaitTargetApplyBatchInput
 ): Promise<ExecutionSessionSpawnHeadlessWaitTargetApplyBatch> {
+  if (typeof input !== "object" || input === null || Array.isArray(input)) {
+    throw new ValidationError(
+      "Execution session spawn headless wait target apply batch input must be an object."
+    );
+  }
+
   const headlessWaitTargetBatch = normalizeHeadlessWaitTargetBatch(
     input.headlessWaitTargetBatch
   );

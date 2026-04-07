@@ -60,5 +60,20 @@ function normalizeHeadlessCloseTarget(
     );
   }
 
+  if (
+    !("candidate" in value.headlessCloseCandidate) ||
+    typeof value.headlessCloseCandidate.candidate !== "object" ||
+    value.headlessCloseCandidate.candidate === null ||
+    Array.isArray(value.headlessCloseCandidate.candidate) ||
+    !("headlessContext" in value.headlessCloseCandidate) ||
+    typeof value.headlessCloseCandidate.headlessContext !== "object" ||
+    value.headlessCloseCandidate.headlessContext === null ||
+    Array.isArray(value.headlessCloseCandidate.headlessContext)
+  ) {
+    throw new ValidationError(
+      "Execution session spawn headless close target apply requires headlessCloseTarget.headlessCloseCandidate to include candidate and headlessContext objects."
+    );
+  }
+
   return value;
 }

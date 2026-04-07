@@ -64,6 +64,19 @@ describe(
       );
     });
 
+    it("should reject an empty nested headless close candidate wrapper", async () => {
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTarget({
+          headlessCloseTarget: {
+            headlessCloseCandidate: {} as never
+          },
+          invokeClose: async () => undefined
+        })
+      ).rejects.toThrow(
+        "Execution session spawn headless close target apply requires headlessCloseTarget.headlessCloseCandidate to include candidate and headlessContext objects."
+      );
+    });
+
     it("should compose an apply result from an available close target without widening the result shape", async () => {
       const headlessCloseTarget = createHeadlessCloseTarget({
         target: {
@@ -308,6 +321,11 @@ describe(
     });
 
     it("should reject malformed headless close target batch wrappers before iterating results", async () => {
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch(undefined as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless close target apply batch input must be an object."
+      );
       await expect(
         applyExecutionSessionSpawnHeadlessCloseTargetBatch({
           headlessCloseTargetBatch: undefined as never,

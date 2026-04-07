@@ -64,6 +64,19 @@ describe(
       );
     });
 
+    it("should reject an empty nested headless wait candidate wrapper", async () => {
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTarget({
+          headlessWaitTarget: {
+            headlessWaitCandidate: {} as never
+          },
+          invokeWait: async () => undefined
+        })
+      ).rejects.toThrow(
+        "Execution session spawn headless wait target apply requires headlessWaitTarget.headlessWaitCandidate to include candidate and headlessContext objects."
+      );
+    });
+
     it("should compose an apply result from an available wait target without widening the result shape", async () => {
       const headlessWaitTarget = createHeadlessWaitTarget({
         target: {
@@ -318,6 +331,11 @@ describe(
     });
 
     it("should reject malformed headless wait target batch wrappers before iterating results", async () => {
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch(undefined as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless wait target apply batch input must be an object."
+      );
       await expect(
         applyExecutionSessionSpawnHeadlessWaitTargetBatch({
           headlessWaitTargetBatch: undefined as never,

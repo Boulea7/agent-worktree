@@ -59,5 +59,20 @@ function normalizeHeadlessWaitTarget(
     );
   }
 
+  if (
+    !("candidate" in value.headlessWaitCandidate) ||
+    typeof value.headlessWaitCandidate.candidate !== "object" ||
+    value.headlessWaitCandidate.candidate === null ||
+    Array.isArray(value.headlessWaitCandidate.candidate) ||
+    !("headlessContext" in value.headlessWaitCandidate) ||
+    typeof value.headlessWaitCandidate.headlessContext !== "object" ||
+    value.headlessWaitCandidate.headlessContext === null ||
+    Array.isArray(value.headlessWaitCandidate.headlessContext)
+  ) {
+    throw new ValidationError(
+      "Execution session spawn headless wait target apply requires headlessWaitTarget.headlessWaitCandidate to include candidate and headlessContext objects."
+    );
+  }
+
   return value;
 }

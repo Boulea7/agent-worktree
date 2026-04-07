@@ -9,6 +9,12 @@ import type {
 export async function applyExecutionSessionSpawnHeadlessCloseTargetBatch(
   input: ExecutionSessionSpawnHeadlessCloseTargetApplyBatchInput
 ): Promise<ExecutionSessionSpawnHeadlessCloseTargetApplyBatch> {
+  if (typeof input !== "object" || input === null || Array.isArray(input)) {
+    throw new ValidationError(
+      "Execution session spawn headless close target apply batch input must be an object."
+    );
+  }
+
   const headlessCloseTargetBatch = normalizeHeadlessCloseTargetBatch(
     input.headlessCloseTargetBatch
   );

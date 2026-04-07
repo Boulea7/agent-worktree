@@ -23,10 +23,37 @@ export function deriveExecutionSessionCloseRecordedEvent(
     );
   }
 
+  const attemptId = normalizeRequiredIdentifier(
+    input.requestedEvent.attemptId,
+    "Execution session close recorded event attemptId must be a non-empty string."
+  );
+  const runtime = normalizeRequiredIdentifier(
+    input.requestedEvent.runtime,
+    "Execution session close recorded event runtime must be a non-empty string."
+  );
+  const sessionId = normalizeRequiredIdentifier(
+    input.requestedEvent.sessionId,
+    "Execution session close recorded event sessionId must be a non-empty string."
+  );
+
   return {
-    attemptId: input.requestedEvent.attemptId,
-    runtime: input.requestedEvent.runtime,
-    sessionId: input.requestedEvent.sessionId,
+    attemptId,
+    runtime,
+    sessionId,
     lifecycleEventKind: "close_recorded"
   };
+}
+
+function normalizeRequiredIdentifier(value: unknown, message: string): string {
+  if (typeof value !== "string") {
+    throw new ValidationError(message);
+  }
+
+  const normalized = value.trim();
+
+  if (normalized.length === 0) {
+    throw new ValidationError(message);
+  }
+
+  return normalized;
 }

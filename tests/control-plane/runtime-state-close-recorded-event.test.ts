@@ -83,6 +83,36 @@ describe("control-plane runtime-state close-recorded-event helpers", () => {
       "Execution session close recorded event input must be an object."
     );
   });
+
+  it("should reject malformed identifiers on the supplied close requested event", () => {
+    expect(() =>
+      deriveExecutionSessionCloseRecordedEvent({
+        requestedEvent: createCloseRequestedEvent({
+          attemptId: "   "
+        })
+      })
+    ).toThrow(
+      "Execution session close recorded event attemptId must be a non-empty string."
+    );
+    expect(() =>
+      deriveExecutionSessionCloseRecordedEvent({
+        requestedEvent: createCloseRequestedEvent({
+          runtime: null as never
+        })
+      })
+    ).toThrow(
+      "Execution session close recorded event runtime must be a non-empty string."
+    );
+    expect(() =>
+      deriveExecutionSessionCloseRecordedEvent({
+        requestedEvent: createCloseRequestedEvent({
+          sessionId: {} as never
+        })
+      })
+    ).toThrow(
+      "Execution session close recorded event sessionId must be a non-empty string."
+    );
+  });
 });
 
 function createCloseRequestedEvent(
