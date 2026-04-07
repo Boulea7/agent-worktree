@@ -183,3 +183,15 @@ describe("control-plane internal exports", () => {
     expectTypeOf<ControlPlaneInternalExports>().not.toBeAny();
   });
 });
+
+// @ts-expect-error control-plane internal barrel must not export selection candidate types
+type ControlPlaneInternalShouldNotExportSelectionCandidate = import("../../src/control-plane/internal.js").AttemptSelectionCandidate;
+
+// @ts-expect-error control-plane internal barrel must not export verification summary types
+type ControlPlaneInternalShouldNotExportVerificationSummary = import("../../src/control-plane/internal.js").AttemptVerificationSummary;
+
+// @ts-expect-error control-plane internal barrel must not export selection helpers
+type ControlPlaneInternalShouldNotExportSelectionHelper = typeof import("../../src/control-plane/internal.js").deriveAttemptSelectionCandidate;
+
+// @ts-expect-error control-plane internal barrel must not export verification helpers
+type ControlPlaneInternalShouldNotExportVerificationHelper = typeof import("../../src/control-plane/internal.js").deriveAttemptVerificationSummary;

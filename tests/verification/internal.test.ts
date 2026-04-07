@@ -46,3 +46,15 @@ describe("verification internal exports", () => {
     expectTypeOf<VerificationInternalExports>().not.toBeAny();
   });
 });
+
+// @ts-expect-error verification internal barrel must not export control-plane record types
+type VerificationInternalShouldNotExportExecutionSessionRecord = import("../../src/verification/internal.js").ExecutionSessionRecord;
+
+// @ts-expect-error verification internal barrel must not export selection candidate types
+type VerificationInternalShouldNotExportSelectionCandidate = import("../../src/verification/internal.js").AttemptSelectionCandidate;
+
+// @ts-expect-error verification internal barrel must not export control-plane helpers
+type VerificationInternalShouldNotExportControlPlaneHelper = typeof import("../../src/verification/internal.js").buildExecutionSessionIndex;
+
+// @ts-expect-error verification internal barrel must not export selection helpers
+type VerificationInternalShouldNotExportSelectionHelper = typeof import("../../src/verification/internal.js").deriveAttemptSelectionCandidate;

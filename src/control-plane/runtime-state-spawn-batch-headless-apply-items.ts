@@ -77,8 +77,11 @@ function cloneExecution(
   execution: ExecutionSessionSpawnHeadlessInputSeed
 ): ExecutionSessionSpawnHeadlessInputSeed {
   return {
-    ...execution
-  };
+    ...copyExecutionField(execution, "prompt"),
+    ...copyExecutionField(execution, "cwd"),
+    ...copyExecutionField(execution, "timeoutMs"),
+    ...copyExecutionField(execution, "abortSignal")
+  } as ExecutionSessionSpawnHeadlessInputSeed;
 }
 
 function normalizeExecutionSeed(
@@ -89,4 +92,19 @@ function normalizeExecutionSeed(
       "Execution session spawn batch headless apply items executions entries must be objects."
     );
   }
+}
+
+function copyExecutionField<
+  Key extends keyof ExecutionSessionSpawnHeadlessInputSeed
+>(
+  execution: ExecutionSessionSpawnHeadlessInputSeed,
+  key: Key
+): Partial<Pick<ExecutionSessionSpawnHeadlessInputSeed, Key>> {
+  if (!Object.prototype.propertyIsEnumerable.call(execution, key)) {
+    return {};
+  }
+
+  return {
+    [key]: execution[key]
+  } as Pick<ExecutionSessionSpawnHeadlessInputSeed, Key>;
 }
