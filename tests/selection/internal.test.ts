@@ -98,3 +98,15 @@ describe("selection internal exports", () => {
     expectTypeOf<AttemptHandoffFinalizationCloseoutDecisionSummary>().not.toBeAny();
   });
 });
+
+// @ts-expect-error selection internal barrel must not export control-plane context types
+type SelectionInternalShouldNotExportExecutionSessionContext = import("../../src/selection/internal.js").ExecutionSessionContext;
+
+// @ts-expect-error selection internal barrel must not export verification summary types
+type SelectionInternalShouldNotExportVerificationSummary = import("../../src/selection/internal.js").AttemptVerificationSummary;
+
+// @ts-expect-error selection internal barrel must not export control-plane helpers
+type SelectionInternalShouldNotExportControlPlaneHelper = typeof import("../../src/selection/internal.js").deriveExecutionSessionContext;
+
+// @ts-expect-error selection internal barrel must not export verification helpers
+type SelectionInternalShouldNotExportVerificationHelper = typeof import("../../src/selection/internal.js").deriveAttemptVerificationSummary;
