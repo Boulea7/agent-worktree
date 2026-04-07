@@ -5,10 +5,12 @@ import type {
   HeadlessExecutionResult
 } from "../../src/adapters/types.js";
 import {
+  applyExecutionSessionCloseTargetBatch,
   applyExecutionSessionSpawnBatchHeadlessApply,
   applyExecutionSessionSpawnHeadlessCloseTargetBatch,
   applyExecutionSessionSpawnHeadlessWaitTargetBatch,
   applyExecutionSessionSpawnHeadlessInputBatch,
+  applyExecutionSessionWaitTargetBatch,
   buildExecutionSessionView,
   deriveExecutionSessionSpawnBatchHeadlessApplyItems,
   deriveExecutionSessionSpawnBatchItems,
@@ -334,6 +336,14 @@ describe("control-plane runtime-state spawn-batch-headless-apply helpers", () =>
         },
         resolveSessionLifecycleCapability: () => true
       });
+    const directWaitTargetApplyBatch = await applyExecutionSessionWaitTargetBatch({
+      targets: headlessWaitTargetBatch.results.flatMap((result) =>
+        result.target === undefined ? [] : [result.target]
+      ),
+      timeoutMs: 1_500,
+      invokeWait: async () => undefined,
+      resolveSessionLifecycleCapability: () => true
+    });
     const headlessCloseCandidateBatch =
       deriveExecutionSessionSpawnHeadlessCloseCandidateBatch({
         headlessContextBatch,
@@ -352,6 +362,13 @@ describe("control-plane runtime-state spawn-batch-headless-apply helpers", () =>
         },
         resolveSessionLifecycleCapability: () => true
       });
+    const directCloseTargetApplyBatch = await applyExecutionSessionCloseTargetBatch({
+      targets: headlessCloseTargetBatch.results.flatMap((result) =>
+        result.target === undefined ? [] : [result.target]
+      ),
+      invokeClose: async () => undefined,
+      resolveSessionLifecycleCapability: () => true
+    });
 
     expect(
       headlessWaitTargetBatch.results.map((result) => result.target?.attemptId)
@@ -399,6 +416,12 @@ describe("control-plane runtime-state spawn-batch-headless-apply helpers", () =>
         requestSessionId: "thr_trace_apply_child_2"
       }
     ]);
+    expect(
+      headlessWaitTargetApplyBatch.results.map((result) => result.apply)
+    ).toEqual(directWaitTargetApplyBatch.results);
+    expect(
+      headlessCloseTargetApplyBatch.results.map((result) => result.apply)
+    ).toEqual(directCloseTargetApplyBatch.results);
     expect(waitInvokedSessionIds).toEqual([
       "thr_trace_apply_child_1",
       "thr_trace_apply_child_2"
