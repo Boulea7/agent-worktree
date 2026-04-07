@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   deriveExecutionSessionCloseRecordedEvent,
   type ExecutionSessionCloseRequestedEvent
@@ -70,6 +71,17 @@ describe("control-plane runtime-state close-recorded-event helpers", () => {
     expect(event).not.toHaveProperty("outcome");
     expect(event).not.toHaveProperty("error");
     expect(event).not.toHaveProperty("adapterResult");
+  });
+
+  it("should reject non-object close recorded-event inputs before reading requestedEvent", () => {
+    expect(() =>
+      deriveExecutionSessionCloseRecordedEvent(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionCloseRecordedEvent(undefined as never)
+    ).toThrow(
+      "Execution session close recorded event input must be an object."
+    );
   });
 });
 

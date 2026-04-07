@@ -1,3 +1,4 @@
+import { ValidationError } from "../core/errors.js";
 import { applyExecutionSessionSpawnHeadlessWaitTarget } from "./runtime-state-spawn-headless-wait-target-apply.js";
 import type {
   ExecutionSessionSpawnHeadlessWaitTargetApply,
@@ -8,9 +9,12 @@ import type {
 export async function applyExecutionSessionSpawnHeadlessWaitTargetBatch(
   input: ExecutionSessionSpawnHeadlessWaitTargetApplyBatchInput
 ): Promise<ExecutionSessionSpawnHeadlessWaitTargetApplyBatch> {
+  const headlessWaitTargetBatch = normalizeHeadlessWaitTargetBatch(
+    input.headlessWaitTargetBatch
+  );
   const results: ExecutionSessionSpawnHeadlessWaitTargetApply[] = [];
 
-  for (const headlessWaitTarget of input.headlessWaitTargetBatch.results) {
+  for (const headlessWaitTarget of headlessWaitTargetBatch.results) {
     results.push(
       await applyExecutionSessionSpawnHeadlessWaitTarget({
         headlessWaitTarget,
@@ -27,7 +31,25 @@ export async function applyExecutionSessionSpawnHeadlessWaitTargetBatch(
   }
 
   return {
-    headlessWaitTargetBatch: input.headlessWaitTargetBatch,
+    headlessWaitTargetBatch,
     results
   };
+}
+
+function normalizeHeadlessWaitTargetBatch(
+  value: ExecutionSessionSpawnHeadlessWaitTargetApplyBatchInput["headlessWaitTargetBatch"]
+) {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new ValidationError(
+      "Execution session spawn headless wait target apply batch requires a headlessWaitTargetBatch wrapper."
+    );
+  }
+
+  if (!Array.isArray(value.results)) {
+    throw new ValidationError(
+      "Execution session spawn headless wait target apply batch requires headlessWaitTargetBatch.results to be an array."
+    );
+  }
+
+  return value;
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   deriveExecutionSessionCloseRequestedEvent,
   type ExecutionSessionCloseRequest
@@ -63,6 +64,17 @@ describe("control-plane runtime-state close-requested-event helpers", () => {
     expect(event).not.toHaveProperty("childPolicy");
     expect(event).not.toHaveProperty("closedAt");
     expect(event).not.toHaveProperty("outcome");
+  });
+
+  it("should reject non-object close requested-event inputs before reading request", () => {
+    expect(() =>
+      deriveExecutionSessionCloseRequestedEvent(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionCloseRequestedEvent(undefined as never)
+    ).toThrow(
+      "Execution session close requested event input must be an object."
+    );
   });
 });
 

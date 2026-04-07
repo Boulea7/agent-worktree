@@ -46,6 +46,24 @@ describe(
       );
     });
 
+    it("should reject a malformed nested headless wait candidate wrapper", async () => {
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTarget({
+          headlessWaitTarget: {
+            headlessWaitCandidate: null as never,
+            target: {
+              attemptId: "att_supported_wait",
+              runtime: "supported-cli",
+              sessionId: "thr_supported_wait"
+            }
+          },
+          invokeWait: async () => undefined
+        })
+      ).rejects.toThrow(
+        "Execution session spawn headless wait target apply requires headlessWaitTarget.headlessWaitCandidate to be an object."
+      );
+    });
+
     it("should compose an apply result from an available wait target without widening the result shape", async () => {
       const headlessWaitTarget = createHeadlessWaitTarget({
         target: {
@@ -297,6 +315,39 @@ describe(
         "Execution session spawn headless wait target apply requires a headlessWaitTarget wrapper."
       );
       expect(invokeWait).not.toHaveBeenCalled();
+    });
+
+    it("should reject malformed headless wait target batch wrappers before iterating results", async () => {
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch({
+          headlessWaitTargetBatch: undefined as never,
+          invokeWait: async () => undefined
+        })
+      ).rejects.toThrow(
+        "Execution session spawn headless wait target apply batch requires a headlessWaitTargetBatch wrapper."
+      );
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch({
+          headlessWaitTargetBatch: {
+            headlessWaitCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            results: undefined as never
+          },
+          invokeWait: async () => undefined
+        })
+      ).rejects.toThrow(
+        "Execution session spawn headless wait target apply batch requires headlessWaitTargetBatch.results to be an array."
+      );
     });
 
     it("should fail fast on the first supported invoker error in batch mode", async () => {

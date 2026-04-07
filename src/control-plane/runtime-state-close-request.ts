@@ -7,6 +7,12 @@ import type {
 export function deriveExecutionSessionCloseRequest(
   input: ExecutionSessionCloseRequestInput
 ): ExecutionSessionCloseRequest {
+  if (typeof input !== "object" || input === null || Array.isArray(input)) {
+    throw new ValidationError(
+      "Execution session close request input must be an object."
+    );
+  }
+
   if (
     typeof input.target !== "object" ||
     input.target === null ||

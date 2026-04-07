@@ -50,5 +50,15 @@ function normalizeHeadlessCloseTarget(
     );
   }
 
+  if (
+    typeof value.headlessCloseCandidate !== "object" ||
+    value.headlessCloseCandidate === null ||
+    Array.isArray(value.headlessCloseCandidate)
+  ) {
+    throw new ValidationError(
+      "Execution session spawn headless close target apply requires headlessCloseTarget.headlessCloseCandidate to be an object."
+    );
+  }
+
   return value;
 }

@@ -86,6 +86,18 @@ describe("control-plane runtime-state close-request helpers", () => {
     ).toThrow("Execution session close request must be an object.");
   });
 
+  it("should reject non-object close request inputs before reading target", () => {
+    expect(() =>
+      deriveExecutionSessionCloseRequest(undefined as never)
+    ).toThrow("Execution session close request input must be an object.");
+    expect(() =>
+      deriveExecutionSessionCloseRequest(null as never)
+    ).toThrow("Execution session close request input must be an object.");
+    expect(() =>
+      deriveExecutionSessionCloseRequest([] as never)
+    ).toThrow("Execution session close request input must be an object.");
+  });
+
   it("should derive the request without mutating the supplied close target", () => {
     const target = createCloseTarget();
     const targetSnapshot = JSON.parse(JSON.stringify(target));

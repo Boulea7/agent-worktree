@@ -49,5 +49,15 @@ function normalizeHeadlessWaitTarget(
     );
   }
 
+  if (
+    typeof value.headlessWaitCandidate !== "object" ||
+    value.headlessWaitCandidate === null ||
+    Array.isArray(value.headlessWaitCandidate)
+  ) {
+    throw new ValidationError(
+      "Execution session spawn headless wait target apply requires headlessWaitTarget.headlessWaitCandidate to be an object."
+    );
+  }
+
   return value;
 }

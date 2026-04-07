@@ -207,6 +207,22 @@ describe("control-plane runtime-state close-target-apply helpers", () => {
     });
   });
 
+  it("should reject malformed close target batch inputs before iterating targets", async () => {
+    await expect(
+      applyExecutionSessionCloseTargetBatch(undefined as never)
+    ).rejects.toThrow(
+      "Execution session close target apply batch input must be an object."
+    );
+    await expect(
+      applyExecutionSessionCloseTargetBatch({
+        targets: undefined as never,
+        invokeClose: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Execution session close target apply batch requires targets to be an array."
+    );
+  });
+
   it("should preserve input order and keep blocked entries in close target batch mode", async () => {
     const invokedSessionIds: string[] = [];
 

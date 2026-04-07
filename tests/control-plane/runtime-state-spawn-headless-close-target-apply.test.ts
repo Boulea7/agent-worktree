@@ -46,6 +46,24 @@ describe(
       );
     });
 
+    it("should reject a malformed nested headless close candidate wrapper", async () => {
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTarget({
+          headlessCloseTarget: {
+            headlessCloseCandidate: null as never,
+            target: {
+              attemptId: "att_supported_close",
+              runtime: "supported-cli",
+              sessionId: "thr_supported_close"
+            }
+          },
+          invokeClose: async () => undefined
+        })
+      ).rejects.toThrow(
+        "Execution session spawn headless close target apply requires headlessCloseTarget.headlessCloseCandidate to be an object."
+      );
+    });
+
     it("should compose an apply result from an available close target without widening the result shape", async () => {
       const headlessCloseTarget = createHeadlessCloseTarget({
         target: {
@@ -287,6 +305,39 @@ describe(
         "Execution session spawn headless close target apply requires a headlessCloseTarget wrapper."
       );
       expect(invokeClose).not.toHaveBeenCalled();
+    });
+
+    it("should reject malformed headless close target batch wrappers before iterating results", async () => {
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch({
+          headlessCloseTargetBatch: undefined as never,
+          invokeClose: async () => undefined
+        })
+      ).rejects.toThrow(
+        "Execution session spawn headless close target apply batch requires a headlessCloseTargetBatch wrapper."
+      );
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch({
+          headlessCloseTargetBatch: {
+            headlessCloseCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            results: undefined as never
+          },
+          invokeClose: async () => undefined
+        })
+      ).rejects.toThrow(
+        "Execution session spawn headless close target apply batch requires headlessCloseTargetBatch.results to be an array."
+      );
     });
 
     it("should fail fast on the first supported invoker error in batch mode", async () => {
