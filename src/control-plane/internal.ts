@@ -48,6 +48,8 @@ export { deriveExecutionSessionSpawnHeadlessCloseCandidate } from "./runtime-sta
 export { deriveExecutionSessionSpawnHeadlessCloseCandidateBatch } from "./runtime-state-spawn-headless-close-candidate-batch.js";
 export { deriveExecutionSessionSpawnHeadlessCloseTarget } from "./runtime-state-spawn-headless-close-target.js";
 export { deriveExecutionSessionSpawnHeadlessCloseTargetBatch } from "./runtime-state-spawn-headless-close-target-batch.js";
+export { deriveExecutionSessionSpawnHeadlessCloseRequest } from "./runtime-state-spawn-headless-close-request.js";
+export { deriveExecutionSessionSpawnHeadlessCloseRequestBatch } from "./runtime-state-spawn-headless-close-request-batch.js";
 export { applyExecutionSessionSpawnHeadlessCloseTarget } from "./runtime-state-spawn-headless-close-target-apply.js";
 export { applyExecutionSessionSpawnHeadlessCloseTargetBatch } from "./runtime-state-spawn-headless-close-target-apply-batch.js";
 export { deriveExecutionSessionSpawnReadiness } from "./runtime-state-spawn-readiness.js";
@@ -202,6 +204,10 @@ export {
   type ExecutionSessionSpawnHeadlessCloseCandidateBatch,
   type ExecutionSessionSpawnHeadlessCloseCandidateBatchInput,
   type ExecutionSessionSpawnHeadlessCloseCandidateInput,
+  type ExecutionSessionSpawnHeadlessCloseRequest,
+  type ExecutionSessionSpawnHeadlessCloseRequestBatch,
+  type ExecutionSessionSpawnHeadlessCloseRequestBatchInput,
+  type ExecutionSessionSpawnHeadlessCloseRequestInput,
   type ExecutionSessionSpawnHeadlessCloseTarget,
   type ExecutionSessionSpawnHeadlessCloseTargetBatch,
   type ExecutionSessionSpawnHeadlessCloseTargetBatchInput,

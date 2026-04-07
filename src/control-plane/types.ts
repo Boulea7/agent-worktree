@@ -960,6 +960,15 @@ export interface ExecutionSessionSpawnHeadlessCloseTarget {
   target?: ExecutionSessionCloseTarget;
 }
 
+export interface ExecutionSessionSpawnHeadlessCloseRequestInput {
+  headlessCloseTarget: ExecutionSessionSpawnHeadlessCloseTarget;
+}
+
+export interface ExecutionSessionSpawnHeadlessCloseRequest {
+  headlessCloseTarget: ExecutionSessionSpawnHeadlessCloseTarget;
+  request?: ExecutionSessionCloseRequest;
+}
+
 export interface ExecutionSessionSpawnHeadlessCloseTargetApplyInput {
   headlessCloseTarget: ExecutionSessionSpawnHeadlessCloseTarget;
   invokeClose: ExecutionSessionCloseInvoker;
@@ -978,6 +987,15 @@ export interface ExecutionSessionSpawnHeadlessCloseTargetBatchInput {
 export interface ExecutionSessionSpawnHeadlessCloseTargetBatch {
   headlessCloseCandidateBatch: ExecutionSessionSpawnHeadlessCloseCandidateBatch;
   results: ExecutionSessionSpawnHeadlessCloseTarget[];
+}
+
+export interface ExecutionSessionSpawnHeadlessCloseRequestBatchInput {
+  headlessCloseTargetBatch: ExecutionSessionSpawnHeadlessCloseTargetBatch;
+}
+
+export interface ExecutionSessionSpawnHeadlessCloseRequestBatch {
+  headlessCloseTargetBatch: ExecutionSessionSpawnHeadlessCloseTargetBatch;
+  results: ExecutionSessionSpawnHeadlessCloseRequest[];
 }
 
 export interface ExecutionSessionSpawnHeadlessCloseTargetApplyBatchInput {

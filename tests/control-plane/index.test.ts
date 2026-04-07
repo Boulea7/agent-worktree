@@ -74,6 +74,12 @@ describe("control-plane index exports", () => {
       "deriveExecutionSessionSpawnHeadlessCloseCandidateBatch"
     );
     expect(controlPlane).not.toHaveProperty(
+      "deriveExecutionSessionSpawnHeadlessCloseRequest"
+    );
+    expect(controlPlane).not.toHaveProperty(
+      "deriveExecutionSessionSpawnHeadlessCloseRequestBatch"
+    );
+    expect(controlPlane).not.toHaveProperty(
       "deriveExecutionSessionSpawnHeadlessCloseTarget"
     );
     expect(controlPlane).not.toHaveProperty(
@@ -183,6 +189,12 @@ type ControlPlaneIndexShouldNotExportSpawnHeadlessInput = import("../../src/cont
 
 // @ts-expect-error control-plane index must not export headless close candidates
 type ControlPlaneIndexShouldNotExportSpawnHeadlessCloseCandidate = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessCloseCandidate;
+
+// @ts-expect-error control-plane index must not export headless close request results
+type ControlPlaneIndexShouldNotExportSpawnHeadlessCloseRequest = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessCloseRequest;
+
+// @ts-expect-error control-plane index must not export headless close request batch results
+type ControlPlaneIndexShouldNotExportSpawnHeadlessCloseRequestBatch = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessCloseRequestBatch;
 
 // @ts-expect-error control-plane index must not export headless close targets
 type ControlPlaneIndexShouldNotExportSpawnHeadlessCloseTarget = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessCloseTarget;

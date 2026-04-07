@@ -76,6 +76,30 @@ describe("control-plane runtime-state spawn-headless-wait-request helpers", () =
     );
   });
 
+  it("should reject a nested headless wait candidate wrapper that is not an object", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessWaitRequest({
+        headlessWaitTarget: {
+          headlessWaitCandidate: null as never
+        } as ExecutionSessionSpawnHeadlessWaitTarget
+      })
+    ).toThrow(
+      "Execution session spawn headless wait request requires headlessWaitTarget.headlessWaitCandidate to be an object."
+    );
+  });
+
+  it("should reject a nested headless wait candidate wrapper that omits candidate or headlessContext", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessWaitRequest({
+        headlessWaitTarget: {
+          headlessWaitCandidate: {} as never
+        } as ExecutionSessionSpawnHeadlessWaitTarget
+      })
+    ).toThrow(
+      "Execution session spawn headless wait request requires headlessWaitTarget.headlessWaitCandidate to include candidate and headlessContext objects."
+    );
+  });
+
   it("should reject non-object wait request seam inputs before reading headlessWaitTarget", () => {
     expect(() =>
       deriveExecutionSessionSpawnHeadlessWaitRequest(undefined as never)
