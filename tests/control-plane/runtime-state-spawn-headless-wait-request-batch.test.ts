@@ -89,6 +89,11 @@ describe(
 
     it("should reject malformed headless wait request batch wrappers before iterating results", () => {
       expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitRequestBatch(undefined as never)
+      ).toThrow(
+        "Execution session spawn headless wait request batch input must be an object."
+      );
+      expect(() =>
         deriveExecutionSessionSpawnHeadlessWaitRequestBatch({
           headlessWaitTargetBatch: undefined as never
         })

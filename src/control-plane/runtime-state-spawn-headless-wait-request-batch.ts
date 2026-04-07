@@ -9,6 +9,12 @@ import type {
 export function deriveExecutionSessionSpawnHeadlessWaitRequestBatch(
   input: ExecutionSessionSpawnHeadlessWaitRequestBatchInput
 ): ExecutionSessionSpawnHeadlessWaitRequestBatch {
+  if (typeof input !== "object" || input === null || Array.isArray(input)) {
+    throw new ValidationError(
+      "Execution session spawn headless wait request batch input must be an object."
+    );
+  }
+
   const headlessWaitTargetBatch = normalizeHeadlessWaitTargetBatch(
     input.headlessWaitTargetBatch
   );

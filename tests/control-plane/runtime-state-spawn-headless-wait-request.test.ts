@@ -76,6 +76,19 @@ describe("control-plane runtime-state spawn-headless-wait-request helpers", () =
     );
   });
 
+  it("should reject non-object wait request seam inputs before reading headlessWaitTarget", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessWaitRequest(undefined as never)
+    ).toThrow(
+      "Execution session spawn headless wait request input must be an object."
+    );
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessWaitRequest(null as never)
+    ).toThrow(
+      "Execution session spawn headless wait request input must be an object."
+    );
+  });
+
   it("should not mutate the supplied headless wait target and should keep the result shape minimal", () => {
     const headlessWaitTarget = createHeadlessWaitTarget({
       attemptId: "att_child_wait_request_shape",
