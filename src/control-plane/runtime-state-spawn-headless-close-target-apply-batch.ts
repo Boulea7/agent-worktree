@@ -1,3 +1,4 @@
+import { ValidationError } from "../core/errors.js";
 import { applyExecutionSessionSpawnHeadlessCloseTarget } from "./runtime-state-spawn-headless-close-target-apply.js";
 import type {
   ExecutionSessionSpawnHeadlessCloseTargetApply,
@@ -8,9 +9,18 @@ import type {
 export async function applyExecutionSessionSpawnHeadlessCloseTargetBatch(
   input: ExecutionSessionSpawnHeadlessCloseTargetApplyBatchInput
 ): Promise<ExecutionSessionSpawnHeadlessCloseTargetApplyBatch> {
+  if (typeof input !== "object" || input === null || Array.isArray(input)) {
+    throw new ValidationError(
+      "Execution session spawn headless close target apply batch input must be an object."
+    );
+  }
+
+  const headlessCloseTargetBatch = normalizeHeadlessCloseTargetBatch(
+    input.headlessCloseTargetBatch
+  );
   const results: ExecutionSessionSpawnHeadlessCloseTargetApply[] = [];
 
-  for (const headlessCloseTarget of input.headlessCloseTargetBatch.results) {
+  for (const headlessCloseTarget of headlessCloseTargetBatch.results) {
     results.push(
       await applyExecutionSessionSpawnHeadlessCloseTarget({
         headlessCloseTarget,
@@ -26,7 +36,25 @@ export async function applyExecutionSessionSpawnHeadlessCloseTargetBatch(
   }
 
   return {
-    headlessCloseTargetBatch: input.headlessCloseTargetBatch,
+    headlessCloseTargetBatch,
     results
   };
+}
+
+function normalizeHeadlessCloseTargetBatch(
+  value: ExecutionSessionSpawnHeadlessCloseTargetApplyBatchInput["headlessCloseTargetBatch"]
+) {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new ValidationError(
+      "Execution session spawn headless close target apply batch requires a headlessCloseTargetBatch wrapper."
+    );
+  }
+
+  if (!Array.isArray(value.results)) {
+    throw new ValidationError(
+      "Execution session spawn headless close target apply batch requires headlessCloseTargetBatch.results to be an array."
+    );
+  }
+
+  return value;
 }

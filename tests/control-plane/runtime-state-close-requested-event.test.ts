@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   deriveExecutionSessionCloseRequestedEvent,
   type ExecutionSessionCloseRequest
@@ -63,6 +64,47 @@ describe("control-plane runtime-state close-requested-event helpers", () => {
     expect(event).not.toHaveProperty("childPolicy");
     expect(event).not.toHaveProperty("closedAt");
     expect(event).not.toHaveProperty("outcome");
+  });
+
+  it("should reject non-object close requested-event inputs before reading request", () => {
+    expect(() =>
+      deriveExecutionSessionCloseRequestedEvent(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionCloseRequestedEvent(undefined as never)
+    ).toThrow(
+      "Execution session close requested event input must be an object."
+    );
+  });
+
+  it("should reject malformed identifiers on the supplied close request", () => {
+    expect(() =>
+      deriveExecutionSessionCloseRequestedEvent({
+        request: createCloseRequest({
+          attemptId: "   "
+        })
+      })
+    ).toThrow(
+      "Execution session close requested event attemptId must be a non-empty string."
+    );
+    expect(() =>
+      deriveExecutionSessionCloseRequestedEvent({
+        request: createCloseRequest({
+          runtime: null as never
+        })
+      })
+    ).toThrow(
+      "Execution session close requested event runtime must be a non-empty string."
+    );
+    expect(() =>
+      deriveExecutionSessionCloseRequestedEvent({
+        request: createCloseRequest({
+          sessionId: {} as never
+        })
+      })
+    ).toThrow(
+      "Execution session close requested event sessionId must be a non-empty string."
+    );
   });
 });
 

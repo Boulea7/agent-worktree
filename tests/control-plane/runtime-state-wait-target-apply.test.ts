@@ -212,6 +212,22 @@ describe("control-plane runtime-state wait-target-apply helpers", () => {
     });
   });
 
+  it("should reject malformed wait target batch inputs before iterating targets", async () => {
+    await expect(
+      applyExecutionSessionWaitTargetBatch(undefined as never)
+    ).rejects.toThrow(
+      "Execution session wait target apply batch input must be an object."
+    );
+    await expect(
+      applyExecutionSessionWaitTargetBatch({
+        targets: undefined as never,
+        invokeWait: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Execution session wait target apply batch requires targets to be an array."
+    );
+  });
+
   it("should preserve input order and keep blocked entries in wait target batch mode", async () => {
     const invokedSessionIds: string[] = [];
 
