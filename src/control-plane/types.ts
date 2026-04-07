@@ -878,6 +878,16 @@ export interface ExecutionSessionSpawnHeadlessWaitTarget {
   target?: ExecutionSessionWaitTarget;
 }
 
+export interface ExecutionSessionSpawnHeadlessWaitRequestInput {
+  headlessWaitTarget: ExecutionSessionSpawnHeadlessWaitTarget;
+  timeoutMs?: number;
+}
+
+export interface ExecutionSessionSpawnHeadlessWaitRequest {
+  headlessWaitTarget: ExecutionSessionSpawnHeadlessWaitTarget;
+  request?: ExecutionSessionWaitRequest;
+}
+
 export interface ExecutionSessionSpawnHeadlessWaitTargetApplyInput {
   headlessWaitTarget: ExecutionSessionSpawnHeadlessWaitTarget;
   invokeWait: ExecutionSessionWaitInvoker;
@@ -897,6 +907,16 @@ export interface ExecutionSessionSpawnHeadlessWaitTargetBatchInput {
 export interface ExecutionSessionSpawnHeadlessWaitTargetBatch {
   headlessWaitCandidateBatch: ExecutionSessionSpawnHeadlessWaitCandidateBatch;
   results: ExecutionSessionSpawnHeadlessWaitTarget[];
+}
+
+export interface ExecutionSessionSpawnHeadlessWaitRequestBatchInput {
+  headlessWaitTargetBatch: ExecutionSessionSpawnHeadlessWaitTargetBatch;
+  timeoutMs?: number;
+}
+
+export interface ExecutionSessionSpawnHeadlessWaitRequestBatch {
+  headlessWaitTargetBatch: ExecutionSessionSpawnHeadlessWaitTargetBatch;
+  results: ExecutionSessionSpawnHeadlessWaitRequest[];
 }
 
 export interface ExecutionSessionSpawnHeadlessWaitTargetApplyBatchInput {
