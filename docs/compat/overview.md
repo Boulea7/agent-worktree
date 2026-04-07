@@ -66,7 +66,7 @@ It is still not expected to cover:
 - manifest-backed execution persistence
 - internal observation summaries promoted into manifest-backed lifecycle state
 
-Compatibility docs in this phase still describe mapping and support boundaries first. The `compat smoke codex-cli` surface is a bounded env-gated live proof rather than a general execution promise, and the Vitest smoke harness remains narrower and is not the repository's default validation path.
+Compatibility docs in this phase still describe mapping and support boundaries first. The `compat smoke codex-cli` surface is a bounded env-gated live compatibility checkpoint rather than a general execution promise, and the Vitest smoke harness remains narrower and is not the repository's default validation path.
 
 ## Support Tiers
 
@@ -84,7 +84,7 @@ Tier 1 means the repository should maintain:
 - explicit compatibility docs
 - public mapping rules
 - explicit support-boundary reporting
-- at least one bounded public end-to-end compatibility proof for an implemented Tier 1 runtime in the current baseline
+- at least one bounded public end-to-end compatibility checkpoint for an implemented Tier 1 runtime in the current baseline
 - future smoke-test expectations
 
 ### Experimental

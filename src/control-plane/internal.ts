@@ -40,6 +40,8 @@ export { deriveExecutionSessionSpawnHeadlessWaitCandidate } from "./runtime-stat
 export { deriveExecutionSessionSpawnHeadlessWaitCandidateBatch } from "./runtime-state-spawn-headless-wait-candidate-batch.js";
 export { deriveExecutionSessionSpawnHeadlessWaitTarget } from "./runtime-state-spawn-headless-wait-target.js";
 export { deriveExecutionSessionSpawnHeadlessWaitTargetBatch } from "./runtime-state-spawn-headless-wait-target-batch.js";
+export { deriveExecutionSessionSpawnHeadlessWaitRequest } from "./runtime-state-spawn-headless-wait-request.js";
+export { deriveExecutionSessionSpawnHeadlessWaitRequestBatch } from "./runtime-state-spawn-headless-wait-request-batch.js";
 export { applyExecutionSessionSpawnHeadlessWaitTarget } from "./runtime-state-spawn-headless-wait-target-apply.js";
 export { applyExecutionSessionSpawnHeadlessWaitTargetBatch } from "./runtime-state-spawn-headless-wait-target-apply-batch.js";
 export { deriveExecutionSessionSpawnHeadlessCloseCandidate } from "./runtime-state-spawn-headless-close-candidate.js";
@@ -184,6 +186,10 @@ export {
   type ExecutionSessionSpawnHeadlessWaitCandidateBatch,
   type ExecutionSessionSpawnHeadlessWaitCandidateBatchInput,
   type ExecutionSessionSpawnHeadlessWaitCandidateInput,
+  type ExecutionSessionSpawnHeadlessWaitRequest,
+  type ExecutionSessionSpawnHeadlessWaitRequestBatch,
+  type ExecutionSessionSpawnHeadlessWaitRequestBatchInput,
+  type ExecutionSessionSpawnHeadlessWaitRequestInput,
   type ExecutionSessionSpawnHeadlessWaitTarget,
   type ExecutionSessionSpawnHeadlessWaitTargetBatch,
   type ExecutionSessionSpawnHeadlessWaitTargetBatchInput,
