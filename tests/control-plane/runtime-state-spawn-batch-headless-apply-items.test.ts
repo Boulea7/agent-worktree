@@ -138,6 +138,163 @@ describe(
       });
     });
 
+    it("should project only the canonical execution seed fields", () => {
+      const abortController = new AbortController();
+      const batchItems = {
+        plan: createPlan({
+          requestedCount: 1,
+          canPlan: true
+        }),
+        items: [
+          createBatchItem({
+            childAttemptId: "att_child_whitelist"
+          })
+        ]
+      } satisfies ExecutionSessionSpawnBatchItems;
+      const execution = {
+        prompt: "child one",
+        cwd: "/tmp/headless-one",
+        timeoutMs: 3_000,
+        abortSignal: abortController.signal,
+        profile: "shadow-profile",
+        metadata: {
+          leak: true
+        }
+      } as ExecutionSessionSpawnHeadlessInputSeed & {
+        metadata: {
+          leak: boolean;
+        };
+        profile: string;
+      };
+
+      const result = deriveExecutionSessionSpawnBatchHeadlessApplyItems({
+        batchItems,
+        executions: [execution]
+      }) as unknown as {
+        items: Array<{
+          execution: Record<string, unknown>;
+        }>;
+      };
+
+      expect(result.items).toEqual([
+        {
+          childAttemptId: "att_child_whitelist",
+          request: {
+            parentAttemptId: "att_parent",
+            parentRuntime: "codex-cli",
+            parentSessionId: "thr_parent",
+            sourceKind: "fork"
+          },
+          execution: {
+            prompt: "child one",
+            cwd: "/tmp/headless-one",
+            timeoutMs: 3_000,
+            abortSignal: abortController.signal
+          }
+        }
+      ]);
+      expect(result.items[0]?.execution).not.toBe(execution);
+      expect(result.items[0]?.execution).not.toHaveProperty("profile");
+      expect(result.items[0]?.execution).not.toHaveProperty("metadata");
+    });
+
+    it("should keep projected execution and guardrail copies isolated from later source mutation", () => {
+      const abortController = new AbortController();
+      const inheritedGuardrails = {
+        maxChildren: 3,
+        maxDepth: 4
+      };
+      const batchItems = {
+        plan: createPlan({
+          requestedCount: 1,
+          canPlan: true
+        }),
+        items: [
+          createBatchItem({
+            childAttemptId: "att_child_mutation",
+            inheritedGuardrails
+          })
+        ]
+      } satisfies ExecutionSessionSpawnBatchItems;
+      const execution = {
+        prompt: "child one",
+        cwd: "/tmp/original",
+        timeoutMs: 2_000,
+        abortSignal: abortController.signal
+      } satisfies ExecutionSessionSpawnHeadlessInputSeed;
+      const result = deriveExecutionSessionSpawnBatchHeadlessApplyItems({
+        batchItems,
+        executions: [execution]
+      }) as unknown as {
+        items: Array<{
+          execution: ExecutionSessionSpawnHeadlessInputSeed;
+          request: ExecutionSessionSpawnEffectsInput["request"];
+        }>;
+      };
+
+      execution.cwd = "/tmp/changed";
+      execution.timeoutMs = 9_000;
+      inheritedGuardrails.maxDepth = 99;
+
+      expect(result.items[0]?.execution).toEqual({
+        prompt: "child one",
+        cwd: "/tmp/original",
+        timeoutMs: 2_000,
+        abortSignal: abortController.signal
+      });
+      expect(result.items[0]?.execution.abortSignal).toBe(abortController.signal);
+      expect(result.items[0]?.request.inheritedGuardrails).toEqual({
+        maxChildren: 3,
+        maxDepth: 4
+      });
+    });
+
+    it("should ignore inherited or non-enumerable canonical execution fields during projection", () => {
+      const batchItems = {
+        plan: createPlan({
+          requestedCount: 1,
+          canPlan: true
+        }),
+        items: [
+          createBatchItem({
+            childAttemptId: "att_child_enumerable"
+          })
+        ]
+      } satisfies ExecutionSessionSpawnBatchItems;
+      const execution = Object.create({
+        prompt: "from-prototype"
+      }) as ExecutionSessionSpawnHeadlessInputSeed & {
+        metadata?: {
+          leak: boolean;
+        };
+      };
+
+      Object.defineProperty(execution, "cwd", {
+        value: "/tmp/non-enumerable",
+        enumerable: false
+      });
+      execution.timeoutMs = 2_000;
+      execution.metadata = {
+        leak: true
+      };
+
+      const result = deriveExecutionSessionSpawnBatchHeadlessApplyItems({
+        batchItems,
+        executions: [execution]
+      }) as unknown as {
+        items: Array<{
+          execution: Record<string, unknown>;
+        }>;
+      };
+
+      expect(result.items[0]?.execution).toEqual({
+        timeoutMs: 2_000
+      });
+      expect(result.items[0]?.execution).not.toHaveProperty("prompt");
+      expect(result.items[0]?.execution).not.toHaveProperty("cwd");
+      expect(result.items[0]?.execution).not.toHaveProperty("metadata");
+    });
+
     it("should reject execution counts that do not match the projected batch items", () => {
       expect(() =>
         deriveExecutionSessionSpawnBatchHeadlessApplyItems({

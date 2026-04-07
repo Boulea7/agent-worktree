@@ -112,6 +112,12 @@ describe("control-plane runtime-state spawn-batch-headless-apply helpers", () =>
       apply: manualApply
     });
     expect(invokedSessionIds).toEqual(["thr_parent", "thr_parent_2"]);
+    expect(headlessApplyItems.batchItems.items).toEqual(
+      headlessApplyItems.items?.map(({ childAttemptId, request }) => ({
+        childAttemptId,
+        request
+      }))
+    );
   });
 
   it("should preserve traceability from batch projection through wait and close target batches", async () => {
@@ -528,6 +534,19 @@ describe("control-plane runtime-state spawn-batch-headless-apply helpers", () =>
     })) as unknown as Record<string, unknown>;
 
     expect(headlessApplyItems).toEqual(snapshot);
+    expect(result.headlessApplyItems).toBe(headlessApplyItems);
+    expect(result).toHaveProperty("apply");
+    expect(
+      (result.apply as {
+        results: Array<{
+          headlessInput: {
+            attempt: {
+              attemptId: string;
+            };
+          };
+        }>;
+      }).results.map((entry) => entry.headlessInput.attempt.attemptId)
+    ).toEqual(["att_child_1", "att_child_2"]);
     expect(result).not.toHaveProperty("execution");
     expect(result).not.toHaveProperty("headlessInput");
     expect(result).not.toHaveProperty("execute");
@@ -578,13 +597,21 @@ function createPlan(input: {
 function createHeadlessApplyItems(
   overrides: Partial<ExecutionSessionSpawnBatchHeadlessApplyItems> = {}
 ): ExecutionSessionSpawnBatchHeadlessApplyItems {
+  const batchItems =
+    overrides.items === undefined
+      ? undefined
+      : overrides.items.map(({ childAttemptId, request }) => ({
+          childAttemptId,
+          request
+        }));
+
   return {
     batchItems: {
       plan: createPlan({
         requestedCount: overrides.items?.length ?? 1,
         canPlan: true
       }),
-      ...(overrides.items === undefined ? {} : { items: [] })
+      ...(batchItems === undefined ? {} : { items: batchItems })
     },
     ...overrides
   };
