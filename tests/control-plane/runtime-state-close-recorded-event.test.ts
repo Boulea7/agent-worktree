@@ -84,6 +84,19 @@ describe("control-plane runtime-state close-recorded-event helpers", () => {
     );
   });
 
+  it('should reject requested events whose lifecycleEventKind is not "close_requested"', () => {
+    expect(() =>
+      deriveExecutionSessionCloseRecordedEvent({
+        requestedEvent: createCloseRequestedEvent({
+          lifecycleEventKind:
+            "spawn_requested" as unknown as ExecutionSessionCloseRequestedEvent["lifecycleEventKind"]
+        })
+      })
+    ).toThrow(
+      'Execution session close recorded event requires requestedEvent.lifecycleEventKind to be "close_requested".'
+    );
+  });
+
   it("should reject malformed identifiers on the supplied close requested event", () => {
     expect(() =>
       deriveExecutionSessionCloseRecordedEvent({

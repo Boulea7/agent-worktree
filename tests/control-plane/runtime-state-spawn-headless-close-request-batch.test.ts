@@ -2,17 +2,17 @@ import { describe, expect, it } from "vitest";
 
 import { ValidationError } from "../../src/core/errors.js";
 import {
-  deriveExecutionSessionSpawnHeadlessWaitRequestBatch,
-  type ExecutionSessionSpawnHeadlessWaitTarget,
-  type ExecutionSessionSpawnHeadlessWaitTargetBatch
+  deriveExecutionSessionSpawnHeadlessCloseRequestBatch,
+  type ExecutionSessionSpawnHeadlessCloseTarget,
+  type ExecutionSessionSpawnHeadlessCloseTargetBatch
 } from "../../src/control-plane/internal.js";
 
 describe(
-  "control-plane runtime-state spawn-headless-wait-request-batch helpers",
+  "control-plane runtime-state spawn-headless-close-request-batch helpers",
   () => {
-    it("should return an empty ordered result list for an empty headless wait-target batch", () => {
-      const headlessWaitTargetBatch = {
-        headlessWaitCandidateBatch: {
+    it("should return an empty ordered result list for an empty headless close-target batch", () => {
+      const headlessCloseTargetBatch = {
+        headlessCloseCandidateBatch: {
           headlessContextBatch: {
             headlessViewBatch: {
               headlessRecordBatch: {
@@ -25,21 +25,21 @@ describe(
           results: []
         },
         results: []
-      } satisfies ExecutionSessionSpawnHeadlessWaitTargetBatch;
+      } satisfies ExecutionSessionSpawnHeadlessCloseTargetBatch;
 
       expect(
-        deriveExecutionSessionSpawnHeadlessWaitRequestBatch({
-          headlessWaitTargetBatch
+        deriveExecutionSessionSpawnHeadlessCloseRequestBatch({
+          headlessCloseTargetBatch
         })
       ).toEqual({
-        headlessWaitTargetBatch,
+        headlessCloseTargetBatch,
         results: []
       });
     });
 
-    it("should preserve ordering while keeping blocked headless wait targets in place", () => {
-      const headlessWaitTargetBatch = {
-        headlessWaitCandidateBatch: {
+    it("should preserve ordering while keeping blocked headless close targets in place", () => {
+      const headlessCloseTargetBatch = {
+        headlessCloseCandidateBatch: {
           headlessContextBatch: {
             headlessViewBatch: {
               headlessRecordBatch: {
@@ -52,68 +52,66 @@ describe(
           results: []
         },
         results: [
-          createHeadlessWaitTarget(),
-          createHeadlessWaitTarget({
+          createHeadlessCloseTarget(),
+          createHeadlessCloseTarget({
             target: {
-              attemptId: "att_supported_wait",
+              attemptId: "att_supported_close",
               runtime: "supported-cli",
-              sessionId: "thr_supported_wait"
+              sessionId: "thr_supported_close"
             }
           })
         ]
-      };
+      } satisfies ExecutionSessionSpawnHeadlessCloseTargetBatch;
 
       expect(
-        deriveExecutionSessionSpawnHeadlessWaitRequestBatch({
-          headlessWaitTargetBatch,
-          timeoutMs: 500
+        deriveExecutionSessionSpawnHeadlessCloseRequestBatch({
+          headlessCloseTargetBatch
         })
       ).toEqual({
-        headlessWaitTargetBatch,
+        headlessCloseTargetBatch,
         results: [
           {
-            headlessWaitTarget: headlessWaitTargetBatch.results[0]
+            headlessCloseTarget: headlessCloseTargetBatch.results[0]
           },
           {
-            headlessWaitTarget: headlessWaitTargetBatch.results[1],
+            headlessCloseTarget: headlessCloseTargetBatch.results[1],
             request: {
-              attemptId: "att_supported_wait",
+              attemptId: "att_supported_close",
               runtime: "supported-cli",
-              sessionId: "thr_supported_wait",
-              timeoutMs: 500
+              sessionId: "thr_supported_close"
             }
           }
         ]
       });
     });
 
-    it("should reject malformed headless wait request batch wrappers before iterating results", () => {
+    it("should reject malformed headless close request batch wrappers before iterating results", () => {
       expect(() =>
-        deriveExecutionSessionSpawnHeadlessWaitRequestBatch(undefined as never)
+        deriveExecutionSessionSpawnHeadlessCloseRequestBatch(undefined as never)
       ).toThrow(
-        "Execution session spawn headless wait request batch input must be an object."
+        "Execution session spawn headless close request batch input must be an object."
       );
       expect(() =>
-        deriveExecutionSessionSpawnHeadlessWaitRequestBatch({
-          headlessWaitTargetBatch: undefined as never
+        deriveExecutionSessionSpawnHeadlessCloseRequestBatch({
+          headlessCloseTargetBatch: undefined as never
         })
       ).toThrow(ValidationError);
       expect(() =>
-        deriveExecutionSessionSpawnHeadlessWaitRequestBatch({
-          headlessWaitTargetBatch: undefined as never
+        deriveExecutionSessionSpawnHeadlessCloseRequestBatch({
+          headlessCloseTargetBatch: undefined as never
         })
       ).toThrow(
-        "Execution session spawn headless wait request batch requires a headlessWaitTargetBatch wrapper."
+        "Execution session spawn headless close request batch requires a headlessCloseTargetBatch wrapper."
       );
     });
 
-    it("should fail fast on the first malformed wrapped headless wait target and stop before later entries", () => {
+    it("should fail fast on the first malformed wrapped headless close target and stop before later entries", () => {
       let tailAccessed = false;
 
       expect(() =>
-        deriveExecutionSessionSpawnHeadlessWaitRequestBatch({
-          headlessWaitTargetBatch: {
-            headlessWaitCandidateBatch: {
+        deriveExecutionSessionSpawnHeadlessCloseRequestBatch({
+          headlessCloseTargetBatch: {
+            headlessCloseCandidateBatch: {
               headlessContextBatch: {
                 headlessViewBatch: {
                   headlessRecordBatch: {
@@ -126,36 +124,36 @@ describe(
               results: []
             },
             results: [
-              createHeadlessWaitTarget({
+              createHeadlessCloseTarget({
                 target: {
-                  attemptId: "att_supported_wait_1",
+                  attemptId: "att_supported_close_1",
                   runtime: "supported-cli",
-                  sessionId: "thr_supported_wait_1"
+                  sessionId: "thr_supported_close_1"
                 }
               }),
-              {} as ExecutionSessionSpawnHeadlessWaitTarget,
+              {} as ExecutionSessionSpawnHeadlessCloseTarget,
               {
-                get headlessWaitCandidate() {
+                get headlessCloseCandidate() {
                   tailAccessed = true;
-                  return createHeadlessWaitTarget().headlessWaitCandidate;
+                  return createHeadlessCloseTarget().headlessCloseCandidate;
                 }
-              } as ExecutionSessionSpawnHeadlessWaitTarget
+              } as ExecutionSessionSpawnHeadlessCloseTarget
             ]
           }
         })
       ).toThrow(
-        "Execution session spawn headless wait request requires a headlessWaitTarget wrapper."
+        "Execution session spawn headless close request requires a headlessCloseTarget wrapper."
       );
       expect(tailAccessed).toBe(false);
     });
 
-    it("should fail fast when the first wrapped headless wait target omits candidate or headlessContext", () => {
+    it("should fail fast when the first wrapped headless close target omits candidate or headlessContext", () => {
       let tailAccessed = false;
 
       expect(() =>
-        deriveExecutionSessionSpawnHeadlessWaitRequestBatch({
-          headlessWaitTargetBatch: {
-            headlessWaitCandidateBatch: {
+        deriveExecutionSessionSpawnHeadlessCloseRequestBatch({
+          headlessCloseTargetBatch: {
+            headlessCloseCandidateBatch: {
               headlessContextBatch: {
                 headlessViewBatch: {
                   headlessRecordBatch: {
@@ -169,30 +167,30 @@ describe(
             },
             results: [
               {
-                headlessWaitCandidate: {} as never
-              } as ExecutionSessionSpawnHeadlessWaitTarget,
+                headlessCloseCandidate: {} as never
+              } as ExecutionSessionSpawnHeadlessCloseTarget,
               {
-                get headlessWaitCandidate() {
+                get headlessCloseCandidate() {
                   tailAccessed = true;
-                  return createHeadlessWaitTarget().headlessWaitCandidate;
+                  return createHeadlessCloseTarget().headlessCloseCandidate;
                 }
-              } as ExecutionSessionSpawnHeadlessWaitTarget
+              } as ExecutionSessionSpawnHeadlessCloseTarget
             ]
           }
         })
       ).toThrow(
-        "Execution session spawn headless wait request requires headlessWaitTarget.headlessWaitCandidate to include candidate and headlessContext objects."
+        "Execution session spawn headless close request requires headlessCloseTarget.headlessCloseCandidate to include candidate and headlessContext objects."
       );
       expect(tailAccessed).toBe(false);
     });
   }
 );
 
-function createHeadlessWaitTarget(
-  overrides: Partial<ExecutionSessionSpawnHeadlessWaitTarget> = {}
-): ExecutionSessionSpawnHeadlessWaitTarget {
+function createHeadlessCloseTarget(
+  overrides: Partial<ExecutionSessionSpawnHeadlessCloseTarget> = {}
+): ExecutionSessionSpawnHeadlessCloseTarget {
   return {
-    headlessWaitCandidate: {
+    headlessCloseCandidate: {
       headlessContext: {
         context: {
           childRecords: [],
@@ -211,13 +209,13 @@ function createHeadlessWaitTarget(
             sourceKind: "direct"
           },
           record: {
-            attemptId: "att_wait_child",
+            attemptId: "att_close_child",
             errorEventCount: 0,
             lifecycleState: "active",
             origin: "headless_result",
             runCompleted: false,
             runtime: "codex-cli",
-            sessionId: "thr_wait_child",
+            sessionId: "thr_close_child",
             sourceKind: "delegated"
           },
           selectedBy: "attemptId"
@@ -226,13 +224,13 @@ function createHeadlessWaitTarget(
           headlessRecord: {
             headlessExecute: {} as never,
             record: {
-              attemptId: "att_wait_child",
+              attemptId: "att_close_child",
               errorEventCount: 0,
               lifecycleState: "active",
               origin: "headless_result",
               runCompleted: false,
               runtime: "codex-cli",
-              sessionId: "thr_wait_child",
+              sessionId: "thr_close_child",
               sourceKind: "delegated"
             }
           },
@@ -257,21 +255,24 @@ function createHeadlessWaitTarget(
             sourceKind: "direct"
           },
           record: {
-            attemptId: "att_wait_child",
+            attemptId: "att_close_child",
             errorEventCount: 0,
             lifecycleState: "active",
             origin: "headless_result",
             runCompleted: false,
             runtime: "codex-cli",
-            sessionId: "thr_wait_child",
+            sessionId: "thr_close_child",
             sourceKind: "delegated"
           },
           selectedBy: "attemptId"
         },
         readiness: {
-          blockingReasons: ["descendant_coverage_incomplete"],
-          canWait: false,
-          hasBlockingReasons: true
+          alreadyFinal: false,
+          blockingReasons: ["session_lifecycle_unsupported"],
+          canClose: false,
+          hasBlockingReasons: true,
+          sessionLifecycleSupported: false,
+          wouldAffectDescendants: false
         }
       }
     },
@@ -283,8 +284,8 @@ function buildEmptyView() {
   return {
     childAttemptIdsByParent: new Map<string, string[]>(),
     index: {
-      byAttemptId: new Map<string, ExecutionSessionSpawnHeadlessWaitTarget[]>(),
-      bySessionId: new Map<string, ExecutionSessionSpawnHeadlessWaitTarget[]>()
+      byAttemptId: new Map<string, ExecutionSessionSpawnHeadlessCloseTarget[]>(),
+      bySessionId: new Map<string, ExecutionSessionSpawnHeadlessCloseTarget[]>()
     }
   } as never;
 }

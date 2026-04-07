@@ -43,11 +43,11 @@
 - 极薄的 worktree lifecycle 切片
 - 只读的兼容性诊断命令 `doctor`、`compat probe <tool>` 与 `compat smoke <tool>`
 
-当前仓库已经形成一个极薄的 Phase 4 public compatibility baseline：`compat smoke codex-cli` 提供了第一个 Tier 1 runtime 的有界、公开、端到端兼容性证明，而 `doctor` 与 `compat probe` 让其余 Tier 1 runtime 继续停留在明确的 descriptor-only 边界内。
+当前仓库已经形成一个极薄的 Phase 4 public compatibility baseline：`compat smoke codex-cli` 提供了第一个 Tier 1 runtime 的有界、公开、端到端兼容性检查点，而 `doctor` 与 `compat probe` 让其余 Tier 1 runtime 继续停留在明确的 descriptor-only 边界内。
 
 当前公开基线仍然很窄：`doctor`、`compat list/show/probe/smoke`、以及 `attempt create/list/cleanup` 是主要 public surface。
-这个 P4 收口只代表兼容性承诺，不代表 general execution 或 lifecycle 承诺。更深的 `codex-cli` execution、profile/env 透传、runtime-state，以及当前 internal-only 的 bounded-parallelism Phase 6 prep 仍属于内部实现，不应解读为公开生命周期能力；这条内部链路目前已经推进到 `spawn-budget`、budget-aware `spawn-candidate`、spawn batch planning、spawn batch item projection、bounded spawn batch apply convenience seam、bounded spawn batch headless-apply-items projection seam、bounded spawn batch headless-apply convenience seam，以及当前通过 `spawn-headless wait/close target-apply batches` 收口的 headless batch bridge。
-即便 runtime manifest 中出现内部 `session` block，它也仍然只是非公开元数据，不是 attach/resume 或生命周期控制真相。`codex-cli` 的 executable probing、`--profile` 透传、relay-compatible env overlay 也都保持 internal-only；`sourceKind` 与可选的 `parentAttemptId` 仍然只是审计元数据，不代表公开的 delegated runtime 或 session lifecycle 语义。
+这个 P4 收口只代表兼容性承诺，不代表 general execution 或 lifecycle 承诺。更深的 `codex-cli` execution、profile/env 透传、runtime-state，以及当前 internal-only 的 bounded-parallelism Phase 6 prep 仍属于内部实现，不应解读为公开生命周期能力；这条内部链路目前已经推进到 `spawn-budget`、budget-aware `spawn-candidate`、spawn batch planning、spawn batch item projection、bounded spawn batch apply convenience seam、bounded spawn batch headless-apply-items projection seam、bounded spawn batch headless-apply convenience seam、headless wait/close request projection seams，以及当前通过 `spawn-headless wait/close target-apply batches` 收口的 headless batch bridge。
+其他 runtime 仍然保持 descriptor-only。`resume`、MCP transport execution、public execution 命令、public wait/close/spawn 命令，以及 public manifest-backed execution 或 session-lifecycle 语义仍然延后；env-gated Vitest smoke harness 仍是更窄的兼容性检查，不是默认验证路径。即便 runtime manifest 中出现内部 `session` block，它也仍然只是非公开元数据，不是 attach/resume 或生命周期控制真相。`codex-cli` 的 executable probing、`--profile` 透传、relay-compatible env overlay 也都保持 internal-only；`sourceKind` 与可选的 `parentAttemptId` 仍然只是审计元数据，不代表公开的 delegated runtime 或 session lifecycle 语义。
 更复杂的 runtime adapter、verification ranking 和高级编排能力仍然延后。
 
 ## 阅读顺序

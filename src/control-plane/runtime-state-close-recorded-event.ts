@@ -23,6 +23,12 @@ export function deriveExecutionSessionCloseRecordedEvent(
     );
   }
 
+  if (input.requestedEvent.lifecycleEventKind !== "close_requested") {
+    throw new ValidationError(
+      'Execution session close recorded event requires requestedEvent.lifecycleEventKind to be "close_requested".'
+    );
+  }
+
   const attemptId = normalizeRequiredIdentifier(
     input.requestedEvent.attemptId,
     "Execution session close recorded event attemptId must be a non-empty string."
