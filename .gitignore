@@ -1,6 +1,7 @@
 # Local AI handoff and research state
 .local/
 *.local.md
+.worktrees/
 
 # Local tool state
 .claude/settings.local.json
