@@ -344,6 +344,48 @@ describe(
       );
     });
 
+    it("should preserve semantically invalid execution seeds at the batch projection seam", () => {
+      const result = deriveExecutionSessionSpawnBatchHeadlessApplyItems({
+        batchItems: {
+          plan: createPlan({
+            requestedCount: 1,
+            canPlan: true
+          }),
+          items: [
+            createBatchItem({
+              childAttemptId: "att_child_semantic_boundary"
+            })
+          ]
+        },
+        executions: [
+          {
+            prompt: "   ",
+            timeoutMs: 0
+          }
+        ]
+      }) as unknown as {
+        items: Array<{
+          execution: ExecutionSessionSpawnHeadlessInputSeed;
+        }>;
+      };
+
+      expect(result.items).toEqual([
+        {
+          childAttemptId: "att_child_semantic_boundary",
+          request: {
+            parentAttemptId: "att_parent",
+            parentRuntime: "codex-cli",
+            parentSessionId: "thr_parent",
+            sourceKind: "fork"
+          },
+          execution: {
+            prompt: "   ",
+            timeoutMs: 0
+          }
+        }
+      ]);
+    });
+
     it("should fail fast on the first execution projection error", () => {
       let thirdExecutionAccessed = false;
 

@@ -37,6 +37,23 @@ describe("control-plane runtime-state close-requested-event helpers", () => {
     expect(request).toEqual(requestSnapshot);
   });
 
+  it("should canonicalize the request before projecting the event", () => {
+    expect(
+      deriveExecutionSessionCloseRequestedEvent({
+        request: createCloseRequest({
+          attemptId: "  att_active_trimmed  ",
+          runtime: "  codex-cli  ",
+          sessionId: "  thr_active_trimmed  "
+        })
+      })
+    ).toEqual({
+      attemptId: "att_active_trimmed",
+      runtime: "codex-cli",
+      sessionId: "thr_active_trimmed",
+      lifecycleEventKind: "close_requested"
+    });
+  });
+
   it("should keep request, selector, state, and policy data out of the derived event", () => {
     const event = deriveExecutionSessionCloseRequestedEvent({
       request: createCloseRequest()
@@ -85,7 +102,7 @@ describe("control-plane runtime-state close-requested-event helpers", () => {
         })
       })
     ).toThrow(
-      "Execution session close requested event attemptId must be a non-empty string."
+      "Execution session close request attemptId must be a non-empty string."
     );
     expect(() =>
       deriveExecutionSessionCloseRequestedEvent({
@@ -94,7 +111,7 @@ describe("control-plane runtime-state close-requested-event helpers", () => {
         })
       })
     ).toThrow(
-      "Execution session close requested event runtime must be a non-empty string."
+      "Execution session close request runtime must be a non-empty string."
     );
     expect(() =>
       deriveExecutionSessionCloseRequestedEvent({
@@ -103,7 +120,7 @@ describe("control-plane runtime-state close-requested-event helpers", () => {
         })
       })
     ).toThrow(
-      "Execution session close requested event sessionId must be a non-empty string."
+      "Execution session close request sessionId must be a non-empty string."
     );
   });
 });

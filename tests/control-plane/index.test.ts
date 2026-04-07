@@ -68,6 +68,52 @@ describe("control-plane index exports", () => {
     expect(controlPlane).not.toHaveProperty("executionSessionCloseConsumerBlockingReasons");
     expect(controlPlane).not.toHaveProperty("deriveExecutionSessionSpawnHeadlessInput");
     expect(controlPlane).not.toHaveProperty(
+      "deriveExecutionSessionSpawnHeadlessInputBatch"
+    );
+    expect(controlPlane).not.toHaveProperty(
+      "executeExecutionSessionSpawnHeadless"
+    );
+    expect(controlPlane).not.toHaveProperty(
+      "executeExecutionSessionSpawnHeadlessBatch"
+    );
+    expect(controlPlane).not.toHaveProperty(
+      "deriveExecutionSessionSpawnHeadlessRecord"
+    );
+    expect(controlPlane).not.toHaveProperty(
+      "deriveExecutionSessionSpawnHeadlessRecordBatch"
+    );
+    expect(controlPlane).not.toHaveProperty(
+      "deriveExecutionSessionSpawnHeadlessView"
+    );
+    expect(controlPlane).not.toHaveProperty(
+      "deriveExecutionSessionSpawnHeadlessViewBatch"
+    );
+    expect(controlPlane).not.toHaveProperty(
+      "deriveExecutionSessionSpawnHeadlessContext"
+    );
+    expect(controlPlane).not.toHaveProperty(
+      "deriveExecutionSessionSpawnHeadlessContextBatch"
+    );
+    expect(controlPlane).not.toHaveProperty(
+      "deriveExecutionSessionSpawnHeadlessWaitCandidate"
+    );
+    expect(controlPlane).not.toHaveProperty(
+      "deriveExecutionSessionSpawnHeadlessWaitCandidateBatch"
+    );
+    expect(controlPlane).not.toHaveProperty(
+      "deriveExecutionSessionSpawnHeadlessWaitTarget"
+    );
+    expect(controlPlane).not.toHaveProperty(
+      "deriveExecutionSessionSpawnHeadlessWaitTargetBatch"
+    );
+    expect(controlPlane).not.toHaveProperty(
+      "deriveExecutionSessionSpawnRequestedEvent"
+    );
+    expect(controlPlane).not.toHaveProperty(
+      "deriveExecutionSessionSpawnRecordedEvent"
+    );
+    expect(controlPlane).not.toHaveProperty("deriveExecutionSessionWaitRequest");
+    expect(controlPlane).not.toHaveProperty(
       "deriveExecutionSessionSpawnHeadlessCloseCandidate"
     );
     expect(controlPlane).not.toHaveProperty(
@@ -187,6 +233,9 @@ type ControlPlaneIndexShouldNotExportCloseConsumeBatch = import("../../src/contr
 // @ts-expect-error control-plane index must not export headless spawn inputs
 type ControlPlaneIndexShouldNotExportSpawnHeadlessInput = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessInput;
 
+// @ts-expect-error control-plane index must not export headless spawn input batch results
+type ControlPlaneIndexShouldNotExportSpawnHeadlessInputBatch = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessInputBatch;
+
 // @ts-expect-error control-plane index must not export headless close candidates
 type ControlPlaneIndexShouldNotExportSpawnHeadlessCloseCandidate = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessCloseCandidate;
 
@@ -198,6 +247,36 @@ type ControlPlaneIndexShouldNotExportSpawnHeadlessCloseRequestBatch = import("..
 
 // @ts-expect-error control-plane index must not export headless close targets
 type ControlPlaneIndexShouldNotExportSpawnHeadlessCloseTarget = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessCloseTarget;
+
+// @ts-expect-error control-plane index must not export headless record results
+type ControlPlaneIndexShouldNotExportSpawnHeadlessRecord = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessRecord;
+
+// @ts-expect-error control-plane index must not export headless record batch results
+type ControlPlaneIndexShouldNotExportSpawnHeadlessRecordBatch = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessRecordBatch;
+
+// @ts-expect-error control-plane index must not export headless view results
+type ControlPlaneIndexShouldNotExportSpawnHeadlessView = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessView;
+
+// @ts-expect-error control-plane index must not export headless view batch results
+type ControlPlaneIndexShouldNotExportSpawnHeadlessViewBatch = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessViewBatch;
+
+// @ts-expect-error control-plane index must not export headless context results
+type ControlPlaneIndexShouldNotExportSpawnHeadlessContext = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessContext;
+
+// @ts-expect-error control-plane index must not export headless context batch results
+type ControlPlaneIndexShouldNotExportSpawnHeadlessContextBatch = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessContextBatch;
+
+// @ts-expect-error control-plane index must not export headless wait candidate results
+type ControlPlaneIndexShouldNotExportSpawnHeadlessWaitCandidate = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessWaitCandidate;
+
+// @ts-expect-error control-plane index must not export headless wait candidate batch results
+type ControlPlaneIndexShouldNotExportSpawnHeadlessWaitCandidateBatch = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessWaitCandidateBatch;
+
+// @ts-expect-error control-plane index must not export headless wait target results
+type ControlPlaneIndexShouldNotExportSpawnHeadlessWaitTarget = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessWaitTarget;
+
+// @ts-expect-error control-plane index must not export headless wait target batch results
+type ControlPlaneIndexShouldNotExportSpawnHeadlessWaitTargetBatch = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessWaitTargetBatch;
 
 // @ts-expect-error control-plane index must not export headless wait target apply results
 type ControlPlaneIndexShouldNotExportSpawnHeadlessWaitTargetApply = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessWaitTargetApply;
@@ -244,6 +323,9 @@ type ControlPlaneIndexShouldNotExportCloseConsumerBlockingReasons = typeof impor
 // @ts-expect-error control-plane index must not export close request helpers
 type ControlPlaneIndexShouldNotExportDeriveExecutionSessionCloseRequest = typeof import("../../src/control-plane/index.js").deriveExecutionSessionCloseRequest;
 
+// @ts-expect-error control-plane index must not export wait request helpers
+type ControlPlaneIndexShouldNotExportDeriveExecutionSessionWaitRequest = typeof import("../../src/control-plane/index.js").deriveExecutionSessionWaitRequest;
+
 // @ts-expect-error control-plane index must not export execution-session index helpers
 type ControlPlaneIndexShouldNotExportBuildExecutionSessionIndex = typeof import("../../src/control-plane/index.js").buildExecutionSessionIndex;
 
@@ -258,6 +340,18 @@ type ControlPlaneIndexShouldNotExportDeriveExecutionSessionCloseConsumer = typeo
 
 // @ts-expect-error control-plane index must not export close apply helpers
 type ControlPlaneIndexShouldNotExportApplyExecutionSessionClose = typeof import("../../src/control-plane/index.js").applyExecutionSessionClose;
+
+// @ts-expect-error control-plane index must not export spawn requested-event helpers
+type ControlPlaneIndexShouldNotExportDeriveExecutionSessionSpawnRequestedEvent = typeof import("../../src/control-plane/index.js").deriveExecutionSessionSpawnRequestedEvent;
+
+// @ts-expect-error control-plane index must not export spawn recorded-event helpers
+type ControlPlaneIndexShouldNotExportDeriveExecutionSessionSpawnRecordedEvent = typeof import("../../src/control-plane/index.js").deriveExecutionSessionSpawnRecordedEvent;
+
+// @ts-expect-error control-plane index must not export headless execute helpers
+type ControlPlaneIndexShouldNotExportExecuteExecutionSessionSpawnHeadless = typeof import("../../src/control-plane/index.js").executeExecutionSessionSpawnHeadless;
+
+// @ts-expect-error control-plane index must not export headless execute batch helpers
+type ControlPlaneIndexShouldNotExportExecuteExecutionSessionSpawnHeadlessBatch = typeof import("../../src/control-plane/index.js").executeExecutionSessionSpawnHeadlessBatch;
 
 // @ts-expect-error control-plane index must not export close apply batch helpers
 type ControlPlaneIndexShouldNotExportApplyExecutionSessionCloseBatch = typeof import("../../src/control-plane/index.js").applyExecutionSessionCloseBatch;
