@@ -189,6 +189,12 @@ type ControlPlaneIndexShouldNotExportExecutionSessionContext = import("../../src
 // @ts-expect-error control-plane index must not export wait targets
 type ControlPlaneIndexShouldNotExportWaitTarget = import("../../src/control-plane/index.js").ExecutionSessionWaitTarget;
 
+// @ts-expect-error control-plane index must not export wait candidates
+type ControlPlaneIndexShouldNotExportWaitCandidate = import("../../src/control-plane/index.js").ExecutionSessionWaitCandidate;
+
+// @ts-expect-error control-plane index must not export wait readiness types
+type ControlPlaneIndexShouldNotExportWaitReadiness = import("../../src/control-plane/index.js").ExecutionSessionWaitReadiness;
+
 // @ts-expect-error control-plane index must not export wait apply results
 type ControlPlaneIndexShouldNotExportWaitApply = import("../../src/control-plane/index.js").ExecutionSessionWaitApply;
 
@@ -230,6 +236,9 @@ type ControlPlaneIndexShouldNotExportCloseTargetApplyBatch = import("../../src/c
 
 // @ts-expect-error control-plane index must not export close candidates
 type ControlPlaneIndexShouldNotExportCloseCandidate = import("../../src/control-plane/index.js").ExecutionSessionCloseCandidate;
+
+// @ts-expect-error control-plane index must not export close readiness types
+type ControlPlaneIndexShouldNotExportCloseReadiness = import("../../src/control-plane/index.js").ExecutionSessionCloseReadiness;
 
 // @ts-expect-error control-plane index must not export close requests
 type ControlPlaneIndexShouldNotExportCloseRequest = import("../../src/control-plane/index.js").ExecutionSessionCloseRequest;

@@ -21,6 +21,12 @@ export function validatePromotionArtifactSummaryCheckNameLists(input: {
   verification?: AttemptVerification;
 }): void {
   const { artifactSummary, errorPrefix, summaryField, verification } = input;
+  if (!isRecord(artifactSummary)) {
+    throw new ValidationError(
+      `${errorPrefix} ${summaryField} to be an object.`
+    );
+  }
+
   validateArtifactSummarySummaryShape({
     summary: artifactSummary.summary,
     errorPrefix,

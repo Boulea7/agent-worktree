@@ -164,6 +164,18 @@ describe("selection promotion-artifact-summary-guardrails helpers", () => {
     );
   });
 
+  it("should reject malformed top-level artifact summary containers before reading nested fields", () => {
+    expect(() =>
+      validatePromotionArtifactSummaryCheckNameLists({
+        artifactSummary: null as never,
+        errorPrefix: "Attempt promotion candidate requires",
+        summaryField: "artifactSummary"
+      })
+    ).toThrow(
+      "Attempt promotion candidate requires artifactSummary to be an object."
+    );
+  });
+
   it("should reject malformed check-name arrays before comparing them with artifactSummary.checks", () => {
     const checks = [
       createExecutedCheck({

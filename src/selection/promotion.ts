@@ -26,6 +26,12 @@ export function deriveAttemptPromotionCandidate(
   manifest: AttemptManifest,
   artifactSummary: AttemptVerificationArtifactSummary
 ): AttemptPromotionCandidate {
+  if (!isRecord(artifactSummary)) {
+    throw new ValidationError(
+      "Attempt promotion candidate requires artifactSummary to be an object."
+    );
+  }
+
   validateArtifactSummaryBasis(artifactSummary);
 
   const attemptId = normalizeRequiredString(
@@ -164,4 +170,8 @@ function countsEqual(
     left.skipped === right.skipped &&
     left.error === right.error
   );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

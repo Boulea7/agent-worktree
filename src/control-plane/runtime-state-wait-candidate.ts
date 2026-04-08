@@ -15,7 +15,13 @@ export function deriveExecutionSessionWaitCandidate(
     );
   }
 
-  if (!isRecord(input.view) || !isRecord(input.view.index)) {
+  if (
+    !isRecord(input.view) ||
+    !isRecord(input.view.index) ||
+    !hasMapGetter(input.view.index.byAttemptId) ||
+    !hasMapGetter(input.view.index.bySessionId) ||
+    !hasMapGetter(input.view.childAttemptIdsByParent)
+  ) {
     throw new ValidationError(
       "Execution session wait candidate requires view to be an object."
     );
@@ -46,4 +52,12 @@ export function deriveExecutionSessionWaitCandidate(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasMapGetter(value: unknown): value is { get: (key: string) => unknown } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as { get?: unknown }).get === "function"
+  );
 }

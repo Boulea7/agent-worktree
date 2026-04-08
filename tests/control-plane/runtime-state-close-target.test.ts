@@ -223,6 +223,42 @@ describe("control-plane runtime-state close-target helpers", () => {
     ).toThrow(
       "Execution session close target requires candidate.readiness to be an object."
     );
+
+    expect(() =>
+      deriveExecutionSessionCloseTarget({
+        candidate: {
+          context: {
+            record: {
+              attemptId: "att_active",
+              runtime: "codex-cli",
+              sessionId: "thr_active"
+            }
+          },
+          readiness: {}
+        } as never
+      })
+    ).toThrow(
+      "Execution session close target requires candidate.readiness.canClose to be a boolean."
+    );
+
+    expect(() =>
+      deriveExecutionSessionCloseTarget({
+        candidate: {
+          context: {
+            record: {
+              attemptId: "att_active",
+              runtime: "   ",
+              sessionId: "thr_active"
+            }
+          },
+          readiness: {
+            canClose: true
+          }
+        } as never
+      })
+    ).toThrow(
+      "Execution session close target requires candidate.context.record.runtime to be a non-empty string."
+    );
   });
 });
 

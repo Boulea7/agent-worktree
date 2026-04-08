@@ -257,6 +257,22 @@ describe("control-plane runtime-state close-candidate helpers", () => {
     ).toThrow(
       "Execution session close candidate requires selector to be an object."
     );
+
+    const incompleteView = buildExecutionSessionView([]);
+
+    expect(() =>
+      deriveExecutionSessionCloseCandidate({
+        view: {
+          ...incompleteView,
+          childAttemptIdsByParent: undefined as never
+        },
+        selector: {
+          attemptId: "att_active"
+        }
+      })
+    ).toThrow(
+      "Execution session close candidate requires view to be an object."
+    );
   });
 
   it("should preserve terminal lifecycle blocking for closed sessions", () => {

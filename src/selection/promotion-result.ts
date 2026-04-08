@@ -108,6 +108,12 @@ function validatePromotionCandidate(
     "Attempt promotion result requires candidate.sourceKind to use the existing attempt source-kind vocabulary when provided."
   );
 
+  if (!isRecord(candidate.artifactSummary)) {
+    throw new ValidationError(
+      "Attempt promotion result requires candidate.artifactSummary to be an object."
+    );
+  }
+
   if (
     candidate.artifactSummary.summaryBasis !== VERIFICATION_ARTIFACT_SUMMARY_BASIS
   ) {
@@ -228,4 +234,8 @@ function countsEqual(
     left.skipped === right.skipped &&
     left.error === right.error
   );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

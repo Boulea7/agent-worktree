@@ -539,6 +539,23 @@ describe("selection promotion-result helpers", () => {
     );
   });
 
+  it("should fail loudly when candidate.artifactSummary itself is malformed", () => {
+    const candidate = {
+      ...createPromotionCandidate({
+        attemptId: "att_malformed_artifact_summary_result",
+        verification: createVerification({
+          state: "passed",
+          checks: []
+        })
+      }),
+      artifactSummary: null as never
+    } as unknown as AttemptPromotionCandidate;
+
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      "Attempt promotion result requires candidate.artifactSummary to be an object."
+    );
+  });
+
   it("should not mutate candidates or the supplied candidate array", () => {
     const firstCandidate = Object.freeze(
       createPromotionCandidate({

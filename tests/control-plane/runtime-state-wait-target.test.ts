@@ -215,6 +215,42 @@ describe("control-plane runtime-state wait-target helpers", () => {
     ).toThrow(
       "Execution session wait target requires candidate.readiness to be an object."
     );
+
+    expect(() =>
+      deriveExecutionSessionWaitTarget({
+        candidate: {
+          context: {
+            record: {
+              attemptId: "att_active",
+              runtime: "codex-cli",
+              sessionId: "thr_active"
+            }
+          },
+          readiness: {}
+        } as never
+      })
+    ).toThrow(
+      "Execution session wait target requires candidate.readiness.canWait to be a boolean."
+    );
+
+    expect(() =>
+      deriveExecutionSessionWaitTarget({
+        candidate: {
+          context: {
+            record: {
+              attemptId: "   ",
+              runtime: "codex-cli",
+              sessionId: "thr_active"
+            }
+          },
+          readiness: {
+            canWait: true
+          }
+        } as never
+      })
+    ).toThrow(
+      "Execution session wait target requires candidate.context.record.attemptId to be a non-empty string."
+    );
   });
 });
 

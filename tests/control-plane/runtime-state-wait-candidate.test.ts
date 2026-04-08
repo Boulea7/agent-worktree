@@ -240,6 +240,20 @@ describe("control-plane runtime-state wait-candidate helpers", () => {
     ).toThrow(
       "Execution session wait candidate requires selector to be an object."
     );
+
+    const incompleteView = buildExecutionSessionView([]);
+
+    expect(() =>
+      deriveExecutionSessionWaitCandidate({
+        view: {
+          ...incompleteView,
+          childAttemptIdsByParent: undefined as never
+        },
+        selector: {
+          attemptId: "att_active"
+        }
+      })
+    ).toThrow("Execution session wait candidate requires view to be an object.");
   });
 
   it("should preserve the stable blocking-reason order when multiple blockers apply", () => {

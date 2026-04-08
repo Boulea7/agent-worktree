@@ -220,6 +220,23 @@ describe("selection promotion helpers", () => {
     );
   });
 
+  it("should fail loudly when artifactSummary itself is malformed before reading artifactSummary.summaryBasis", () => {
+    const verification = createVerification({
+      state: "passed",
+      checks: []
+    });
+    const manifest = createManifest({
+      attemptId: "att_malformed_artifact_summary",
+      verification
+    });
+
+    expect(() =>
+      deriveAttemptPromotionCandidate(manifest, null as never)
+    ).toThrow(
+      "Attempt promotion candidate requires artifactSummary to be an object."
+    );
+  });
+
   it("should fail loudly when artifactSummary.recommendedForPromotion does not match the summary derived from manifest.verification", () => {
     const artifactVerification = createVerification({
       state: "passed",
