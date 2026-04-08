@@ -249,6 +249,39 @@ describe("control-plane runtime-state wait readiness helpers", () => {
     ).toThrow(
       "Execution session wait readiness requires context to be an object."
     );
+
+    expect(() =>
+      deriveExecutionSessionWaitReadiness({
+        context: {
+          record: undefined as never
+        } as never
+      })
+    ).toThrow(
+      "Execution session wait readiness requires context.record to be an object."
+    );
+  });
+
+  it("should fail loudly when the supplied wait-readiness context uses an invalid lifecycle state", () => {
+    expect(() =>
+      deriveExecutionSessionWaitReadiness({
+        context: {
+          record: {},
+          hasKnownSession: true,
+          hasChildren: false
+        } as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionWaitReadiness({
+        context: {
+          record: {},
+          hasKnownSession: true,
+          hasChildren: false
+        } as never
+      })
+    ).toThrow(
+      "Execution session lifecycle disposition requires context.record.lifecycleState to use the existing session lifecycle vocabulary."
+    );
   });
 });
 

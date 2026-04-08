@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   buildExecutionSessionView,
   deriveExecutionSessionContext,
@@ -137,6 +138,63 @@ describe("control-plane runtime-state lifecycle disposition helpers", () => {
       hasKnownSession: true,
       wouldAffectDescendants: false
     });
+  });
+
+  it("should fail loudly when lifecycle disposition input, context flags, or lifecycle state are malformed", () => {
+    expect(() =>
+      deriveExecutionSessionLifecycleDisposition(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionLifecycleDisposition(undefined as never)
+    ).toThrow("Execution session lifecycle disposition input must be an object.");
+
+    expect(() =>
+      deriveExecutionSessionLifecycleDisposition({
+        context: undefined as never
+      })
+    ).toThrow(
+      "Execution session lifecycle disposition requires context to be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionLifecycleDisposition({
+        context: {
+          record: {},
+          hasKnownSession: true,
+          hasChildren: false
+        } as never
+      })
+    ).toThrow(
+      "Execution session lifecycle disposition requires context.record.lifecycleState to use the existing session lifecycle vocabulary."
+    );
+
+    expect(() =>
+      deriveExecutionSessionLifecycleDisposition({
+        context: {
+          record: {
+            lifecycleState: "active"
+          },
+          hasKnownSession: "yes",
+          hasChildren: false
+        } as never
+      })
+    ).toThrow(
+      "Execution session lifecycle disposition requires context.hasKnownSession to be a boolean."
+    );
+
+    expect(() =>
+      deriveExecutionSessionLifecycleDisposition({
+        context: {
+          record: {
+            lifecycleState: "active"
+          },
+          hasKnownSession: true,
+          hasChildren: 1
+        } as never
+      })
+    ).toThrow(
+      "Execution session lifecycle disposition requires context.hasChildren to be a boolean."
+    );
   });
 });
 

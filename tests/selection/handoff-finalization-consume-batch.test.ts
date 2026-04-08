@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import type {
   AttemptHandoffFinalizationConsumer,
   AttemptHandoffFinalizationRequest
@@ -20,6 +21,51 @@ describe("selection handoff-finalization-consume-batch helpers", () => {
     ).resolves.toEqual({
       results: []
     });
+  });
+
+  it("should fail loudly when batch input is not an object", async () => {
+    await expect(
+      consumeAttemptHandoffFinalizationBatch(undefined as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeAttemptHandoffFinalizationBatch(undefined as never)
+    ).rejects.toThrow(
+      "Attempt handoff finalization consume batch input must be an object."
+    );
+  });
+
+  it("should fail loudly when consumers is not an array", async () => {
+    await expect(
+      consumeAttemptHandoffFinalizationBatch({
+        consumers: undefined as never,
+        invokeHandoffFinalization: async () => undefined
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeAttemptHandoffFinalizationBatch({
+        consumers: undefined as never,
+        invokeHandoffFinalization: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization consume batch requires consumers to be an array."
+    );
+  });
+
+  it("should fail loudly when invokeHandoffFinalization is not a function", async () => {
+    await expect(
+      consumeAttemptHandoffFinalizationBatch({
+        consumers: [],
+        invokeHandoffFinalization: undefined as never
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeAttemptHandoffFinalizationBatch({
+        consumers: [],
+        invokeHandoffFinalization: undefined as never
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization consume batch requires invokeHandoffFinalization to be a function."
+    );
   });
 
   it("should preserve input order and continue past blocked consumers", async () => {
@@ -131,6 +177,48 @@ describe("selection handoff-finalization-consume-batch helpers", () => {
       })
     ).rejects.toThrow(expectedError);
     expect(invokedAttemptIds).toEqual(["att_supported_1", "att_supported_2"]);
+  });
+
+  it("should fail fast when a batch entry is not a valid consumer and stop before invoking later supported entries", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      consumeAttemptHandoffFinalizationBatch({
+        consumers: [
+          undefined,
+          createSupportedConsumer({
+            request: createFinalizationRequest({
+              attemptId: "att_supported"
+            })
+          })
+        ] as unknown as AttemptHandoffFinalizationConsumer[],
+        invokeHandoffFinalization: async (
+          request: AttemptHandoffFinalizationRequest
+        ) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeAttemptHandoffFinalizationBatch({
+        consumers: [
+          undefined,
+          createSupportedConsumer({
+            request: createFinalizationRequest({
+              attemptId: "att_supported"
+            })
+          })
+        ] as unknown as AttemptHandoffFinalizationConsumer[],
+        invokeHandoffFinalization: async (
+          request: AttemptHandoffFinalizationRequest
+        ) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization consume requires consumer to be an object."
+    );
+    expect(invokedAttemptIds).toEqual([]);
   });
 
   it("should keep the batch result shape minimal and leave inputs untouched", async () => {

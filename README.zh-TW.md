@@ -65,8 +65,8 @@
 
 - [docs/compat/overview.md](docs/compat/overview.md)
 - [ROADMAP.md](ROADMAP.md)
-- [docs/compat/tooling-matrix.md](docs/compat/tooling-matrix.md)
 - [docs/maintainers/development-phases.md](docs/maintainers/development-phases.md)
+- [docs/compat/tooling-matrix.md](docs/compat/tooling-matrix.md)
 - [docs/research/vision-synthesis.md](docs/research/vision-synthesis.md)
 
 ## 公開與私有文件

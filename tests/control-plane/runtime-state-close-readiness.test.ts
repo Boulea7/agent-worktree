@@ -319,6 +319,56 @@ describe("control-plane runtime-state close readiness helpers", () => {
     ).toThrow(
       "Execution session close readiness requires context to be an object."
     );
+
+    expect(() =>
+      deriveExecutionSessionCloseReadiness({
+        context: {
+          record: undefined as never
+        } as never
+      })
+    ).toThrow(
+      "Execution session close readiness requires context.record to be an object."
+    );
+  });
+
+  it("should fail loudly when the supplied close-readiness context omits lifecycle or runtime fields", () => {
+    expect(() =>
+      deriveExecutionSessionCloseReadiness({
+        context: {
+          record: {},
+          hasKnownSession: true,
+          hasChildren: false
+        } as never,
+        resolveSessionLifecycleCapability: () => true
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionCloseReadiness({
+        context: {
+          record: {},
+          hasKnownSession: true,
+          hasChildren: false
+        } as never,
+        resolveSessionLifecycleCapability: () => true
+      })
+    ).toThrow(
+      "Execution session lifecycle disposition requires context.record.lifecycleState to use the existing session lifecycle vocabulary."
+    );
+
+    expect(() =>
+      deriveExecutionSessionCloseReadiness({
+        context: {
+          record: {
+            lifecycleState: "active"
+          },
+          hasKnownSession: true,
+          hasChildren: false
+        } as never,
+        resolveSessionLifecycleCapability: () => true
+      })
+    ).toThrow(
+      "Execution session close readiness requires context.record.runtime to be a non-empty string."
+    );
   });
 });
 
