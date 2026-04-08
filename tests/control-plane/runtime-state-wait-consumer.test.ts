@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   deriveExecutionSessionWaitConsumer,
   type ExecutionSessionWaitRequest
@@ -109,6 +110,56 @@ describe("control-plane runtime-state wait-consumer helpers", () => {
       }
     });
     expect(request).toEqual(requestSnapshot);
+  });
+
+  it("should reject non-object wait consumer inputs before reading request", () => {
+    expect(() =>
+      deriveExecutionSessionWaitConsumer(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionWaitConsumer(undefined as never)
+    ).toThrow("Execution session wait consumer input must be an object.");
+    expect(() =>
+      deriveExecutionSessionWaitConsumer(null as never)
+    ).toThrow("Execution session wait consumer input must be an object.");
+    expect(() =>
+      deriveExecutionSessionWaitConsumer([] as never)
+    ).toThrow("Execution session wait consumer input must be an object.");
+  });
+
+  it("should reject missing or non-object wait consumer requests before deriving readiness", () => {
+    expect(() =>
+      deriveExecutionSessionWaitConsumer({
+        request: undefined as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionWaitConsumer({
+        request: undefined as never
+      })
+    ).toThrow(
+      "Execution session wait consumer requires request to be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionWaitConsumer({
+        request: [] as never
+      })
+    ).toThrow(
+      "Execution session wait consumer requires request to be an object."
+    );
+  });
+
+  it("should continue surfacing downstream request validation failures", () => {
+    expect(() =>
+      deriveExecutionSessionWaitConsumer({
+        request: createWaitRequest({
+          sessionId: "   "
+        })
+      })
+    ).toThrow(
+      "Execution session wait request sessionId must be a non-empty string."
+    );
   });
 });
 

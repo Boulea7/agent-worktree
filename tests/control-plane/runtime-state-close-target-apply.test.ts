@@ -124,6 +124,46 @@ describe("control-plane runtime-state close-target-apply helpers", () => {
     );
   });
 
+  it("should reject non-object close target-apply inputs before deriving a request", async () => {
+    await expect(
+      applyExecutionSessionCloseTarget(undefined as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyExecutionSessionCloseTarget(undefined as never)
+    ).rejects.toThrow(
+      "Execution session close target apply input must be an object."
+    );
+    await expect(
+      applyExecutionSessionCloseTarget(null as never)
+    ).rejects.toThrow(
+      "Execution session close target apply input must be an object."
+    );
+    await expect(
+      applyExecutionSessionCloseTarget([] as never)
+    ).rejects.toThrow(
+      "Execution session close target apply input must be an object."
+    );
+  });
+
+  it("should reject missing or non-object close targets before deriving a request", async () => {
+    await expect(
+      applyExecutionSessionCloseTarget({
+        target: undefined as never,
+        invokeClose: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Execution session close target apply requires target to be an object."
+    );
+    await expect(
+      applyExecutionSessionCloseTarget({
+        target: [] as never,
+        invokeClose: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Execution session close target apply requires target to be an object."
+    );
+  });
+
   it("should surface invoker failures directly without returning a partial target-apply result", async () => {
     const expectedError = new Error("close failed");
 
