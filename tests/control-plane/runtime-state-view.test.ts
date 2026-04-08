@@ -226,6 +226,57 @@ describe("control-plane runtime-state view helpers", () => {
       ])
     ).toThrow(ValidationError);
   });
+
+  it("should fail loudly when view helper inputs or containers are malformed", () => {
+    const view = buildExecutionSessionView([
+      createRecord({
+        attemptId: "att_root",
+        sessionId: "thr_root",
+        sourceKind: "direct"
+      })
+    ]);
+
+    expect(() => buildExecutionSessionView(undefined as never)).toThrow(
+      ValidationError
+    );
+    expect(() => buildExecutionSessionView(undefined as never)).toThrow(
+      "Execution session view records must be an array."
+    );
+
+    expect(() =>
+      resolveExecutionSessionRecord(undefined as never, {
+        attemptId: "att_root"
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      resolveExecutionSessionRecord(undefined as never, {
+        attemptId: "att_root"
+      })
+    ).toThrow("Execution session view requires view to be an object.");
+
+    expect(() =>
+      resolveExecutionSessionRecord(view, undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      resolveExecutionSessionRecord(view, undefined as never)
+    ).toThrow("Execution session view requires selector to be an object.");
+
+    expect(() =>
+      listChildExecutionSessions(undefined as never, "att_root")
+    ).toThrow(ValidationError);
+    expect(() =>
+      listChildExecutionSessions(undefined as never, "att_root")
+    ).toThrow("Execution session view requires view to be an object.");
+
+    expect(() =>
+      listChildExecutionSessions(view, 123 as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      listChildExecutionSessions(view, 123 as never)
+    ).toThrow(
+      "Execution session view parent attemptId must be a non-empty string."
+    );
+  });
 });
 
 function createRecord(

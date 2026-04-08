@@ -1,3 +1,4 @@
+import { ValidationError } from "../core/errors.js";
 import {
   listChildExecutionSessions,
   resolveExecutionSessionRecord
@@ -11,6 +12,24 @@ import type {
 export function deriveExecutionSessionContext(
   input: ExecutionSessionContextInput
 ): ExecutionSessionContext | undefined {
+  if (!isRecord(input)) {
+    throw new ValidationError(
+      "Execution session context input must be an object."
+    );
+  }
+
+  if (!isRecord(input.view)) {
+    throw new ValidationError(
+      "Execution session context requires view to be an object."
+    );
+  }
+
+  if (!isRecord(input.selector)) {
+    throw new ValidationError(
+      "Execution session context requires selector to be an object."
+    );
+  }
+
   const record = resolveExecutionSessionRecord(input.view, input.selector);
 
   if (record === undefined) {
@@ -39,4 +58,8 @@ function deriveSelectionKind(
   input: ExecutionSessionContextInput
 ): ExecutionSessionContextSelectionKind {
   return input.selector.attemptId !== undefined ? "attemptId" : "sessionId";
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

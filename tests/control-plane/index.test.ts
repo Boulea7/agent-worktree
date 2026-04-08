@@ -186,6 +186,12 @@ type ControlPlaneIndexShouldNotExportExecutionSessionRecord = import("../../src/
 // @ts-expect-error control-plane index must not export execution-session context types
 type ControlPlaneIndexShouldNotExportExecutionSessionContext = import("../../src/control-plane/index.js").ExecutionSessionContext;
 
+// @ts-expect-error control-plane index must not export execution-session view types
+type ControlPlaneIndexShouldNotExportExecutionSessionView = import("../../src/control-plane/index.js").ExecutionSessionView;
+
+// @ts-expect-error control-plane index must not export execution-session lifecycle disposition types
+type ControlPlaneIndexShouldNotExportExecutionSessionLifecycleDisposition = import("../../src/control-plane/index.js").ExecutionSessionLifecycleDisposition;
+
 // @ts-expect-error control-plane index must not export wait targets
 type ControlPlaneIndexShouldNotExportWaitTarget = import("../../src/control-plane/index.js").ExecutionSessionWaitTarget;
 
@@ -266,6 +272,15 @@ type ControlPlaneIndexShouldNotExportSpawnHeadlessInput = import("../../src/cont
 
 // @ts-expect-error control-plane index must not export headless spawn input batch results
 type ControlPlaneIndexShouldNotExportSpawnHeadlessInputBatch = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessInputBatch;
+
+// @ts-expect-error control-plane index must not export headless spawn apply results
+type ControlPlaneIndexShouldNotExportSpawnHeadlessApply = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessApply;
+
+// @ts-expect-error control-plane index must not export headless spawn apply batch results
+type ControlPlaneIndexShouldNotExportSpawnHeadlessApplyBatch = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessApplyBatch;
+
+// @ts-expect-error control-plane index must not export headless spawn execute results
+type ControlPlaneIndexShouldNotExportSpawnHeadlessExecute = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessExecute;
 
 // @ts-expect-error control-plane index must not export headless close candidates
 type ControlPlaneIndexShouldNotExportSpawnHeadlessCloseCandidate = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessCloseCandidate;

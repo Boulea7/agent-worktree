@@ -100,6 +100,145 @@ describe("selection handoff-finalization-consume helpers", () => {
     ).rejects.toBe(expectedError);
   });
 
+  it("should fail loudly when consume input is not an object", async () => {
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      consumeAttemptHandoffFinalization(undefined as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeAttemptHandoffFinalization(undefined as never)
+    ).rejects.toThrow(
+      "Attempt handoff finalization consume input must be an object."
+    );
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
+  it("should fail before invoking handoff finalization when consumer is not an object", async () => {
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      consumeAttemptHandoffFinalization({
+        consumer: undefined as never,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeAttemptHandoffFinalization({
+        consumer: undefined as never,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization consume requires consumer to be an object."
+    );
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
+  it("should fail before invoking handoff finalization when invokeHandoffFinalization is not a function", async () => {
+    await expect(
+      consumeAttemptHandoffFinalization({
+        consumer: createFinalizationConsumer(),
+        invokeHandoffFinalization: undefined as never
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeAttemptHandoffFinalization({
+        consumer: createFinalizationConsumer(),
+        invokeHandoffFinalization: undefined as never
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization consume requires invokeHandoffFinalization to be a function."
+    );
+  });
+
+  it("should fail before invoking handoff finalization when consumer.request is not an object", async () => {
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      consumeAttemptHandoffFinalization({
+        consumer: createFinalizationConsumer({
+          request: undefined as never
+        }),
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeAttemptHandoffFinalization({
+        consumer: createFinalizationConsumer({
+          request: undefined as never
+        }),
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization consume requires consumer.request to be an object."
+    );
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
+  it("should fail before invoking handoff finalization when consumer.readiness is not an object", async () => {
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      consumeAttemptHandoffFinalization({
+        consumer: createFinalizationConsumer({
+          readiness: undefined as never
+        }),
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeAttemptHandoffFinalization({
+        consumer: createFinalizationConsumer({
+          readiness: undefined as never
+        }),
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization consume requires consumer.readiness to be an object."
+    );
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
+  it("should fail before invoking handoff finalization when consumer.request.status uses an unknown attempt status", async () => {
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      consumeAttemptHandoffFinalization({
+        consumer: createFinalizationConsumer({
+          request: createFinalizationRequest({
+            status: "invalid_status" as never
+          }),
+          readiness: {
+            blockingReasons: [],
+            canConsumeHandoffFinalization: true,
+            hasBlockingReasons: false,
+            handoffFinalizationSupported: true
+          }
+        }),
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeAttemptHandoffFinalization({
+        consumer: createFinalizationConsumer({
+          request: createFinalizationRequest({
+            status: "invalid_status" as never
+          }),
+          readiness: {
+            blockingReasons: [],
+            canConsumeHandoffFinalization: true,
+            hasBlockingReasons: false,
+            handoffFinalizationSupported: true
+          }
+        }),
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization consume requires consumer.request.status to use the existing attempt status vocabulary."
+    );
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
   it("should fail before invoking handoff finalization when readiness blockingReasons is not an array", async () => {
     const consumer = createFinalizationConsumer({
       readiness: {

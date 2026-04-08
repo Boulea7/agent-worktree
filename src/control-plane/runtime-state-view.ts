@@ -10,9 +10,20 @@ import type {
 export function buildExecutionSessionView(
   records: readonly ExecutionSessionRecord[]
 ): ExecutionSessionView {
+  if (!Array.isArray(records)) {
+    throw new ValidationError("Execution session view records must be an array.");
+  }
+
   const childAttemptIdsByParent = new Map<string, string[]>();
 
-  for (const record of records) {
+  for (let index = 0; index < records.length; index += 1) {
+    if (!hasOwnIndex(records, index) || !isRecord(records[index])) {
+      throw new ValidationError(
+        "Execution session view records must contain only objects."
+      );
+    }
+
+    const record = records[index] as ExecutionSessionRecord;
     const attemptId = normalizeRequiredAttemptId(
       record.attemptId,
       "Execution session view attemptId must be a non-empty string."
@@ -41,6 +52,8 @@ export function resolveExecutionSessionRecord(
   view: ExecutionSessionView,
   selector: ExecutionSessionSelector
 ): ExecutionSessionRecord | undefined {
+  validateView(view);
+  validateSelectorContainer(selector);
   const normalizedSelector = normalizeSelector(selector);
 
   if ("attemptId" in normalizedSelector) {
@@ -54,6 +67,7 @@ export function listChildExecutionSessions(
   view: ExecutionSessionView,
   attemptId: string
 ): ExecutionSessionRecord[] {
+  validateView(view);
   const normalizedAttemptId = normalizeRequiredIdentifier(
     attemptId,
     "Execution session view parent attemptId must be a non-empty string."
@@ -95,11 +109,15 @@ function normalizeSelector(
 }
 
 function normalizeOptionalIdentifier(
-  value: string | undefined,
+  value: unknown,
   message: string
 ): string | undefined {
   if (value === undefined) {
     return undefined;
+  }
+
+  if (typeof value !== "string") {
+    throw new ValidationError(message);
   }
 
   const normalized = value.trim();
@@ -111,7 +129,11 @@ function normalizeOptionalIdentifier(
   return normalized;
 }
 
-function normalizeRequiredIdentifier(value: string, message: string): string {
+function normalizeRequiredIdentifier(value: unknown, message: string): string {
+  if (typeof value !== "string") {
+    throw new ValidationError(message);
+  }
+
   const normalized = value.trim();
 
   if (normalized.length === 0) {
@@ -119,4 +141,44 @@ function normalizeRequiredIdentifier(value: string, message: string): string {
   }
 
   return normalized;
+}
+
+function validateView(view: unknown): asserts view is ExecutionSessionView {
+  if (
+    !isRecord(view) ||
+    !isRecord(view.index) ||
+    !hasMapGetter(view.index.byAttemptId) ||
+    !hasMapGetter(view.index.bySessionId) ||
+    !hasMapGetter(view.childAttemptIdsByParent)
+  ) {
+    throw new ValidationError(
+      "Execution session view requires view to be an object."
+    );
+  }
+}
+
+function validateSelectorContainer(
+  selector: unknown
+): asserts selector is ExecutionSessionSelector {
+  if (!isRecord(selector)) {
+    throw new ValidationError(
+      "Execution session view requires selector to be an object."
+    );
+  }
+}
+
+function hasOwnIndex(values: readonly unknown[], index: number): boolean {
+  return Object.prototype.hasOwnProperty.call(values, index);
+}
+
+function hasMapGetter(value: unknown): value is { get: (key: string) => unknown } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as { get?: unknown }).get === "function"
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

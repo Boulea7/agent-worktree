@@ -58,6 +58,21 @@ type SelectionIndexShouldNotExportHandoffRequest = import("../../src/selection/i
 // @ts-expect-error selection index must not export handoff consumer types
 type SelectionIndexShouldNotExportHandoffConsumer = import("../../src/selection/index.js").AttemptHandoffConsumer;
 
+// @ts-expect-error selection index must not export handoff capability resolver types
+type SelectionIndexShouldNotExportHandoffCapabilityResolver = import("../../src/selection/index.js").AttemptHandoffCapabilityResolver;
+
+// @ts-expect-error selection index must not export handoff consumer readiness types
+type SelectionIndexShouldNotExportHandoffConsumerReadiness = import("../../src/selection/index.js").AttemptHandoffConsumerReadiness;
+
+// @ts-expect-error selection index must not export handoff consume result types
+type SelectionIndexShouldNotExportHandoffConsume = import("../../src/selection/index.js").AttemptHandoffConsume;
+
+// @ts-expect-error selection index must not export handoff apply result types
+type SelectionIndexShouldNotExportHandoffApply = import("../../src/selection/index.js").AttemptHandoffApply;
+
+// @ts-expect-error selection index must not export promotion target apply result types
+type SelectionIndexShouldNotExportPromotionTargetApply = import("../../src/selection/index.js").AttemptPromotionTargetApply;
+
 // @ts-expect-error selection index must not export handoff finalization target payloads
 type SelectionIndexShouldNotExportHandoffFinalizationTarget = import("../../src/selection/index.js").AttemptHandoffFinalizationTarget;
 

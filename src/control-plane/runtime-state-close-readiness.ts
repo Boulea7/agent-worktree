@@ -31,7 +31,8 @@ export function deriveExecutionSessionCloseReadiness(
   const disposition = deriveExecutionSessionLifecycleDisposition({
     context: input.context
   });
-  const sessionLifecycleSupported = resolveSessionLifecycleCapability(input);
+  const runtime = normalizeRequiredRuntime(input.context.record.runtime);
+  const sessionLifecycleSupported = resolveSessionLifecycleCapability(input, runtime);
   const blockingReasons: ExecutionSessionCloseBlockingReason[] = [];
 
   if (!sessionLifecycleSupported) {
@@ -61,20 +62,36 @@ export function deriveExecutionSessionCloseReadiness(
 }
 
 function resolveSessionLifecycleCapability(
-  input: ExecutionSessionCloseReadinessInput
+  input: ExecutionSessionCloseReadinessInput,
+  runtime: string
 ): boolean {
   if (input.resolveSessionLifecycleCapability !== undefined) {
-    return input.resolveSessionLifecycleCapability(input.context.record.runtime);
+    return input.resolveSessionLifecycleCapability(runtime);
   }
 
   try {
-    return adapterSupportsCapability(
-      input.context.record.runtime,
-      "sessionLifecycle"
-    );
+    return adapterSupportsCapability(runtime, "sessionLifecycle");
   } catch {
     return false;
   }
+}
+
+function normalizeRequiredRuntime(value: unknown): string {
+  if (typeof value !== "string") {
+    throw new ValidationError(
+      "Execution session close readiness requires context.record.runtime to be a non-empty string."
+    );
+  }
+
+  const normalized = value.trim();
+
+  if (normalized.length === 0) {
+    throw new ValidationError(
+      "Execution session close readiness requires context.record.runtime to be a non-empty string."
+    );
+  }
+
+  return normalized;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -238,6 +238,39 @@ describe("control-plane runtime-state context helpers", () => {
       })
     ).toThrow(ValidationError);
   });
+
+  it("should fail loudly when the supplied context input, view, or selector containers are malformed", () => {
+    const view = buildExecutionSessionView([
+      createRecord({
+        attemptId: "att_root",
+        sessionId: "thr_root",
+        sourceKind: "direct"
+      })
+    ]);
+
+    expect(() =>
+      deriveExecutionSessionContext(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionContext(undefined as never)
+    ).toThrow("Execution session context input must be an object.");
+
+    expect(() =>
+      deriveExecutionSessionContext({
+        view: undefined as never,
+        selector: {
+          attemptId: "att_root"
+        }
+      })
+    ).toThrow("Execution session context requires view to be an object.");
+
+    expect(() =>
+      deriveExecutionSessionContext({
+        view,
+        selector: undefined as never
+      })
+    ).toThrow("Execution session context requires selector to be an object.");
+  });
 });
 
 function createRecord(
