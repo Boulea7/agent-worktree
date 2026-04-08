@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { ValidationError } from "../../src/core/errors.js";
 import {
+  deriveExecutionSessionCloseRecordedEvent,
   deriveExecutionSessionCloseRequestedEvent,
   type ExecutionSessionCloseRequest
 } from "../../src/control-plane/internal.js";
@@ -52,6 +53,35 @@ describe("control-plane runtime-state close-requested-event helpers", () => {
       sessionId: "thr_active_trimmed",
       lifecycleEventKind: "close_requested"
     });
+  });
+
+  it("should preserve canonicalized identifiers through the close request lifecycle chain", () => {
+    const request = createCloseRequest({
+      attemptId: "  att_chain_trimmed  ",
+      runtime: "  codex-cli  ",
+      sessionId: "  thr_chain_trimmed  "
+    });
+    const requestSnapshot = JSON.parse(JSON.stringify(request));
+    const requestedEvent = deriveExecutionSessionCloseRequestedEvent({
+      request
+    });
+    const recordedEvent = deriveExecutionSessionCloseRecordedEvent({
+      requestedEvent
+    });
+
+    expect(requestedEvent).toEqual({
+      attemptId: "att_chain_trimmed",
+      runtime: "codex-cli",
+      sessionId: "thr_chain_trimmed",
+      lifecycleEventKind: "close_requested"
+    });
+    expect(recordedEvent).toEqual({
+      attemptId: "att_chain_trimmed",
+      runtime: "codex-cli",
+      sessionId: "thr_chain_trimmed",
+      lifecycleEventKind: "close_recorded"
+    });
+    expect(request).toEqual(requestSnapshot);
   });
 
   it("should keep request, selector, state, and policy data out of the derived event", () => {

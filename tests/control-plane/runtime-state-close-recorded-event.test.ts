@@ -37,6 +37,23 @@ describe("control-plane runtime-state close-recorded-event helpers", () => {
     expect(requestedEvent).toEqual(requestedEventSnapshot);
   });
 
+  it("should canonicalize requested-event identifiers before projecting close_recorded", () => {
+    expect(
+      deriveExecutionSessionCloseRecordedEvent({
+        requestedEvent: createCloseRequestedEvent({
+          attemptId: "  att_recorded_trimmed  ",
+          runtime: "  codex-cli  ",
+          sessionId: "  thr_recorded_trimmed  "
+        })
+      })
+    ).toEqual({
+      attemptId: "att_recorded_trimmed",
+      runtime: "codex-cli",
+      sessionId: "thr_recorded_trimmed",
+      lifecycleEventKind: "close_recorded"
+    });
+  });
+
   it("should keep requested-event, selector, readiness, policy, manifest, and outcome data out of the derived close_recorded event", () => {
     const event = deriveExecutionSessionCloseRecordedEvent({
       requestedEvent: createCloseRequestedEvent()
