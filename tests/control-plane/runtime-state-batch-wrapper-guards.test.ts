@@ -33,6 +33,18 @@ describe("control-plane runtime-state batch-wrapper-guards helpers", () => {
         "Execution session close consume batch input must be an object."
       )
     ).toThrow("Execution session close consume batch input must be an object.");
+    expect(() =>
+      normalizeBatchWrapper(
+        null as never,
+        "Execution session close consume batch input must be an object."
+      )
+    ).toThrow("Execution session close consume batch input must be an object.");
+    expect(() =>
+      normalizeBatchWrapper(
+        [] as never,
+        "Execution session close consume batch input must be an object."
+      )
+    ).toThrow("Execution session close consume batch input must be an object.");
   });
 
   it("should return the same array reference when the collection is valid", () => {
@@ -56,6 +68,14 @@ describe("control-plane runtime-state batch-wrapper-guards helpers", () => {
     expect(() =>
       normalizeBatchWrapperItems(
         {},
+        "Execution session close target apply batch requires targets to be an array."
+      )
+    ).toThrow(
+      "Execution session close target apply batch requires targets to be an array."
+    );
+    expect(() =>
+      normalizeBatchWrapperItems(
+        undefined as never,
         "Execution session close target apply batch requires targets to be an array."
       )
     ).toThrow(
