@@ -1,6 +1,6 @@
 import { ValidationError } from "../core/errors.js";
 
-export function normalizeBatchWrapper<Wrapper extends Record<string, unknown>>(
+export function normalizeBatchWrapper<Wrapper extends object>(
   value: unknown,
   inputMessage: string
 ): Wrapper {
