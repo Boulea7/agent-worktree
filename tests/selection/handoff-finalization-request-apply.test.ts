@@ -285,6 +285,26 @@ describe("selection handoff-finalization-request-apply helpers", () => {
     expect(invokeHandoffFinalization).not.toHaveBeenCalled();
   });
 
+  it("should fail loudly when summary.requests contains requests with invalid status values", async () => {
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      applyAttemptHandoffFinalizationRequestSummary({
+        summary: createRequestSummary({
+          requests: [
+            createRequest({
+              status: "invalid" as never
+            })
+          ]
+        }) as never,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization request apply requires summary.requests entries to use the existing attempt status vocabulary."
+    );
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
   it("should fail loudly when summary.blockingReasons contains sparse array holes", async () => {
     const invokeHandoffFinalization = vi.fn(async () => undefined);
     const blockingReasons = new Array<string>(1);

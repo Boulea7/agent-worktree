@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   buildExecutionSessionView,
   deriveExecutionSessionCloseCandidate,
@@ -177,6 +178,87 @@ describe("control-plane runtime-state close-target helpers", () => {
       sessionId: "thr_chain"
     });
     expect(candidate).toEqual(candidateSnapshot);
+  });
+
+  it("should fail loudly when the supplied close-target input or candidate containers are malformed", () => {
+    expect(() =>
+      deriveExecutionSessionCloseTarget(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionCloseTarget(undefined as never)
+    ).toThrow("Execution session close target input must be an object.");
+
+    expect(() =>
+      deriveExecutionSessionCloseTarget({
+        candidate: undefined as never
+      })
+    ).toThrow(
+      "Execution session close target requires candidate to be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionCloseTarget({
+        candidate: {
+          context: null,
+          readiness: {}
+        } as never
+      })
+    ).toThrow(
+      "Execution session close target requires candidate.context to be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionCloseTarget({
+        candidate: {
+          context: {
+            record: {
+              attemptId: "att_active",
+              runtime: "codex-cli",
+              sessionId: "thr_active"
+            }
+          },
+          readiness: null
+        } as never
+      })
+    ).toThrow(
+      "Execution session close target requires candidate.readiness to be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionCloseTarget({
+        candidate: {
+          context: {
+            record: {
+              attemptId: "att_active",
+              runtime: "codex-cli",
+              sessionId: "thr_active"
+            }
+          },
+          readiness: {}
+        } as never
+      })
+    ).toThrow(
+      "Execution session close target requires candidate.readiness.canClose to be a boolean."
+    );
+
+    expect(() =>
+      deriveExecutionSessionCloseTarget({
+        candidate: {
+          context: {
+            record: {
+              attemptId: "att_active",
+              runtime: "   ",
+              sessionId: "thr_active"
+            }
+          },
+          readiness: {
+            canClose: true
+          }
+        } as never
+      })
+    ).toThrow(
+      "Execution session close target requires candidate.context.record.runtime to be a non-empty string."
+    );
   });
 });
 

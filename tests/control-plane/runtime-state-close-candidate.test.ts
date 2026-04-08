@@ -230,6 +230,51 @@ describe("control-plane runtime-state close-candidate helpers", () => {
     });
   });
 
+  it("should fail loudly when the supplied close-candidate input, view, or selector containers are malformed", () => {
+    expect(() =>
+      deriveExecutionSessionCloseCandidate(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionCloseCandidate(undefined as never)
+    ).toThrow("Execution session close candidate input must be an object.");
+
+    expect(() =>
+      deriveExecutionSessionCloseCandidate({
+        view: undefined as never,
+        selector: {
+          attemptId: "att_active"
+        }
+      })
+    ).toThrow(
+      "Execution session close candidate requires view to be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionCloseCandidate({
+        view: buildExecutionSessionView([]),
+        selector: undefined as never
+      })
+    ).toThrow(
+      "Execution session close candidate requires selector to be an object."
+    );
+
+    const incompleteView = buildExecutionSessionView([]);
+
+    expect(() =>
+      deriveExecutionSessionCloseCandidate({
+        view: {
+          ...incompleteView,
+          childAttemptIdsByParent: undefined as never
+        },
+        selector: {
+          attemptId: "att_active"
+        }
+      })
+    ).toThrow(
+      "Execution session close candidate requires view to be an object."
+    );
+  });
+
   it("should preserve terminal lifecycle blocking for closed sessions", () => {
     const record = createRecord({
       attemptId: "att_closed",

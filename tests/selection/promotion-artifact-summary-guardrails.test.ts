@@ -124,6 +124,108 @@ describe("selection promotion-artifact-summary-guardrails helpers", () => {
     );
   });
 
+  it("should reject malformed summary containers before comparing canonical summary values", () => {
+    const checks = [
+      createExecutedCheck({
+        name: "lint",
+        required: true,
+        status: "passed"
+      })
+    ];
+    const verification = createVerification(checks);
+
+    expect(() =>
+      validatePromotionArtifactSummaryCheckNameLists({
+        artifactSummary: {
+          ...createArtifactSummary(checks, verification),
+          summary: null as never
+        },
+        errorPrefix: "Attempt promotion candidate requires",
+        summaryField: "artifactSummary"
+      })
+    ).toThrow(
+      "Attempt promotion candidate requires artifactSummary.summary to be an object."
+    );
+
+    expect(() =>
+      validatePromotionArtifactSummaryCheckNameLists({
+        artifactSummary: {
+          ...createArtifactSummary(checks, verification),
+          summary: {
+            ...deriveAttemptVerificationSummary(verification),
+            counts: null as never
+          }
+        },
+        errorPrefix: "Attempt promotion candidate requires",
+        summaryField: "artifactSummary"
+      })
+    ).toThrow(
+      "Attempt promotion candidate requires artifactSummary.summary.counts to be an object."
+    );
+  });
+
+  it("should reject malformed top-level artifact summary containers before reading nested fields", () => {
+    expect(() =>
+      validatePromotionArtifactSummaryCheckNameLists({
+        artifactSummary: null as never,
+        errorPrefix: "Attempt promotion candidate requires",
+        summaryField: "artifactSummary"
+      })
+    ).toThrow(
+      "Attempt promotion candidate requires artifactSummary to be an object."
+    );
+  });
+
+  it("should reject malformed check-name arrays before comparing them with artifactSummary.checks", () => {
+    const checks = [
+      createExecutedCheck({
+        name: "lint",
+        required: true,
+        status: "passed"
+      })
+    ];
+    const verification = createVerification(checks);
+    const pendingCheckNames = new Array<string>(1);
+
+    expect(() =>
+      validatePromotionArtifactSummaryCheckNameLists({
+        artifactSummary: {
+          ...createArtifactSummary(checks, verification),
+          pendingCheckNames
+        },
+        errorPrefix: "Attempt promotion candidate requires",
+        summaryField: "artifactSummary"
+      })
+    ).toThrow(
+      "Attempt promotion candidate requires artifactSummary.pendingCheckNames to use non-empty string entries."
+    );
+  });
+
+  it("should reject malformed artifactSummary.checks containers before deriving canonical check-name lists", () => {
+    const checks = [
+      createExecutedCheck({
+        name: "lint",
+        required: true,
+        status: "passed"
+      })
+    ];
+    const verification = createVerification(checks);
+    const artifactChecks = new Array<AttemptVerificationExecutedCheck>(1);
+
+    expect(() =>
+      validatePromotionArtifactSummaryCheckNameLists({
+        artifactSummary: {
+          ...createArtifactSummary(checks, verification),
+          checks: artifactChecks as never
+        },
+        errorPrefix: "Attempt promotion candidate requires",
+        summaryField: "artifactSummary"
+      })
+    ).toThrow(
+      "Attempt promotion candidate requires artifactSummary.checks to use the existing verification check vocabulary."
+    );
+  });
+
   it("should reject artifact summaries that drift from manifest.verification.checks", () => {
     const checks = [
       createExecutedCheck({
@@ -151,6 +253,41 @@ describe("selection promotion-artifact-summary-guardrails helpers", () => {
         errorPrefix: "Attempt promotion candidate requires",
         summaryField: "artifactSummary",
         verification: mismatchedVerification
+      })
+    ).toThrow(
+      "Attempt promotion candidate requires artifactSummary.checks to match manifest.verification.checks."
+    );
+  });
+
+  it("should reject malformed manifest.verification.checks containers before comparing check entries", () => {
+    const checks = [
+      createExecutedCheck({
+        name: "lint",
+        required: true,
+        status: "passed"
+      })
+    ];
+    const verification = createVerification(checks);
+    const artifactSummary = createArtifactSummary(checks, verification);
+    const verificationChecks = new Array<AttemptVerification["checks"][number]>(1);
+
+    Object.setPrototypeOf(verificationChecks, {
+      0: {
+        name: "lint",
+        required: true,
+        status: "passed"
+      }
+    });
+
+    expect(() =>
+      validatePromotionArtifactSummaryCheckNameLists({
+        artifactSummary,
+        errorPrefix: "Attempt promotion candidate requires",
+        summaryField: "artifactSummary",
+        verification: {
+          ...verification,
+          checks: verificationChecks as never
+        }
       })
     ).toThrow(
       "Attempt promotion candidate requires artifactSummary.checks to match manifest.verification.checks."

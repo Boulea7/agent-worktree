@@ -21,6 +21,17 @@ export function validatePromotionArtifactSummaryCheckNameLists(input: {
   verification?: AttemptVerification;
 }): void {
   const { artifactSummary, errorPrefix, summaryField, verification } = input;
+  if (!isRecord(artifactSummary)) {
+    throw new ValidationError(
+      `${errorPrefix} ${summaryField} to be an object.`
+    );
+  }
+
+  validateArtifactSummarySummaryShape({
+    summary: artifactSummary.summary,
+    errorPrefix,
+    summaryField
+  });
   const checks = normalizeArtifactChecks({
     checks: artifactSummary.checks,
     errorPrefix,
@@ -28,7 +39,12 @@ export function validatePromotionArtifactSummaryCheckNameLists(input: {
   });
 
   assertCheckNamesEqual({
-    actual: artifactSummary.blockingRequiredCheckNames,
+    actual: normalizeCheckNameList({
+      value: artifactSummary.blockingRequiredCheckNames,
+      errorPrefix,
+      summaryField,
+      fieldName: "blockingRequiredCheckNames"
+    }),
     expected: collectCheckNames(
       checks,
       (check) =>
@@ -44,7 +60,12 @@ export function validatePromotionArtifactSummaryCheckNameLists(input: {
   });
 
   assertCheckNamesEqual({
-    actual: artifactSummary.failedOrErrorCheckNames,
+    actual: normalizeCheckNameList({
+      value: artifactSummary.failedOrErrorCheckNames,
+      errorPrefix,
+      summaryField,
+      fieldName: "failedOrErrorCheckNames"
+    }),
     expected: collectCheckNames(
       checks,
       (check) => check.status === "failed" || check.status === "error"
@@ -55,7 +76,12 @@ export function validatePromotionArtifactSummaryCheckNameLists(input: {
   });
 
   assertCheckNamesEqual({
-    actual: artifactSummary.pendingCheckNames,
+    actual: normalizeCheckNameList({
+      value: artifactSummary.pendingCheckNames,
+      errorPrefix,
+      summaryField,
+      fieldName: "pendingCheckNames"
+    }),
     expected: collectCheckNames(
       checks,
       (check) => check.status === "pending"
@@ -66,7 +92,12 @@ export function validatePromotionArtifactSummaryCheckNameLists(input: {
   });
 
   assertCheckNamesEqual({
-    actual: artifactSummary.skippedCheckNames,
+    actual: normalizeCheckNameList({
+      value: artifactSummary.skippedCheckNames,
+      errorPrefix,
+      summaryField,
+      fieldName: "skippedCheckNames"
+    }),
     expected: collectCheckNames(
       checks,
       (check) => check.status === "skipped"
@@ -77,7 +108,12 @@ export function validatePromotionArtifactSummaryCheckNameLists(input: {
   });
 
   assertCheckNamesEqual({
-    actual: artifactSummary.passedCheckNames,
+    actual: normalizeCheckNameList({
+      value: artifactSummary.passedCheckNames,
+      errorPrefix,
+      summaryField,
+      fieldName: "passedCheckNames"
+    }),
     expected: collectCheckNames(
       checks,
       (check) => check.status === "passed"
@@ -112,6 +148,26 @@ export function validatePromotionArtifactSummaryCheckNameLists(input: {
   }
 }
 
+function validateArtifactSummarySummaryShape(input: {
+  summary: unknown;
+  errorPrefix: string;
+  summaryField: string;
+}): void {
+  const { summary, errorPrefix, summaryField } = input;
+
+  if (!isRecord(summary)) {
+    throw new ValidationError(
+      `${errorPrefix} ${summaryField}.summary to be an object.`
+    );
+  }
+
+  if (!isRecord(summary.counts)) {
+    throw new ValidationError(
+      `${errorPrefix} ${summaryField}.summary.counts to be an object.`
+    );
+  }
+}
+
 function assertCheckNamesEqual(input: {
   actual: readonly string[];
   expected: readonly string[];
@@ -126,6 +182,43 @@ function assertCheckNamesEqual(input: {
       `${errorPrefix} ${summaryField}.${fieldName} to match ${summaryField}.checks.`
     );
   }
+}
+
+function normalizeCheckNameList(input: {
+  value: unknown;
+  errorPrefix: string;
+  summaryField: string;
+  fieldName: string;
+}): string[] {
+  const { value, errorPrefix, summaryField, fieldName } = input;
+
+  if (!Array.isArray(value)) {
+    throw new ValidationError(
+      `${errorPrefix} ${summaryField}.${fieldName} to use non-empty string entries.`
+    );
+  }
+
+  const names: string[] = [];
+
+  for (let index = 0; index < value.length; index += 1) {
+    if (!hasOwnIndex(value, index) || typeof value[index] !== "string") {
+      throw new ValidationError(
+        `${errorPrefix} ${summaryField}.${fieldName} to use non-empty string entries.`
+      );
+    }
+
+    const name = value[index].trim();
+
+    if (name.length === 0 || value[index] !== name) {
+      throw new ValidationError(
+        `${errorPrefix} ${summaryField}.${fieldName} to use non-empty string entries.`
+      );
+    }
+
+    names.push(name);
+  }
+
+  return names;
 }
 
 function collectCheckNames(
@@ -194,7 +287,15 @@ function assertChecksMatchVerification(input: {
 
   for (let index = 0; index < artifactChecks.length; index += 1) {
     const artifactCheck = artifactChecks[index];
-    const verificationCheck = verification.checks[index];
+    const verificationChecks = verification.checks;
+
+    if (!hasOwnIndex(verificationChecks, index)) {
+      throw new ValidationError(
+        `${errorPrefix} ${summaryField}.checks to match manifest.verification.checks.`
+      );
+    }
+
+    const verificationCheck = verificationChecks[index];
 
     if (artifactCheck === undefined) {
       throw new ValidationError(
@@ -247,13 +348,25 @@ function normalizeArtifactChecks(input: {
     );
   }
 
-  return checks.map((check) =>
-    normalizeArtifactCheck({
-      check,
-      errorPrefix,
-      summaryField
-    })
-  );
+  const normalizedChecks: AttemptVerificationArtifactCheck[] = [];
+
+  for (let index = 0; index < checks.length; index += 1) {
+    if (!hasOwnIndex(checks, index)) {
+      throw new ValidationError(
+        `${errorPrefix} ${summaryField}.checks to use the existing verification check vocabulary.`
+      );
+    }
+
+    normalizedChecks.push(
+      normalizeArtifactCheck({
+        check: checks[index],
+        errorPrefix,
+        summaryField
+      })
+    );
+  }
+
+  return normalizedChecks;
 }
 
 function normalizeArtifactCheck(input: {
@@ -294,4 +407,12 @@ function normalizeArtifactCheck(input: {
     required: record.required,
     status: record.status as AttemptVerificationCheckStatus
   };
+}
+
+function hasOwnIndex(values: readonly unknown[], index: number): boolean {
+  return Object.prototype.hasOwnProperty.call(values, index);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

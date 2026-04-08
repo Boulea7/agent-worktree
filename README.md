@@ -107,9 +107,11 @@ Use [AGENTS.md](AGENTS.md) as the repository-specific execution rules and bounda
 - [README.md](README.md)
 - [docs/index.md](docs/index.md)
 - [AGENTS.md](AGENTS.md)
+- [ROADMAP.md](ROADMAP.md)
 
 ## Key References
 
+- [docs/compat/overview.md](docs/compat/overview.md)
 - [ROADMAP.md](ROADMAP.md)
 - [docs/maintainers/development-phases.md](docs/maintainers/development-phases.md)
 - [docs/compat/tooling-matrix.md](docs/compat/tooling-matrix.md)

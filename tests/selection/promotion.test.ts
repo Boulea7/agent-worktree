@@ -193,6 +193,50 @@ describe("selection promotion helpers", () => {
     );
   });
 
+  it("should fail loudly when artifactSummary.summary is malformed before comparing manifest.verification", () => {
+    const verification = createVerification({
+      state: "passed",
+      checks: [
+        {
+          name: "lint",
+          required: true,
+          status: "passed"
+        }
+      ]
+    });
+    const manifest = createManifest({
+      attemptId: "att_malformed_summary",
+      verification
+    });
+    const artifactSummary = {
+      ...createArtifactSummary(verification),
+      summary: null as never
+    };
+
+    expect(() =>
+      deriveAttemptPromotionCandidate(manifest, artifactSummary as never)
+    ).toThrow(
+      "Attempt promotion candidate requires artifactSummary.summary to be an object."
+    );
+  });
+
+  it("should fail loudly when artifactSummary itself is malformed before reading artifactSummary.summaryBasis", () => {
+    const verification = createVerification({
+      state: "passed",
+      checks: []
+    });
+    const manifest = createManifest({
+      attemptId: "att_malformed_artifact_summary",
+      verification
+    });
+
+    expect(() =>
+      deriveAttemptPromotionCandidate(manifest, null as never)
+    ).toThrow(
+      "Attempt promotion candidate requires artifactSummary to be an object."
+    );
+  });
+
   it("should fail loudly when artifactSummary.recommendedForPromotion does not match the summary derived from manifest.verification", () => {
     const artifactVerification = createVerification({
       state: "passed",
