@@ -1,4 +1,5 @@
 import { ValidationError } from "../core/errors.js";
+import { normalizeHeadlessTargetBatchWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import { deriveExecutionSessionSpawnHeadlessCloseRequest } from "./runtime-state-spawn-headless-close-request.js";
 import type {
   ExecutionSessionSpawnHeadlessCloseRequest,
@@ -37,17 +38,8 @@ export function deriveExecutionSessionSpawnHeadlessCloseRequestBatch(
 function normalizeHeadlessCloseTargetBatch(
   value: ExecutionSessionSpawnHeadlessCloseRequestBatchInput["headlessCloseTargetBatch"]
 ) {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new ValidationError(
-      "Execution session spawn headless close request batch requires a headlessCloseTargetBatch wrapper."
-    );
-  }
-
-  if (!Array.isArray(value.results)) {
-    throw new ValidationError(
-      "Execution session spawn headless close request batch requires headlessCloseTargetBatch.results to be an array."
-    );
-  }
-
-  return value;
+  return normalizeHeadlessTargetBatchWrapper(value, {
+    context: "Execution session spawn headless close request batch",
+    wrapperKey: "headlessCloseTargetBatch"
+  });
 }

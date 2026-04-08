@@ -19,7 +19,7 @@ export function deriveExecutionSessionCloseRequest(
     Array.isArray(input.target)
   ) {
     throw new ValidationError(
-      "Execution session close request must be an object."
+      "Execution session close request target must be an object."
     );
   }
 

@@ -1,4 +1,5 @@
 import { ValidationError } from "../core/errors.js";
+import { normalizeHeadlessTargetBatchWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import { deriveExecutionSessionSpawnHeadlessWaitRequest } from "./runtime-state-spawn-headless-wait-request.js";
 import type {
   ExecutionSessionSpawnHeadlessWaitRequest,
@@ -38,17 +39,8 @@ export function deriveExecutionSessionSpawnHeadlessWaitRequestBatch(
 function normalizeHeadlessWaitTargetBatch(
   value: ExecutionSessionSpawnHeadlessWaitRequestBatchInput["headlessWaitTargetBatch"]
 ) {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new ValidationError(
-      "Execution session spawn headless wait request batch requires a headlessWaitTargetBatch wrapper."
-    );
-  }
-
-  if (!Array.isArray(value.results)) {
-    throw new ValidationError(
-      "Execution session spawn headless wait request batch requires headlessWaitTargetBatch.results to be an array."
-    );
-  }
-
-  return value;
+  return normalizeHeadlessTargetBatchWrapper(value, {
+    context: "Execution session spawn headless wait request batch",
+    wrapperKey: "headlessWaitTargetBatch"
+  });
 }

@@ -8,10 +8,12 @@ import {
   applyExecutionSessionCloseTargetBatch,
   applyExecutionSessionSpawnBatchHeadlessApply,
   applyExecutionSessionSpawnHeadlessCloseTargetBatch,
+  deriveExecutionSessionSpawnHeadlessCloseRequestBatch,
   applyExecutionSessionSpawnHeadlessWaitTargetBatch,
   applyExecutionSessionSpawnHeadlessInputBatch,
   applyExecutionSessionWaitTargetBatch,
   buildExecutionSessionView,
+  deriveExecutionSessionCloseRequest,
   deriveExecutionSessionSpawnBatchHeadlessApplyItems,
   deriveExecutionSessionSpawnBatchItems,
   deriveExecutionSessionSpawnBatchPlan,
@@ -22,7 +24,9 @@ import {
   deriveExecutionSessionSpawnHeadlessRecordBatch,
   deriveExecutionSessionSpawnHeadlessViewBatch,
   deriveExecutionSessionSpawnHeadlessWaitCandidateBatch,
+  deriveExecutionSessionSpawnHeadlessWaitRequestBatch,
   deriveExecutionSessionSpawnHeadlessWaitTargetBatch,
+  deriveExecutionSessionWaitRequest,
   executeExecutionSessionSpawnHeadlessBatch,
   type ExecutionSessionSpawnBatchHeadlessApplyItems,
   type ExecutionSessionSpawnHeadlessInputSeed,
@@ -436,6 +440,141 @@ describe("control-plane runtime-state spawn-batch-headless-apply helpers", () =>
       "thr_trace_apply_child_1",
       "thr_trace_apply_child_2"
     ]);
+  });
+
+  it("should preserve traceability from headless target batches through headless request batches", () => {
+    const headlessRecordBatch = deriveExecutionSessionSpawnHeadlessRecordBatch({
+      items: [
+        createHeadlessExecute({
+          attemptId: "att_trace_request_child_1",
+          parentAttemptId: "att_trace_request_parent",
+          sessionId: "thr_trace_request_child_1",
+          sourceKind: "delegated"
+        }),
+        createHeadlessExecute({
+          attemptId: "att_trace_request_child_2",
+          parentAttemptId: "att_trace_request_parent",
+          sessionId: "thr_trace_request_child_2",
+          sourceKind: "delegated"
+        })
+      ]
+    });
+    const headlessViewBatch = {
+      descendantCoverage: "complete" as const,
+      headlessRecordBatch,
+      view: buildExecutionSessionView(
+        headlessRecordBatch.results.map((result) => result.record)
+      )
+    };
+    const headlessContextBatch = deriveExecutionSessionSpawnHeadlessContextBatch({
+      headlessViewBatch
+    });
+    const headlessWaitCandidateBatch =
+      deriveExecutionSessionSpawnHeadlessWaitCandidateBatch({
+        headlessContextBatch
+      });
+    const headlessWaitTargetBatch = deriveExecutionSessionSpawnHeadlessWaitTargetBatch({
+      headlessWaitCandidateBatch
+    });
+    const headlessWaitRequestBatch =
+      deriveExecutionSessionSpawnHeadlessWaitRequestBatch({
+        headlessWaitTargetBatch,
+        timeoutMs: 1_500
+      });
+    const directWaitRequests = headlessWaitTargetBatch.results.flatMap((result) =>
+      result.target === undefined
+        ? []
+        : [
+            deriveExecutionSessionWaitRequest({
+              target: result.target,
+              timeoutMs: 1_500
+            })
+          ]
+    );
+    const headlessCloseCandidateBatch =
+      deriveExecutionSessionSpawnHeadlessCloseCandidateBatch({
+        headlessContextBatch,
+        resolveSessionLifecycleCapability: () => true
+      });
+    const headlessCloseTargetBatch =
+      deriveExecutionSessionSpawnHeadlessCloseTargetBatch({
+        headlessCloseCandidateBatch
+      });
+    const headlessCloseRequestBatch =
+      deriveExecutionSessionSpawnHeadlessCloseRequestBatch({
+        headlessCloseTargetBatch
+      });
+    const directCloseRequests = headlessCloseTargetBatch.results.flatMap((result) =>
+      result.target === undefined
+        ? []
+        : [
+            deriveExecutionSessionCloseRequest({
+              target: result.target
+            })
+          ]
+    );
+
+    expect(
+      headlessWaitRequestBatch.results.map((result) => ({
+        lineageAttemptId:
+          result.headlessWaitTarget.headlessWaitCandidate.headlessContext.context
+            .record.attemptId,
+        requestAttemptId: result.request?.attemptId,
+        requestSessionId: result.request?.sessionId,
+        requestTimeoutMs: result.request?.timeoutMs
+      }))
+    ).toEqual([
+      {
+        lineageAttemptId: "att_trace_request_child_1",
+        requestAttemptId: "att_trace_request_child_1",
+        requestSessionId: "thr_trace_request_child_1",
+        requestTimeoutMs: 1_500
+      },
+      {
+        lineageAttemptId: "att_trace_request_child_2",
+        requestAttemptId: "att_trace_request_child_2",
+        requestSessionId: "thr_trace_request_child_2",
+        requestTimeoutMs: 1_500
+      }
+    ]);
+    expect(
+      headlessCloseRequestBatch.results.map((result) => ({
+        lineageAttemptId:
+          result.headlessCloseTarget.headlessCloseCandidate.headlessContext.context
+            .record.attemptId,
+        requestAttemptId: result.request?.attemptId,
+        requestSessionId: result.request?.sessionId
+      }))
+    ).toEqual([
+      {
+        lineageAttemptId: "att_trace_request_child_1",
+        requestAttemptId: "att_trace_request_child_1",
+        requestSessionId: "thr_trace_request_child_1"
+      },
+      {
+        lineageAttemptId: "att_trace_request_child_2",
+        requestAttemptId: "att_trace_request_child_2",
+        requestSessionId: "thr_trace_request_child_2"
+      }
+    ]);
+    expect(
+      headlessWaitRequestBatch.results.map((result) => result.request)
+    ).toEqual(directWaitRequests);
+    expect(
+      headlessCloseRequestBatch.results.map((result) => result.request)
+    ).toEqual(directCloseRequests);
+
+    for (const result of headlessWaitRequestBatch.results) {
+      expect(result).not.toHaveProperty("target");
+      expect(result).not.toHaveProperty("candidate");
+      expect(result).not.toHaveProperty("consumer");
+    }
+
+    for (const result of headlessCloseRequestBatch.results) {
+      expect(result).not.toHaveProperty("target");
+      expect(result).not.toHaveProperty("candidate");
+      expect(result).not.toHaveProperty("consumer");
+    }
   });
 
   it("should reject explicit empty record fixtures instead of silently falling back to defaults", () => {

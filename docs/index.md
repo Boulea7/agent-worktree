@@ -6,6 +6,7 @@ For committed repository truth, start with `SPEC.md`, then `README.md`, then thi
 
 - [SPEC.md](../SPEC.md)
 - [README.md](../README.md)
+- [Documentation Index](index.md)
 - [AGENTS.md](../AGENTS.md)
 - [ROADMAP.md](../ROADMAP.md)
 

@@ -78,12 +78,12 @@ describe("control-plane runtime-state close-request helpers", () => {
       deriveExecutionSessionCloseRequest({
         target: undefined as never
       })
-    ).toThrow("Execution session close request must be an object.");
+    ).toThrow("Execution session close request target must be an object.");
     expect(() =>
       deriveExecutionSessionCloseRequest({
         target: null as never
       })
-    ).toThrow("Execution session close request must be an object.");
+    ).toThrow("Execution session close request target must be an object.");
   });
 
   it("should reject non-object close request inputs before reading target", () => {
