@@ -7,6 +7,22 @@ import type {
 export function deriveExecutionSessionSpawnRecordedEvent(
   input: ExecutionSessionSpawnRecordedEventInput
 ): ExecutionSessionSpawnRecordedEvent {
+  if (typeof input !== "object" || input === null || Array.isArray(input)) {
+    throw new ValidationError(
+      "Execution session spawn recorded event input must be an object."
+    );
+  }
+
+  if (
+    typeof input.requestedEvent !== "object" ||
+    input.requestedEvent === null ||
+    Array.isArray(input.requestedEvent)
+  ) {
+    throw new ValidationError(
+      "Execution session spawn recorded event requires requestedEvent to be an object."
+    );
+  }
+
   const requestedEvent = normalizeRequestedEvent(input.requestedEvent);
 
   return {

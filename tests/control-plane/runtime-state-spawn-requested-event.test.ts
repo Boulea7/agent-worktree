@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { ValidationError } from "../../src/core/errors.js";
 import {
+  deriveExecutionSessionSpawnRecordedEvent,
   deriveExecutionSessionSpawnRequestedEvent,
   type ExecutionSessionSpawnRequest
 } from "../../src/control-plane/internal.js";
@@ -52,6 +53,63 @@ describe("control-plane runtime-state spawn-requested-event helpers", () => {
       sessionId: "thr_parent_trimmed",
       lifecycleEventKind: "spawn_requested"
     });
+  });
+
+  it("should preserve canonicalized identifiers through the spawn request lifecycle chain", () => {
+    const request = createSpawnRequest({
+      parentAttemptId: "  att_chain_trimmed  ",
+      parentRuntime: "  codex-cli  ",
+      parentSessionId: "  thr_chain_trimmed  "
+    });
+    const requestSnapshot = JSON.parse(JSON.stringify(request));
+    const requestedEvent = deriveExecutionSessionSpawnRequestedEvent({
+      request
+    });
+    const recordedEvent = deriveExecutionSessionSpawnRecordedEvent({
+      requestedEvent
+    });
+
+    expect(requestedEvent).toEqual({
+      attemptId: "att_chain_trimmed",
+      runtime: "codex-cli",
+      sessionId: "thr_chain_trimmed",
+      lifecycleEventKind: "spawn_requested"
+    });
+    expect(recordedEvent).toEqual({
+      attemptId: "att_chain_trimmed",
+      runtime: "codex-cli",
+      sessionId: "thr_chain_trimmed",
+      lifecycleEventKind: "spawn_recorded"
+    });
+    expect(request).toEqual(requestSnapshot);
+  });
+
+  it("should reject non-object spawn requested-event inputs before reading request", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnRequestedEvent(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnRequestedEvent(undefined as never)
+    ).toThrow(
+      "Execution session spawn requested event input must be an object."
+    );
+  });
+
+  it("should reject missing or non-object requests before canonicalization", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnRequestedEvent({
+        request: undefined as never
+      })
+    ).toThrow(
+      "Execution session spawn requested event requires request to be an object."
+    );
+    expect(() =>
+      deriveExecutionSessionSpawnRequestedEvent({
+        request: [] as never
+      })
+    ).toThrow(
+      "Execution session spawn requested event requires request to be an object."
+    );
   });
 
   it("should fail loudly when the request is malformed", () => {
