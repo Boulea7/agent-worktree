@@ -7,6 +7,38 @@ import {
 } from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state wait-apply-batch helpers", () => {
+  it("should reject non-object batch inputs before reading requests", async () => {
+    await expect(
+      applyExecutionSessionWaitBatch(undefined as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyExecutionSessionWaitBatch(undefined as never)
+    ).rejects.toThrow(
+      "Execution session wait apply batch input must be an object."
+    );
+    await expect(
+      applyExecutionSessionWaitBatch(null as never)
+    ).rejects.toThrow(
+      "Execution session wait apply batch input must be an object."
+    );
+    await expect(
+      applyExecutionSessionWaitBatch([] as never)
+    ).rejects.toThrow(
+      "Execution session wait apply batch input must be an object."
+    );
+  });
+
+  it("should reject non-array request containers before iterating requests", async () => {
+    await expect(
+      applyExecutionSessionWaitBatch({
+        requests: {} as never,
+        invokeWait: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Execution session wait apply batch requires requests to be an array."
+    );
+  });
+
   it("should return an empty batch result for an empty request list", async () => {
     await expect(
       applyExecutionSessionWaitBatch({

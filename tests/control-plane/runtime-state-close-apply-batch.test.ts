@@ -7,6 +7,38 @@ import {
 } from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state close-apply-batch helpers", () => {
+  it("should reject non-object batch inputs before reading requests", async () => {
+    await expect(
+      applyExecutionSessionCloseBatch(undefined as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyExecutionSessionCloseBatch(undefined as never)
+    ).rejects.toThrow(
+      "Execution session close apply batch input must be an object."
+    );
+    await expect(
+      applyExecutionSessionCloseBatch(null as never)
+    ).rejects.toThrow(
+      "Execution session close apply batch input must be an object."
+    );
+    await expect(
+      applyExecutionSessionCloseBatch([] as never)
+    ).rejects.toThrow(
+      "Execution session close apply batch input must be an object."
+    );
+  });
+
+  it("should reject non-array request containers before iterating requests", async () => {
+    await expect(
+      applyExecutionSessionCloseBatch({
+        requests: {} as never,
+        invokeClose: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Execution session close apply batch requires requests to be an array."
+    );
+  });
+
   it("should return an empty batch result for an empty request list", async () => {
     await expect(
       applyExecutionSessionCloseBatch({

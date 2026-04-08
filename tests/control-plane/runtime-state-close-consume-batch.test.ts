@@ -8,6 +8,38 @@ import {
 } from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state close-consume-batch helpers", () => {
+  it("should reject non-object batch inputs before reading consumers", async () => {
+    await expect(
+      consumeExecutionSessionCloseBatch(undefined as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeExecutionSessionCloseBatch(undefined as never)
+    ).rejects.toThrow(
+      "Execution session close consume batch input must be an object."
+    );
+    await expect(
+      consumeExecutionSessionCloseBatch(null as never)
+    ).rejects.toThrow(
+      "Execution session close consume batch input must be an object."
+    );
+    await expect(
+      consumeExecutionSessionCloseBatch([] as never)
+    ).rejects.toThrow(
+      "Execution session close consume batch input must be an object."
+    );
+  });
+
+  it("should reject non-array consumer containers before iterating consumers", async () => {
+    await expect(
+      consumeExecutionSessionCloseBatch({
+        consumers: {} as never,
+        invokeClose: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Execution session close consume batch requires consumers to be an array."
+    );
+  });
+
   it("should return an empty batch result for an empty consumer list", async () => {
     await expect(
       consumeExecutionSessionCloseBatch({
