@@ -50,7 +50,7 @@
 其他 runtime 仍維持 descriptor-only。`resume`、MCP transport execution、public execution 命令、public wait/close/spawn 命令，以及 public manifest-backed execution 或 session-lifecycle 語義仍然延後；env-gated Vitest smoke harness 仍是更窄的相容性檢查，而不是預設驗證路徑。即使 runtime manifest 中出現內部 `session` block，它也仍只是非公開中繼資料，不是 attach/resume 或 lifecycle control truth。`codex-cli` 的 executable probing、`--profile` 傳遞、relay-compatible env overlay 也都維持 internal-only；`sourceKind` 與可選的 `parentAttemptId` 仍只是審計中繼資料，不代表公開 delegated runtime 或 session lifecycle 語義。
 更複雜的 runtime adapter、verification ranking 與高階編排能力仍然延後。
 
-## 參照順序
+## Start Here
 
 已提交文件的規範入口順序是：[SPEC.md](SPEC.md) -> [README.md](README.md) -> [docs/index.md](docs/index.md)。
 [AGENTS.md](AGENTS.md) 用作倉庫級執行規則與邊界補充，不取代已提交的 spec/doc 文件集。
@@ -59,9 +59,12 @@
 - [README.md](README.md)
 - [docs/index.md](docs/index.md)
 - [AGENTS.md](AGENTS.md)
+- [ROADMAP.md](ROADMAP.md)
 
-## 補充參考
+## Key References
 
+- [docs/compat/overview.md](docs/compat/overview.md)
+- [ROADMAP.md](ROADMAP.md)
 - [docs/compat/tooling-matrix.md](docs/compat/tooling-matrix.md)
 - [docs/maintainers/development-phases.md](docs/maintainers/development-phases.md)
 - [docs/research/vision-synthesis.md](docs/research/vision-synthesis.md)

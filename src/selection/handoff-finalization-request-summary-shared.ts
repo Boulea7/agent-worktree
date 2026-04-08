@@ -1,4 +1,10 @@
 import { ValidationError } from "../core/errors.js";
+import {
+  attemptSourceKinds,
+  attemptStatuses,
+  type AttemptSourceKind,
+  type AttemptStatus
+} from "../manifest/types.js";
 import type {
   AttemptHandoffDecisionBlockingReason,
   AttemptHandoffFinalizationRequestSummary
@@ -12,6 +18,8 @@ const validAttemptHandoffDecisionBlockingReasons =
     "no_results",
     "handoff_unsupported"
   ]);
+const validAttemptStatuses = new Set<AttemptStatus>(attemptStatuses);
+const validAttemptSourceKinds = new Set<AttemptSourceKind>(attemptSourceKinds);
 
 export function deriveCanonicalAttemptHandoffDecisionBlockingReasons(
   resultCount: number,
@@ -154,6 +162,14 @@ function validateRequests(value: readonly unknown[]): void {
         "Attempt handoff finalization request apply requires summary.requests entries to be objects."
       );
     }
+
+    const request = value[index] as Record<string, unknown>;
+
+    validateRequestTaskId(request.taskId);
+    validateRequestField(request.attemptId, "attemptId");
+    validateRequestField(request.runtime, "runtime");
+    validateAttemptStatus(request.status);
+    validateAttemptSourceKind(request.sourceKind);
   }
 }
 
@@ -173,4 +189,43 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function hasOwnIndex(values: readonly unknown[], index: number): boolean {
   return Object.prototype.hasOwnProperty.call(values, index);
+}
+
+function validateRequestTaskId(value: unknown): void {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new ValidationError(
+      "Attempt handoff finalization request apply requires summary.requests entries to use non-empty taskId strings."
+    );
+  }
+}
+
+function validateRequestField(value: unknown, fieldName: string): void {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new ValidationError(
+      `Attempt handoff finalization request apply requires summary.requests entries to use non-empty ${fieldName} strings.`
+    );
+  }
+}
+
+function validateAttemptStatus(value: unknown): void {
+  if (
+    typeof value !== "string" ||
+    !validAttemptStatuses.has(value as AttemptStatus)
+  ) {
+    throw new ValidationError(
+      "Attempt handoff finalization request apply requires summary.requests entries to use the existing attempt status vocabulary."
+    );
+  }
+}
+
+function validateAttemptSourceKind(value: unknown): void {
+  if (
+    value !== undefined &&
+    (typeof value !== "string" ||
+      !validAttemptSourceKinds.has(value as AttemptSourceKind))
+  ) {
+    throw new ValidationError(
+      "Attempt handoff finalization request apply requires summary.requests entries to use the existing attempt source-kind vocabulary when provided."
+    );
+  }
 }

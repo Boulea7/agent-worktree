@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   buildExecutionSessionView,
   deriveExecutionSessionWaitCandidate,
@@ -171,6 +172,49 @@ describe("control-plane runtime-state wait-target helpers", () => {
       sessionId: "thr_chain"
     });
     expect(candidate).toEqual(candidateSnapshot);
+  });
+
+  it("should fail loudly when the supplied wait-target input or candidate containers are malformed", () => {
+    expect(() =>
+      deriveExecutionSessionWaitTarget(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionWaitTarget(undefined as never)
+    ).toThrow("Execution session wait target input must be an object.");
+
+    expect(() =>
+      deriveExecutionSessionWaitTarget({
+        candidate: undefined as never
+      })
+    ).toThrow("Execution session wait target requires candidate to be an object.");
+
+    expect(() =>
+      deriveExecutionSessionWaitTarget({
+        candidate: {
+          context: null,
+          readiness: {}
+        } as never
+      })
+    ).toThrow(
+      "Execution session wait target requires candidate.context to be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionWaitTarget({
+        candidate: {
+          context: {
+            record: {
+              attemptId: "att_active",
+              runtime: "codex-cli",
+              sessionId: "thr_active"
+            }
+          },
+          readiness: null
+        } as never
+      })
+    ).toThrow(
+      "Execution session wait target requires candidate.readiness to be an object."
+    );
   });
 });
 

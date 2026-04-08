@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import type { HeadlessExecutionResult } from "../../src/adapters/types.js";
 import {
   buildExecutionSessionView,
@@ -231,6 +232,23 @@ describe("control-plane runtime-state wait readiness helpers", () => {
       canWait: true,
       hasBlockingReasons: false
     });
+  });
+
+  it("should fail loudly when the supplied wait-readiness input or context container is malformed", () => {
+    expect(() =>
+      deriveExecutionSessionWaitReadiness(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionWaitReadiness(undefined as never)
+    ).toThrow("Execution session wait readiness input must be an object.");
+
+    expect(() =>
+      deriveExecutionSessionWaitReadiness({
+        context: undefined as never
+      })
+    ).toThrow(
+      "Execution session wait readiness requires context to be an object."
+    );
   });
 });
 

@@ -215,6 +215,33 @@ describe("control-plane runtime-state wait-candidate helpers", () => {
     });
   });
 
+  it("should fail loudly when the supplied wait-candidate input, view, or selector containers are malformed", () => {
+    expect(() =>
+      deriveExecutionSessionWaitCandidate(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionWaitCandidate(undefined as never)
+    ).toThrow("Execution session wait candidate input must be an object.");
+
+    expect(() =>
+      deriveExecutionSessionWaitCandidate({
+        view: undefined as never,
+        selector: {
+          attemptId: "att_active"
+        }
+      })
+    ).toThrow("Execution session wait candidate requires view to be an object.");
+
+    expect(() =>
+      deriveExecutionSessionWaitCandidate({
+        view: buildExecutionSessionView([]),
+        selector: undefined as never
+      })
+    ).toThrow(
+      "Execution session wait candidate requires selector to be an object."
+    );
+  });
+
   it("should preserve the stable blocking-reason order when multiple blockers apply", () => {
     const rootRecord = createRecord({
       attemptId: "att_terminal_parent",

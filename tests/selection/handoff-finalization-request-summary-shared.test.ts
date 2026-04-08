@@ -112,6 +112,88 @@ describe("selection handoff-finalization-request-summary-shared helpers", () => 
       "Attempt handoff finalization request apply requires summary.blockingReasons to match the canonical blocker derivation from summary result counts."
     );
   });
+
+  it("should reject malformed top-level request summary containers and scalars", () => {
+    expect(() =>
+      validateAttemptHandoffFinalizationRequestSummaryForApply(undefined as never)
+    ).toThrow(
+      "Attempt handoff finalization request apply requires summary to be an object."
+    );
+
+    expect(() =>
+      validateAttemptHandoffFinalizationRequestSummaryForApply(
+        createSummary({
+          requests: undefined as never
+        })
+      )
+    ).toThrow(
+      "Attempt handoff finalization request apply requires summary.requests to be an array."
+    );
+
+    expect(() =>
+      validateAttemptHandoffFinalizationRequestSummaryForApply(
+        createSummary({
+          canFinalizeHandoff: "yes" as never
+        })
+      )
+    ).toThrow(
+      "Attempt handoff finalization request apply requires summary.canFinalizeHandoff to be a boolean."
+    );
+
+    expect(() =>
+      validateAttemptHandoffFinalizationRequestSummaryForApply(
+        createSummary({
+          resultCount: -1
+        })
+      )
+    ).toThrow(
+      "Attempt handoff finalization request apply requires summary.resultCount to be a non-negative integer."
+    );
+  });
+
+  it("should reject malformed request entries before apply-side consumers see them", () => {
+    expect(() =>
+      validateAttemptHandoffFinalizationRequestSummaryForApply(
+        createSummary({
+          requests: [
+            createRequest({
+              taskId: "   "
+            })
+          ]
+        })
+      )
+    ).toThrow(
+      "Attempt handoff finalization request apply requires summary.requests entries to use non-empty taskId strings."
+    );
+
+    expect(() =>
+      validateAttemptHandoffFinalizationRequestSummaryForApply(
+        createSummary({
+          requests: [
+            createRequest({
+              status: "invalid" as never
+            })
+          ]
+        })
+      )
+    ).toThrow(
+      "Attempt handoff finalization request apply requires summary.requests entries to use the existing attempt status vocabulary."
+    );
+
+    expect(() =>
+      validateAttemptHandoffFinalizationRequestSummaryForApply(
+        createSummary({
+          requests: [
+            createRequest({
+              sourceKind: "bogus" as never
+            })
+          ]
+        })
+      )
+    ).toThrow(
+      "Attempt handoff finalization request apply requires summary.requests entries to use the existing attempt source-kind vocabulary when provided."
+    );
+  });
 });
 
 function createRequest(

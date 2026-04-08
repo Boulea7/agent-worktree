@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import type { HeadlessExecutionResult } from "../../src/adapters/types.js";
 import {
   buildExecutionSessionView,
@@ -301,6 +302,23 @@ describe("control-plane runtime-state close readiness helpers", () => {
       canClose: true,
       hasBlockingReasons: false
     });
+  });
+
+  it("should fail loudly when the supplied close-readiness input or context container is malformed", () => {
+    expect(() =>
+      deriveExecutionSessionCloseReadiness(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionCloseReadiness(undefined as never)
+    ).toThrow("Execution session close readiness input must be an object.");
+
+    expect(() =>
+      deriveExecutionSessionCloseReadiness({
+        context: undefined as never
+      })
+    ).toThrow(
+      "Execution session close readiness requires context to be an object."
+    );
   });
 });
 

@@ -41,6 +41,11 @@ export function deriveAttemptPromotionCandidate(
   );
   const summary = deriveAttemptVerificationSummary(manifest.verification);
 
+  validatePromotionArtifactSummaryCheckNameLists({
+    artifactSummary,
+    errorPrefix: "Attempt promotion candidate requires",
+    summaryField: "artifactSummary"
+  });
   validateRecommendationConsistency(artifactSummary, summary);
   validateSummaryConsistency(summary, artifactSummary.summary);
   validatePromotionArtifactSummaryCheckNameLists({

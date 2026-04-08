@@ -1,3 +1,4 @@
+import { ValidationError } from "../core/errors.js";
 import { deriveExecutionSessionContext } from "./runtime-state-context.js";
 import { deriveExecutionSessionCloseReadiness } from "./runtime-state-close-readiness.js";
 import type {
@@ -8,6 +9,24 @@ import type {
 export function deriveExecutionSessionCloseCandidate(
   input: ExecutionSessionCloseCandidateInput
 ): ExecutionSessionCloseCandidate | undefined {
+  if (!isRecord(input)) {
+    throw new ValidationError(
+      "Execution session close candidate input must be an object."
+    );
+  }
+
+  if (!isRecord(input.view) || !isRecord(input.view.index)) {
+    throw new ValidationError(
+      "Execution session close candidate requires view to be an object."
+    );
+  }
+
+  if (!isRecord(input.selector)) {
+    throw new ValidationError(
+      "Execution session close candidate requires selector to be an object."
+    );
+  }
+
   const context = deriveExecutionSessionContext({
     view: input.view,
     selector: input.selector
@@ -27,6 +46,10 @@ export function deriveExecutionSessionCloseCandidate(
             resolveSessionLifecycleCapability:
               input.resolveSessionLifecycleCapability
           })
-    })
+      })
   };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

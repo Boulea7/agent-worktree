@@ -116,13 +116,13 @@ function validatePromotionCandidate(
     );
   }
 
-  validateRecommendationConsistency(candidate);
-  validateSummaryConsistency(candidate.summary, candidate.artifactSummary.summary);
   validatePromotionArtifactSummaryCheckNameLists({
     artifactSummary: candidate.artifactSummary,
     errorPrefix: "Attempt promotion result requires",
     summaryField: "candidate.artifactSummary"
   });
+  validateRecommendationConsistency(candidate);
+  validateSummaryConsistency(candidate.summary, candidate.artifactSummary.summary);
 }
 
 function validateTaskBoundary(

@@ -50,7 +50,7 @@
 他の runtime は引き続き descriptor-only です。`resume`、MCP transport execution、public execution commands、public wait/close/spawn commands、そして public manifest-backed execution または session-lifecycle semantics はまだ deferred のままで、env-gated Vitest smoke harness もより狭い互換性チェックであり、既定の検証経路ではありません。runtime manifest に内部 `session` block が現れても、それは依然として非公開メタデータであり、attach/resume や lifecycle control truth ではありません。`codex-cli` の executable probing、`--profile` の受け渡し、relay-compatible env overlay も internal-only のままであり、`sourceKind` と任意の `parentAttemptId` も監査用メタデータに留まり、公開 delegated runtime や session lifecycle の意味を持ちません。
 より高度な runtime adapter、verification ranking、複雑なオーケストレーション機能はまだ先送りです。
 
-## 参照順序
+## Start Here
 
 コミット済みドキュメントの規範的な入口順は [SPEC.md](SPEC.md) -> [README.md](README.md) -> [docs/index.md](docs/index.md) です。
 [AGENTS.md](AGENTS.md) はリポジトリ固有の実行ルールと境界補助であり、コミット済み spec/doc セットの代替ではありません。
@@ -59,9 +59,12 @@
 - [README.md](README.md)
 - [docs/index.md](docs/index.md)
 - [AGENTS.md](AGENTS.md)
+- [ROADMAP.md](ROADMAP.md)
 
-## 補足参照
+## Key References
 
+- [docs/compat/overview.md](docs/compat/overview.md)
+- [ROADMAP.md](ROADMAP.md)
 - [docs/compat/tooling-matrix.md](docs/compat/tooling-matrix.md)
 - [docs/maintainers/development-phases.md](docs/maintainers/development-phases.md)
 - [docs/research/vision-synthesis.md](docs/research/vision-synthesis.md)
