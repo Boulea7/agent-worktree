@@ -151,6 +151,8 @@ describe("control-plane internal exports", () => {
     expect(controlPlane).not.toHaveProperty("executeAttemptVerification");
     expect(controlPlane).not.toHaveProperty("normalizeHeadlessTargetWrapper");
     expect(controlPlane).not.toHaveProperty("normalizeHeadlessTargetBatchWrapper");
+    expect(controlPlane).not.toHaveProperty("normalizeBatchWrapper");
+    expect(controlPlane).not.toHaveProperty("normalizeBatchWrapperItems");
   });
 
   it("should continue exporting representative repo-internal types across the current buckets", () => {
@@ -215,3 +217,9 @@ type ControlPlaneInternalShouldNotExportNormalizeHeadlessTargetWrapper = typeof 
 
 // @ts-expect-error control-plane internal barrel must not export shared headless batch wrapper guards
 type ControlPlaneInternalShouldNotExportNormalizeHeadlessTargetBatchWrapper = typeof import("../../src/control-plane/internal.js").normalizeHeadlessTargetBatchWrapper;
+
+// @ts-expect-error control-plane internal barrel must not export generic batch wrapper guards
+type ControlPlaneInternalShouldNotExportNormalizeBatchWrapper = typeof import("../../src/control-plane/internal.js").normalizeBatchWrapper;
+
+// @ts-expect-error control-plane internal barrel must not export generic batch wrapper item guards
+type ControlPlaneInternalShouldNotExportNormalizeBatchWrapperItems = typeof import("../../src/control-plane/internal.js").normalizeBatchWrapperItems;

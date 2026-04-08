@@ -1,4 +1,7 @@
-import { ValidationError } from "../core/errors.js";
+import {
+  normalizeBatchWrapper,
+  normalizeBatchWrapperItems
+} from "./runtime-state-batch-wrapper-guards.js";
 import { applyExecutionSessionWait } from "./runtime-state-wait-apply.js";
 import type {
   ExecutionSessionWaitApply,
@@ -9,30 +12,29 @@ import type {
 export async function applyExecutionSessionWaitBatch(
   input: ExecutionSessionWaitApplyBatchInput
 ): Promise<ExecutionSessionWaitApplyBatch> {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) {
-    throw new ValidationError(
-      "Execution session wait apply batch input must be an object."
-    );
-  }
-
-  if (!Array.isArray(input.requests)) {
-    throw new ValidationError(
-      "Execution session wait apply batch requires requests to be an array."
-    );
-  }
+  const normalizedInput = normalizeBatchWrapper<ExecutionSessionWaitApplyBatchInput>(
+    input,
+    "Execution session wait apply batch input must be an object."
+  );
+  const requests = normalizeBatchWrapperItems<
+    ExecutionSessionWaitApplyBatchInput["requests"][number]
+  >(
+    normalizedInput.requests,
+    "Execution session wait apply batch requires requests to be an array."
+  );
 
   const results: ExecutionSessionWaitApply[] = [];
 
-  for (const request of input.requests) {
+  for (const request of requests) {
     results.push(
       await applyExecutionSessionWait({
         request,
-        invokeWait: input.invokeWait,
-        ...(input.resolveSessionLifecycleCapability === undefined
+        invokeWait: normalizedInput.invokeWait,
+        ...(normalizedInput.resolveSessionLifecycleCapability === undefined
           ? {}
           : {
               resolveSessionLifecycleCapability:
-                input.resolveSessionLifecycleCapability
+                normalizedInput.resolveSessionLifecycleCapability
             })
       })
     );

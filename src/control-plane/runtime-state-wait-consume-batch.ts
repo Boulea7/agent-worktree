@@ -1,4 +1,7 @@
-import { ValidationError } from "../core/errors.js";
+import {
+  normalizeBatchWrapper,
+  normalizeBatchWrapperItems
+} from "./runtime-state-batch-wrapper-guards.js";
 import { consumeExecutionSessionWait } from "./runtime-state-wait-consume.js";
 import type {
   ExecutionSessionWaitConsume,
@@ -9,19 +12,16 @@ import type {
 export async function consumeExecutionSessionWaitBatch(
   input: ExecutionSessionWaitConsumeBatchInput
 ): Promise<ExecutionSessionWaitConsumeBatch> {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) {
-    throw new ValidationError(
-      "Execution session wait consume batch input must be an object."
-    );
-  }
-
-  const { consumers, invokeWait } = input;
-
-  if (!Array.isArray(consumers)) {
-    throw new ValidationError(
-      "Execution session wait consume batch requires consumers to be an array."
-    );
-  }
+  const normalizedInput = normalizeBatchWrapper<ExecutionSessionWaitConsumeBatchInput>(
+    input,
+    "Execution session wait consume batch input must be an object."
+  );
+  const consumers = normalizeBatchWrapperItems<
+    ExecutionSessionWaitConsumeBatchInput["consumers"][number]
+  >(
+    normalizedInput.consumers,
+    "Execution session wait consume batch requires consumers to be an array."
+  );
 
   const results: ExecutionSessionWaitConsume[] = [];
 
@@ -29,7 +29,7 @@ export async function consumeExecutionSessionWaitBatch(
     results.push(
       await consumeExecutionSessionWait({
         consumer,
-        invokeWait
+        invokeWait: normalizedInput.invokeWait
       })
     );
   }
