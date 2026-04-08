@@ -78,6 +78,8 @@ Recent thin-slice follow-ups inside those buckets now also include:
 - close-side requested-event canonicalization now reuses the existing close-request normalizer, so close-requested projection stays aligned with the current close request vocabulary without introducing a broader shared event helper
 - repo-internal close-side and closeout-entry barrel assertions, so current tests explicitly prove those helpers stay available only through internal barrels and do not leak into default entry points
 - bucket-level repo-internal barrel coverage for `selection`, `control-plane`, and `verification`, plus repo-internal type-only denylist coverage and narrower default `control-plane` / `selection` / `verification` entry points, so tests keep proving boundaries without freezing helper-by-helper topology as a docs contract
+- direct helper evidence for the shared control-plane headless wrapper guards plus the shared selection validation helpers, so maintainers now have module-level tests for those internal-only utilities without widening any barrel or public surface
+- `normalizeRequiredIdentifier` / `normalizeRequiredAttemptId` style consolidation remains deferred until a later window can align semantics across buckets without turning evidence-hardening work into broader production refactoring
 
 That Phase 5 foundation remains internal-only. It does not introduce public verification, ranking, promotion, handoff, report, explanation, decision, target, consumer, queue, persistence, or broader lifecycle surfaces.
 Required verification checks that end in `skipped` remain blocking for Phase 5 selection and promotion semantics; they must not be treated as satisfied gates.
