@@ -128,6 +128,40 @@ describe("control-plane runtime-state wait-target-apply helpers", () => {
     );
   });
 
+  it("should reject non-object wait target-apply inputs before deriving a request", async () => {
+    await expect(applyExecutionSessionWaitTarget(undefined as never)).rejects.toThrow(
+      ValidationError
+    );
+    await expect(applyExecutionSessionWaitTarget(undefined as never)).rejects.toThrow(
+      "Execution session wait target apply input must be an object."
+    );
+    await expect(applyExecutionSessionWaitTarget(null as never)).rejects.toThrow(
+      "Execution session wait target apply input must be an object."
+    );
+    await expect(applyExecutionSessionWaitTarget([] as never)).rejects.toThrow(
+      "Execution session wait target apply input must be an object."
+    );
+  });
+
+  it("should reject missing or non-object wait targets before deriving a request", async () => {
+    await expect(
+      applyExecutionSessionWaitTarget({
+        target: undefined as never,
+        invokeWait: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Execution session wait target apply requires target to be an object."
+    );
+    await expect(
+      applyExecutionSessionWaitTarget({
+        target: [] as never,
+        invokeWait: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Execution session wait target apply requires target to be an object."
+    );
+  });
+
   it("should surface invoker failures directly without returning a partial target apply result", async () => {
     const expectedError = new Error("wait failed");
 

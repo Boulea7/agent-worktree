@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   deriveExecutionSessionCloseConsumer,
   type ExecutionSessionCloseRequest
@@ -107,6 +108,56 @@ describe("control-plane runtime-state close-consumer helpers", () => {
       }
     });
     expect(request).toEqual(requestSnapshot);
+  });
+
+  it("should reject non-object close consumer inputs before reading request", () => {
+    expect(() =>
+      deriveExecutionSessionCloseConsumer(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionCloseConsumer(undefined as never)
+    ).toThrow("Execution session close consumer input must be an object.");
+    expect(() =>
+      deriveExecutionSessionCloseConsumer(null as never)
+    ).toThrow("Execution session close consumer input must be an object.");
+    expect(() =>
+      deriveExecutionSessionCloseConsumer([] as never)
+    ).toThrow("Execution session close consumer input must be an object.");
+  });
+
+  it("should reject missing or non-object close consumer requests before deriving readiness", () => {
+    expect(() =>
+      deriveExecutionSessionCloseConsumer({
+        request: undefined as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionCloseConsumer({
+        request: undefined as never
+      })
+    ).toThrow(
+      "Execution session close consumer requires request to be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionCloseConsumer({
+        request: [] as never
+      })
+    ).toThrow(
+      "Execution session close consumer requires request to be an object."
+    );
+  });
+
+  it("should continue surfacing downstream close request validation failures", () => {
+    expect(() =>
+      deriveExecutionSessionCloseConsumer({
+        request: createCloseRequest({
+          sessionId: "   "
+        })
+      })
+    ).toThrow(
+      "Execution session close request sessionId must be a non-empty string."
+    );
   });
 });
 

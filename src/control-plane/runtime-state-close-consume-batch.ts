@@ -1,6 +1,10 @@
-import { ValidationError } from "../core/errors.js";
+import {
+  normalizeBatchWrapper,
+  normalizeBatchWrapperItems
+} from "./runtime-state-batch-wrapper-guards.js";
 import { consumeExecutionSessionClose } from "./runtime-state-close-consume.js";
 import type {
+  ExecutionSessionCloseConsume,
   ExecutionSessionCloseConsumeBatch,
   ExecutionSessionCloseConsumeBatchInput
 } from "./types.js";
@@ -8,27 +12,24 @@ import type {
 export async function consumeExecutionSessionCloseBatch(
   input: ExecutionSessionCloseConsumeBatchInput
 ): Promise<ExecutionSessionCloseConsumeBatch> {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) {
-    throw new ValidationError(
-      "Execution session close consume batch input must be an object."
-    );
-  }
+  const normalizedInput = normalizeBatchWrapper<ExecutionSessionCloseConsumeBatchInput>(
+    input,
+    "Execution session close consume batch input must be an object."
+  );
+  const consumers = normalizeBatchWrapperItems<
+    ExecutionSessionCloseConsumeBatchInput["consumers"][number]
+  >(
+    normalizedInput.consumers,
+    "Execution session close consume batch requires consumers to be an array."
+  );
 
-  const { consumers, invokeClose } = input;
-
-  if (!Array.isArray(consumers)) {
-    throw new ValidationError(
-      "Execution session close consume batch requires consumers to be an array."
-    );
-  }
-
-  const results = [];
+  const results: ExecutionSessionCloseConsume[] = [];
 
   for (const consumer of consumers) {
     results.push(
       await consumeExecutionSessionClose({
         consumer,
-        invokeClose
+        invokeClose: normalizedInput.invokeClose
       })
     );
   }

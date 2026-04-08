@@ -151,6 +151,8 @@ describe("control-plane index exports", () => {
     );
     expect(controlPlane).not.toHaveProperty("normalizeHeadlessTargetWrapper");
     expect(controlPlane).not.toHaveProperty("normalizeHeadlessTargetBatchWrapper");
+    expect(controlPlane).not.toHaveProperty("normalizeBatchWrapper");
+    expect(controlPlane).not.toHaveProperty("normalizeBatchWrapperItems");
   });
 });
 
@@ -402,3 +404,9 @@ type ControlPlaneIndexShouldNotExportApplyExecutionSessionSpawnHeadlessCloseTarg
 
 // @ts-expect-error control-plane index must not export headless close target apply batch helpers
 type ControlPlaneIndexShouldNotExportApplyExecutionSessionSpawnHeadlessCloseTargetBatch = typeof import("../../src/control-plane/index.js").applyExecutionSessionSpawnHeadlessCloseTargetBatch;
+
+// @ts-expect-error control-plane index must not export generic batch wrapper guards
+type ControlPlaneIndexShouldNotExportNormalizeBatchWrapper = typeof import("../../src/control-plane/index.js").normalizeBatchWrapper;
+
+// @ts-expect-error control-plane index must not export generic batch wrapper item guards
+type ControlPlaneIndexShouldNotExportNormalizeBatchWrapperItems = typeof import("../../src/control-plane/index.js").normalizeBatchWrapperItems;

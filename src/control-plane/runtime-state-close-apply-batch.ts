@@ -1,4 +1,7 @@
-import { ValidationError } from "../core/errors.js";
+import {
+  normalizeBatchWrapper,
+  normalizeBatchWrapperItems
+} from "./runtime-state-batch-wrapper-guards.js";
 import { applyExecutionSessionClose } from "./runtime-state-close-apply.js";
 import type {
   ExecutionSessionCloseApply,
@@ -9,30 +12,29 @@ import type {
 export async function applyExecutionSessionCloseBatch(
   input: ExecutionSessionCloseApplyBatchInput
 ): Promise<ExecutionSessionCloseApplyBatch> {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) {
-    throw new ValidationError(
-      "Execution session close apply batch input must be an object."
-    );
-  }
-
-  if (!Array.isArray(input.requests)) {
-    throw new ValidationError(
-      "Execution session close apply batch requires requests to be an array."
-    );
-  }
+  const normalizedInput = normalizeBatchWrapper<ExecutionSessionCloseApplyBatchInput>(
+    input,
+    "Execution session close apply batch input must be an object."
+  );
+  const requests = normalizeBatchWrapperItems<
+    ExecutionSessionCloseApplyBatchInput["requests"][number]
+  >(
+    normalizedInput.requests,
+    "Execution session close apply batch requires requests to be an array."
+  );
 
   const results: ExecutionSessionCloseApply[] = [];
 
-  for (const request of input.requests) {
+  for (const request of requests) {
     results.push(
       await applyExecutionSessionClose({
         request,
-        invokeClose: input.invokeClose,
-        ...(input.resolveSessionLifecycleCapability === undefined
+        invokeClose: normalizedInput.invokeClose,
+        ...(normalizedInput.resolveSessionLifecycleCapability === undefined
           ? {}
           : {
               resolveSessionLifecycleCapability:
-                input.resolveSessionLifecycleCapability
+                normalizedInput.resolveSessionLifecycleCapability
             })
       })
     );
