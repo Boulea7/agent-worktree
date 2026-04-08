@@ -76,6 +76,16 @@ describe("selection internal exports", () => {
     expect(selection).not.toHaveProperty("consumeExecutionSessionClose");
     expect(selection).not.toHaveProperty("deriveAttemptVerificationPayload");
     expect(selection).not.toHaveProperty("executeAttemptVerification");
+    expect(selection).not.toHaveProperty("normalizePromotionAttemptSourceKind");
+    expect(selection).not.toHaveProperty(
+      "validatePromotionArtifactSummaryCheckNameLists"
+    );
+    expect(selection).not.toHaveProperty(
+      "deriveCanonicalAttemptHandoffDecisionBlockingReasons"
+    );
+    expect(selection).not.toHaveProperty(
+      "validateAttemptHandoffFinalizationRequestSummaryForApply"
+    );
   });
 
   it("should continue exporting representative internal-only type surfaces across the current buckets", () => {
@@ -110,3 +120,15 @@ type SelectionInternalShouldNotExportControlPlaneHelper = typeof import("../../s
 
 // @ts-expect-error selection internal barrel must not export verification helpers
 type SelectionInternalShouldNotExportVerificationHelper = typeof import("../../src/selection/internal.js").deriveAttemptVerificationSummary;
+
+// @ts-expect-error selection internal barrel must not export promotion source-kind helpers
+type SelectionInternalShouldNotExportNormalizePromotionAttemptSourceKind = typeof import("../../src/selection/internal.js").normalizePromotionAttemptSourceKind;
+
+// @ts-expect-error selection internal barrel must not export promotion artifact-summary guardrails
+type SelectionInternalShouldNotExportValidatePromotionArtifactSummaryCheckNameLists = typeof import("../../src/selection/internal.js").validatePromotionArtifactSummaryCheckNameLists;
+
+// @ts-expect-error selection internal barrel must not export handoff finalization shared blocker derivation helpers
+type SelectionInternalShouldNotExportDeriveCanonicalAttemptHandoffDecisionBlockingReasons = typeof import("../../src/selection/internal.js").deriveCanonicalAttemptHandoffDecisionBlockingReasons;
+
+// @ts-expect-error selection internal barrel must not export handoff finalization shared request-summary validators
+type SelectionInternalShouldNotExportValidateAttemptHandoffFinalizationRequestSummaryForApply = typeof import("../../src/selection/internal.js").validateAttemptHandoffFinalizationRequestSummaryForApply;

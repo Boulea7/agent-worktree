@@ -149,6 +149,8 @@ describe("control-plane internal exports", () => {
     expect(controlPlane).not.toHaveProperty("deriveAttemptPromotionReport");
     expect(controlPlane).not.toHaveProperty("deriveAttemptVerificationPayload");
     expect(controlPlane).not.toHaveProperty("executeAttemptVerification");
+    expect(controlPlane).not.toHaveProperty("normalizeHeadlessTargetWrapper");
+    expect(controlPlane).not.toHaveProperty("normalizeHeadlessTargetBatchWrapper");
   });
 
   it("should continue exporting representative repo-internal types across the current buckets", () => {
@@ -207,3 +209,9 @@ type ControlPlaneInternalShouldNotExportSelectionHelper = typeof import("../../s
 
 // @ts-expect-error control-plane internal barrel must not export verification helpers
 type ControlPlaneInternalShouldNotExportVerificationHelper = typeof import("../../src/control-plane/internal.js").deriveAttemptVerificationSummary;
+
+// @ts-expect-error control-plane internal barrel must not export shared headless wrapper guards
+type ControlPlaneInternalShouldNotExportNormalizeHeadlessTargetWrapper = typeof import("../../src/control-plane/internal.js").normalizeHeadlessTargetWrapper;
+
+// @ts-expect-error control-plane internal barrel must not export shared headless batch wrapper guards
+type ControlPlaneInternalShouldNotExportNormalizeHeadlessTargetBatchWrapper = typeof import("../../src/control-plane/internal.js").normalizeHeadlessTargetBatchWrapper;

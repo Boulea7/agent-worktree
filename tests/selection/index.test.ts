@@ -6,6 +6,16 @@ describe("selection index exports", () => {
   it("should keep the default barrel free of runtime exports", () => {
     expect(Object.keys(selection)).toEqual([]);
     expectTypeOf<typeof selection>().not.toBeAny();
+    expect(selection).not.toHaveProperty("normalizePromotionAttemptSourceKind");
+    expect(selection).not.toHaveProperty(
+      "validatePromotionArtifactSummaryCheckNameLists"
+    );
+    expect(selection).not.toHaveProperty(
+      "deriveCanonicalAttemptHandoffDecisionBlockingReasons"
+    );
+    expect(selection).not.toHaveProperty(
+      "validateAttemptHandoffFinalizationRequestSummaryForApply"
+    );
   });
 });
 
@@ -257,6 +267,18 @@ type SelectionIndexShouldNotExportDeriveAttemptHandoffFinalizationReportReady = 
 
 // @ts-expect-error selection index must not export handoff report-ready helpers
 type SelectionIndexShouldNotExportDeriveAttemptHandoffReportReady = typeof import("../../src/selection/index.js").deriveAttemptHandoffReportReady;
+
+// @ts-expect-error selection index must not export promotion source-kind helpers
+type SelectionIndexShouldNotExportNormalizePromotionAttemptSourceKind = typeof import("../../src/selection/index.js").normalizePromotionAttemptSourceKind;
+
+// @ts-expect-error selection index must not export promotion artifact-summary guardrails
+type SelectionIndexShouldNotExportValidatePromotionArtifactSummaryCheckNameLists = typeof import("../../src/selection/index.js").validatePromotionArtifactSummaryCheckNameLists;
+
+// @ts-expect-error selection index must not export handoff finalization shared blocker derivation helpers
+type SelectionIndexShouldNotExportDeriveCanonicalAttemptHandoffDecisionBlockingReasons = typeof import("../../src/selection/index.js").deriveCanonicalAttemptHandoffDecisionBlockingReasons;
+
+// @ts-expect-error selection index must not export handoff finalization shared request-summary validators
+type SelectionIndexShouldNotExportValidateAttemptHandoffFinalizationRequestSummaryForApply = typeof import("../../src/selection/index.js").validateAttemptHandoffFinalizationRequestSummaryForApply;
 
 // @ts-expect-error selection index must not export handoff explanation helpers
 type SelectionIndexShouldNotExportDeriveAttemptHandoffExplanationSummary = typeof import("../../src/selection/index.js").deriveAttemptHandoffExplanationSummary;
