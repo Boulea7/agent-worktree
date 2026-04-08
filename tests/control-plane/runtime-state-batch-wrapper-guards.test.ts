@@ -21,30 +21,22 @@ describe("control-plane runtime-state batch-wrapper-guards helpers", () => {
   });
 
   it("should reject non-object batch wrappers", () => {
-    expect(() =>
-      normalizeBatchWrapper(
-        undefined as never,
+    for (const value of [undefined, null, [], 0, "wrapper", true]) {
+      expect(() =>
+        normalizeBatchWrapper(
+          value as never,
+          "Execution session close consume batch input must be an object."
+        )
+      ).toThrow(ValidationError);
+      expect(() =>
+        normalizeBatchWrapper(
+          value as never,
+          "Execution session close consume batch input must be an object."
+        )
+      ).toThrow(
         "Execution session close consume batch input must be an object."
-      )
-    ).toThrow(ValidationError);
-    expect(() =>
-      normalizeBatchWrapper(
-        undefined as never,
-        "Execution session close consume batch input must be an object."
-      )
-    ).toThrow("Execution session close consume batch input must be an object.");
-    expect(() =>
-      normalizeBatchWrapper(
-        null as never,
-        "Execution session close consume batch input must be an object."
-      )
-    ).toThrow("Execution session close consume batch input must be an object.");
-    expect(() =>
-      normalizeBatchWrapper(
-        [] as never,
-        "Execution session close consume batch input must be an object."
-      )
-    ).toThrow("Execution session close consume batch input must be an object.");
+      );
+    }
   });
 
   it("should return the same array reference when the collection is valid", () => {
@@ -59,27 +51,21 @@ describe("control-plane runtime-state batch-wrapper-guards helpers", () => {
   });
 
   it("should reject non-array batch collections", () => {
-    expect(() =>
-      normalizeBatchWrapperItems(
-        {},
+    for (const value of [undefined, {}, "targets", 123]) {
+      expect(() =>
+        normalizeBatchWrapperItems(
+          value as never,
+          "Execution session close target apply batch requires targets to be an array."
+        )
+      ).toThrow(ValidationError);
+      expect(() =>
+        normalizeBatchWrapperItems(
+          value as never,
+          "Execution session close target apply batch requires targets to be an array."
+        )
+      ).toThrow(
         "Execution session close target apply batch requires targets to be an array."
-      )
-    ).toThrow(ValidationError);
-    expect(() =>
-      normalizeBatchWrapperItems(
-        {},
-        "Execution session close target apply batch requires targets to be an array."
-      )
-    ).toThrow(
-      "Execution session close target apply batch requires targets to be an array."
-    );
-    expect(() =>
-      normalizeBatchWrapperItems(
-        undefined as never,
-        "Execution session close target apply batch requires targets to be an array."
-      )
-    ).toThrow(
-      "Execution session close target apply batch requires targets to be an array."
-    );
+      );
+    }
   });
 });

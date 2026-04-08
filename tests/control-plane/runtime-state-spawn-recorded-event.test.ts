@@ -37,6 +37,23 @@ describe("control-plane runtime-state spawn-recorded-event helpers", () => {
     expect(requestedEvent).toEqual(requestedEventSnapshot);
   });
 
+  it("should canonicalize requested-event identifiers before projecting spawn_recorded", () => {
+    expect(
+      deriveExecutionSessionSpawnRecordedEvent({
+        requestedEvent: createSpawnRequestedEvent({
+          attemptId: "  att_recorded_trimmed  ",
+          runtime: "  codex-cli  ",
+          sessionId: "  thr_recorded_trimmed  "
+        })
+      })
+    ).toEqual({
+      attemptId: "att_recorded_trimmed",
+      runtime: "codex-cli",
+      sessionId: "thr_recorded_trimmed",
+      lifecycleEventKind: "spawn_recorded"
+    });
+  });
+
   it("should keep requested-event, lineage, guardrail, and child-planning data out of the derived spawn_recorded event", () => {
     const event = deriveExecutionSessionSpawnRecordedEvent({
       requestedEvent: createSpawnRequestedEvent()
@@ -81,6 +98,17 @@ describe("control-plane runtime-state spawn-recorded-event helpers", () => {
     expect(event).not.toHaveProperty("adapterResult");
   });
 
+  it("should reject non-object spawn recorded-event inputs before reading requestedEvent", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnRecordedEvent(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnRecordedEvent(undefined as never)
+    ).toThrow(
+      "Execution session spawn recorded event input must be an object."
+    );
+  });
+
   it("should fail loudly when requestedEvent is not an object", () => {
     expect(() =>
       deriveExecutionSessionSpawnRecordedEvent({
@@ -116,6 +144,36 @@ describe("control-plane runtime-state spawn-recorded-event helpers", () => {
       })
     ).toThrow(
       'Execution session spawn recorded event requires requestedEvent.lifecycleEventKind to be "spawn_requested".'
+    );
+  });
+
+  it("should reject malformed identifiers on the supplied spawn requested event", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnRecordedEvent({
+        requestedEvent: createSpawnRequestedEvent({
+          attemptId: "   "
+        })
+      })
+    ).toThrow(
+      "Execution session spawn recorded event requires requestedEvent.attemptId to be a non-empty string."
+    );
+    expect(() =>
+      deriveExecutionSessionSpawnRecordedEvent({
+        requestedEvent: createSpawnRequestedEvent({
+          runtime: null as never
+        })
+      })
+    ).toThrow(
+      "Execution session spawn recorded event requires requestedEvent.runtime to be a non-empty string."
+    );
+    expect(() =>
+      deriveExecutionSessionSpawnRecordedEvent({
+        requestedEvent: createSpawnRequestedEvent({
+          sessionId: {} as never
+        })
+      })
+    ).toThrow(
+      "Execution session spawn recorded event requires requestedEvent.sessionId to be a non-empty string."
     );
   });
 });
