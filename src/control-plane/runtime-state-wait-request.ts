@@ -19,7 +19,7 @@ export function deriveExecutionSessionWaitRequest(
     Array.isArray(input.target)
   ) {
     throw new ValidationError(
-      "Execution session wait request must be an object."
+      "Execution session wait request target must be an object."
     );
   }
 

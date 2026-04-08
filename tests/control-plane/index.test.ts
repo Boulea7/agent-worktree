@@ -383,6 +383,12 @@ type ControlPlaneIndexShouldNotExportDeriveExecutionSessionSpawnHeadlessWaitRequ
 // @ts-expect-error control-plane index must not export headless wait request batch helpers
 type ControlPlaneIndexShouldNotExportDeriveExecutionSessionSpawnHeadlessWaitRequestBatch = typeof import("../../src/control-plane/index.js").deriveExecutionSessionSpawnHeadlessWaitRequestBatch;
 
+// @ts-expect-error control-plane index must not export headless close request helpers
+type ControlPlaneIndexShouldNotExportDeriveExecutionSessionSpawnHeadlessCloseRequest = typeof import("../../src/control-plane/index.js").deriveExecutionSessionSpawnHeadlessCloseRequest;
+
+// @ts-expect-error control-plane index must not export headless close request batch helpers
+type ControlPlaneIndexShouldNotExportDeriveExecutionSessionSpawnHeadlessCloseRequestBatch = typeof import("../../src/control-plane/index.js").deriveExecutionSessionSpawnHeadlessCloseRequestBatch;
+
 // @ts-expect-error control-plane index must not export headless close target apply helpers
 type ControlPlaneIndexShouldNotExportApplyExecutionSessionSpawnHeadlessCloseTarget = typeof import("../../src/control-plane/index.js").applyExecutionSessionSpawnHeadlessCloseTarget;
 

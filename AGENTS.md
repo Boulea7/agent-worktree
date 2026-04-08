@@ -296,7 +296,7 @@ Experimental:
 
 The current implementation boundary should stay narrow:
 
-- preserve the existing `Phase 1: Core Scaffold` and `Phase 2: Worktree Lifecycle` foundations while prioritizing Phase 4 baseline accuracy and thin internal Phase 5 continuation
+- preserve the existing `Phase 1: Core Scaffold` and `Phase 2: Worktree Lifecycle` foundations while prioritizing Phase 4 baseline accuracy plus the current thin internal Phase 5 closeout and bounded-parallelism Phase 6 prep continuation
 - keep machine-readable output and runtime manifests clearer than human-readable text
 - avoid widening public adapter, execution, verification-ranking, report, or lifecycle surfaces unless a spec or RFC explicitly justifies that promotion
 - keep internal architecture flexible unless a spec explicitly defines a public contract

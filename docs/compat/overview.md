@@ -20,6 +20,8 @@ The currently implemented boundary is expected to cover:
 - a public read-only `doctor` slice for compatibility diagnostics
 - a public read-only `compat probe <tool>` slice for bounded per-runtime probing
 - a public read-only `compat smoke <tool>` slice for bounded env-gated live smoke
+- explicit allow-list JSON serializers for the current public machine-readable compatibility and attempt lifecycle outputs
+- an explicit public cleanup-outcome vocabulary for `attempt cleanup --json`
 - adapter descriptors derived from the shared capability vocabulary
 - capability-first runtime resolution
 - machine-checkable command rendering contracts
@@ -42,7 +44,8 @@ The public `compat smoke codex-cli` surface may consume the same bounded executi
 Descriptor-only runtimes may still return `smokeStatus: "not_supported"` through the same read-only command surface, but that result does not apply to the current `codex-cli` implementation path.
 The bounded parser also remains intentionally narrow: obvious non-JSON prelude lines, including bracket-prefixed log noise, may normalize to `unknown`, while malformed JSON-looking records still fail loudly.
 The same boundary now allows a thin internal observation layer on top of canonical events, but that observation is still diagnostic execution metadata rather than a public session or persistence protocol.
-The merged baseline also contains a deeper internal helper chain for runtime-state, runtime-context, spawn, wait, and close composition, including the current internal-only headless wait/close request projection seams and the downstream headless batch bridge through spawn-headless wait/close target-apply batches, but those helpers remain internal-only and are not a public lifecycle promise.
+The merged baseline also contains a deeper internal helper chain for runtime-state, runtime-context, spawn, wait, and close composition.
+That current internal continuation now spans the thin Phase 5 closeout chain plus bounded-parallelism Phase 6 prep, including internal-only spawn-budget, spawn-candidate, spawn-batch-plan, spawn-batch-items, spawn-batch-headless-apply-items, headless wait/close request projection seams, and the downstream headless batch bridge through spawn-headless wait/close target-apply batches, but those helpers remain internal-only and are not a public lifecycle promise.
 
 The first concrete reference path is intentionally narrow:
 
