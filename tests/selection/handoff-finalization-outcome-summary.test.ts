@@ -14,6 +14,32 @@ describe("selection handoff-finalization-outcome-summary helpers", () => {
     ).toBeUndefined();
   });
 
+  it("should fail loudly when the supplied finalization apply batch is null", () => {
+    expect(() =>
+      selection.deriveAttemptHandoffFinalizationOutcomeSummary(null as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      selection.deriveAttemptHandoffFinalizationOutcomeSummary(null as never)
+    ).toThrow(
+      "Attempt handoff finalization outcome summary requires batch.results to be an array."
+    );
+  });
+
+  it("should fail loudly when the supplied finalization apply batch results are not an array", () => {
+    expect(() =>
+      selection.deriveAttemptHandoffFinalizationOutcomeSummary({
+        results: null
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      selection.deriveAttemptHandoffFinalizationOutcomeSummary({
+        results: null
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization outcome summary requires batch.results to be an array."
+    );
+  });
+
   it("should derive a zero-count summary for an empty apply batch results array", () => {
     expect(
       selection.deriveAttemptHandoffFinalizationOutcomeSummary({
