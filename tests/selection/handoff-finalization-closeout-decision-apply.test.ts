@@ -138,6 +138,92 @@ describe("selection handoff-finalization-closeout-decision-apply helpers", () =>
     expect(invokedAttemptIds).toEqual(["att_supported"]);
   });
 
+  it("should derive an all-blocked closeout decision summary when every finalization request is unsupported", async () => {
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      applyCloseoutDecisionSummary({
+        summary: createRequestSummary({
+          resultCount: 2,
+          invokedResultCount: 2,
+          blockedResultCount: 0,
+          canFinalizeHandoff: true,
+          blockingReasons: [],
+          requests: [
+            createRequest({
+              attemptId: "att_blocked_1",
+              runtime: "codex-cli"
+            }),
+            createRequest({
+              attemptId: "att_blocked_2",
+              runtime: "gemini-cli",
+              sourceKind: "delegated"
+            })
+          ]
+        }),
+        invokeHandoffFinalization,
+        resolveHandoffFinalizationCapability: () => false
+      })
+    ).resolves.toEqual({
+      decisionBasis: "handoff_finalization_closure_summary",
+      resultCount: 2,
+      invokedResultCount: 0,
+      blockedResultCount: 2,
+      groupCount: 1,
+      reportingDisposition: "all_blocked",
+      blockingReasons: ["handoff_finalization_unsupported"],
+      canAdvanceFromCloseout: false,
+      hasBlockingReasons: true
+    });
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
+  it("should surface canonical request-summary errors when the nested summary is null", async () => {
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      applyCloseoutDecisionSummary({
+        summary: null as never,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyCloseoutDecisionSummary({
+        summary: null as never,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization request apply requires summary to be an object."
+    );
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
+  it("should surface canonical request-summary errors when nested summary.requests is not an array", async () => {
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      applyCloseoutDecisionSummary({
+        summary: {
+          ...createRequestSummary(),
+          requests: null
+        } as never,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyCloseoutDecisionSummary({
+        summary: {
+          ...createRequestSummary(),
+          requests: null
+        } as never,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization request apply requires summary.requests to be an array."
+    );
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
   it("should surface canonical request-summary validation failures", async () => {
     await expect(
       applyCloseoutDecisionSummary({
