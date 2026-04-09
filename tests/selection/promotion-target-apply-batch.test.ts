@@ -54,6 +54,45 @@ const applyAttemptPromotionTargetBatch = (
 }>;
 
 describe("selection promotion-target-apply-batch helpers", () => {
+  it("should fail closed when the supplied promotion target-apply batch input or callbacks are malformed", async () => {
+    await expect(
+      applyAttemptPromotionTargetBatch(undefined as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyAttemptPromotionTargetBatch(undefined as never)
+    ).rejects.toThrow(
+      "Attempt promotion target apply batch input must be an object."
+    );
+
+    await expect(
+      applyAttemptPromotionTargetBatch({
+        targets: undefined as never,
+        invokeHandoff: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Attempt promotion target apply batch requires targets to be an array."
+    );
+
+    await expect(
+      applyAttemptPromotionTargetBatch({
+        targets: [],
+        invokeHandoff: undefined as never
+      })
+    ).rejects.toThrow(
+      "Attempt promotion target apply batch requires invokeHandoff to be a function."
+    );
+
+    await expect(
+      applyAttemptPromotionTargetBatch({
+        targets: [],
+        invokeHandoff: async () => undefined,
+        resolveHandoffCapability: "yes" as never
+      })
+    ).rejects.toThrow(
+      "Attempt promotion target apply batch requires resolveHandoffCapability to be a function when provided."
+    );
+  });
+
   it("should return an empty batch result for an empty promotion target list", async () => {
     await expect(
       applyAttemptPromotionTargetBatch({
@@ -209,7 +248,7 @@ describe("selection promotion-target-apply-batch helpers", () => {
     );
   });
 
-  it("should fail loudly when a batch entry does not produce a promotion target-apply result", async () => {
+  it("should fail loudly when a batch promotion target entry is not an object before deriving a promotion target-apply result", async () => {
     const targets = [undefined] as unknown as readonly AttemptPromotionTarget[];
 
     await expect(
@@ -224,8 +263,46 @@ describe("selection promotion-target-apply-batch helpers", () => {
         invokeHandoff: async () => undefined
       })
     ).rejects.toThrow(
-      "Attempt promotion target apply batch requires each target to produce a promotion target-apply result."
+      "Attempt promotion target apply batch requires targets entries to be objects."
     );
+  });
+
+  it("should fail loudly when promotion target entries are sparse or non-objects before later helpers run", async () => {
+    const sparseTargets = new Array<AttemptPromotionTarget>(1);
+
+    await expect(
+      applyAttemptPromotionTargetBatch({
+        targets: sparseTargets,
+        invokeHandoff: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Attempt promotion target apply batch requires targets entries to be objects."
+    );
+  });
+
+  it("should preserve ordered fail-fast semantics when a later promotion target entry is malformed", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      applyAttemptPromotionTargetBatch({
+        targets: [
+          createPromotionTarget({
+            attemptId: "att_supported_1"
+          }),
+          undefined,
+          createPromotionTarget({
+            attemptId: "att_supported_2"
+          })
+        ] as unknown as readonly AttemptPromotionTarget[],
+        invokeHandoff: async (request) => {
+          invokedAttemptIds.push(request.attemptId);
+        },
+        resolveHandoffCapability: () => true
+      })
+    ).rejects.toThrow(
+      "Attempt promotion target apply batch requires targets entries to be objects."
+    );
+    expect(invokedAttemptIds).toEqual(["att_supported_1"]);
   });
 
   it("should not mutate the supplied promotion targets", async () => {

@@ -11,6 +11,10 @@ import type {
   AttemptHandoffConsumerBlockingReason,
   AttemptHandoffRequest
 } from "./types.js";
+import {
+  validateSelectionObjectInput,
+  validateSelectionOptionalFunction
+} from "./entry-validation.js";
 
 const validAttemptStatuses = new Set<AttemptStatus>(attemptStatuses);
 const validAttemptSourceKinds = new Set<AttemptSourceKind>(attemptSourceKinds);
@@ -19,6 +23,14 @@ export function deriveAttemptHandoffConsumer(input: {
   request: AttemptHandoffRequest | undefined;
   resolveHandoffCapability?: AttemptHandoffCapabilityResolver;
 }): AttemptHandoffConsumer | undefined {
+  validateSelectionObjectInput(
+    input,
+    "Attempt handoff consumer input must be an object."
+  );
+  validateSelectionOptionalFunction(
+    input.resolveHandoffCapability,
+    "Attempt handoff consumer requires resolveHandoffCapability to be a function when provided."
+  );
   const { request } = input;
 
   if (request === undefined) {

@@ -1,4 +1,9 @@
 import { ValidationError } from "../core/errors.js";
+import {
+  validateSelectionObjectInput,
+  validateSelectionOptionalFunction,
+  validateSelectionRequiredFunction
+} from "./entry-validation.js";
 import { deriveAttemptHandoffTarget } from "./handoff-target.js";
 import { applyAttemptHandoffTarget } from "./handoff-target-apply.js";
 import type {
@@ -9,6 +14,18 @@ import type {
 export async function applyAttemptPromotionTarget(
   input: AttemptPromotionTargetApplyInput
 ): Promise<AttemptPromotionTargetApply | undefined> {
+  validateSelectionObjectInput(
+    input,
+    "Attempt promotion target apply input must be an object."
+  );
+  validateSelectionRequiredFunction(
+    input.invokeHandoff,
+    "Attempt promotion target apply requires invokeHandoff to be a function."
+  );
+  validateSelectionOptionalFunction(
+    input.resolveHandoffCapability,
+    "Attempt promotion target apply requires resolveHandoffCapability to be a function when provided."
+  );
   const handoffTarget = deriveAttemptHandoffTarget(input.target);
 
   if (handoffTarget === undefined) {

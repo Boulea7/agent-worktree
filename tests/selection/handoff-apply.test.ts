@@ -31,6 +31,34 @@ import type {
 } from "../../src/verification/internal.js";
 
 describe("selection handoff-apply helpers", () => {
+  it("should fail loudly when the supplied apply input or callbacks are malformed", async () => {
+    await expect(applyAttemptHandoff(undefined as never)).rejects.toThrow(
+      ValidationError
+    );
+    await expect(applyAttemptHandoff(undefined as never)).rejects.toThrow(
+      "Attempt handoff apply input must be an object."
+    );
+
+    await expect(
+      applyAttemptHandoff({
+        request: createHandoffRequest(),
+        invokeHandoff: undefined as never
+      })
+    ).rejects.toThrow(
+      "Attempt handoff apply requires invokeHandoff to be a function."
+    );
+
+    await expect(
+      applyAttemptHandoff({
+        request: createHandoffRequest(),
+        invokeHandoff: async () => undefined,
+        resolveHandoffCapability: "yes" as never
+      })
+    ).rejects.toThrow(
+      "Attempt handoff apply requires resolveHandoffCapability to be a function when provided."
+    );
+  });
+
   it("should return undefined when the supplied handoff request is undefined", async () => {
     const invokeHandoff = vi.fn(async () => undefined);
 

@@ -30,6 +30,34 @@ import type {
 } from "../../src/verification/internal.js";
 
 describe("selection handoff-target-apply helpers", () => {
+  it("should fail loudly when the supplied target-apply input or callbacks are malformed", async () => {
+    await expect(applyAttemptHandoffTarget(undefined as never)).rejects.toThrow(
+      ValidationError
+    );
+    await expect(applyAttemptHandoffTarget(undefined as never)).rejects.toThrow(
+      "Attempt handoff target apply input must be an object."
+    );
+
+    await expect(
+      applyAttemptHandoffTarget({
+        target: createHandoffTarget(),
+        invokeHandoff: undefined as never
+      })
+    ).rejects.toThrow(
+      "Attempt handoff target apply requires invokeHandoff to be a function."
+    );
+
+    await expect(
+      applyAttemptHandoffTarget({
+        target: createHandoffTarget(),
+        invokeHandoff: async () => undefined,
+        resolveHandoffCapability: "yes" as never
+      })
+    ).rejects.toThrow(
+      "Attempt handoff target apply requires resolveHandoffCapability to be a function when provided."
+    );
+  });
+
   it("should return undefined when the supplied handoff target is undefined", async () => {
     let invoked = false;
 

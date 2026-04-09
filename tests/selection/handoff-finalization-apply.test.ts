@@ -23,6 +23,34 @@ import type {
 } from "../../src/verification/internal.js";
 
 describe("selection handoff-finalization-apply helpers", () => {
+  it("should fail loudly when the supplied finalization-apply input or callbacks are malformed", async () => {
+    await expect(
+      applyAttemptHandoffFinalization(undefined as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyAttemptHandoffFinalization(undefined as never)
+    ).rejects.toThrow("Attempt handoff finalization apply input must be an object.");
+
+    await expect(
+      applyAttemptHandoffFinalization({
+        request: createFinalizationRequest(),
+        invokeHandoffFinalization: undefined as never
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization apply requires invokeHandoffFinalization to be a function."
+    );
+
+    await expect(
+      applyAttemptHandoffFinalization({
+        request: createFinalizationRequest(),
+        invokeHandoffFinalization: async () => undefined,
+        resolveHandoffFinalizationCapability: "yes" as never
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization apply requires resolveHandoffFinalizationCapability to be a function when provided."
+    );
+  });
+
   it("should return undefined when the supplied finalization request is undefined", async () => {
     const invokeHandoffFinalization = vi.fn(async () => undefined);
 

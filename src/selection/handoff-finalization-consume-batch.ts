@@ -1,4 +1,7 @@
 import { ValidationError } from "../core/errors.js";
+import {
+  validateSelectionObjectArrayEntry
+} from "./entry-validation.js";
 import { consumeAttemptHandoffFinalization } from "./handoff-finalization-consume.js";
 import type {
   AttemptHandoffFinalizationConsume,
@@ -13,7 +16,14 @@ export async function consumeAttemptHandoffFinalizationBatch(
   const consumers = normalizeConsumers(normalizedInput.consumers);
   const results: AttemptHandoffFinalizationConsume[] = [];
 
-  for (const consumer of consumers) {
+  for (let index = 0; index < consumers.length; index += 1) {
+    validateSelectionObjectArrayEntry(
+      consumers,
+      index,
+      "Attempt handoff finalization consume batch requires consumers entries to be objects."
+    );
+
+    const consumer = consumers[index]!;
     results.push(
       await consumeAttemptHandoffFinalization({
         consumer,

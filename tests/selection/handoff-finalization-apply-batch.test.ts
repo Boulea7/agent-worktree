@@ -5,6 +5,45 @@ import { applyAttemptHandoffFinalizationBatch } from "../../src/selection/handof
 import type { AttemptHandoffFinalizationRequest } from "../../src/selection/types.js";
 
 describe("selection handoff-finalization-apply-batch helpers", () => {
+  it("should fail closed when the supplied finalization apply-batch input or callbacks are malformed", async () => {
+    await expect(
+      applyAttemptHandoffFinalizationBatch(undefined as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyAttemptHandoffFinalizationBatch(undefined as never)
+    ).rejects.toThrow(
+      "Attempt handoff finalization apply batch input must be an object."
+    );
+
+    await expect(
+      applyAttemptHandoffFinalizationBatch({
+        requests: undefined as never,
+        invokeHandoffFinalization: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization apply batch requires requests to be an array."
+    );
+
+    await expect(
+      applyAttemptHandoffFinalizationBatch({
+        requests: [],
+        invokeHandoffFinalization: undefined as never
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization apply batch requires invokeHandoffFinalization to be a function."
+    );
+
+    await expect(
+      applyAttemptHandoffFinalizationBatch({
+        requests: [],
+        invokeHandoffFinalization: async () => undefined,
+        resolveHandoffFinalizationCapability: "yes" as never
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization apply batch requires resolveHandoffFinalizationCapability to be a function when provided."
+    );
+  });
+
   it("should return an empty batch result for an empty finalization request list", async () => {
     await expect(
       applyAttemptHandoffFinalizationBatch({
@@ -222,7 +261,7 @@ describe("selection handoff-finalization-apply-batch helpers", () => {
     expect(invokedAttemptIds).toEqual(["att_supported_1", "att_supported_2"]);
   });
 
-  it("should fail loudly when a batch entry does not produce an apply result", async () => {
+  it("should fail loudly when a finalization request batch entry is not an object before deriving an apply result", async () => {
     const requests = [undefined] as unknown as readonly AttemptHandoffFinalizationRequest[];
 
     await expect(
@@ -237,8 +276,48 @@ describe("selection handoff-finalization-apply-batch helpers", () => {
         invokeHandoffFinalization: async () => undefined
       })
     ).rejects.toThrow(
-      "Attempt handoff finalization apply batch requires each request to produce an apply result."
+      "Attempt handoff finalization apply batch requires requests entries to be objects."
     );
+  });
+
+  it("should fail loudly when finalization request entries are sparse or non-objects before later helpers run", async () => {
+    const sparseRequests = new Array<AttemptHandoffFinalizationRequest>(1);
+
+    await expect(
+      applyAttemptHandoffFinalizationBatch({
+        requests: sparseRequests,
+        invokeHandoffFinalization: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization apply batch requires requests entries to be objects."
+    );
+  });
+
+  it("should preserve ordered fail-fast semantics when a later finalization request entry is malformed", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      applyAttemptHandoffFinalizationBatch({
+        requests: [
+          createFinalizationRequest({
+            attemptId: "att_supported_1"
+          }),
+          undefined,
+          createFinalizationRequest({
+            attemptId: "att_supported_2"
+          })
+        ] as unknown as readonly AttemptHandoffFinalizationRequest[],
+        invokeHandoffFinalization: async (
+          request: AttemptHandoffFinalizationRequest
+        ) => {
+          invokedAttemptIds.push(request.attemptId);
+        },
+        resolveHandoffFinalizationCapability: () => true
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization apply batch requires requests entries to be objects."
+    );
+    expect(invokedAttemptIds).toEqual(["att_supported_1"]);
   });
 
   it("should not mutate the supplied requests", async () => {

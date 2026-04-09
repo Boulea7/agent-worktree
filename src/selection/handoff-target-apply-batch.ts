@@ -1,4 +1,11 @@
 import { ValidationError } from "../core/errors.js";
+import {
+  validateSelectionArray,
+  validateSelectionObjectArrayEntry,
+  validateSelectionObjectInput,
+  validateSelectionOptionalFunction,
+  validateSelectionRequiredFunction
+} from "./entry-validation.js";
 import { applyAttemptHandoffTarget } from "./handoff-target-apply.js";
 import type {
   AttemptHandoffTargetApply,
@@ -9,9 +16,32 @@ import type {
 export async function applyAttemptHandoffTargetBatch(
   input: AttemptHandoffTargetApplyBatchInput
 ): Promise<AttemptHandoffTargetApplyBatch> {
+  validateSelectionObjectInput(
+    input,
+    "Attempt handoff target apply batch input must be an object."
+  );
+  validateSelectionArray(
+    input.targets,
+    "Attempt handoff target apply batch requires targets to be an array."
+  );
+  validateSelectionRequiredFunction(
+    input.invokeHandoff,
+    "Attempt handoff target apply batch requires invokeHandoff to be a function."
+  );
+  validateSelectionOptionalFunction(
+    input.resolveHandoffCapability,
+    "Attempt handoff target apply batch requires resolveHandoffCapability to be a function when provided."
+  );
   const results: AttemptHandoffTargetApply[] = [];
 
-  for (const target of input.targets) {
+  for (let index = 0; index < input.targets.length; index += 1) {
+    validateSelectionObjectArrayEntry(
+      input.targets,
+      index,
+      "Attempt handoff target apply batch requires targets entries to be objects."
+    );
+
+    const target = input.targets[index]!;
     const result = await applyAttemptHandoffTarget({
       target,
       invokeHandoff: input.invokeHandoff,

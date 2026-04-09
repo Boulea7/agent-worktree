@@ -7,6 +7,17 @@ import {
 } from "../../src/selection/internal.js";
 
 describe("selection handoff-finalization-consumer helpers", () => {
+  it("should fail loudly when the supplied finalization-consumer input is malformed", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationConsumer(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationConsumer(undefined as never)
+    ).toThrow(
+      "Attempt handoff finalization consumer input must be an object."
+    );
+  });
+
   it("should return undefined when the supplied finalization request is undefined", () => {
     expect(
       deriveAttemptHandoffFinalizationConsumer({
@@ -100,6 +111,17 @@ describe("selection handoff-finalization-consumer helpers", () => {
         resolveHandoffFinalizationCapability: (() => "yes") as never
       })
     ).toThrow(ValidationError);
+  });
+
+  it("should fail loudly when resolveHandoffFinalizationCapability is not a function when provided", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationConsumer({
+        request: createFinalizationRequest(),
+        resolveHandoffFinalizationCapability: "yes" as never
+      })
+    ).toThrow(
+      "Attempt handoff finalization consumer requires resolveHandoffFinalizationCapability to be a function when provided."
+    );
   });
 
   it("should fail loudly when request.taskId is blank-only whitespace", () => {
