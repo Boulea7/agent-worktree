@@ -1,4 +1,11 @@
 import { ValidationError } from "../core/errors.js";
+import {
+  validateSelectionArray,
+  validateSelectionObjectArrayEntries,
+  validateSelectionObjectInput,
+  validateSelectionOptionalFunction,
+  validateSelectionRequiredFunction
+} from "./entry-validation.js";
 import { applyAttemptHandoffFinalization } from "./handoff-finalization-apply.js";
 import type {
   AttemptHandoffFinalizationApply,
@@ -9,6 +16,27 @@ import type {
 export async function applyAttemptHandoffFinalizationBatch(
   input: AttemptHandoffFinalizationApplyBatchInput
 ): Promise<AttemptHandoffFinalizationApplyBatch> {
+  validateSelectionObjectInput(
+    input,
+    "Attempt handoff finalization apply batch input must be an object."
+  );
+  validateSelectionArray(
+    input.requests,
+    "Attempt handoff finalization apply batch requires requests to be an array."
+  );
+  validateSelectionRequiredFunction(
+    input.invokeHandoffFinalization,
+    "Attempt handoff finalization apply batch requires invokeHandoffFinalization to be a function."
+  );
+  validateSelectionOptionalFunction(
+    input.resolveHandoffFinalizationCapability,
+    "Attempt handoff finalization apply batch requires resolveHandoffFinalizationCapability to be a function when provided."
+  );
+  validateSelectionObjectArrayEntries(
+    input.requests,
+    "Attempt handoff finalization apply batch requires requests entries to be objects."
+  );
+
   const results: AttemptHandoffFinalizationApply[] = [];
 
   for (const request of input.requests) {

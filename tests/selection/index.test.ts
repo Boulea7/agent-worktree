@@ -64,14 +64,29 @@ type SelectionIndexShouldNotExportHandoffCapabilityResolver = import("../../src/
 // @ts-expect-error selection index must not export handoff consumer readiness types
 type SelectionIndexShouldNotExportHandoffConsumerReadiness = import("../../src/selection/index.js").AttemptHandoffConsumerReadiness;
 
+// @ts-expect-error selection index must not export handoff invoker types
+type SelectionIndexShouldNotExportHandoffInvoker = import("../../src/selection/index.js").AttemptHandoffInvoker;
+
 // @ts-expect-error selection index must not export handoff consume result types
 type SelectionIndexShouldNotExportHandoffConsume = import("../../src/selection/index.js").AttemptHandoffConsume;
+
+// @ts-expect-error selection index must not export handoff consume input types
+type SelectionIndexShouldNotExportHandoffConsumeInput = import("../../src/selection/index.js").AttemptHandoffConsumeInput;
 
 // @ts-expect-error selection index must not export handoff apply result types
 type SelectionIndexShouldNotExportHandoffApply = import("../../src/selection/index.js").AttemptHandoffApply;
 
+// @ts-expect-error selection index must not export handoff apply input types
+type SelectionIndexShouldNotExportHandoffApplyInput = import("../../src/selection/index.js").AttemptHandoffApplyInput;
+
+// @ts-expect-error selection index must not export handoff apply-batch input types
+type SelectionIndexShouldNotExportHandoffApplyBatchInput = import("../../src/selection/index.js").AttemptHandoffApplyBatchInput;
+
 // @ts-expect-error selection index must not export promotion target apply result types
 type SelectionIndexShouldNotExportPromotionTargetApply = import("../../src/selection/index.js").AttemptPromotionTargetApply;
+
+// @ts-expect-error selection index must not export promotion target apply input types
+type SelectionIndexShouldNotExportPromotionTargetApplyInput = import("../../src/selection/index.js").AttemptPromotionTargetApplyInput;
 
 // @ts-expect-error selection index must not export handoff finalization target payloads
 type SelectionIndexShouldNotExportHandoffFinalizationTarget = import("../../src/selection/index.js").AttemptHandoffFinalizationTarget;
@@ -180,6 +195,9 @@ type SelectionIndexShouldNotExportHandoffReportReadyEntry = import("../../src/se
 
 // @ts-expect-error selection index must not export handoff explanation code types
 type SelectionIndexShouldNotExportHandoffExplanationCode = import("../../src/selection/index.js").AttemptHandoffExplanationCode;
+
+// @ts-expect-error selection index must not export promotion explanation code types
+type SelectionIndexShouldNotExportPromotionExplanationCode = import("../../src/selection/index.js").AttemptPromotionExplanationCode;
 
 // @ts-expect-error selection index must not export handoff explanation entry types
 type SelectionIndexShouldNotExportHandoffExplanationEntry = import("../../src/selection/index.js").AttemptHandoffExplanationEntry;

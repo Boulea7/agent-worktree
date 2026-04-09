@@ -19,7 +19,6 @@ export {
   type SessionSnapshot,
   type SessionSnapshotInput,
   type SessionGuardrails,
-  type SessionLifecycleCapabilityResolver,
   type SessionSourceKind,
   type SessionTreeIndex
 } from "./types.js";

@@ -1,4 +1,7 @@
 import { ValidationError } from "../core/errors.js";
+import {
+  validateSelectionObjectArrayEntries
+} from "./entry-validation.js";
 import { consumeAttemptHandoffFinalization } from "./handoff-finalization-consume.js";
 import type {
   AttemptHandoffFinalizationConsume,
@@ -55,6 +58,11 @@ function normalizeConsumers(
       "Attempt handoff finalization consume batch requires consumers to be an array."
     );
   }
+
+  validateSelectionObjectArrayEntries(
+    value,
+    "Attempt handoff finalization consume batch requires consumers entries to be objects."
+  );
 
   return value;
 }

@@ -34,6 +34,34 @@ const applyAttemptPromotionTarget = (
 ) => Promise<AttemptPromotionTargetApply | undefined>;
 
 describe("selection promotion-target-apply helpers", () => {
+  it("should fail loudly when the supplied promotion target-apply input or callbacks are malformed", async () => {
+    await expect(
+      applyAttemptPromotionTarget(undefined as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyAttemptPromotionTarget(undefined as never)
+    ).rejects.toThrow("Attempt promotion target apply input must be an object.");
+
+    await expect(
+      applyAttemptPromotionTarget({
+        target: createPromotionTarget(),
+        invokeHandoff: undefined as never
+      })
+    ).rejects.toThrow(
+      "Attempt promotion target apply requires invokeHandoff to be a function."
+    );
+
+    await expect(
+      applyAttemptPromotionTarget({
+        target: createPromotionTarget(),
+        invokeHandoff: async () => undefined,
+        resolveHandoffCapability: "yes" as never
+      })
+    ).rejects.toThrow(
+      "Attempt promotion target apply requires resolveHandoffCapability to be a function when provided."
+    );
+  });
+
   it("should return undefined when the supplied promotion target is undefined", async () => {
     let invoked = false;
 

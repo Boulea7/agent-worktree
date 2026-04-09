@@ -68,6 +68,19 @@ describe("selection handoff-finalization-consume-batch helpers", () => {
     );
   });
 
+  it("should fail loudly when consumer entries are sparse before deeper consumer validation runs", async () => {
+    const sparseConsumers = new Array<AttemptHandoffFinalizationConsumer>(1);
+
+    await expect(
+      consumeAttemptHandoffFinalizationBatch({
+        consumers: sparseConsumers,
+        invokeHandoffFinalization: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization consume batch requires consumers entries to be objects."
+    );
+  });
+
   it("should preserve input order and continue past blocked consumers", async () => {
     const consumers = [
       createFinalizationConsumer({
@@ -179,7 +192,7 @@ describe("selection handoff-finalization-consume-batch helpers", () => {
     expect(invokedAttemptIds).toEqual(["att_supported_1", "att_supported_2"]);
   });
 
-  it("should fail fast when a batch entry is not a valid consumer and stop before invoking later supported entries", async () => {
+  it("should fail fast when a batch entry is not a valid consumer at the batch seam and stop before invoking later supported entries", async () => {
     const invokedAttemptIds: string[] = [];
 
     await expect(
@@ -216,7 +229,7 @@ describe("selection handoff-finalization-consume-batch helpers", () => {
         }
       })
     ).rejects.toThrow(
-      "Attempt handoff finalization consume requires consumer to be an object."
+      "Attempt handoff finalization consume batch requires consumers entries to be objects."
     );
     expect(invokedAttemptIds).toEqual([]);
   });

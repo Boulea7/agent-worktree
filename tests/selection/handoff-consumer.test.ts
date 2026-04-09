@@ -31,6 +31,15 @@ import type {
 } from "../../src/verification/internal.js";
 
 describe("selection handoff-consumer helpers", () => {
+  it("should fail loudly when the supplied handoff-consumer input is malformed", () => {
+    expect(() =>
+      deriveAttemptHandoffConsumer(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffConsumer(undefined as never)
+    ).toThrow("Attempt handoff consumer input must be an object.");
+  });
+
   it("should return undefined when the supplied handoff request is undefined", () => {
     expect(
       deriveAttemptHandoffConsumer({
@@ -147,6 +156,17 @@ describe("selection handoff-consumer helpers", () => {
         resolveHandoffCapability: (() => "yes") as never
       })
     ).toThrow(ValidationError);
+  });
+
+  it("should fail loudly when resolveHandoffCapability is not a function when provided", () => {
+    expect(() =>
+      deriveAttemptHandoffConsumer({
+        request: createHandoffRequest(),
+        resolveHandoffCapability: "yes" as never
+      })
+    ).toThrow(
+      "Attempt handoff consumer requires resolveHandoffCapability to be a function when provided."
+    );
   });
 
   it("should fail loudly when the runtime resolver returns undefined", () => {

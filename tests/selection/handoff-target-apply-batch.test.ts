@@ -79,6 +79,43 @@ const applyAttemptHandoffTargetBatch = (
 }>;
 
 describe("selection handoff-target-apply-batch helpers", () => {
+  it("should fail closed when the supplied target-apply batch input or callbacks are malformed", async () => {
+    await expect(
+      applyAttemptHandoffTargetBatch(undefined as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyAttemptHandoffTargetBatch(undefined as never)
+    ).rejects.toThrow("Attempt handoff target apply batch input must be an object.");
+
+    await expect(
+      applyAttemptHandoffTargetBatch({
+        targets: undefined as never,
+        invokeHandoff: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Attempt handoff target apply batch requires targets to be an array."
+    );
+
+    await expect(
+      applyAttemptHandoffTargetBatch({
+        targets: [],
+        invokeHandoff: undefined as never
+      })
+    ).rejects.toThrow(
+      "Attempt handoff target apply batch requires invokeHandoff to be a function."
+    );
+
+    await expect(
+      applyAttemptHandoffTargetBatch({
+        targets: [],
+        invokeHandoff: async () => undefined,
+        resolveHandoffCapability: "yes" as never
+      })
+    ).rejects.toThrow(
+      "Attempt handoff target apply batch requires resolveHandoffCapability to be a function when provided."
+    );
+  });
+
   it("should return an empty batch result for an empty target list", async () => {
     await expect(
       applyAttemptHandoffTargetBatch({
@@ -234,7 +271,7 @@ describe("selection handoff-target-apply-batch helpers", () => {
     );
   });
 
-  it("should fail loudly when a batch entry does not produce a target-apply result", async () => {
+  it("should fail loudly when a batch entry is not an object before deriving a target-apply result", async () => {
     const targets = [undefined] as unknown as readonly AttemptHandoffTarget[];
 
     await expect(
@@ -249,7 +286,20 @@ describe("selection handoff-target-apply-batch helpers", () => {
         invokeHandoff: async () => undefined
       })
     ).rejects.toThrow(
-      "Attempt handoff target apply batch requires each target to produce a target-apply result."
+      "Attempt handoff target apply batch requires targets entries to be objects."
+    );
+  });
+
+  it("should fail loudly when target entries are sparse or non-objects before later helpers run", async () => {
+    const sparseTargets = new Array<AttemptHandoffTarget>(1);
+
+    await expect(
+      applyAttemptHandoffTargetBatch({
+        targets: sparseTargets,
+        invokeHandoff: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Attempt handoff target apply batch requires targets entries to be objects."
     );
   });
 
