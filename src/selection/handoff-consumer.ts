@@ -37,6 +37,11 @@ export function deriveAttemptHandoffConsumer(input: {
     return undefined;
   }
 
+  validateSelectionObjectInput(
+    request,
+    "Attempt handoff consumer requires request to be an object when provided."
+  );
+
   const taskId = normalizeRequiredString(request.taskId, "request.taskId");
   const attemptId = normalizeRequiredString(request.attemptId, "request.attemptId");
   const runtime = normalizeRequiredString(request.runtime, "request.runtime");

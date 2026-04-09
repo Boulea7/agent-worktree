@@ -40,6 +40,21 @@ describe("selection handoff-consumer helpers", () => {
     ).toThrow("Attempt handoff consumer input must be an object.");
   });
 
+  it("should fail loudly when request is not an object when provided", () => {
+    expect(() =>
+      deriveAttemptHandoffConsumer({
+        request: null as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffConsumer({
+        request: null as never
+      })
+    ).toThrow(
+      "Attempt handoff consumer requires request to be an object when provided."
+    );
+  });
+
   it("should return undefined when the supplied handoff request is undefined", () => {
     expect(
       deriveAttemptHandoffConsumer({

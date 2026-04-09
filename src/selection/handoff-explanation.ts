@@ -1,4 +1,9 @@
 import { ValidationError } from "../core/errors.js";
+import {
+  validateSelectionArray,
+  validateSelectionObjectArrayEntries,
+  validateSelectionObjectInput
+} from "./entry-validation.js";
 import { deriveAttemptHandoffReportReady } from "./handoff-report-ready.js";
 import type {
   AttemptHandoffConsumerBlockingReason,
@@ -20,7 +25,19 @@ export function deriveAttemptHandoffExplanationSummary(
     return undefined;
   }
 
+  validateSelectionObjectInput(
+    report,
+    "Attempt handoff explanation summary requires report to be an object."
+  );
   validateReportBasis(report);
+  validateCanonicalSubgroupInput(
+    report.invokedResults,
+    "report.invokedResults"
+  );
+  validateCanonicalSubgroupInput(
+    report.blockedResults,
+    "report.blockedResults"
+  );
   const canonicalReport = deriveAttemptHandoffReportReady({
     results: report.results
   });
@@ -76,6 +93,20 @@ function validateCanonicalSubgroups(
       "Attempt handoff explanation summary requires report.blockedResults to match the stable filtered blocked subgroup."
     );
   }
+}
+
+function validateCanonicalSubgroupInput(
+  value: unknown,
+  fieldName: "report.invokedResults" | "report.blockedResults"
+): void {
+  validateSelectionArray(
+    value,
+    `Attempt handoff explanation summary requires ${fieldName} to be an array.`
+  );
+  validateSelectionObjectArrayEntries(
+    value,
+    `Attempt handoff explanation summary requires ${fieldName} entries to be objects.`
+  );
 }
 
 function deriveExplanationEntry(
@@ -203,8 +234,14 @@ function reportEntryArraysEqual(
   return (
     Array.isArray(left) &&
     left.length === right.length &&
-    left.every((entry, index) =>
-      reportEntryEqual(entry as AttemptHandoffReportReadyEntry, right[index]!)
+    left.every(
+      (entry, index) =>
+        hasOwnIndex(left, index) &&
+        hasOwnIndex(right, index) &&
+        reportEntryEqual(
+          entry as AttemptHandoffReportReadyEntry,
+          right[index] as AttemptHandoffReportReadyEntry
+        )
     )
   );
 }
@@ -213,6 +250,10 @@ function reportEntryEqual(
   left: AttemptHandoffReportReadyEntry,
   right: AttemptHandoffReportReadyEntry
 ): boolean {
+  if (!isComparableReportEntry(left) || !isComparableReportEntry(right)) {
+    return false;
+  }
+
   return (
     left.handoffTarget.handoffBasis === right.handoffTarget.handoffBasis &&
     normalizeComparableString(left.handoffTarget.taskId) ===
@@ -272,6 +313,39 @@ function reportEntryEqual(
   );
 }
 
+function isComparableReportEntry(
+  value: unknown
+): value is AttemptHandoffReportReadyEntry {
+  if (!isRecord(value) || !isRecord(value.handoffTarget) || !isRecord(value.targetApply)) {
+    return false;
+  }
+
+  if (
+    !isComparableRequest(value.targetApply.request) ||
+    !isRecord(value.targetApply.apply) ||
+    !isRecord(value.targetApply.apply.consumer) ||
+    !isRecord(value.targetApply.apply.consume)
+  ) {
+    return false;
+  }
+
+  return (
+    isComparableRequest(value.targetApply.apply.consumer.request) &&
+    isComparableReadiness(value.targetApply.apply.consumer.readiness) &&
+    isComparableRequest(value.targetApply.apply.consume.request) &&
+    isComparableReadiness(value.targetApply.apply.consume.readiness) &&
+    typeof value.targetApply.apply.consume.invoked === "boolean"
+  );
+}
+
+function isComparableRequest(value: unknown): boolean {
+  return isRecord(value);
+}
+
+function isComparableReadiness(value: unknown): boolean {
+  return isRecord(value) && Array.isArray(value.blockingReasons);
+}
+
 function readinessEqual(
   left: AttemptHandoffReportReadyEntry["targetApply"]["apply"]["consumer"]["readiness"],
   right: AttemptHandoffReportReadyEntry["targetApply"]["apply"]["consumer"]["readiness"]
@@ -294,6 +368,14 @@ function stringArraysEqual(
   );
 }
 
+function hasOwnIndex(values: readonly unknown[], index: number): boolean {
+  return Object.prototype.hasOwnProperty.call(values, index);
+}
+
 function normalizeComparableString(value: unknown): unknown {
   return typeof value === "string" ? value.trim() : value;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

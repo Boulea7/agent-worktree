@@ -167,6 +167,78 @@ describe("selection handoff-decision helpers", () => {
     );
   });
 
+  it("should fail loudly when summary.invokedResults contains a non-object entry", () => {
+    expect(() =>
+      deriveAttemptHandoffDecisionSummary({
+        ...createExplanationSummary([createInvokedExplanationEntry()]),
+        invokedResults: [null] as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffDecisionSummary({
+        ...createExplanationSummary([createInvokedExplanationEntry()]),
+        invokedResults: [null] as never
+      })
+    ).toThrow(
+      "Attempt handoff decision summary requires summary.invokedResults entries to be objects."
+    );
+  });
+
+  it("should fail loudly when summary.invokedResults is not an array", () => {
+    expect(() =>
+      deriveAttemptHandoffDecisionSummary({
+        ...createExplanationSummary([createInvokedExplanationEntry()]),
+        invokedResults: null as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffDecisionSummary({
+        ...createExplanationSummary([createInvokedExplanationEntry()]),
+        invokedResults: null as never
+      })
+    ).toThrow(
+      "Attempt handoff decision summary requires summary.invokedResults to be an array."
+    );
+  });
+
+  it("should fail loudly when summary.invokedResults contains a malformed object entry", () => {
+    expect(() =>
+      deriveAttemptHandoffDecisionSummary({
+        ...createExplanationSummary([createInvokedExplanationEntry()]),
+        invokedResults: [{}] as never
+      })
+    ).toThrow(ValidationError);
+  });
+
+  it("should fail loudly when summary.blockedResults contains a sparse entry", () => {
+    const blockedResults = [] as unknown[];
+    blockedResults[1] = createBlockedExplanationEntry();
+
+    expect(() =>
+      deriveAttemptHandoffDecisionSummary({
+        ...createExplanationSummary([createBlockedExplanationEntry()]),
+        blockedResults: blockedResults as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffDecisionSummary({
+        ...createExplanationSummary([createBlockedExplanationEntry()]),
+        blockedResults: blockedResults as never
+      })
+    ).toThrow(
+      "Attempt handoff decision summary requires summary.blockedResults entries to be objects."
+    );
+  });
+
+  it("should fail loudly when summary.blockedResults contains a malformed object entry", () => {
+    expect(() =>
+      deriveAttemptHandoffDecisionSummary({
+        ...createExplanationSummary([createBlockedExplanationEntry()]),
+        blockedResults: [{}] as never
+      })
+    ).toThrow(ValidationError);
+  });
+
   it("should fail loudly when explanationBasis is invalid", () => {
     const summary = {
       ...createExplanationSummary([]),
