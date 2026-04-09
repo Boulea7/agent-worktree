@@ -205,3 +205,9 @@ Exit criteria:
 - Every phase should have explicit exit gates.
 - Every phase should define what tests are mandatory before completion.
 - The repository now has a usable Git commit baseline, so implementation windows should actively use non-destructive Git commits, branches, and worktrees as archival checkpoints for each completed thin slice or debugging milestone.
+
+## Related
+
+- [docs/index.md](../index.md)
+- [ROADMAP.md](../../ROADMAP.md)
+- [docs/compat/overview.md](../compat/overview.md)

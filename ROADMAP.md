@@ -38,3 +38,9 @@
 - Full Tree-of-Thoughts or MCTS search by default
 - Custom process reward model training
 - Large-scale benchmark claims before a stable prototype exists
+
+## Related
+
+- [docs/index.md](docs/index.md)
+- [docs/compat/overview.md](docs/compat/overview.md)
+- [docs/maintainers/development-phases.md](docs/maintainers/development-phases.md)

@@ -45,7 +45,7 @@ Descriptor-only runtimes may still return `smokeStatus: "not_supported"` through
 The bounded parser also remains intentionally narrow: obvious non-JSON prelude lines, including bracket-prefixed log noise, may normalize to `unknown`, while malformed JSON-looking records still fail loudly.
 The same boundary now allows a thin internal observation layer on top of canonical events, but that observation is still diagnostic execution metadata rather than a public session or persistence protocol.
 The merged baseline also contains a deeper internal helper chain for runtime-state, runtime-context, spawn, wait, and close composition.
-That current internal continuation now spans the thin Phase 5 closeout chain plus bounded-parallelism Phase 6 prep, including internal-only spawn-budget, spawn-candidate, spawn-batch-plan, spawn-batch-items, spawn-batch-headless-apply-items, headless wait/close request projection seams, and the downstream headless batch bridge through spawn-headless wait/close target-apply batches, but those helpers remain internal-only and are not a public lifecycle promise.
+That current internal continuation now spans the thin Phase 5 closeout chain plus bounded-parallelism Phase 6 prep, including internal-only spawn-budget, spawn-candidate, spawn-batch-plan, spawn-batch-items, spawn-batch-items-apply, spawn-batch-headless-apply-items, spawn-batch-headless-apply, headless wait/close request projection seams, and the downstream headless batch bridge through spawn-headless wait/close target-apply batches, but those helpers remain internal-only and are not a public lifecycle promise.
 
 The first concrete reference path is intentionally narrow:
 
@@ -123,3 +123,9 @@ Runtime lifecycle behavior, cross-runtime parity, and broader execution surfaces
 For this repository, canonical committed truth starts with `SPEC.md`, then `README.md`, then `docs/index.md`. Use `AGENTS.md` as the repository-specific execution rules and boundary companion rather than as a replacement for that committed doc set.
 
 Thin compatibility files such as `CLAUDE.md` and `GEMINI.md` exist to help specific tools without creating duplicated policy.
+
+## Related
+
+- [docs/index.md](../index.md)
+- [ROADMAP.md](../../ROADMAP.md)
+- [docs/maintainers/development-phases.md](../maintainers/development-phases.md)
