@@ -12,8 +12,8 @@ describe("verification aggregation helpers", () => {
       })
     ).toEqual({
       sourceState: "pending",
-      overallOutcome: "pending",
-      requiredOutcome: "pending",
+      overallOutcome: "incomplete",
+      requiredOutcome: "incomplete",
       counts: {
         total: 0,
         valid: 0,
@@ -27,7 +27,7 @@ describe("verification aggregation helpers", () => {
         error: 0
       },
       hasInvalidChecks: false,
-      hasComparablePayload: true,
+      hasComparablePayload: false,
       isSelectionReady: false
     });
   });
@@ -174,7 +174,7 @@ describe("verification aggregation helpers", () => {
       })
     ).toEqual({
       sourceState: "pending",
-      overallOutcome: "passed",
+      overallOutcome: "failed",
       requiredOutcome: "failed",
       counts: {
         total: 2,
@@ -311,8 +311,8 @@ describe("verification aggregation helpers", () => {
       })
     ).toEqual({
       sourceState: "verified",
-      overallOutcome: "passed",
-      requiredOutcome: "satisfied",
+      overallOutcome: "incomplete",
+      requiredOutcome: "incomplete",
       counts: {
         total: 0,
         valid: 0,
@@ -326,8 +326,36 @@ describe("verification aggregation helpers", () => {
         error: 0
       },
       hasInvalidChecks: false,
-      hasComparablePayload: true,
-      isSelectionReady: true
+      hasComparablePayload: false,
+      isSelectionReady: false
+    });
+  });
+
+  it("should keep zero-check failed states incomplete instead of comparable", () => {
+    expect(
+      deriveAttemptVerificationSummary({
+        state: "failed",
+        checks: []
+      })
+    ).toEqual({
+      sourceState: "failed",
+      overallOutcome: "incomplete",
+      requiredOutcome: "incomplete",
+      counts: {
+        total: 0,
+        valid: 0,
+        invalid: 0,
+        required: 0,
+        optional: 0,
+        passed: 0,
+        failed: 0,
+        pending: 0,
+        skipped: 0,
+        error: 0
+      },
+      hasInvalidChecks: false,
+      hasComparablePayload: false,
+      isSelectionReady: false
     });
   });
 

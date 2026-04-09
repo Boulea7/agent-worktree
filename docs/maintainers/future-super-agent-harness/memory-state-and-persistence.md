@@ -5,6 +5,7 @@ Maintainer planning only. This document does not modify the current public contr
 ## Summary
 
 The future branch should explicitly separate audit truth, runtime state, workspace state, summary state, and long-term memory. DeerFlow is useful here because it demonstrates why collapsing them together causes confusion.
+Claude Code source-backed materials reinforce the same point from a different angle: session memory, durable memory, team memory, and dream-like background consolidation should not be collapsed into one generic `memory` bucket.
 
 ## Proposed Layers
 
@@ -75,7 +76,15 @@ It should never become the durable truth of repository state.
 Useful lesson:
 
 - keep conversation/session continuity separate from persistent memory
+- keep session summarization separate from persistent memory
+- keep persistent memory internally split between stable narrative summaries and atomic facts
+- keep memory user-controllable through inspect/edit/delete/import/export flows if it can influence future behavior
+- keep any dream-like or background-consolidation path downstream of already-stable runtime/workspace/memory layers
+- keep team-shared memory separate from per-session and per-operator memory
 
 Lesson not to copy:
 
 - do not move the future branch toward a thread-native workspace model
+- do not use mutable memory blobs or checkpoint-like stores as durable audit truth
+- do not let async debounce queues replace first-class durable event records
+- do not treat feature-gated memory or dream paths as if static source analysis had already proven rollout, defaults, or product guarantees

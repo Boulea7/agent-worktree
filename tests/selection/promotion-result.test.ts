@@ -44,7 +44,13 @@ describe("selection promotion-result helpers", () => {
       attemptId: "att_ready",
       verification: createVerification({
         state: "verified",
-        checks: []
+        checks: [
+          {
+            name: "lint",
+            required: true,
+            status: "passed"
+          }
+        ]
       })
     });
 
@@ -68,7 +74,13 @@ describe("selection promotion-result helpers", () => {
         sourceKind: "delegated",
         verification: createVerification({
           state: "pending",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
         })
       }),
       createPromotionCandidate({
@@ -78,7 +90,13 @@ describe("selection promotion-result helpers", () => {
         sourceKind: "direct",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       }),
       createIncomparablePromotionCandidate({
@@ -562,7 +580,13 @@ describe("selection promotion-result helpers", () => {
         attemptId: "att_z",
         verification: createVerification({
           state: "pending",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
         })
       })
     );
@@ -571,7 +595,13 @@ describe("selection promotion-result helpers", () => {
         attemptId: "att_a",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       })
     );
@@ -705,7 +735,13 @@ function createManifest(
     verification:
       verification ?? {
         state: "verified",
-        checks: []
+        checks: [
+          {
+            name: "lint",
+            required: true,
+            status: "passed"
+          }
+        ]
       },
     ...rest
   };

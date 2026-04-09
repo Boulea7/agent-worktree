@@ -28,7 +28,10 @@ describe("verification index exports", () => {
       })
     ).toMatchObject({
       sourceState: "verified",
-      isSelectionReady: true
+      isSelectionReady: false,
+      hasComparablePayload: false,
+      overallOutcome: "incomplete",
+      requiredOutcome: "incomplete"
     });
   });
 

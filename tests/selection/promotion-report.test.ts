@@ -139,7 +139,13 @@ describe("selection promotion-report helpers", () => {
         sourceKind: "direct",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       }),
       createIncomparablePromotionCandidate({
@@ -228,7 +234,13 @@ describe("selection promotion-report helpers", () => {
           attemptId: "att_ready",
           verification: createVerification({
             state: "verified",
-            checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
           })
         })
       ]),
@@ -248,7 +260,13 @@ describe("selection promotion-report helpers", () => {
           attemptId: "att_ready",
           verification: createVerification({
             state: "verified",
-            checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
           })
         })
       ]),
@@ -268,7 +286,13 @@ describe("selection promotion-report helpers", () => {
           attemptId: "att_ready",
           verification: createVerification({
             state: "verified",
-            checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
           })
         })
       ]),
@@ -288,7 +312,13 @@ describe("selection promotion-report helpers", () => {
           attemptId: "att_ready",
           verification: createVerification({
             state: "verified",
-            checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
           })
         })
       ]),
@@ -308,7 +338,13 @@ describe("selection promotion-report helpers", () => {
           attemptId: "att_ready",
           verification: createVerification({
             state: "verified",
-            checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
           })
         })
       ]),
@@ -327,7 +363,13 @@ describe("selection promotion-report helpers", () => {
         attemptId: "att_ready",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       })
     ]);
@@ -357,7 +399,13 @@ describe("selection promotion-report helpers", () => {
         attemptId: "att_ready",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       })
     ]);
@@ -402,7 +450,13 @@ describe("selection promotion-report helpers", () => {
           attemptId: "att_ready",
           verification: createVerification({
             state: "verified",
-            checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
           })
         })
       ]),
@@ -421,7 +475,13 @@ describe("selection promotion-report helpers", () => {
         attemptId: "att_a",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       }),
       createPromotionCandidate({
@@ -495,7 +555,13 @@ describe("selection promotion-report helpers", () => {
         attemptId: "att_ready",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       })
     ]);
@@ -523,7 +589,13 @@ describe("selection promotion-report helpers", () => {
         attemptId: "att_ready",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       })
     ]);
@@ -707,7 +779,13 @@ function createManifest(
     verification:
       verification ?? {
         state: "verified",
-        checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
       },
     ...rest
   };

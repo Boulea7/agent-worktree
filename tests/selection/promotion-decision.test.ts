@@ -228,7 +228,13 @@ describe("selection promotion-decision helpers", () => {
           attemptId: "att_ready",
           verification: createVerification({
             state: "verified",
-            checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
           })
         }),
         createIncomparablePromotionCandidate({
@@ -310,7 +316,13 @@ describe("selection promotion-decision helpers", () => {
         attemptId: "att_a",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       }),
       createPromotionCandidate({
@@ -350,7 +362,13 @@ describe("selection promotion-decision helpers", () => {
         attemptId: "att_ready",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       })
     ]);
@@ -395,14 +413,26 @@ describe("selection promotion-decision helpers", () => {
         attemptId: "att_b",
         verification: createVerification({
           state: "pending",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
         })
       }),
       createPromotionCandidate({
         attemptId: "att_a",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       })
     ]);
@@ -461,14 +491,26 @@ describe("selection promotion-decision helpers", () => {
         attemptId: "att_b",
         verification: createVerification({
           state: "pending",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
         })
       }),
       createPromotionCandidate({
         attemptId: "att_a",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       })
     ]);
@@ -509,7 +551,13 @@ describe("selection promotion-decision helpers", () => {
         attemptId: "att_ready",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       })
     ]);
@@ -538,7 +586,13 @@ describe("selection promotion-decision helpers", () => {
         attemptId: "att_ready",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       })
     ]);
@@ -591,7 +645,13 @@ describe("selection promotion-decision helpers", () => {
           attemptId: "att_ready",
           verification: createVerification({
             state: "verified",
-            checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
           })
         })
       ]),
@@ -612,7 +672,13 @@ describe("selection promotion-decision helpers", () => {
         attemptId: "att_ready",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       })
     ]);
@@ -642,14 +708,26 @@ describe("selection promotion-decision helpers", () => {
         attemptId: "att_b",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       }),
       createPromotionCandidate({
         attemptId: "att_a",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       })
     ]);
@@ -676,7 +754,13 @@ describe("selection promotion-decision helpers", () => {
         attemptId: "att_selected",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       }),
       createPromotionCandidate({
@@ -716,7 +800,13 @@ describe("selection promotion-decision helpers", () => {
         attemptId: "att_selected",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       }),
       createPromotionCandidate({
@@ -756,7 +846,13 @@ describe("selection promotion-decision helpers", () => {
         attemptId: "att_selected",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       }),
       createPromotionCandidate({
@@ -796,7 +892,13 @@ describe("selection promotion-decision helpers", () => {
         attemptId: "att_selected",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       }),
       createPromotionCandidate({
@@ -987,7 +1089,13 @@ function createManifest(
     verification:
       verification ?? {
         state: "verified",
-        checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
       },
     ...rest
   };

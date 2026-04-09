@@ -239,7 +239,13 @@ describe("selection promotion-target helpers", () => {
           attemptId: "att_ready",
           verification: createVerification({
             state: "verified",
-            checks: []
+            checks: [
+              {
+                name: "lint",
+                required: true,
+                status: "passed"
+              }
+            ]
           })
         })
       ]),
@@ -258,7 +264,13 @@ describe("selection promotion-target helpers", () => {
           attemptId: "att_ready",
           verification: createVerification({
             state: "verified",
-            checks: []
+            checks: [
+              {
+                name: "lint",
+                required: true,
+                status: "passed"
+              }
+            ]
           })
         })
       ]),
@@ -306,7 +318,13 @@ describe("selection promotion-target helpers", () => {
           attemptId: "att_ready",
           verification: createVerification({
             state: "verified",
-            checks: []
+            checks: [
+              {
+                name: "lint",
+                required: true,
+                status: "passed"
+              }
+            ]
           })
         })
       ]),
@@ -329,7 +347,13 @@ describe("selection promotion-target helpers", () => {
         attemptId: "att_ready",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       })
     ]);
@@ -361,7 +385,13 @@ describe("selection promotion-target helpers", () => {
         attemptId: "att_ready",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       })
     ]);
@@ -380,7 +410,13 @@ describe("selection promotion-target helpers", () => {
         attemptId: "att_ready",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       })
     ]);
@@ -409,7 +445,13 @@ describe("selection promotion-target helpers", () => {
         attemptId: "att_ready",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       })
     ]);
@@ -480,7 +522,13 @@ describe("selection promotion-target helpers", () => {
         attemptId: "att_ready",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       })
     ]);
@@ -524,7 +572,13 @@ describe("selection promotion-target helpers", () => {
         attemptId: "att_ready",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       })
     ]);
@@ -571,7 +625,13 @@ describe("selection promotion-target helpers", () => {
           attemptId: "att_ready",
           verification: createVerification({
             state: "verified",
-            checks: []
+            checks: [
+              {
+                name: "lint",
+                required: true,
+                status: "passed"
+              }
+            ]
           })
         })
       ])
@@ -599,7 +659,13 @@ describe("selection promotion-target helpers", () => {
           attemptId: "att_ready",
           verification: createVerification({
             state: "verified",
-            checks: []
+            checks: [
+              {
+                name: "lint",
+                required: true,
+                status: "passed"
+              }
+            ]
           })
         })
       ])
@@ -716,7 +782,13 @@ function createManifest(
     verification:
       verification ?? {
         state: "verified",
-        checks: []
+        checks: [
+          {
+            name: "lint",
+            required: true,
+            status: "passed"
+          }
+        ]
       },
     ...rest
   };
