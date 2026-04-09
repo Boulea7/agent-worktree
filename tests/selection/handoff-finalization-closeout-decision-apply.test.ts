@@ -48,6 +48,36 @@ describe("selection handoff-finalization-closeout-decision-apply helpers", () =>
     ).resolves.toBeUndefined();
   });
 
+  it("should fail closed when the supplied closeout-decision-apply input or invoker is malformed", async () => {
+    await expect(
+      applyCloseoutDecisionSummary(undefined as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyCloseoutDecisionSummary(undefined as never)
+    ).rejects.toThrow(
+      "Attempt handoff finalization closeout decision apply input must be an object."
+    );
+
+    await expect(
+      applyCloseoutDecisionSummary({
+        summary: createRequestSummary(),
+        invokeHandoffFinalization: undefined as never
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization closeout decision apply requires invokeHandoffFinalization to be a function."
+    );
+
+    await expect(
+      applyCloseoutDecisionSummary({
+        summary: createRequestSummary(),
+        invokeHandoffFinalization: async () => undefined,
+        resolveHandoffFinalizationCapability: "yes" as never
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization closeout decision apply requires resolveHandoffFinalizationCapability to be a function when provided."
+    );
+  });
+
   it("should return undefined for the post-apply helper when the supplied request summary cannot finalize handoff", async () => {
     const invokeHandoffFinalization = vi.fn(async () => undefined);
 

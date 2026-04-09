@@ -50,8 +50,14 @@ describe("verification internal exports", () => {
 // @ts-expect-error verification internal barrel must not export control-plane record types
 type VerificationInternalShouldNotExportExecutionSessionRecord = import("../../src/verification/internal.js").ExecutionSessionRecord;
 
+// @ts-expect-error verification internal barrel must not export control-plane context types
+type VerificationInternalShouldNotExportExecutionSessionContext = import("../../src/verification/internal.js").ExecutionSessionContext;
+
 // @ts-expect-error verification internal barrel must not export selection candidate types
 type VerificationInternalShouldNotExportSelectionCandidate = import("../../src/verification/internal.js").AttemptSelectionCandidate;
+
+// @ts-expect-error verification internal barrel must not export handoff decision summary types
+type VerificationInternalShouldNotExportHandoffDecisionSummary = import("../../src/verification/internal.js").AttemptHandoffDecisionSummary;
 
 // @ts-expect-error verification internal barrel must not export control-plane helpers
 type VerificationInternalShouldNotExportControlPlaneHelper = typeof import("../../src/verification/internal.js").buildExecutionSessionIndex;

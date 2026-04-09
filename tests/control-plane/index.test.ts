@@ -186,8 +186,17 @@ type ControlPlaneIndexShouldNotExportExecutionSessionRecord = import("../../src/
 // @ts-expect-error control-plane index must not export execution-session context types
 type ControlPlaneIndexShouldNotExportExecutionSessionContext = import("../../src/control-plane/index.js").ExecutionSessionContext;
 
+// @ts-expect-error control-plane index must not export execution-session selector types
+type ControlPlaneIndexShouldNotExportExecutionSessionSelector = import("../../src/control-plane/index.js").ExecutionSessionSelector;
+
 // @ts-expect-error control-plane index must not export execution-session view types
 type ControlPlaneIndexShouldNotExportExecutionSessionView = import("../../src/control-plane/index.js").ExecutionSessionView;
+
+// @ts-expect-error control-plane index must not export execution-session context selection-kind types
+type ControlPlaneIndexShouldNotExportExecutionSessionContextSelectionKind = import("../../src/control-plane/index.js").ExecutionSessionContextSelectionKind;
+
+// @ts-expect-error control-plane index must not export execution-session record-source types
+type ControlPlaneIndexShouldNotExportExecutionSessionRecordSource = import("../../src/control-plane/index.js").ExecutionSessionRecordSource;
 
 // @ts-expect-error control-plane index must not export execution-session lifecycle disposition types
 type ControlPlaneIndexShouldNotExportExecutionSessionLifecycleDisposition = import("../../src/control-plane/index.js").ExecutionSessionLifecycleDisposition;
@@ -209,6 +218,9 @@ type ControlPlaneIndexShouldNotExportWaitApplyBatch = import("../../src/control-
 
 // @ts-expect-error control-plane index must not export wait consumers
 type ControlPlaneIndexShouldNotExportWaitConsumer = import("../../src/control-plane/index.js").ExecutionSessionWaitConsumer;
+
+// @ts-expect-error control-plane index must not export wait consumer input types
+type ControlPlaneIndexShouldNotExportWaitConsumerInput = import("../../src/control-plane/index.js").ExecutionSessionWaitConsumerInput;
 
 // @ts-expect-error control-plane index must not export wait consumer readiness types
 type ControlPlaneIndexShouldNotExportWaitConsumerReadiness = import("../../src/control-plane/index.js").ExecutionSessionWaitConsumerReadiness;
@@ -257,6 +269,9 @@ type ControlPlaneIndexShouldNotExportCloseRecordedEvent = import("../../src/cont
 
 // @ts-expect-error control-plane index must not export close consumers
 type ControlPlaneIndexShouldNotExportCloseConsumer = import("../../src/control-plane/index.js").ExecutionSessionCloseConsumer;
+
+// @ts-expect-error control-plane index must not export spawn request input types
+type ControlPlaneIndexShouldNotExportExecutionSessionSpawnRequestInput = import("../../src/control-plane/index.js").ExecutionSessionSpawnRequestInput;
 
 // @ts-expect-error control-plane index must not export close consumer readiness types
 type ControlPlaneIndexShouldNotExportCloseConsumerReadiness = import("../../src/control-plane/index.js").ExecutionSessionCloseConsumerReadiness;

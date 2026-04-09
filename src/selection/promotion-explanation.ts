@@ -33,6 +33,12 @@ const validVerificationRequiredOutcomes = new Set<string>(
 export function deriveAttemptPromotionExplanationSummary(
   report: AttemptPromotionReport
 ): AttemptPromotionExplanationSummary {
+  if (!isRecord(report)) {
+    throw new ValidationError(
+      "Attempt promotion explanation summary requires report to be an object."
+    );
+  }
+
   validateReportBasis(report);
   validateTaskId(report.taskId);
   validatePromotionReport(report);
@@ -68,9 +74,12 @@ function validateReportBasis(report: AttemptPromotionReport): void {
 }
 
 function validateTaskId(value: unknown): void {
-  if (value !== undefined && typeof value !== "string") {
+  if (
+    value !== undefined &&
+    (typeof value !== "string" || value.trim().length === 0)
+  ) {
     throw new ValidationError(
-      "Attempt promotion explanation summary requires report.taskId to be a string when provided."
+      "Attempt promotion explanation summary requires report.taskId to be a non-empty string when provided."
     );
   }
 }
@@ -81,6 +90,8 @@ function validatePromotionReport(report: AttemptPromotionReport): void {
       "Attempt promotion explanation summary requires report.candidates to be an array."
     );
   }
+
+  validateCandidateEntries(report.candidates);
 
   if (report.candidateCount !== report.candidates.length) {
     throw new ValidationError(
@@ -107,6 +118,7 @@ function validatePromotionReport(report: AttemptPromotionReport): void {
   }
 
   report.candidates.forEach(validatePromotionAuditCandidate);
+  validateUniqueCandidateAttemptIds(report.candidates);
 
   if (
     !promotionAuditCandidatesEqual(report.selected, report.candidates[0])
@@ -186,6 +198,34 @@ function validatePromotionReport(report: AttemptPromotionReport): void {
     throw new ValidationError(
       "Attempt promotion explanation summary requires report.pendingCandidates to match the stable filtered pending subgroup."
     );
+  }
+}
+
+function validateUniqueCandidateAttemptIds(
+  candidates: readonly AttemptPromotionAuditCandidate[]
+): void {
+  const seenAttemptIds = new Set<string>();
+
+  for (const candidate of candidates) {
+    if (seenAttemptIds.has(candidate.attemptId)) {
+      throw new ValidationError(
+        "Attempt promotion explanation summary requires report.candidates to use unique candidate.attemptId values."
+      );
+    }
+
+    seenAttemptIds.add(candidate.attemptId);
+  }
+}
+
+function validateCandidateEntries(
+  candidates: readonly unknown[]
+): void {
+  for (let index = 0; index < candidates.length; index += 1) {
+    if (!hasOwnIndex(candidates, index) || !isRecord(candidates[index])) {
+      throw new ValidationError(
+        "Attempt promotion explanation summary requires report.candidates entries to be objects."
+      );
+    }
   }
 }
 
@@ -544,4 +584,8 @@ function stringArraysEqual(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasOwnIndex(values: readonly unknown[], index: number): boolean {
+  return Object.prototype.hasOwnProperty.call(values, index);
 }

@@ -1,3 +1,4 @@
+import { ValidationError } from "../core/errors.js";
 import { applyAttemptHandoffFinalizationBatch } from "./handoff-finalization-apply-batch.js";
 import type {
   AttemptHandoffFinalizationApplyBatch,
@@ -8,6 +9,8 @@ import { validateAttemptHandoffFinalizationRequestSummaryForApply } from "./hand
 export async function applyAttemptHandoffFinalizationRequestSummary(
   input: AttemptHandoffFinalizationRequestSummaryApplyInput
 ): Promise<AttemptHandoffFinalizationApplyBatch | undefined> {
+  validateInput(input);
+
   if (input.summary === undefined) {
     return undefined;
   }
@@ -28,4 +31,31 @@ export async function applyAttemptHandoffFinalizationRequestSummary(
             input.resolveHandoffFinalizationCapability
       })
   });
+}
+
+function validateInput(value: unknown): void {
+  if (!isRecord(value)) {
+    throw new ValidationError(
+      "Attempt handoff finalization request apply input must be an object."
+    );
+  }
+
+  if (typeof value.invokeHandoffFinalization !== "function") {
+    throw new ValidationError(
+      "Attempt handoff finalization request apply requires invokeHandoffFinalization to be a function."
+    );
+  }
+
+  if (
+    value.resolveHandoffFinalizationCapability !== undefined &&
+    typeof value.resolveHandoffFinalizationCapability !== "function"
+  ) {
+    throw new ValidationError(
+      "Attempt handoff finalization request apply requires resolveHandoffFinalizationCapability to be a function when provided."
+    );
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

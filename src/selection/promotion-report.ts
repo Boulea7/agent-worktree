@@ -33,7 +33,14 @@ const validVerificationRequiredOutcomes = new Set<string>(
 export function deriveAttemptPromotionReport(
   summary: AttemptPromotionAuditSummary
 ): AttemptPromotionReport {
+  if (!isRecord(summary)) {
+    throw new ValidationError(
+      "Attempt promotion report requires summary to be an object."
+    );
+  }
+
   validateAuditBasis(summary);
+  validateTaskId(summary.taskId);
 
   validatePromotionAuditSummary(summary);
 
@@ -65,6 +72,17 @@ export function deriveAttemptPromotionReport(
   };
 }
 
+function validateTaskId(value: unknown): void {
+  if (
+    value !== undefined &&
+    (typeof value !== "string" || value.trim().length === 0)
+  ) {
+    throw new ValidationError(
+      "Attempt promotion report requires summary.taskId to be a non-empty string when provided."
+    );
+  }
+}
+
 function validateAuditBasis(summary: AttemptPromotionAuditSummary): void {
   if (summary.auditBasis !== ATTEMPT_PROMOTION_AUDIT_BASIS) {
     throw new ValidationError(
@@ -76,6 +94,14 @@ function validateAuditBasis(summary: AttemptPromotionAuditSummary): void {
 function validatePromotionAuditSummary(
   summary: AttemptPromotionAuditSummary
 ): void {
+  if (!Array.isArray(summary.candidates)) {
+    throw new ValidationError(
+      "Attempt promotion report requires summary.candidates to be an array."
+    );
+  }
+
+  validateCandidateEntries(summary.candidates);
+
   if (summary.candidateCount !== summary.candidates.length) {
     throw new ValidationError(
       "Attempt promotion report requires summary.candidateCount to match summary.candidates.length."
@@ -101,6 +127,7 @@ function validatePromotionAuditSummary(
   }
 
   summary.candidates.forEach(validatePromotionAuditCandidate);
+  validateUniqueCandidateAttemptIds(summary.candidates);
 
   const comparableCandidateCount = summary.candidates.filter(
     (candidate) => candidate.summary.hasComparablePayload
@@ -129,6 +156,34 @@ function validatePromotionAuditSummary(
     throw new ValidationError(
       "Attempt promotion report requires summary.recommendedForPromotion to match the selected audit candidate."
     );
+  }
+}
+
+function validateUniqueCandidateAttemptIds(
+  candidates: readonly AttemptPromotionAuditCandidate[]
+): void {
+  const seenAttemptIds = new Set<string>();
+
+  for (const candidate of candidates) {
+    if (seenAttemptIds.has(candidate.attemptId)) {
+      throw new ValidationError(
+        "Attempt promotion report requires summary.candidates to use unique candidate.attemptId values."
+      );
+    }
+
+    seenAttemptIds.add(candidate.attemptId);
+  }
+}
+
+function validateCandidateEntries(
+  candidates: readonly unknown[]
+): void {
+  for (let index = 0; index < candidates.length; index += 1) {
+    if (!hasOwnIndex(candidates, index) || !isRecord(candidates[index])) {
+      throw new ValidationError(
+        "Attempt promotion report requires summary.candidates entries to be objects."
+      );
+    }
   }
 }
 
@@ -347,4 +402,8 @@ function validateAttemptSourceKind(value: unknown): void {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasOwnIndex(values: readonly unknown[], index: number): boolean {
+  return Object.prototype.hasOwnProperty.call(values, index);
 }

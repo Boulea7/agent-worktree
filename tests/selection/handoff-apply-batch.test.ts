@@ -20,6 +20,54 @@ describe("selection handoff-apply-batch helpers", () => {
     });
   });
 
+  it("should fail closed when the supplied apply-batch input, request list, or invoker is malformed", async () => {
+    await expect(
+      applyAttemptHandoffBatch(undefined as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyAttemptHandoffBatch(undefined as never)
+    ).rejects.toThrow("Attempt handoff apply batch input must be an object.");
+
+    await expect(
+      applyAttemptHandoffBatch({
+        requests: undefined as never,
+        invokeHandoff: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Attempt handoff apply batch requires requests to be an array."
+    );
+
+    await expect(
+      applyAttemptHandoffBatch({
+        requests: [],
+        invokeHandoff: undefined as never
+      })
+    ).rejects.toThrow(
+      "Attempt handoff apply batch requires invokeHandoff to be a function."
+    );
+
+    await expect(
+      applyAttemptHandoffBatch({
+        requests: [],
+        invokeHandoff: async () => undefined,
+        resolveHandoffCapability: "yes" as never
+      })
+    ).rejects.toThrow(
+      "Attempt handoff apply batch requires resolveHandoffCapability to be a function when provided."
+    );
+
+    const sparseRequests = new Array<AttemptHandoffRequest>(1);
+
+    await expect(
+      applyAttemptHandoffBatch({
+        requests: sparseRequests,
+        invokeHandoff: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Attempt handoff apply batch requires requests entries to be objects."
+    );
+  });
+
   it("should preserve input order and continue past blocked requests", async () => {
     const requests = [
       createHandoffRequest({
@@ -230,7 +278,7 @@ describe("selection handoff-apply-batch helpers", () => {
         invokeHandoff: async () => undefined
       })
     ).rejects.toThrow(
-      "Attempt handoff apply batch requires each request to produce an apply result."
+      "Attempt handoff apply batch requires requests entries to be objects."
     );
   });
 

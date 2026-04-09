@@ -5,6 +5,7 @@ import type {
   AttemptManifest,
   AttemptVerification
 } from "../../src/manifest/types.js";
+import { deriveAttemptPromotionTarget as deriveAttemptPromotionTargetDirect } from "../../src/selection/promotion-target.js";
 import {
   deriveAttemptPromotionAuditSummary,
   deriveAttemptPromotionCandidate,
@@ -279,6 +280,19 @@ describe("selection promotion-target helpers", () => {
     expect(() => deriveAttemptPromotionTarget(summary)).toThrow(
       'Attempt promotion target requires summary.decisionBasis to be "promotion_explanation_summary".'
     );
+  });
+
+  it("should fail loudly when the supplied promotion decision container is malformed", () => {
+    expect(() =>
+      deriveAttemptPromotionTargetDirect(null as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionTargetDirect(null as never)
+    ).toThrow("Attempt promotion target requires summary to be an object.");
+
+    expect(() =>
+      deriveAttemptPromotionTargetDirect([] as never)
+    ).toThrow("Attempt promotion target requires summary to be an object.");
   });
 
   it("should fail loudly when candidateCount is inconsistent with selectedAttemptId or selected", () => {

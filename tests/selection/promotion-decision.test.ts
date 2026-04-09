@@ -5,6 +5,7 @@ import type {
   AttemptManifest,
   AttemptVerification
 } from "../../src/manifest/types.js";
+import { deriveAttemptPromotionDecisionSummary as deriveAttemptPromotionDecisionSummaryDirect } from "../../src/selection/promotion-decision.js";
 import {
   deriveAttemptPromotionAuditSummary,
   deriveAttemptPromotionCandidate,
@@ -259,6 +260,90 @@ describe("selection promotion-decision helpers", () => {
     );
   });
 
+  it("should fail loudly when the supplied promotion explanation container is malformed", () => {
+    expect(() =>
+      deriveAttemptPromotionDecisionSummaryDirect(null as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionDecisionSummaryDirect(null as never)
+    ).toThrow(
+      "Attempt promotion decision summary requires summary to be an object."
+    );
+
+    expect(() =>
+      deriveAttemptPromotionDecisionSummaryDirect([] as never)
+    ).toThrow(
+      "Attempt promotion decision summary requires summary to be an object."
+    );
+  });
+
+  it("should fail loudly when summary.candidates is malformed, sparse, or uses duplicate attempt identities", () => {
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...createPromotionExplanationSummary([]),
+        candidates: undefined as never
+      })
+    ).toThrow(
+      "Attempt promotion decision summary requires summary.candidates to be an array."
+    );
+
+    const sparseCandidates =
+      new Array<AttemptPromotionExplanationSummary["candidates"][number]>(1);
+
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...createPromotionExplanationSummary([]),
+        candidateCount: 1,
+        comparableCandidateCount: 0,
+        promotionReadyCandidateCount: 0,
+        recommendedForPromotion: false,
+        selectedAttemptId: undefined,
+        selected: undefined,
+        candidates: sparseCandidates as never
+      })
+    ).toThrow(
+      "Attempt promotion decision summary requires summary.candidates entries to be objects."
+    );
+
+    const duplicateSummary = createPromotionExplanationSummary([
+      createPromotionCandidate({
+        attemptId: "att_a",
+        verification: createVerification({
+          state: "verified",
+          checks: []
+        })
+      }),
+      createPromotionCandidate({
+        attemptId: "att_b",
+        verification: createVerification({
+          state: "pending",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...duplicateSummary,
+        candidates: [
+          duplicateSummary.candidates[0]!,
+          {
+            ...duplicateSummary.candidates[1]!,
+            attemptId: "att_a"
+          }
+        ]
+      })
+    ).toThrow(
+      "Attempt promotion decision summary requires summary.candidates to use unique candidate.attemptId values."
+    );
+  });
+
   it("should fail loudly when summary counts do not match canonical decision derivation", () => {
     const summary = createPromotionExplanationSummary([
       createPromotionCandidate({
@@ -496,6 +581,28 @@ describe("selection promotion-decision helpers", () => {
       })
     ).toThrow(
       "Attempt promotion decision summary requires candidate.blockingRequiredCheckNames to use non-empty string entries."
+    );
+  });
+
+  it("should fail loudly when summary.taskId is blank", () => {
+    const summary = {
+      ...createPromotionExplanationSummary([
+        createPromotionCandidate({
+          attemptId: "att_ready",
+          verification: createVerification({
+            state: "verified",
+            checks: []
+          })
+        })
+      ]),
+      taskId: "   "
+    } as AttemptPromotionExplanationSummary;
+
+    expect(() => deriveAttemptPromotionDecisionSummary(summary)).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptPromotionDecisionSummary(summary)).toThrow(
+      "Attempt promotion decision summary requires summary.taskId to be a non-empty string when provided."
     );
   });
 

@@ -36,6 +36,12 @@ const validBlockingReasons =
 export function deriveAttemptPromotionTarget(
   summary: AttemptPromotionDecisionSummary
 ): AttemptPromotionTarget | undefined {
+  if (!isRecord(summary)) {
+    throw new ValidationError(
+      "Attempt promotion target requires summary to be an object."
+    );
+  }
+
   validateDecisionBasis(summary);
   validatePromotionDecisionSummary(summary);
 
@@ -454,6 +460,10 @@ function validateAttemptSourceKind(value: unknown): void {
       "Attempt promotion target requires summary.selected.sourceKind to use the existing attempt source-kind vocabulary when provided."
     );
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function blockingReasonArraysEqual(

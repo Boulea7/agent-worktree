@@ -193,6 +193,12 @@ type SelectionIndexShouldNotExportHandoffDecisionBlockingReason = import("../../
 // @ts-expect-error selection index must not export handoff decision summaries
 type SelectionIndexShouldNotExportHandoffDecisionSummary = import("../../src/selection/index.js").AttemptHandoffDecisionSummary;
 
+// @ts-expect-error selection index must not export control-plane context types
+type SelectionIndexShouldNotExportExecutionSessionContext = import("../../src/selection/index.js").ExecutionSessionContext;
+
+// @ts-expect-error selection index must not export verification summary types
+type SelectionIndexShouldNotExportVerificationSummary = import("../../src/selection/index.js").AttemptVerificationSummary;
+
 // @ts-expect-error selection index must not export promotion candidate helpers
 type SelectionIndexShouldNotExportDeriveAttemptPromotionCandidate = typeof import("../../src/selection/index.js").deriveAttemptPromotionCandidate;
 

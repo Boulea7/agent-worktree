@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   consumeAttemptHandoffBatch,
   type AttemptHandoffConsumer,
@@ -18,6 +19,44 @@ describe("selection handoff-consume-batch helpers", () => {
     ).resolves.toEqual({
       results: []
     });
+  });
+
+  it("should fail closed when the supplied batch input, consumer list, or invoker is malformed", async () => {
+    await expect(
+      consumeAttemptHandoffBatch(undefined as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeAttemptHandoffBatch(undefined as never)
+    ).rejects.toThrow("Attempt handoff consume batch input must be an object.");
+
+    await expect(
+      consumeAttemptHandoffBatch({
+        consumers: undefined as never,
+        invokeHandoff: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Attempt handoff consume batch requires consumers to be an array."
+    );
+
+    await expect(
+      consumeAttemptHandoffBatch({
+        consumers: [],
+        invokeHandoff: undefined as never
+      })
+    ).rejects.toThrow(
+      "Attempt handoff consume batch requires invokeHandoff to be a function."
+    );
+
+    const sparseConsumers = new Array<AttemptHandoffConsumer>(1);
+
+    await expect(
+      consumeAttemptHandoffBatch({
+        consumers: sparseConsumers,
+        invokeHandoff: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Attempt handoff consume batch requires consumers entries to be objects."
+    );
   });
 
   it("should preserve input order and continue past blocked consumers", async () => {

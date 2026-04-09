@@ -5,6 +5,7 @@ import type {
   AttemptManifest,
   AttemptVerification
 } from "../../src/manifest/types.js";
+import { deriveAttemptPromotionReport as deriveAttemptPromotionReportDirect } from "../../src/selection/promotion-report.js";
 import {
   deriveAttemptPromotionAuditSummary,
   deriveAttemptPromotionCandidate,
@@ -180,6 +181,46 @@ describe("selection promotion-report helpers", () => {
     );
   });
 
+  it("should fail loudly when the supplied report summary container is malformed", () => {
+    expect(() =>
+      deriveAttemptPromotionReportDirect(null as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionReportDirect(null as never)
+    ).toThrow("Attempt promotion report requires summary to be an object.");
+
+    expect(() =>
+      deriveAttemptPromotionReportDirect([] as never)
+    ).toThrow("Attempt promotion report requires summary to be an object.");
+  });
+
+  it("should fail loudly when summary.candidates is malformed or sparse", () => {
+    expect(() =>
+      deriveAttemptPromotionReport({
+        ...createPromotionAuditSummary([]),
+        candidates: undefined as never
+      })
+    ).toThrow(
+      "Attempt promotion report requires summary.candidates to be an array."
+    );
+
+    const sparseCandidates = new Array<AttemptPromotionAuditSummary["candidates"][number]>(1);
+
+    expect(() =>
+      deriveAttemptPromotionReport({
+        ...createPromotionAuditSummary([]),
+        candidateCount: 1,
+        comparableCandidateCount: 0,
+        promotionReadyCandidateCount: 0,
+        selectedAttemptId: undefined,
+        recommendedForPromotion: false,
+        candidates: sparseCandidates as never
+      })
+    ).toThrow(
+      "Attempt promotion report requires summary.candidates entries to be objects."
+    );
+  });
+
   it("should fail loudly when selectedAttemptId does not match the first candidate", () => {
     const summary = {
       ...createPromotionAuditSummary([
@@ -351,6 +392,66 @@ describe("selection promotion-report helpers", () => {
     );
     expect(() => deriveAttemptPromotionReport(invalidStatusSummary)).toThrow(
       "Attempt promotion report requires candidate.status to use the existing attempt status vocabulary."
+    );
+  });
+
+  it("should fail loudly when summary.taskId is blank", () => {
+    const summary = {
+      ...createPromotionAuditSummary([
+        createPromotionCandidate({
+          attemptId: "att_ready",
+          verification: createVerification({
+            state: "verified",
+            checks: []
+          })
+        })
+      ]),
+      taskId: "   "
+    } as AttemptPromotionAuditSummary;
+
+    expect(() => deriveAttemptPromotionReport(summary)).toThrow(ValidationError);
+    expect(() => deriveAttemptPromotionReport(summary)).toThrow(
+      "Attempt promotion report requires summary.taskId to be a non-empty string when provided."
+    );
+  });
+
+  it("should fail loudly when summary.candidates contain duplicate attempt identities", () => {
+    const summary = createPromotionAuditSummary([
+      createPromotionCandidate({
+        attemptId: "att_a",
+        verification: createVerification({
+          state: "verified",
+          checks: []
+        })
+      }),
+      createPromotionCandidate({
+        attemptId: "att_b",
+        verification: createVerification({
+          state: "failed",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "failed"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(() =>
+      deriveAttemptPromotionReport({
+        ...summary,
+        candidates: [
+          summary.candidates[0]!,
+          {
+            ...summary.candidates[1]!,
+            attemptId: "att_a"
+          }
+        ]
+      })
+    ).toThrow(
+      "Attempt promotion report requires summary.candidates to use unique candidate.attemptId values."
     );
   });
 

@@ -46,20 +46,14 @@ export function deriveAttemptPromotionCandidate(
     "Attempt promotion candidate requires manifest.sourceKind to use the existing attempt source-kind vocabulary when provided."
   );
   const summary = deriveAttemptVerificationSummary(manifest.verification);
-
-  validatePromotionArtifactSummaryCheckNameLists({
-    artifactSummary,
-    errorPrefix: "Attempt promotion candidate requires",
-    summaryField: "artifactSummary"
-  });
-  validateRecommendationConsistency(artifactSummary, summary);
-  validateSummaryConsistency(summary, artifactSummary.summary);
   validatePromotionArtifactSummaryCheckNameLists({
     artifactSummary,
     errorPrefix: "Attempt promotion candidate requires",
     summaryField: "artifactSummary",
     verification: manifest.verification
   });
+  validateRecommendationConsistency(artifactSummary, summary);
+  validateSummaryConsistency(summary, artifactSummary.summary);
 
   return {
     promotionBasis: ATTEMPT_PROMOTION_BASIS,

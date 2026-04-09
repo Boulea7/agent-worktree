@@ -101,6 +101,50 @@ describe("selection handoff-consume helpers", () => {
     expect(invokeHandoff).not.toHaveBeenCalled();
   });
 
+  it("should fail closed when the supplied consume input, consumer, request, or invoker is malformed", async () => {
+    await expect(
+      consumeAttemptHandoff(undefined as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeAttemptHandoff(undefined as never)
+    ).rejects.toThrow("Attempt handoff consume input must be an object.");
+
+    await expect(
+      consumeAttemptHandoff({
+        consumer: undefined as never,
+        invokeHandoff: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Attempt handoff consume requires consumer to be an object."
+    );
+
+    await expect(
+      consumeAttemptHandoff({
+        consumer: {
+          request: undefined as never,
+          readiness: {
+            blockingReasons: ["handoff_unsupported"],
+            canConsumeHandoff: false,
+            hasBlockingReasons: true,
+            handoffSupported: false
+          }
+        } as never,
+        invokeHandoff: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Attempt handoff consume requires consumer.request to be an object."
+    );
+
+    await expect(
+      consumeAttemptHandoff({
+        consumer: createHandoffConsumer(),
+        invokeHandoff: undefined as never
+      })
+    ).rejects.toThrow(
+      "Attempt handoff consume requires invokeHandoff to be a function."
+    );
+  });
+
   it("should pass the exact handoff request object to the supplied invoker", async () => {
     const consumer = createHandoffConsumer({
       request: createHandoffRequest({
