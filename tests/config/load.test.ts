@@ -9,6 +9,7 @@ import {
   loadProjectConfig,
   resolveProjectConfigPath
 } from "../../src/config/load.js";
+import { builtInProjectConfig } from "../../src/config/types.js";
 import { parseProjectConfig } from "../../src/config/schema.js";
 
 describe("parseProjectConfig", () => {
@@ -68,6 +69,34 @@ describe("parseProjectConfig", () => {
       }
     });
   });
+
+  it("should return fresh mutable containers on each parse", () => {
+    const first = parseProjectConfig({ version: "0.x" });
+    first.compatibility.experimental.push("custom-runtime");
+    first.runtimes.example = { enabled: true };
+    first.instructions.tool_adapters.example = "EXAMPLE.md";
+
+    const second = parseProjectConfig({ version: "0.x" });
+
+    expect(second.compatibility.experimental).toEqual(
+      builtInProjectConfig.compatibility.experimental
+    );
+    expect(second.runtimes).toEqual({});
+    expect(second.instructions.tool_adapters).toEqual({
+      claude_code: "CLAUDE.md",
+      gemini_cli: "GEMINI.md"
+    });
+  });
+
+  it("should keep built-in defaults immutable to external callers", () => {
+    expect(() => {
+      builtInProjectConfig.extensions.example = { enabled: true };
+    }).toThrow(TypeError);
+
+    const fresh = parseProjectConfig({ version: "0.x" });
+
+    expect(fresh.extensions).toEqual({});
+  });
 });
 
 describe("loadProjectConfig", () => {
@@ -98,6 +127,26 @@ describe("loadProjectConfig", () => {
 
     expect(config.version).toBe("0.x");
     expect(config.instructions.canonical_file).toBe("AGENTS.md");
+  });
+
+  it("should return fresh mutable containers when no config file exists", async () => {
+    const cwd = await createTempDirectory();
+    const first = await loadProjectConfig({ cwd });
+
+    first.compatibility.experimental.push("custom-runtime");
+    first.extensions.example = { enabled: true };
+    first.instructions.tool_adapters.example = "EXAMPLE.md";
+
+    const second = await loadProjectConfig({ cwd });
+
+    expect(second.compatibility.experimental).toEqual(
+      builtInProjectConfig.compatibility.experimental
+    );
+    expect(second.extensions).toEqual({});
+    expect(second.instructions.tool_adapters).toEqual({
+      claude_code: "CLAUDE.md",
+      gemini_cli: "GEMINI.md"
+    });
   });
 
   it("should require the config file when requireConfig is true", async () => {

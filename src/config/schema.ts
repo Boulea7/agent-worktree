@@ -4,6 +4,7 @@ import { runtimeKinds } from "../core/capabilities.js";
 import { ValidationError } from "../core/errors.js";
 import {
   builtInProjectConfig,
+  createBuiltInProjectConfig,
   type ProjectConfig,
   type ProjectCompatibilityConfig,
   type ProjectDefaultsConfig,
@@ -48,10 +49,13 @@ export const rawProjectConfigSchema = z
 function mergeCompatibility(
   value: z.infer<typeof compatibilitySchema> | undefined
 ): ProjectCompatibilityConfig {
+  const builtInConfig = createBuiltInProjectConfig();
+
   return {
-    tier1: value?.tier1 ?? builtInProjectConfig.compatibility.tier1,
-    experimental:
-      value?.experimental ?? builtInProjectConfig.compatibility.experimental
+    tier1: [...(value?.tier1 ?? builtInConfig.compatibility.tier1)],
+    experimental: [
+      ...(value?.experimental ?? builtInConfig.compatibility.experimental)
+    ]
   };
 }
 
@@ -69,12 +73,14 @@ function mergeDefaults(
 function mergeInstructions(
   value: z.infer<typeof instructionsSchema> | undefined
 ): ProjectInstructionsConfig {
+  const builtInConfig = createBuiltInProjectConfig();
+
   return {
     canonical_file:
       value?.canonical_file ??
-      builtInProjectConfig.instructions.canonical_file,
+      builtInConfig.instructions.canonical_file,
     tool_adapters: {
-      ...builtInProjectConfig.instructions.tool_adapters,
+      ...builtInConfig.instructions.tool_adapters,
       ...(value?.tool_adapters ?? {})
     }
   };
@@ -82,6 +88,7 @@ function mergeInstructions(
 
 export function parseProjectConfig(input: unknown): ProjectConfig {
   const result = rawProjectConfigSchema.safeParse(input);
+  const builtInConfig = createBuiltInProjectConfig();
 
   if (!result.success) {
     throw new ValidationError("Invalid project config.", result.error);
@@ -92,10 +99,10 @@ export function parseProjectConfig(input: unknown): ProjectConfig {
     compatibility: mergeCompatibility(result.data.compatibility),
     defaults: mergeDefaults(result.data.defaults),
     instructions: mergeInstructions(result.data.instructions),
-    runtimes: result.data.runtimes ?? builtInProjectConfig.runtimes,
-    bootstrap: result.data.bootstrap ?? builtInProjectConfig.bootstrap,
-    verify: result.data.verify ?? builtInProjectConfig.verify,
-    policies: result.data.policies ?? builtInProjectConfig.policies,
-    extensions: result.data.extensions ?? builtInProjectConfig.extensions
+    runtimes: { ...(result.data.runtimes ?? builtInConfig.runtimes) },
+    bootstrap: { ...(result.data.bootstrap ?? builtInConfig.bootstrap) },
+    verify: { ...(result.data.verify ?? builtInConfig.verify) },
+    policies: { ...(result.data.policies ?? builtInConfig.policies) },
+    extensions: { ...(result.data.extensions ?? builtInConfig.extensions) }
   };
 }

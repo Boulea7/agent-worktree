@@ -65,12 +65,59 @@ Mitigation:
 
 - keep trust-boundary assumptions explicit in the future branch planning set
 
+### 7. Missing-Evidence Promotion
+
+Risk:
+
+- verification, comparison, or selection semantics allow sparse or missing check evidence to sort too favorably
+
+Mitigation:
+
+- keep missing evidence as an explicit blocker class
+- do not let coarse verification state substitute for comparable verification payload
+
+### 8. Mixed-Task Downstream Aggregation
+
+Risk:
+
+- downstream handoff or finalization paths accidentally re-accept mixed-task batches after upstream selection has already established single-task boundaries
+
+Mitigation:
+
+- preserve task isolation through promotion, handoff, finalization, and closeout projections
+- reject or explicitly partition mixed-task downstream batches
+
+### 9. Parent-First Delegated Side Effects
+
+Risk:
+
+- delegated spawn or headless execution records parent-side effects before child-side validation is complete, producing orphaned or half-shaped state
+
+Mitigation:
+
+- validate child lineage and execution seed contracts before irreversible parent-side apply steps
+- keep delegated failure semantics and cleanup semantics explicit before richer spawn flows
+
+### 10. Memory Flattening And Dream Overreach
+
+Risk:
+
+- session memory, durable memory, team memory, and dream-like background consolidation get flattened into one vague memory subsystem
+
+Mitigation:
+
+- keep those layers explicitly separate in planning docs and future branch contracts
+- avoid introducing dream-like background consolidation before runtime, workspace, and durable-memory boundaries are stable
+
 ## Open Questions
 
 - What is the smallest durable delegated-attempt state that future branch execution needs?
 - How should peer collaboration and hierarchical delegation share control-plane primitives without becoming the same topology?
 - What is the smallest useful internal todo or task-tracking model that helps coordination without pretending to be audit truth?
 - Does long-term memory belong in the first future-branch implementation wave, or only after runtime and workspace state layering is stable?
+- Does the future branch need any dream-like background consolidation in the first wave, or should that wait until session memory, durable memory, and team memory boundaries are proven?
+- What is the smallest identity canonicalization rule set for `attemptId`, `sessionId`, and child lineage so selector space and index space cannot drift apart?
+- What is the smallest coverage-truth model needed so descendant completeness is not just an ad hoc headless wrapper flag?
 - What is the smallest safe installable extension asset format worth supporting?
 - Which future control surfaces are actually needed first: richer CLI, embedded API, or a maintainer-facing UI?
 

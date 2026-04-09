@@ -4,7 +4,12 @@ import path from "node:path";
 import YAML from "yaml";
 
 import { ConfigError } from "../core/errors.js";
-import { builtInProjectConfig, type LoadProjectConfigOptions, projectConfigFileName, type ProjectConfig } from "./types.js";
+import {
+  createBuiltInProjectConfig,
+  type LoadProjectConfigOptions,
+  projectConfigFileName,
+  type ProjectConfig
+} from "./types.js";
 import { parseProjectConfig } from "./schema.js";
 
 export async function resolveProjectConfigPath(
@@ -46,7 +51,7 @@ export async function loadProjectConfig(
       );
     }
 
-    return { ...builtInProjectConfig };
+    return createBuiltInProjectConfig();
   }
 
   const fileContents = await readConfigFile(filePath);

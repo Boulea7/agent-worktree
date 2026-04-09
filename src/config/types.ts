@@ -42,7 +42,7 @@ export interface LoadProjectConfigOptions {
   requireConfig?: boolean;
 }
 
-export const builtInProjectConfig: ProjectConfig = {
+const builtInProjectConfigTemplate: ProjectConfig = {
   version: defaultProjectConfigVersion,
   compatibility: {
     tier1: ["claude-code", "codex-cli", "gemini-cli", "opencode"],
@@ -65,3 +65,54 @@ export const builtInProjectConfig: ProjectConfig = {
   policies: {},
   extensions: {}
 };
+
+function deepFreeze<T>(value: T): T {
+  if (value !== null && typeof value === "object") {
+    Object.freeze(value);
+
+    for (const nestedValue of Object.values(value)) {
+      deepFreeze(nestedValue);
+    }
+  }
+
+  return value;
+}
+
+export function createBuiltInProjectConfig(): ProjectConfig {
+  return {
+    version: builtInProjectConfigTemplate.version,
+    compatibility: {
+      tier1: [...builtInProjectConfigTemplate.compatibility.tier1],
+      experimental: [...builtInProjectConfigTemplate.compatibility.experimental]
+    },
+    defaults: {
+      execution_mode: builtInProjectConfigTemplate.defaults.execution_mode,
+      safety_intent: builtInProjectConfigTemplate.defaults.safety_intent
+    },
+    instructions: {
+      canonical_file: builtInProjectConfigTemplate.instructions.canonical_file,
+      tool_adapters: {
+        ...builtInProjectConfigTemplate.instructions.tool_adapters
+      }
+    },
+    runtimes: {
+      ...builtInProjectConfigTemplate.runtimes
+    },
+    bootstrap: {
+      ...builtInProjectConfigTemplate.bootstrap
+    },
+    verify: {
+      ...builtInProjectConfigTemplate.verify
+    },
+    policies: {
+      ...builtInProjectConfigTemplate.policies
+    },
+    extensions: {
+      ...builtInProjectConfigTemplate.extensions
+    }
+  };
+}
+
+export const builtInProjectConfig: ProjectConfig = deepFreeze(
+  createBuiltInProjectConfig()
+);
