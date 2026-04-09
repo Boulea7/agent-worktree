@@ -138,6 +138,29 @@ describe("verification selection helpers", () => {
     ).toBeLessThan(0);
   });
 
+  it("should prefer a real required failure over a required-skipped candidate", () => {
+    expect(
+      compareAttemptVerificationCandidates(
+        createCandidate("att_required_failed", {
+          overallOutcome: "failed",
+          requiredOutcome: "failed",
+          counts: {
+            failed: 1,
+            skipped: 0
+          }
+        }),
+        createCandidate("att_required_skipped", {
+          overallOutcome: "failed",
+          requiredOutcome: "failed",
+          counts: {
+            failed: 0,
+            skipped: 1
+          }
+        })
+      )
+    ).toBeLessThan(0);
+  });
+
   it("should prefer fewer invalid checks when earlier dimensions are tied", () => {
     expect(
       compareAttemptVerificationCandidates(

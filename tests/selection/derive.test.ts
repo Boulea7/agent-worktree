@@ -57,7 +57,13 @@ describe("selection helpers", () => {
       attemptId: "att_ready",
       verification: {
         state: "verified",
-        checks: []
+        checks: [
+          {
+            name: "lint",
+            status: "passed",
+            required: true
+          }
+        ]
       }
     });
 
@@ -81,7 +87,13 @@ describe("selection helpers", () => {
         sourceKind: "delegated",
         verification: {
           state: "pending",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              status: "pending",
+              required: true
+            }
+          ]
         }
       }),
       createManifest({
@@ -91,7 +103,13 @@ describe("selection helpers", () => {
         sourceKind: "direct",
         verification: {
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              status: "passed",
+              required: true
+            }
+          ]
         }
       }),
       createManifest({
@@ -248,14 +266,26 @@ describe("selection helpers", () => {
         attemptId: "att_b",
         verification: {
           state: "pending",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
         }
       }),
       createManifest({
         attemptId: "att_a",
         verification: {
           state: "pending",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
         }
       })
     ];
@@ -281,7 +311,13 @@ describe("selection helpers", () => {
         sourceKind: "delegated",
         verification: {
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         }
       }),
       createManifest({
@@ -291,7 +327,13 @@ describe("selection helpers", () => {
         sourceKind: "direct",
         verification: {
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         }
       })
     ];
@@ -336,12 +378,24 @@ describe("selection helpers", () => {
         attemptId: "att_a",
         verification: {
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         }
       }),
       verification: {
         state: "verified",
-        checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
       }
     } satisfies AttemptManifest;
     const manifests = [firstManifest, secondManifest];
@@ -378,7 +432,13 @@ function createManifest(
     verification:
       verification ?? {
         state: "verified",
-        checks: []
+        checks: [
+          {
+            name: "lint",
+            status: "passed",
+            required: true
+          }
+        ]
       },
     ...rest
   };

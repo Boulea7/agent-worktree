@@ -176,7 +176,13 @@ describe("selection promotion-audit helpers", () => {
         sourceKind: "direct",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       }),
       createIncomparablePromotionCandidate({
@@ -218,14 +224,26 @@ describe("selection promotion-audit helpers", () => {
       attemptId: "att_b",
       verification: createVerification({
         state: "pending",
-        checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
       })
     });
     const secondCandidate = createPromotionCandidate({
       attemptId: "att_a",
       verification: createVerification({
         state: "verified",
-        checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
       })
     });
     const canonical = deriveAttemptPromotionResult([firstCandidate, secondCandidate]);
@@ -249,7 +267,13 @@ describe("selection promotion-audit helpers", () => {
           attemptId: "att_ready",
           verification: createVerification({
             state: "verified",
-            checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
           })
         })
       ]),
@@ -271,7 +295,13 @@ describe("selection promotion-audit helpers", () => {
           attemptId: "att_ready",
           verification: createVerification({
             state: "verified",
-            checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
           })
         })
       ]),
@@ -293,7 +323,13 @@ describe("selection promotion-audit helpers", () => {
           attemptId: "att_ready",
           verification: createVerification({
             state: "verified",
-            checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
           })
         })
       ]),
@@ -315,7 +351,13 @@ describe("selection promotion-audit helpers", () => {
           attemptId: "att_ready",
           verification: createVerification({
             state: "verified",
-            checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
           })
         })
       ]),
@@ -336,14 +378,26 @@ describe("selection promotion-audit helpers", () => {
         attemptId: "att_b",
         verification: createVerification({
           state: "pending",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
         })
       }),
       createPromotionCandidate({
         attemptId: "att_a",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       })
     ]);
@@ -396,7 +450,13 @@ describe("selection promotion-audit helpers", () => {
         attemptId: "att_invalid_source",
         verification: createVerification({
           state: "verified",
-          checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
         })
       }),
       sourceKind: "bogus"
@@ -592,7 +652,13 @@ function createManifest(
     verification:
       verification ?? {
         state: "verified",
-        checks: []
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
       },
     ...rest
   };

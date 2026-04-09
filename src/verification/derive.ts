@@ -65,6 +65,7 @@ export function deriveAttemptVerificationSummary(
 
     if (normalizedCheck.status === "skipped" && normalizedCheck.required) {
       hasRequiredFailure = true;
+      hasAnyFailure = true;
     }
   }
 
@@ -77,10 +78,8 @@ export function deriveAttemptVerificationSummary(
     overallOutcome = "incomplete";
     requiredOutcome = "incomplete";
   } else if (counts.valid === 0) {
-    const fallback = deriveFallbackOutcomes(verification.state);
-    overallOutcome = fallback.overallOutcome;
-    requiredOutcome = fallback.requiredOutcome;
-    hasComparablePayload = fallback.hasComparablePayload;
+    overallOutcome = "incomplete";
+    requiredOutcome = "incomplete";
   } else {
     requiredOutcome = hasRequiredFailure
       ? "failed"
@@ -152,41 +151,6 @@ function normalizeVerificationCheck(
     status: status as AttemptVerificationCheckStatus,
     required: required ?? false
   };
-}
-
-function deriveFallbackOutcomes(state: string): {
-  hasComparablePayload: boolean;
-  overallOutcome: AttemptVerificationOverallOutcome;
-  requiredOutcome: AttemptVerificationRequiredOutcome;
-} {
-  switch (state) {
-    case "passed":
-    case "verified":
-      return {
-        overallOutcome: "passed",
-        requiredOutcome: "satisfied",
-        hasComparablePayload: true
-      };
-    case "pending":
-      return {
-        overallOutcome: "pending",
-        requiredOutcome: "pending",
-        hasComparablePayload: true
-      };
-    case "failed":
-    case "error":
-      return {
-        overallOutcome: "failed",
-        requiredOutcome: "failed",
-        hasComparablePayload: true
-      };
-    default:
-      return {
-        overallOutcome: "incomplete",
-        requiredOutcome: "incomplete",
-        hasComparablePayload: false
-      };
-  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

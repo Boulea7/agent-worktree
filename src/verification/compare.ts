@@ -39,6 +39,10 @@ export function compareAttemptVerificationCandidates(
       overallOutcomeRank[left.summary.overallOutcome],
       overallOutcomeRank[right.summary.overallOutcome]
     ) ||
+    comparePreferredBoolean(
+      hasRealNegativeEvidence(left),
+      hasRealNegativeEvidence(right)
+    ) ||
     compareAscending(
       left.summary.counts.failed + left.summary.counts.error,
       right.summary.counts.failed + right.summary.counts.error
@@ -64,4 +68,8 @@ function compareAscending(left: number, right: number): number {
 
 function compareDescending(left: number, right: number): number {
   return right - left;
+}
+
+function hasRealNegativeEvidence(candidate: AttemptVerificationCandidate): boolean {
+  return candidate.summary.counts.failed + candidate.summary.counts.error > 0;
 }

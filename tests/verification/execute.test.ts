@@ -477,9 +477,10 @@ describe("verification execution helpers", () => {
       state: "pending",
       checks: []
     });
-    expect(result.summary.overallOutcome).toBe("pending");
-    expect(result.summary.requiredOutcome).toBe("pending");
-    expect(result.summary.hasComparablePayload).toBe(true);
+    expect(result.summary.overallOutcome).toBe("incomplete");
+    expect(result.summary.requiredOutcome).toBe("incomplete");
+    expect(result.summary.hasComparablePayload).toBe(false);
+    expect(result.summary.isSelectionReady).toBe(false);
     expect(runner).not.toHaveBeenCalled();
   });
 
