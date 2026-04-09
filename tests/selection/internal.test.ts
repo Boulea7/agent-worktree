@@ -3,6 +3,8 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 import * as selection from "../../src/selection/internal.js";
 import type {
   AttemptHandoffApply,
+  AttemptHandoffConsumeBatchInput,
+  AttemptHandoffConsumerBlockingReason,
   AttemptHandoffFinalizationApplyBatchInput,
   AttemptHandoffFinalizationApplyInput,
   AttemptHandoffFinalizationCapabilityResolver,
@@ -21,8 +23,12 @@ import type {
   AttemptHandoffReportReady,
   AttemptHandoffReportReadyEntry,
   AttemptPromotionAuditSummary,
+  AttemptPromotionDecisionBlockingReason,
   AttemptPromotionDecisionSummary,
   AttemptPromotionReport,
+  AttemptPromotionTargetApplyBatchInput,
+  AttemptHandoffTargetApplyBatchInput,
+  AttemptHandoffTargetApplyInput,
   AttemptSelectionCandidate,
   AttemptSelectionResult
 } from "../../src/selection/internal.js";
@@ -99,12 +105,17 @@ describe("selection internal exports", () => {
     expectTypeOf<AttemptSelectionResult>().not.toBeAny();
     expectTypeOf<AttemptPromotionAuditSummary>().not.toBeAny();
     expectTypeOf<AttemptPromotionReport>().not.toBeAny();
+    expectTypeOf<AttemptPromotionDecisionBlockingReason>().not.toBeAny();
     expectTypeOf<AttemptPromotionDecisionSummary>().not.toBeAny();
     expectTypeOf<AttemptHandoffApply>().not.toBeAny();
+    expectTypeOf<AttemptHandoffConsumeBatchInput>().not.toBeAny();
+    expectTypeOf<AttemptHandoffConsumerBlockingReason>().not.toBeAny();
     expectTypeOf<AttemptHandoffReportReady>().not.toBeAny();
     expectTypeOf<AttemptHandoffReportReadyEntry>().not.toBeAny();
     expectTypeOf<AttemptHandoffExplanationSummary>().not.toBeAny();
     expectTypeOf<AttemptHandoffDecisionSummary>().not.toBeAny();
+    expectTypeOf<AttemptHandoffTargetApplyBatchInput>().not.toBeAny();
+    expectTypeOf<AttemptHandoffTargetApplyInput>().not.toBeAny();
     expectTypeOf<AttemptHandoffFinalizationCapabilityResolver>().not.toBeAny();
     expectTypeOf<AttemptHandoffFinalizationConsumerBlockingReason>().not.toBeAny();
     expectTypeOf<AttemptHandoffFinalizationInvoker>().not.toBeAny();
@@ -118,6 +129,7 @@ describe("selection internal exports", () => {
     expectTypeOf<AttemptHandoffFinalizationClosureSummary>().not.toBeAny();
     expectTypeOf<AttemptHandoffFinalizationCloseoutDecisionBlockingReason>().not.toBeAny();
     expectTypeOf<AttemptHandoffFinalizationCloseoutDecisionSummary>().not.toBeAny();
+    expectTypeOf<AttemptPromotionTargetApplyBatchInput>().not.toBeAny();
   });
 });
 
