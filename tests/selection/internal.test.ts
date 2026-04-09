@@ -3,12 +3,18 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 import * as selection from "../../src/selection/internal.js";
 import type {
   AttemptHandoffApply,
+  AttemptHandoffFinalizationApplyBatchInput,
+  AttemptHandoffFinalizationApplyInput,
+  AttemptHandoffFinalizationCapabilityResolver,
   AttemptHandoffFinalizationCloseoutDecisionBlockingReason,
   AttemptHandoffFinalizationCloseoutDecisionSummary,
   AttemptHandoffDecisionSummary,
   AttemptHandoffExplanationSummary,
   AttemptHandoffFinalizationClosureSummary,
+  AttemptHandoffFinalizationConsumerBlockingReason,
+  AttemptHandoffFinalizationExplanationCode,
   AttemptHandoffFinalizationGroupedReportingDispositionSummary,
+  AttemptHandoffFinalizationInvoker,
   AttemptHandoffFinalizationReportReady,
   AttemptHandoffFinalizationReportReadyEntry,
   AttemptHandoffFinalizationRequestSummaryApplyInput,
@@ -99,7 +105,13 @@ describe("selection internal exports", () => {
     expectTypeOf<AttemptHandoffReportReadyEntry>().not.toBeAny();
     expectTypeOf<AttemptHandoffExplanationSummary>().not.toBeAny();
     expectTypeOf<AttemptHandoffDecisionSummary>().not.toBeAny();
+    expectTypeOf<AttemptHandoffFinalizationCapabilityResolver>().not.toBeAny();
+    expectTypeOf<AttemptHandoffFinalizationConsumerBlockingReason>().not.toBeAny();
+    expectTypeOf<AttemptHandoffFinalizationInvoker>().not.toBeAny();
+    expectTypeOf<AttemptHandoffFinalizationApplyInput>().not.toBeAny();
+    expectTypeOf<AttemptHandoffFinalizationApplyBatchInput>().not.toBeAny();
     expectTypeOf<AttemptHandoffFinalizationRequestSummaryApplyInput>().not.toBeAny();
+    expectTypeOf<AttemptHandoffFinalizationExplanationCode>().not.toBeAny();
     expectTypeOf<AttemptHandoffFinalizationReportReady>().not.toBeAny();
     expectTypeOf<AttemptHandoffFinalizationReportReadyEntry>().not.toBeAny();
     expectTypeOf<AttemptHandoffFinalizationGroupedReportingDispositionSummary>().not.toBeAny();

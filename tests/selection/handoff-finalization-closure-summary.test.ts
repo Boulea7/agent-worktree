@@ -34,6 +34,16 @@ describe("selection handoff-finalization-closure-summary helpers", () => {
     ).toBeUndefined();
   });
 
+  it("should fail loudly when the supplied grouped reporting disposition summary is null", () => {
+    const act = () =>
+      deriveAttemptHandoffFinalizationClosureSummary(null as never);
+
+    expect(act).toThrow(ValidationError);
+    expect(act).toThrow(
+      "Attempt handoff finalization closure summary requires summary to be an object."
+    );
+  });
+
   it("should derive a stable empty closure summary", () => {
     expect(
       deriveAttemptHandoffFinalizationClosureSummary(
@@ -187,6 +197,24 @@ describe("selection handoff-finalization-closure-summary helpers", () => {
     expect(act).toThrow(ValidationError);
     expect(act).toThrow(
       "Attempt handoff finalization closure summary requires summary.reportingDisposition to match the canonical disposition derived from the result counts."
+    );
+  });
+
+  it("should fail loudly when reportingDisposition uses unknown grouped reporting vocabulary", () => {
+    const act = () =>
+      deriveAttemptHandoffFinalizationClosureSummary(
+        createDispositionSummary({
+          resultCount: 1,
+          invokedResultCount: 1,
+          blockedResultCount: 0,
+          groupCount: 1,
+          reportingDisposition: "unsupported" as never
+        })
+      );
+
+    expect(act).toThrow(ValidationError);
+    expect(act).toThrow(
+      "Attempt handoff finalization closure summary requires summary.reportingDisposition to use the existing grouped reporting disposition vocabulary."
     );
   });
 
