@@ -41,9 +41,17 @@ export function validateSelectionObjectArrayEntries(
   message: string
 ): void {
   for (let index = 0; index < values.length; index += 1) {
-    if (!hasOwnIndex(values, index) || !isRecord(values[index])) {
-      throw new ValidationError(message);
-    }
+    validateSelectionObjectArrayEntry(values, index, message);
+  }
+}
+
+export function validateSelectionObjectArrayEntry(
+  values: readonly unknown[],
+  index: number,
+  message: string
+): void {
+  if (!hasOwnIndex(values, index) || !isRecord(values[index])) {
+    throw new ValidationError(message);
   }
 }
 

@@ -1,7 +1,7 @@
 import { ValidationError } from "../core/errors.js";
 import {
   validateSelectionArray,
-  validateSelectionObjectArrayEntries,
+  validateSelectionObjectArrayEntry,
   validateSelectionObjectInput,
   validateSelectionOptionalFunction,
   validateSelectionRequiredFunction
@@ -32,14 +32,16 @@ export async function applyAttemptPromotionTargetBatch(
     input.resolveHandoffCapability,
     "Attempt promotion target apply batch requires resolveHandoffCapability to be a function when provided."
   );
-  validateSelectionObjectArrayEntries(
-    input.targets,
-    "Attempt promotion target apply batch requires targets entries to be objects."
-  );
-
   const results: AttemptPromotionTargetApply[] = [];
 
-  for (const target of input.targets) {
+  for (let index = 0; index < input.targets.length; index += 1) {
+    validateSelectionObjectArrayEntry(
+      input.targets,
+      index,
+      "Attempt promotion target apply batch requires targets entries to be objects."
+    );
+
+    const target = input.targets[index]!;
     const result = await applyAttemptPromotionTarget({
       target,
       invokeHandoff: input.invokeHandoff,

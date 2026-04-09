@@ -280,6 +280,31 @@ describe("selection promotion-target-apply-batch helpers", () => {
     );
   });
 
+  it("should preserve ordered fail-fast semantics when a later promotion target entry is malformed", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      applyAttemptPromotionTargetBatch({
+        targets: [
+          createPromotionTarget({
+            attemptId: "att_supported_1"
+          }),
+          undefined,
+          createPromotionTarget({
+            attemptId: "att_supported_2"
+          })
+        ] as unknown as readonly AttemptPromotionTarget[],
+        invokeHandoff: async (request) => {
+          invokedAttemptIds.push(request.attemptId);
+        },
+        resolveHandoffCapability: () => true
+      })
+    ).rejects.toThrow(
+      "Attempt promotion target apply batch requires targets entries to be objects."
+    );
+    expect(invokedAttemptIds).toEqual(["att_supported_1"]);
+  });
+
   it("should not mutate the supplied promotion targets", async () => {
     const targets = [
       createPromotionTarget({

@@ -1,7 +1,7 @@
 import { ValidationError } from "../core/errors.js";
 import {
   validateSelectionArray,
-  validateSelectionObjectArrayEntries,
+  validateSelectionObjectArrayEntry,
   validateSelectionObjectInput,
   validateSelectionOptionalFunction,
   validateSelectionRequiredFunction
@@ -32,14 +32,16 @@ export async function applyAttemptHandoffFinalizationBatch(
     input.resolveHandoffFinalizationCapability,
     "Attempt handoff finalization apply batch requires resolveHandoffFinalizationCapability to be a function when provided."
   );
-  validateSelectionObjectArrayEntries(
-    input.requests,
-    "Attempt handoff finalization apply batch requires requests entries to be objects."
-  );
-
   const results: AttemptHandoffFinalizationApply[] = [];
 
-  for (const request of input.requests) {
+  for (let index = 0; index < input.requests.length; index += 1) {
+    validateSelectionObjectArrayEntry(
+      input.requests,
+      index,
+      "Attempt handoff finalization apply batch requires requests entries to be objects."
+    );
+
+    const request = input.requests[index]!;
     const result = await applyAttemptHandoffFinalization({
       request,
       invokeHandoffFinalization: input.invokeHandoffFinalization,

@@ -303,6 +303,31 @@ describe("selection handoff-target-apply-batch helpers", () => {
     );
   });
 
+  it("should preserve ordered fail-fast semantics when a later target entry is malformed", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      applyAttemptHandoffTargetBatch({
+        targets: [
+          createHandoffTarget({
+            attemptId: "att_supported_1"
+          }),
+          undefined,
+          createHandoffTarget({
+            attemptId: "att_supported_2"
+          })
+        ] as unknown as readonly AttemptHandoffTarget[],
+        invokeHandoff: async (request) => {
+          invokedAttemptIds.push(request.attemptId);
+        },
+        resolveHandoffCapability: () => true
+      })
+    ).rejects.toThrow(
+      "Attempt handoff target apply batch requires targets entries to be objects."
+    );
+    expect(invokedAttemptIds).toEqual(["att_supported_1"]);
+  });
+
   it("should not mutate the supplied targets", async () => {
     const targets = [
       createHandoffTarget({

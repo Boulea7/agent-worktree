@@ -293,6 +293,33 @@ describe("selection handoff-finalization-apply-batch helpers", () => {
     );
   });
 
+  it("should preserve ordered fail-fast semantics when a later finalization request entry is malformed", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      applyAttemptHandoffFinalizationBatch({
+        requests: [
+          createFinalizationRequest({
+            attemptId: "att_supported_1"
+          }),
+          undefined,
+          createFinalizationRequest({
+            attemptId: "att_supported_2"
+          })
+        ] as unknown as readonly AttemptHandoffFinalizationRequest[],
+        invokeHandoffFinalization: async (
+          request: AttemptHandoffFinalizationRequest
+        ) => {
+          invokedAttemptIds.push(request.attemptId);
+        },
+        resolveHandoffFinalizationCapability: () => true
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization apply batch requires requests entries to be objects."
+    );
+    expect(invokedAttemptIds).toEqual(["att_supported_1"]);
+  });
+
   it("should not mutate the supplied requests", async () => {
     const requests = [
       createFinalizationRequest({

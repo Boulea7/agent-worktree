@@ -81,6 +81,36 @@ describe("selection handoff-finalization-consume-batch helpers", () => {
     );
   });
 
+  it("should preserve ordered fail-fast semantics when a later consumer entry is malformed", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      consumeAttemptHandoffFinalizationBatch({
+        consumers: [
+          createSupportedConsumer({
+            request: createFinalizationRequest({
+              attemptId: "att_supported_1"
+            })
+          }),
+          undefined,
+          createSupportedConsumer({
+            request: createFinalizationRequest({
+              attemptId: "att_supported_2"
+            })
+          })
+        ] as unknown as AttemptHandoffFinalizationConsumer[],
+        invokeHandoffFinalization: async (
+          request: AttemptHandoffFinalizationRequest
+        ) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization consume batch requires consumers entries to be objects."
+    );
+    expect(invokedAttemptIds).toEqual(["att_supported_1"]);
+  });
+
   it("should preserve input order and continue past blocked consumers", async () => {
     const consumers = [
       createFinalizationConsumer({
