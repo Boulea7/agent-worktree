@@ -33,6 +33,16 @@ describe("selection handoff-finalization-closeout-decision helpers", () => {
     ).toBeUndefined();
   });
 
+  it("should fail loudly when the supplied closure summary is null", () => {
+    const act = () =>
+      deriveAttemptHandoffFinalizationCloseoutDecisionSummary(null as never);
+
+    expect(act).toThrow(ValidationError);
+    expect(act).toThrow(
+      "Attempt handoff finalization closeout decision summary requires summary to be an object."
+    );
+  });
+
   it("should derive a no-results blocker when the closeout is empty", () => {
     expect(
       deriveAttemptHandoffFinalizationCloseoutDecisionSummary(
@@ -187,6 +197,28 @@ describe("selection handoff-finalization-closeout-decision helpers", () => {
     expect(act).toThrow(ValidationError);
     expect(act).toThrow(
       "Attempt handoff finalization closeout decision summary requires summary.allResultsBlocked to match the canonical count-derived state."
+    );
+  });
+
+  it("should fail loudly when reportingDisposition uses unknown closure vocabulary", () => {
+    const act = () =>
+      deriveAttemptHandoffFinalizationCloseoutDecisionSummary(
+        createClosureSummary({
+          resultCount: 1,
+          invokedResultCount: 1,
+          blockedResultCount: 0,
+          groupCount: 1,
+          reportingDisposition: "unsupported" as never,
+          hasResults: true,
+          allResultsInvoked: true,
+          allResultsBlocked: false,
+          hasMixedDisposition: false
+        })
+      );
+
+    expect(act).toThrow(ValidationError);
+    expect(act).toThrow(
+      "Attempt handoff finalization closeout decision summary requires summary.reportingDisposition to use the existing grouped reporting disposition vocabulary."
     );
   });
 

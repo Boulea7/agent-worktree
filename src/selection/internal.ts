@@ -153,6 +153,8 @@ export type {
   AttemptHandoffFinalizationConsumeInput,
   AttemptHandoffFinalizationApply,
   AttemptHandoffFinalizationApplyBatch,
+  AttemptHandoffFinalizationApplyBatchInput,
+  AttemptHandoffFinalizationApplyInput,
   AttemptHandoffFinalizationExplanationCode,
   AttemptHandoffFinalizationExplanationEntry,
   AttemptHandoffFinalizationExplanationSummary,

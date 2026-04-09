@@ -38,6 +38,18 @@ describe(
       ).toBeUndefined();
     });
 
+    it("should fail loudly when the supplied grouped reporting summary is null", () => {
+      const act = () =>
+        deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary(
+          null as never
+        );
+
+      expect(act).toThrow(ValidationError);
+      expect(act).toThrow(
+        "Attempt handoff finalization grouped reporting disposition summary requires summary to be an object."
+      );
+    });
+
     it("should derive an empty disposition when no grouped reporting results exist", () => {
       expect(
         deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary(
@@ -255,6 +267,23 @@ describe(
       expect(act).toThrow(ValidationError);
       expect(act).toThrow(
         'Attempt handoff finalization grouped reporting disposition summary requires "handoff_finalization_invoked" groups to keep all results invoked.'
+      );
+    });
+
+    it("should fail loudly when a grouped reporting group uses unknown explanation vocabulary", () => {
+      const act = () =>
+        deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary(
+          createGroupedReportingSummary([
+            {
+              ...createInvokedReportingGroup(),
+              groupKey: "handoff_finalization_unknown"
+            } as never
+          ])
+        );
+
+      expect(act).toThrow(ValidationError);
+      expect(act).toThrow(
+        "Attempt handoff finalization grouped reporting disposition summary requires each groupKey to use the existing handoff-finalization explanation vocabulary."
       );
     });
 
