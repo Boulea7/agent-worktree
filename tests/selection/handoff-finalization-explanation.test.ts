@@ -69,6 +69,42 @@ describe("selection handoff-finalization-explanation helpers", () => {
     ).toBeUndefined();
   });
 
+  it("should fail loudly when the supplied finalization outcome summary is null", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary(null as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary(null as never)
+    ).toThrow(
+      "Attempt handoff finalization explanation summary requires summary to be an object."
+    );
+  });
+
+  it("should fail loudly when summary.outcomes is not an array", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary({
+        outcomeBasis: "handoff_finalization_apply_batch",
+        resultCount: 0,
+        invokedResultCount: 0,
+        blockedResultCount: 0,
+        blockingReasons: [],
+        outcomes: null
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary({
+        outcomeBasis: "handoff_finalization_apply_batch",
+        resultCount: 0,
+        invokedResultCount: 0,
+        blockedResultCount: 0,
+        blockingReasons: [],
+        outcomes: null
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization explanation summary requires summary.outcomes to be an array."
+    );
+  });
+
   it("should derive a zero-count explanation summary for an empty outcome summary", () => {
     expect(
       deriveAttemptHandoffFinalizationExplanationSummary({
