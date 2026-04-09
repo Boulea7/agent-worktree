@@ -237,7 +237,7 @@ describe("selection promotion helpers", () => {
     );
   });
 
-  it("should fail loudly when artifactSummary.recommendedForPromotion does not match the summary derived from manifest.verification", () => {
+  it("should fail loudly when artifactSummary diverges from manifest.verification before recommendation consistency", () => {
     const artifactVerification = createVerification({
       state: "passed",
       checks: [
@@ -270,7 +270,7 @@ describe("selection promotion helpers", () => {
     expect(() =>
       deriveAttemptPromotionCandidate(manifest, artifactSummary)
     ).toThrow(
-      "Attempt promotion candidate requires artifactSummary.recommendedForPromotion to match the summary derived from manifest.verification."
+      "Attempt promotion candidate requires artifactSummary.checks to match manifest.verification.checks."
     );
   });
 

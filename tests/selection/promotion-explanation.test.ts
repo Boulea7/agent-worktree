@@ -5,6 +5,7 @@ import type {
   AttemptManifest,
   AttemptVerification
 } from "../../src/manifest/types.js";
+import { deriveAttemptPromotionExplanationSummary as deriveAttemptPromotionExplanationSummaryDirect } from "../../src/selection/promotion-explanation.js";
 import {
   deriveAttemptPromotionAuditSummary,
   deriveAttemptPromotionCandidate,
@@ -451,6 +452,54 @@ describe("selection promotion-explanation helpers", () => {
     );
   });
 
+  it("should fail loudly when the supplied promotion report container is malformed", () => {
+    expect(() =>
+      deriveAttemptPromotionExplanationSummaryDirect(null as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionExplanationSummaryDirect(null as never)
+    ).toThrow(
+      "Attempt promotion explanation summary requires report to be an object."
+    );
+
+    expect(() =>
+      deriveAttemptPromotionExplanationSummaryDirect([] as never)
+    ).toThrow(
+      "Attempt promotion explanation summary requires report to be an object."
+    );
+  });
+
+  it("should fail loudly when report.candidates is malformed or sparse", () => {
+    expect(() =>
+      deriveAttemptPromotionExplanationSummary({
+        ...createPromotionReport([]),
+        candidates: undefined as never
+      })
+    ).toThrow(
+      "Attempt promotion explanation summary requires report.candidates to be an array."
+    );
+
+    const sparseCandidates = new Array<AttemptPromotionReport["candidates"][number]>(1);
+
+    expect(() =>
+      deriveAttemptPromotionExplanationSummary({
+        ...createPromotionReport([]),
+        candidateCount: 1,
+        comparableCandidateCount: 0,
+        promotionReadyCandidateCount: 0,
+        selectedAttemptId: undefined,
+        recommendedForPromotion: false,
+        selected: undefined,
+        promotionReadyCandidates: [],
+        nonPromotionReadyCandidates: [],
+        pendingCandidates: [],
+        candidates: sparseCandidates as never
+      })
+    ).toThrow(
+      "Attempt promotion explanation summary requires report.candidates entries to be objects."
+    );
+  });
+
   it("should fail loudly when report.selected does not match the first report candidate", () => {
     const report = createPromotionReport([
       createPromotionCandidate({
@@ -606,7 +655,69 @@ describe("selection promotion-explanation helpers", () => {
       ValidationError
     );
     expect(() => deriveAttemptPromotionExplanationSummary(report)).toThrow(
-      "Attempt promotion explanation summary requires report.taskId to be a string when provided."
+      "Attempt promotion explanation summary requires report.taskId to be a non-empty string when provided."
+    );
+  });
+
+  it("should fail loudly when report.taskId is blank", () => {
+    const report = {
+      ...createPromotionReport([
+        createPromotionCandidate({
+          attemptId: "att_ready",
+          verification: createVerification({
+            state: "verified",
+            checks: []
+          })
+        })
+      ]),
+      taskId: "   "
+    } as AttemptPromotionReport;
+
+    expect(() => deriveAttemptPromotionExplanationSummary(report)).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptPromotionExplanationSummary(report)).toThrow(
+      "Attempt promotion explanation summary requires report.taskId to be a non-empty string when provided."
+    );
+  });
+
+  it("should fail loudly when report.candidates contain duplicate attempt identities", () => {
+    const report = createPromotionReport([
+      createPromotionCandidate({
+        attemptId: "att_a",
+        verification: createVerification({
+          state: "verified",
+          checks: []
+        })
+      }),
+      createPromotionCandidate({
+        attemptId: "att_b",
+        verification: createVerification({
+          state: "pending",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(() =>
+      deriveAttemptPromotionExplanationSummary({
+        ...report,
+        candidates: [
+          report.candidates[0]!,
+          {
+            ...report.candidates[1]!,
+            attemptId: "att_a"
+          }
+        ]
+      })
+    ).toThrow(
+      "Attempt promotion explanation summary requires report.candidates to use unique candidate.attemptId values."
     );
   });
 

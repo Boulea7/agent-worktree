@@ -247,6 +247,18 @@ describe("control-plane runtime-state wait-candidate helpers", () => {
       deriveExecutionSessionWaitCandidate({
         view: {
           ...incompleteView,
+          index: undefined as never
+        },
+        selector: {
+          attemptId: "att_active"
+        }
+      })
+    ).toThrow("Execution session wait candidate requires view to be an object.");
+
+    expect(() =>
+      deriveExecutionSessionWaitCandidate({
+        view: {
+          ...incompleteView,
           childAttemptIdsByParent: undefined as never
         },
         selector: {

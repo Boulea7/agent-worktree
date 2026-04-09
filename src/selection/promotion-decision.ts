@@ -29,6 +29,12 @@ const validExplanationCodes = new Set<AttemptPromotionExplanationCode>([
 export function deriveAttemptPromotionDecisionSummary(
   summary: AttemptPromotionExplanationSummary
 ): AttemptPromotionDecisionSummary {
+  if (!isRecord(summary)) {
+    throw new ValidationError(
+      "Attempt promotion decision summary requires summary to be an object."
+    );
+  }
+
   validateExplanationBasis(summary);
   validateTaskId(summary.taskId);
   validatePromotionExplanationSummary(summary);
@@ -66,9 +72,12 @@ function validateExplanationBasis(
 }
 
 function validateTaskId(value: unknown): void {
-  if (value !== undefined && typeof value !== "string") {
+  if (
+    value !== undefined &&
+    (typeof value !== "string" || value.trim().length === 0)
+  ) {
     throw new ValidationError(
-      "Attempt promotion decision summary requires summary.taskId to be a string when provided."
+      "Attempt promotion decision summary requires summary.taskId to be a non-empty string when provided."
     );
   }
 }
@@ -81,6 +90,8 @@ function validatePromotionExplanationSummary(
       "Attempt promotion decision summary requires summary.candidates to be an array."
     );
   }
+
+  validateCandidateEntries(summary.candidates);
 
   if (summary.candidateCount !== summary.candidates.length) {
     throw new ValidationError(
@@ -135,6 +146,8 @@ function validatePromotionExplanationSummary(
     }
   });
 
+  validateUniqueCandidateAttemptIds(summary.candidates);
+
   if (
     !explanationCandidatesEqual(summary.selected, summary.candidates[0])
   ) {
@@ -168,6 +181,34 @@ function validatePromotionExplanationSummary(
     throw new ValidationError(
       "Attempt promotion decision summary requires summary.comparableCandidateCount to match the count derived from summary.candidates."
     );
+  }
+}
+
+function validateCandidateEntries(
+  candidates: readonly unknown[]
+): void {
+  for (let index = 0; index < candidates.length; index += 1) {
+    if (!hasOwnIndex(candidates, index) || !isRecord(candidates[index])) {
+      throw new ValidationError(
+        "Attempt promotion decision summary requires summary.candidates entries to be objects."
+      );
+    }
+  }
+}
+
+function validateUniqueCandidateAttemptIds(
+  candidates: readonly AttemptPromotionExplanationCandidate[]
+): void {
+  const seenAttemptIds = new Set<string>();
+
+  for (const candidate of candidates) {
+    if (seenAttemptIds.has(candidate.attemptId)) {
+      throw new ValidationError(
+        "Attempt promotion decision summary requires summary.candidates to use unique candidate.attemptId values."
+      );
+    }
+
+    seenAttemptIds.add(candidate.attemptId);
   }
 }
 
@@ -426,6 +467,14 @@ function validateAttemptStatus(value: unknown): void {
       "Attempt promotion decision summary requires candidate.status to use the existing attempt status vocabulary."
     );
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasOwnIndex(values: readonly unknown[], index: number): boolean {
+  return Object.prototype.hasOwnProperty.call(values, index);
 }
 
 function validateAttemptSourceKind(value: unknown): void {

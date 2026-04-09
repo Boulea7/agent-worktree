@@ -124,6 +124,36 @@ describe("selection handoff-finalization-request-apply helpers", () => {
     expect(invokeHandoffFinalization).not.toHaveBeenCalled();
   });
 
+  it("should fail closed when the supplied top-level request-apply input or invoker is malformed", async () => {
+    await expect(
+      applyAttemptHandoffFinalizationRequestSummary(undefined as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyAttemptHandoffFinalizationRequestSummary(undefined as never)
+    ).rejects.toThrow(
+      "Attempt handoff finalization request apply input must be an object."
+    );
+
+    await expect(
+      applyAttemptHandoffFinalizationRequestSummary({
+        summary: createRequestSummary(),
+        invokeHandoffFinalization: undefined as never
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization request apply requires invokeHandoffFinalization to be a function."
+    );
+
+    await expect(
+      applyAttemptHandoffFinalizationRequestSummary({
+        summary: createRequestSummary(),
+        invokeHandoffFinalization: async () => undefined,
+        resolveHandoffFinalizationCapability: "yes" as never
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization request apply requires resolveHandoffFinalizationCapability to be a function when provided."
+    );
+  });
+
   it("should return undefined when the supplied request summary cannot finalize handoff", async () => {
     const invokeHandoffFinalization = vi.fn(async () => undefined);
 

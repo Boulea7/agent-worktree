@@ -1,3 +1,4 @@
+import { ValidationError } from "../core/errors.js";
 import type {
   AttemptHandoffFinalizationClosureSummary,
   AttemptHandoffFinalizationRequestSummaryApplyInput
@@ -14,6 +15,7 @@ import { deriveAttemptHandoffFinalizationClosureSummary } from "./handoff-finali
 export async function deriveAttemptHandoffFinalizationCloseoutSummary(
   input: AttemptHandoffFinalizationRequestSummaryApplyInput
 ): Promise<AttemptHandoffFinalizationClosureSummary | undefined> {
+  validateInput(input);
   const applyBatch =
     await applyAttemptHandoffFinalizationRequestSummary(input);
   const outcomeSummary = deriveAttemptHandoffFinalizationOutcomeSummary(applyBatch);
@@ -35,4 +37,31 @@ export async function deriveAttemptHandoffFinalizationCloseoutSummary(
   return deriveAttemptHandoffFinalizationClosureSummary(
     groupedReportingDispositionSummary
   );
+}
+
+function validateInput(value: unknown): void {
+  if (!isRecord(value)) {
+    throw new ValidationError(
+      "Attempt handoff finalization closeout summary input must be an object."
+    );
+  }
+
+  if (typeof value.invokeHandoffFinalization !== "function") {
+    throw new ValidationError(
+      "Attempt handoff finalization closeout summary requires invokeHandoffFinalization to be a function."
+    );
+  }
+
+  if (
+    value.resolveHandoffFinalizationCapability !== undefined &&
+    typeof value.resolveHandoffFinalizationCapability !== "function"
+  ) {
+    throw new ValidationError(
+      "Attempt handoff finalization closeout summary requires resolveHandoffFinalizationCapability to be a function when provided."
+    );
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

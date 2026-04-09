@@ -1,4 +1,10 @@
 import { ValidationError } from "../core/errors.js";
+import {
+  attemptSourceKinds,
+  attemptStatuses,
+  type AttemptSourceKind,
+  type AttemptStatus
+} from "../manifest/types.js";
 import type {
   AttemptHandoffConsume,
   AttemptHandoffConsumerBlockingReason,
@@ -6,6 +12,8 @@ import type {
   AttemptHandoffConsumeInput
 } from "./types.js";
 
+const validAttemptStatuses = new Set<AttemptStatus>(attemptStatuses);
+const validAttemptSourceKinds = new Set<AttemptSourceKind>(attemptSourceKinds);
 const validBlockingReasons = new Set<AttemptHandoffConsumerBlockingReason>([
   "handoff_unsupported"
 ]);
@@ -13,7 +21,11 @@ const validBlockingReasons = new Set<AttemptHandoffConsumerBlockingReason>([
 export async function consumeAttemptHandoff(
   input: AttemptHandoffConsumeInput
 ): Promise<AttemptHandoffConsume> {
+  validateInput(input);
+  validateInvokeHandoff(input.invokeHandoff);
   const { consumer, invokeHandoff } = input;
+  validateConsumer(consumer);
+  validateRequest(consumer.request);
   validateReadiness(consumer.readiness);
 
   if (!consumer.readiness.canConsumeHandoff) {
@@ -31,6 +43,54 @@ export async function consumeAttemptHandoff(
     readiness: consumer.readiness,
     invoked: true
   };
+}
+
+function validateInput(value: unknown): void {
+  if (!isRecord(value)) {
+    throw new ValidationError("Attempt handoff consume input must be an object.");
+  }
+}
+
+function validateInvokeHandoff(value: unknown): void {
+  if (typeof value !== "function") {
+    throw new ValidationError(
+      "Attempt handoff consume requires invokeHandoff to be a function."
+    );
+  }
+}
+
+function validateConsumer(value: unknown): void {
+  if (!isRecord(value)) {
+    throw new ValidationError(
+      "Attempt handoff consume requires consumer to be an object."
+    );
+  }
+
+  if (!isRecord(value.request)) {
+    throw new ValidationError(
+      "Attempt handoff consume requires consumer.request to be an object."
+    );
+  }
+
+  if (!isRecord(value.readiness)) {
+    throw new ValidationError(
+      "Attempt handoff consume requires consumer.readiness to be an object."
+    );
+  }
+}
+
+function validateRequest(value: {
+  taskId?: unknown;
+  attemptId?: unknown;
+  runtime?: unknown;
+  status?: unknown;
+  sourceKind?: unknown;
+}): void {
+  validateRequiredString(value.taskId, "consumer.request.taskId");
+  validateRequiredString(value.attemptId, "consumer.request.attemptId");
+  validateRequiredString(value.runtime, "consumer.request.runtime");
+  validateAttemptStatus(value.status, "consumer.request.status");
+  validateAttemptSourceKind(value.sourceKind, "consumer.request.sourceKind");
 }
 
 function validateReadiness(value: AttemptHandoffConsumerReadiness): void {
@@ -95,4 +155,39 @@ function validateReadiness(value: AttemptHandoffConsumerReadiness): void {
 
 function hasOwnIndex(values: readonly unknown[], index: number): boolean {
   return Object.prototype.hasOwnProperty.call(values, index);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function validateRequiredString(value: unknown, fieldName: string): void {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new ValidationError(
+      `Attempt handoff consume requires ${fieldName} to be a non-empty string.`
+    );
+  }
+}
+
+function validateAttemptStatus(value: unknown, fieldName: string): void {
+  if (
+    typeof value !== "string" ||
+    !validAttemptStatuses.has(value as AttemptStatus)
+  ) {
+    throw new ValidationError(
+      `Attempt handoff consume requires ${fieldName} to use the existing attempt status vocabulary.`
+    );
+  }
+}
+
+function validateAttemptSourceKind(value: unknown, fieldName: string): void {
+  if (
+    value !== undefined &&
+    (typeof value !== "string" ||
+      !validAttemptSourceKinds.has(value as AttemptSourceKind))
+  ) {
+    throw new ValidationError(
+      `Attempt handoff consume requires ${fieldName} to use the existing attempt source-kind vocabulary when provided.`
+    );
+  }
 }

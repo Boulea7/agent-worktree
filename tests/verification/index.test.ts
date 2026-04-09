@@ -82,3 +82,9 @@ type VerificationIndexShouldNotExportArtifactCheck = import("../../src/verificat
 
 // @ts-expect-error verification index must not export artifact-summary types
 type VerificationIndexShouldNotExportArtifactSummaryType = import("../../src/verification/index.js").AttemptVerificationArtifactSummary;
+
+// @ts-expect-error verification index must not export control-plane context types
+type VerificationIndexShouldNotExportExecutionSessionContext = import("../../src/verification/index.js").ExecutionSessionContext;
+
+// @ts-expect-error verification index must not export selection candidate types
+type VerificationIndexShouldNotExportAttemptSelectionCandidate = import("../../src/verification/index.js").AttemptSelectionCandidate;

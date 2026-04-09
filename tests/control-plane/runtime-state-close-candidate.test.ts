@@ -264,6 +264,20 @@ describe("control-plane runtime-state close-candidate helpers", () => {
       deriveExecutionSessionCloseCandidate({
         view: {
           ...incompleteView,
+          index: undefined as never
+        },
+        selector: {
+          attemptId: "att_active"
+        }
+      })
+    ).toThrow(
+      "Execution session close candidate requires view to be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionCloseCandidate({
+        view: {
+          ...incompleteView,
           childAttemptIdsByParent: undefined as never
         },
         selector: {
