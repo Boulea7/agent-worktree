@@ -50,6 +50,17 @@ describe("selection handoff-finalization-grouped-reporting-summary helpers", () 
     ).toBeUndefined();
   });
 
+  it("should fail loudly when the supplied grouped projection summary is null", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedReportingSummary(null as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedReportingSummary(null as never)
+    ).toThrow(
+      "Attempt handoff finalization grouped reporting summary requires summary to be an object."
+    );
+  });
+
   it("should derive a zero-count grouped reporting summary for an empty grouped projection summary", () => {
     expect(
       deriveAttemptHandoffFinalizationGroupedReportingSummary({

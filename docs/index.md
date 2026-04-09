@@ -69,3 +69,9 @@ For committed repository truth, start with `SPEC.md`, then `README.md`, then thi
 
 - [ADR Process](adrs/README.md)
 - [RFC Process](../rfcs/README.md)
+
+## Related
+
+- [ROADMAP.md](../ROADMAP.md)
+- [docs/compat/overview.md](compat/overview.md)
+- [docs/maintainers/development-phases.md](maintainers/development-phases.md)

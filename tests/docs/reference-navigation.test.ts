@@ -5,6 +5,14 @@ import { describe, expect, it } from "vitest";
 
 const relatedDocs = [
   {
+    path: "docs/index.md",
+    links: [
+      "[ROADMAP.md](../ROADMAP.md)",
+      "[docs/compat/overview.md](compat/overview.md)",
+      "[docs/maintainers/development-phases.md](maintainers/development-phases.md)"
+    ]
+  },
+  {
     path: "ROADMAP.md",
     links: [
       "[docs/index.md](docs/index.md)",
