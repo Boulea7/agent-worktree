@@ -99,6 +99,21 @@ describe("selection handoff-explanation helpers", () => {
     expect(deriveAttemptHandoffExplanationSummary(undefined)).toBeUndefined();
   });
 
+  it("should fail loudly when the supplied handoff report-ready summary is null", () => {
+    expect(() =>
+      deriveAttemptHandoffExplanationSummary(
+        null as unknown as Parameters<typeof deriveAttemptHandoffExplanationSummary>[0]
+      )
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffExplanationSummary(
+        null as unknown as Parameters<typeof deriveAttemptHandoffExplanationSummary>[0]
+      )
+    ).toThrow(
+      "Attempt handoff explanation summary requires report to be an object."
+    );
+  });
+
   it("should derive a stable invoked explanation entry", () => {
     expect(
       deriveAttemptHandoffExplanationSummary(
@@ -251,6 +266,78 @@ describe("selection handoff-explanation helpers", () => {
     expect(() => deriveAttemptHandoffExplanationSummary(report)).toThrow(
       ValidationError
     );
+  });
+
+  it("should fail loudly when report.invokedResults contains a non-object entry", () => {
+    expect(() =>
+      deriveAttemptHandoffExplanationSummary({
+        ...createReport([createSupportedPromotionTargetApply()]),
+        invokedResults: [null] as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffExplanationSummary({
+        ...createReport([createSupportedPromotionTargetApply()]),
+        invokedResults: [null] as never
+      })
+    ).toThrow(
+      "Attempt handoff explanation summary requires report.invokedResults entries to be objects."
+    );
+  });
+
+  it("should fail loudly when report.invokedResults is not an array", () => {
+    expect(() =>
+      deriveAttemptHandoffExplanationSummary({
+        ...createReport([createSupportedPromotionTargetApply()]),
+        invokedResults: null as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffExplanationSummary({
+        ...createReport([createSupportedPromotionTargetApply()]),
+        invokedResults: null as never
+      })
+    ).toThrow(
+      "Attempt handoff explanation summary requires report.invokedResults to be an array."
+    );
+  });
+
+  it("should fail loudly when report.invokedResults contains a malformed object entry", () => {
+    expect(() =>
+      deriveAttemptHandoffExplanationSummary({
+        ...createReport([createSupportedPromotionTargetApply()]),
+        invokedResults: [{}] as never
+      })
+    ).toThrow(ValidationError);
+  });
+
+  it("should fail loudly when report.blockedResults contains a sparse entry", () => {
+    const blockedResults = [] as unknown[];
+    blockedResults[1] = createBlockedPromotionTargetApply();
+
+    expect(() =>
+      deriveAttemptHandoffExplanationSummary({
+        ...createReport([createBlockedPromotionTargetApply()]),
+        blockedResults: blockedResults as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffExplanationSummary({
+        ...createReport([createBlockedPromotionTargetApply()]),
+        blockedResults: blockedResults as never
+      })
+    ).toThrow(
+      "Attempt handoff explanation summary requires report.blockedResults entries to be objects."
+    );
+  });
+
+  it("should fail loudly when report.blockedResults contains a malformed object entry", () => {
+    expect(() =>
+      deriveAttemptHandoffExplanationSummary({
+        ...createReport([createBlockedPromotionTargetApply()]),
+        blockedResults: [{}] as never
+      })
+    ).toThrow(ValidationError);
   });
 
   it("should fail loudly when a subgroup entry request drifts from the canonical report projection", () => {

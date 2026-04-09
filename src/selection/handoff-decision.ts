@@ -1,4 +1,9 @@
 import { ValidationError } from "../core/errors.js";
+import {
+  validateSelectionArray,
+  validateSelectionObjectArrayEntries,
+  validateSelectionObjectInput
+} from "./entry-validation.js";
 import { deriveAttemptHandoffExplanationSummary } from "./handoff-explanation.js";
 import type {
   AttemptHandoffDecisionBlockingReason,
@@ -18,14 +23,21 @@ export function deriveAttemptHandoffDecisionSummary(
     return undefined;
   }
 
-  if (!isRecord(summary)) {
-    throw new ValidationError(
-      "Attempt handoff decision summary requires summary to be an object."
-    );
-  }
+  validateSelectionObjectInput(
+    summary,
+    "Attempt handoff decision summary requires summary to be an object."
+  );
 
   validateExplanationBasis(summary);
   validateSummaryResults(summary.results);
+  validateSummarySubgroupEntries(
+    summary.invokedResults,
+    "summary.invokedResults"
+  );
+  validateSummarySubgroupEntries(
+    summary.blockedResults,
+    "summary.blockedResults"
+  );
 
   const canonicalSummary = deriveAttemptHandoffExplanationSummary({
     reportBasis: "promotion_target_apply_batch",
@@ -82,17 +94,28 @@ function validateExplanationBasis(
 }
 
 function validateSummaryResults(value: unknown): void {
-  if (!Array.isArray(value)) {
-    throw new ValidationError(
-      "Attempt handoff decision summary requires summary.results to be an array."
-    );
-  }
+  validateSelectionArray(
+    value,
+    "Attempt handoff decision summary requires summary.results to be an array."
+  );
+  validateSelectionObjectArrayEntries(
+    value,
+    "Attempt handoff decision summary requires summary.results entries to be objects."
+  );
+}
 
-  if (value.some((entry) => !isRecord(entry))) {
-    throw new ValidationError(
-      "Attempt handoff decision summary requires summary.results entries to be objects."
-    );
-  }
+function validateSummarySubgroupEntries(
+  value: unknown,
+  fieldName: "summary.invokedResults" | "summary.blockedResults"
+): void {
+  validateSelectionArray(
+    value,
+    `Attempt handoff decision summary requires ${fieldName} to be an array.`
+  );
+  validateSelectionObjectArrayEntries(
+    value,
+    `Attempt handoff decision summary requires ${fieldName} entries to be objects.`
+  );
 }
 
 function validateCanonicalSummary(
@@ -150,8 +173,14 @@ function explanationEntryArraysEqual(
   return (
     Array.isArray(left) &&
     left.length === right.length &&
-    left.every((entry, index) =>
-      explanationEntryEqual(entry as AttemptHandoffExplanationEntry, right[index]!)
+    left.every(
+      (entry, index) =>
+        hasOwnIndex(left, index) &&
+        hasOwnIndex(right, index) &&
+        explanationEntryEqual(
+          entry as AttemptHandoffExplanationEntry,
+          right[index] as AttemptHandoffExplanationEntry
+        )
     )
   );
 }
@@ -160,6 +189,10 @@ function explanationEntryEqual(
   left: AttemptHandoffExplanationEntry,
   right: AttemptHandoffExplanationEntry
 ): boolean {
+  if (!isComparableExplanationEntry(left) || !isComparableExplanationEntry(right)) {
+    return false;
+  }
+
   return (
     left.handoffTarget.handoffBasis === right.handoffTarget.handoffBasis &&
     normalizeComparableString(left.handoffTarget.taskId) ===
@@ -223,6 +256,46 @@ function explanationEntryEqual(
   );
 }
 
+function isComparableExplanationEntry(
+  value: unknown
+): value is AttemptHandoffExplanationEntry {
+  if (
+    !isRecord(value) ||
+    !isRecord(value.handoffTarget) ||
+    !isRecord(value.targetApply) ||
+    !Array.isArray(value.blockingReasons)
+  ) {
+    return false;
+  }
+
+  if (
+    !isComparableRequest(value.targetApply.request) ||
+    !isRecord(value.targetApply.apply) ||
+    !isRecord(value.targetApply.apply.consumer) ||
+    !isRecord(value.targetApply.apply.consume)
+  ) {
+    return false;
+  }
+
+  return (
+    typeof value.explanationCode === "string" &&
+    typeof value.invoked === "boolean" &&
+    isComparableRequest(value.targetApply.apply.consumer.request) &&
+    isComparableReadiness(value.targetApply.apply.consumer.readiness) &&
+    isComparableRequest(value.targetApply.apply.consume.request) &&
+    isComparableReadiness(value.targetApply.apply.consume.readiness) &&
+    typeof value.targetApply.apply.consume.invoked === "boolean"
+  );
+}
+
+function isComparableRequest(value: unknown): boolean {
+  return isRecord(value);
+}
+
+function isComparableReadiness(value: unknown): boolean {
+  return isRecord(value) && Array.isArray(value.blockingReasons);
+}
+
 function readinessEqual(
   left: AttemptHandoffExplanationEntry["targetApply"]["apply"]["consumer"]["readiness"],
   right: AttemptHandoffExplanationEntry["targetApply"]["apply"]["consumer"]["readiness"]
@@ -247,6 +320,10 @@ function stringArraysEqual(
 
 function normalizeComparableString(value: unknown): unknown {
   return typeof value === "string" ? value.trim() : value;
+}
+
+function hasOwnIndex(values: readonly unknown[], index: number): boolean {
+  return Object.prototype.hasOwnProperty.call(values, index);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
