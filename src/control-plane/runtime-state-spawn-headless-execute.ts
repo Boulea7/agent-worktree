@@ -1,3 +1,4 @@
+import { RuntimeError } from "../core/errors.js";
 import { applyExecutionSessionSpawnHeadlessInput } from "./runtime-state-spawn-headless-apply.js";
 import type {
   ExecutionSessionSpawnHeadlessExecute,
@@ -15,7 +16,19 @@ export async function executeExecutionSessionSpawnHeadless(
     },
     invokeSpawn: input.invokeSpawn
   });
-  const executionResult = await input.executeHeadless(headlessApply.headlessInput);
+  let executionResult: ExecutionSessionSpawnHeadlessExecute["executionResult"];
+
+  try {
+    executionResult = await input.executeHeadless(headlessApply.headlessInput);
+  } catch (error) {
+    throw new RuntimeError(
+      "Headless child execution failed after spawn was recorded.",
+      {
+        cause: error,
+        headlessApply
+      }
+    );
+  }
 
   return {
     headlessApply,

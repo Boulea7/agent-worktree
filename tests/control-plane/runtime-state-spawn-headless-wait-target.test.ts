@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   buildExecutionSessionView,
   deriveExecutionSessionSpawnHeadlessContext,
@@ -81,6 +82,17 @@ describe(
       expect(result).not.toHaveProperty("target");
       expect(result).not.toHaveProperty("waitTarget");
       expect(result).not.toHaveProperty("closeTarget");
+    });
+
+    it("should fail loudly when the supplied wrapper does not include a headless wait candidate", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitTarget({} as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitTarget({} as never)
+      ).toThrow(
+        "Execution session spawn headless wait target requires a headlessWaitCandidate wrapper."
+      );
     });
   }
 );

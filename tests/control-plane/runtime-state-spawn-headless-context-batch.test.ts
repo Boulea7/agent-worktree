@@ -162,6 +162,21 @@ describe(
         "Execution session spawn headless context requires a selected record."
       );
     });
+
+    it("should fail loudly when the supplied headless-view batch wrapper is malformed", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch({
+          headlessViewBatch: {} as ExecutionSessionSpawnHeadlessViewBatch
+        })
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch({
+          headlessViewBatch: {} as ExecutionSessionSpawnHeadlessViewBatch
+        })
+      ).toThrow(
+        "Execution session spawn headless context batch requires headlessViewBatch to include headlessRecordBatch and view objects."
+      );
+    });
   }
 );
 

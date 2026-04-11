@@ -1,4 +1,5 @@
 import { deriveExecutionSessionCloseReadiness } from "./runtime-state-close-readiness.js";
+import { normalizeHeadlessContextWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import type {
   ExecutionSessionCloseReadiness,
   ExecutionSessionSpawnHeadlessCloseCandidate,
@@ -8,49 +9,32 @@ import type {
 export function deriveExecutionSessionSpawnHeadlessCloseCandidate(
   input: ExecutionSessionSpawnHeadlessCloseCandidateInput
 ): ExecutionSessionSpawnHeadlessCloseCandidate {
-  const readiness = deriveExecutionSessionCloseReadiness({
-    context: input.headlessContext.context,
-    ...(input.resolveSessionLifecycleCapability === undefined
-      ? {}
-      : {
-          resolveSessionLifecycleCapability:
-            input.resolveSessionLifecycleCapability
-        })
+  const normalizedInput = normalizeHeadlessContextWrapper(input, {
+    context: "Execution session spawn headless close candidate",
+    wrapperKey: "headlessContext"
   });
   const candidateReadiness: ExecutionSessionCloseReadiness =
-    input.headlessContext.headlessView.descendantCoverage === "incomplete"
-      ? {
-          ...readiness,
-          blockingReasons:
-            insertIncompleteCoverageBlockingReason(
-              readiness.blockingReasons
-            ) as ExecutionSessionCloseReadiness["blockingReasons"],
-          canClose: false,
-          hasBlockingReasons: true
-        }
-      : readiness;
+    deriveExecutionSessionCloseReadiness({
+      context: normalizedInput.headlessContext.context,
+      ...(normalizedInput.headlessContext.headlessView.descendantCoverage === undefined
+        ? {}
+        : {
+            descendantCoverage:
+              normalizedInput.headlessContext.headlessView.descendantCoverage
+          }),
+      ...(normalizedInput.resolveSessionLifecycleCapability === undefined
+        ? {}
+        : {
+            resolveSessionLifecycleCapability:
+              normalizedInput.resolveSessionLifecycleCapability
+          })
+    });
 
   return {
-    headlessContext: input.headlessContext,
+    headlessContext: normalizedInput.headlessContext,
     candidate: {
-      context: input.headlessContext.context,
+      context: normalizedInput.headlessContext.context,
       readiness: candidateReadiness
     }
   };
-}
-
-function insertIncompleteCoverageBlockingReason(
-  blockingReasons: ExecutionSessionCloseReadiness["blockingReasons"]
-): ExecutionSessionCloseReadiness["blockingReasons"] {
-  const childAttemptIndex = blockingReasons.indexOf("child_attempts_present");
-
-  if (childAttemptIndex === -1) {
-    return [...blockingReasons, "descendant_coverage_incomplete"];
-  }
-
-  return [
-    ...blockingReasons.slice(0, childAttemptIndex),
-    "descendant_coverage_incomplete",
-    ...blockingReasons.slice(childAttemptIndex)
-  ];
 }

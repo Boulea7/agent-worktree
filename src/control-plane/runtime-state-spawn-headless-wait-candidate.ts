@@ -1,4 +1,5 @@
 import { deriveExecutionSessionWaitReadiness } from "./runtime-state-readiness.js";
+import { normalizeHeadlessContextWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import type {
   ExecutionSessionWaitReadiness,
   ExecutionSessionSpawnHeadlessWaitCandidate,
@@ -8,43 +9,26 @@ import type {
 export function deriveExecutionSessionSpawnHeadlessWaitCandidate(
   input: ExecutionSessionSpawnHeadlessWaitCandidateInput
 ): ExecutionSessionSpawnHeadlessWaitCandidate {
-  const readiness = deriveExecutionSessionWaitReadiness({
-    context: input.headlessContext.context
+  const normalizedInput = normalizeHeadlessContextWrapper(input, {
+    context: "Execution session spawn headless wait candidate",
+    wrapperKey: "headlessContext"
   });
   const candidateReadiness: ExecutionSessionWaitReadiness =
-    input.headlessContext.headlessView.descendantCoverage === "incomplete"
-      ? {
-          ...readiness,
-          blockingReasons:
-            insertIncompleteCoverageBlockingReason(
-              readiness.blockingReasons
-            ) as ExecutionSessionWaitReadiness["blockingReasons"],
-          canWait: false,
-          hasBlockingReasons: true
-        }
-      : readiness;
+    deriveExecutionSessionWaitReadiness({
+      context: normalizedInput.headlessContext.context,
+      ...(normalizedInput.headlessContext.headlessView.descendantCoverage === undefined
+        ? {}
+        : {
+            descendantCoverage:
+              normalizedInput.headlessContext.headlessView.descendantCoverage
+          })
+    });
 
   return {
-    headlessContext: input.headlessContext,
+    headlessContext: normalizedInput.headlessContext,
     candidate: {
-      context: input.headlessContext.context,
+      context: normalizedInput.headlessContext.context,
       readiness: candidateReadiness
     }
   };
-}
-
-function insertIncompleteCoverageBlockingReason(
-  blockingReasons: ExecutionSessionWaitReadiness["blockingReasons"]
-): ExecutionSessionWaitReadiness["blockingReasons"] {
-  const childAttemptIndex = blockingReasons.indexOf("child_attempts_present");
-
-  if (childAttemptIndex === -1) {
-    return [...blockingReasons, "descendant_coverage_incomplete"];
-  }
-
-  return [
-    ...blockingReasons.slice(0, childAttemptIndex),
-    "descendant_coverage_incomplete",
-    ...blockingReasons.slice(childAttemptIndex)
-  ];
 }

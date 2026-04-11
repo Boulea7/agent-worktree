@@ -108,6 +108,50 @@ describe("control-plane runtime-state wait readiness helpers", () => {
     });
   });
 
+  it("should block wait when descendant coverage is incomplete", () => {
+    const context = createContext({
+      attemptId: "att_incomplete_coverage",
+      sessionId: "thr_incomplete_coverage",
+      lifecycleState: "active",
+      sourceKind: "direct"
+    });
+
+    expect(
+      deriveExecutionSessionWaitReadiness({
+        context,
+        descendantCoverage: "incomplete"
+      })
+    ).toEqual({
+      blockingReasons: ["descendant_coverage_incomplete"],
+      canWait: false,
+      hasBlockingReasons: true
+    });
+  });
+
+  it("should fail loudly when descendant coverage uses unknown vocabulary", () => {
+    const context = createContext({
+      attemptId: "att_invalid_coverage",
+      sessionId: "thr_invalid_coverage",
+      lifecycleState: "active",
+      sourceKind: "direct"
+    });
+
+    expect(() =>
+      deriveExecutionSessionWaitReadiness({
+        context,
+        descendantCoverage: "partial" as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionWaitReadiness({
+        context,
+        descendantCoverage: "partial" as never
+      })
+    ).toThrow(
+      'Execution session wait readiness requires descendantCoverage to be "complete" or "incomplete" when provided.'
+    );
+  });
+
   it("should preserve the stable blocking-reason order when multiple blockers apply", () => {
     const rootRecord = createRecord({
       attemptId: "att_terminal_parent",
@@ -130,12 +174,14 @@ describe("control-plane runtime-state wait readiness helpers", () => {
 
     expect(
       deriveExecutionSessionWaitReadiness({
-        context: context!
+        context: context!,
+        descendantCoverage: "incomplete"
       })
     ).toEqual({
       blockingReasons: [
         "lifecycle_terminal",
         "session_unknown",
+        "descendant_coverage_incomplete",
         "child_attempts_present"
       ],
       canWait: false,
@@ -174,12 +220,14 @@ describe("control-plane runtime-state wait readiness helpers", () => {
     });
     expect(
       deriveExecutionSessionWaitReadiness({
-        context: context!
+        context: context!,
+        descendantCoverage: "incomplete"
       })
     ).toEqual({
       blockingReasons: [
         "lifecycle_terminal",
         "session_unknown",
+        "descendant_coverage_incomplete",
         "child_attempts_present"
       ],
       canWait: false,

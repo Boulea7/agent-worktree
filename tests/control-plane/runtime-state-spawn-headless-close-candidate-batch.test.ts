@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   buildExecutionSessionView,
   deriveExecutionSessionSpawnHeadlessCloseCandidateBatch,
@@ -141,6 +142,21 @@ describe(
         })
       ).toThrow("resolver failed");
       expect(calls).toBe(2);
+    });
+
+    it("should fail loudly when the supplied headless-context batch wrapper is malformed", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseCandidateBatch({
+          headlessContextBatch: {} as never
+        })
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseCandidateBatch({
+          headlessContextBatch: {} as never
+        })
+      ).toThrow(
+        "Execution session spawn headless close candidate batch requires headlessContextBatch to include headlessViewBatch and results."
+      );
     });
   }
 );

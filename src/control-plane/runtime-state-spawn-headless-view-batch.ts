@@ -1,3 +1,5 @@
+import { ValidationError } from "../core/errors.js";
+import { normalizeHeadlessTargetBatchWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import { buildExecutionSessionView } from "./runtime-state-view.js";
 import type {
   ExecutionSessionSpawnHeadlessViewBatch,
@@ -7,11 +9,30 @@ import type {
 export function deriveExecutionSessionSpawnHeadlessViewBatch(
   input: ExecutionSessionSpawnHeadlessViewBatchInput
 ): ExecutionSessionSpawnHeadlessViewBatch {
+  if (
+    typeof input !== "object" ||
+    input === null ||
+    Array.isArray(input) ||
+    !("headlessRecordBatch" in input)
+  ) {
+    throw new ValidationError(
+      "Execution session spawn headless view batch requires a headlessRecordBatch wrapper."
+    );
+  }
+
+  const normalizedBatch = normalizeHeadlessTargetBatchWrapper(
+    input.headlessRecordBatch,
+    {
+      context: "Execution session spawn headless view batch",
+      wrapperKey: "headlessRecordBatch"
+    }
+  );
+
   return {
     descendantCoverage: "incomplete",
-    headlessRecordBatch: input.headlessRecordBatch,
+    headlessRecordBatch: normalizedBatch,
     view: buildExecutionSessionView(
-      input.headlessRecordBatch.results.map((result) => result.record)
+      normalizedBatch.results.map((result) => result.record)
     )
   };
 }

@@ -179,6 +179,56 @@ describe("control-plane runtime-state helpers", () => {
     ).toThrow(ValidationError);
   });
 
+  it("should canonicalize attemptId and sessionId when deriving an execution session record", () => {
+    expect(
+      deriveExecutionSessionRecord({
+        attempt: {
+          attemptId: "  att_trimmed  "
+        },
+        result: createHeadlessExecutionResult({
+          observation: {
+            threadId: "  thr_trimmed  ",
+            runCompleted: false,
+            errorEventCount: 0,
+            lastAgentMessage: "partial"
+          }
+        })
+      })
+    ).toEqual({
+      attemptId: "att_trimmed",
+      runtime: "codex-cli",
+      sessionId: "thr_trimmed",
+      sourceKind: "direct",
+      lifecycleState: "active",
+      runCompleted: false,
+      errorEventCount: 0,
+      lastAgentMessage: "partial",
+      origin: "headless_result"
+    });
+  });
+
+  it("should build canonical index keys for spaced attemptId and sessionId values", () => {
+    const index = buildExecutionSessionIndex([
+      {
+        attemptId: "  att_trimmed  ",
+        runtime: "codex-cli",
+        sessionId: "  thr_trimmed  ",
+        sourceKind: "direct",
+        lifecycleState: "active",
+        runCompleted: false,
+        errorEventCount: 0,
+        origin: "headless_result"
+      }
+    ]);
+
+    expect(index.byAttemptId.get("att_trimmed")).toMatchObject({
+      attemptId: "  att_trimmed  "
+    });
+    expect(index.bySessionId.get("thr_trimmed")).toMatchObject({
+      sessionId: "  thr_trimmed  "
+    });
+  });
+
   it("should build an execution session index by attempt and by session", () => {
     const withSession = deriveExecutionSessionRecord({
       attempt: {

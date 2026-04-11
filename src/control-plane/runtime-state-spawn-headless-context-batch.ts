@@ -1,3 +1,4 @@
+import { normalizeHeadlessViewBatchWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import { deriveExecutionSessionSpawnHeadlessContext } from "./runtime-state-spawn-headless-context.js";
 import type {
   ExecutionSessionSpawnHeadlessContext,
@@ -8,25 +9,28 @@ import type {
 export function deriveExecutionSessionSpawnHeadlessContextBatch(
   input: ExecutionSessionSpawnHeadlessContextBatchInput
 ): ExecutionSessionSpawnHeadlessContextBatch {
+  const normalizedBatch = normalizeHeadlessViewBatchWrapper(input.headlessViewBatch, {
+    context: "Execution session spawn headless context batch",
+    wrapperKey: "headlessViewBatch"
+  });
   const results: ExecutionSessionSpawnHeadlessContext[] = [];
 
-  for (const headlessRecord of input.headlessViewBatch.headlessRecordBatch
-    .results) {
+  for (const headlessRecord of normalizedBatch.headlessRecordBatch.results) {
     results.push(
       deriveExecutionSessionSpawnHeadlessContext({
         headlessView: {
-          ...(input.headlessViewBatch.descendantCoverage === undefined
+          ...(normalizedBatch.descendantCoverage === undefined
             ? {}
-            : { descendantCoverage: input.headlessViewBatch.descendantCoverage }),
+            : { descendantCoverage: normalizedBatch.descendantCoverage }),
           headlessRecord,
-          view: input.headlessViewBatch.view
+          view: normalizedBatch.view
         }
       })
     );
   }
 
   return {
-    headlessViewBatch: input.headlessViewBatch,
+    headlessViewBatch: normalizedBatch,
     results
   };
 }

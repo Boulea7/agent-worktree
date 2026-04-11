@@ -174,6 +174,44 @@ describe("control-plane runtime-state context helpers", () => {
     });
   });
 
+  it("should canonicalize padded parent and session identifiers when resolving a child context", () => {
+    const rootRecord = createRecord({
+      attemptId: "att_root",
+      sessionId: "thr_root",
+      sourceKind: "direct"
+    });
+    const childRecord = createRecord({
+      attemptId: "  att_child  ",
+      sessionId: "  thr_child  ",
+      sourceKind: "fork",
+      parentAttemptId: "  att_root  "
+    });
+    const view = buildExecutionSessionView([rootRecord, childRecord]);
+
+    expect(
+      deriveExecutionSessionContext({
+        view,
+        selector: {
+          sessionId: "thr_child"
+        }
+      })
+    ).toEqual({
+      record: {
+        ...childRecord,
+        attemptId: "att_child",
+        sessionId: "thr_child",
+        parentAttemptId: "att_root"
+      },
+      selectedBy: "sessionId",
+      parentRecord: rootRecord,
+      childRecords: [],
+      hasKnownSession: true,
+      hasParent: true,
+      hasResolvedParent: true,
+      hasChildren: false
+    });
+  });
+
   it("should derive a context from derived execution-session records", () => {
     const rootRecord = deriveExecutionSessionRecord({
       attempt: {

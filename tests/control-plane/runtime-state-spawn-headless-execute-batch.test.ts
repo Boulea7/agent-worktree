@@ -4,6 +4,7 @@ import {
   type HeadlessExecutionInput,
   type HeadlessExecutionResult
 } from "../../src/adapters/types.js";
+import { RuntimeError } from "../../src/core/errors.js";
 import {
   executeExecutionSessionSpawnHeadlessBatch,
   type ExecutionSessionSpawnRequest
@@ -260,70 +261,88 @@ describe("control-plane runtime-state spawn-headless-execute-batch helpers", () 
     const invokedSessionIds: string[] = [];
     const invokedAttemptIds: string[] = [];
 
-    await expect(
-      executeExecutionSessionSpawnHeadlessBatch({
-        items: [
-          {
-            childAttemptId: "att_child_1",
-            request: createSpawnRequest({
-              parentAttemptId: "att_parent_1",
-              parentSessionId: "thr_parent_1"
-            }),
-            execution: {
-              prompt: "child one"
-            }
-          },
-          {
-            childAttemptId: "att_child_2",
-            request: createSpawnRequest({
-              parentAttemptId: "att_parent_2",
-              parentSessionId: "thr_parent_2"
-            }),
-            execution: {
-              prompt: "child two"
-            }
-          },
-          {
-            childAttemptId: "att_child_3",
-            request: createSpawnRequest({
-              parentAttemptId: "att_parent_3",
-              parentSessionId: "thr_parent_3"
-            }),
-            execution: {
-              prompt: "child three"
-            }
+    const error = await executeExecutionSessionSpawnHeadlessBatch({
+      items: [
+        {
+          childAttemptId: "att_child_1",
+          request: createSpawnRequest({
+            parentAttemptId: "att_parent_1",
+            parentSessionId: "thr_parent_1"
+          }),
+          execution: {
+            prompt: "child one"
           }
-        ],
-        invokeSpawn: async (request: ExecutionSessionSpawnRequest) => {
-          invokedSessionIds.push(request.parentSessionId);
         },
-        executeHeadless: async (input: HeadlessExecutionInput) => {
-          const attemptId = input.attempt?.attemptId;
-
-          if (attemptId === undefined) {
-            throw new Error("missing attempt");
+        {
+          childAttemptId: "att_child_2",
+          request: createSpawnRequest({
+            parentAttemptId: "att_parent_2",
+            parentSessionId: "thr_parent_2"
+          }),
+          execution: {
+            prompt: "child two"
           }
-
-          invokedAttemptIds.push(attemptId);
-
-          if (attemptId === "att_child_2") {
-            throw expectedError;
+        },
+        {
+          childAttemptId: "att_child_3",
+          request: createSpawnRequest({
+            parentAttemptId: "att_parent_3",
+            parentSessionId: "thr_parent_3"
+          }),
+          execution: {
+            prompt: "child three"
           }
-
-          return createHeadlessExecutionResult({
-            observation: {
-              runCompleted: true,
-              errorEventCount: 0
-            }
-          });
         }
-      })
-    ).rejects.toThrow(expectedError);
+      ],
+      invokeSpawn: async (request: ExecutionSessionSpawnRequest) => {
+        invokedSessionIds.push(request.parentSessionId);
+      },
+      executeHeadless: async (input: HeadlessExecutionInput) => {
+        const attemptId = input.attempt?.attemptId;
+
+        if (attemptId === undefined) {
+          throw new Error("missing attempt");
+        }
+
+        invokedAttemptIds.push(attemptId);
+
+        if (attemptId === "att_child_2") {
+          throw expectedError;
+        }
+
+        return createHeadlessExecutionResult({
+          observation: {
+            runCompleted: true,
+            errorEventCount: 0
+          }
+        });
+      }
+    }).catch((reason: unknown) => reason);
+
+    expect(error).toBeInstanceOf(RuntimeError);
+    expect((error as RuntimeError).message).toBe(
+      "Headless child execution failed after spawn was recorded."
+    );
+    expect((error as RuntimeError).causeValue).toMatchObject({
+      cause: expectedError,
+      headlessApply: {
+        apply: {
+          consume: {
+            request: {
+              parentAttemptId: "att_parent_2",
+              parentRuntime: "codex-cli",
+              parentSessionId: "thr_parent_2"
+            },
+            invoked: true
+          }
+        }
+      }
+    });
     expect(invokedSessionIds).toEqual(["thr_parent_1", "thr_parent_2"]);
     expect(invokedAttemptIds).toEqual(["att_child_1", "att_child_2"]);
   });
 
-  it("should invoke spawn for the failing item before surfacing execution-seed bridge failures", async () => {
+  it("should stop before invokeSpawn for the failing item when execution-seed bridge preflight fails", async () => {
     const invokedSessionIds: string[] = [];
     const invokedAttemptIds: string[] = [];
 
@@ -383,7 +402,7 @@ describe("control-plane runtime-state spawn-headless-execute-batch helpers", () 
         }
       })
     ).rejects.toThrow("bridge failed");
-    expect(invokedSessionIds).toEqual(["thr_parent_1", "thr_parent_2"]);
+    expect(invokedSessionIds).toEqual(["thr_parent_1"]);
     expect(invokedAttemptIds).toEqual(["att_child_1"]);
   });
 

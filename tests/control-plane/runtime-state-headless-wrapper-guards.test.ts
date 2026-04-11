@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { ValidationError } from "../../src/core/errors.js";
 import {
+  normalizeHeadlessContextBatchWrapper,
+  normalizeHeadlessContextWrapper,
+  normalizeHeadlessViewBatchWrapper,
   normalizeHeadlessTargetBatchWrapper,
   normalizeHeadlessTargetWrapper
 } from "../../src/control-plane/runtime-state-headless-wrapper-guards.js";
@@ -22,6 +25,47 @@ describe("control-plane runtime-state headless-wrapper-guards helpers", () => {
         wrapperKey: "headlessWaitTarget"
       })
     ).toBe(wrapper);
+  });
+
+  it("should return the same headless context wrapper reference when the wrapper is valid", () => {
+    const wrapper = {
+      headlessContext: {
+        context: {},
+        headlessView: {}
+      }
+    };
+
+    expect(
+      normalizeHeadlessContextWrapper(wrapper, {
+        context: "Execution session spawn headless wait candidate",
+        wrapperKey: "headlessContext"
+      })
+    ).toBe(wrapper);
+  });
+
+  it("should reject malformed headless context wrappers", () => {
+    expect(() =>
+      normalizeHeadlessContextWrapper(undefined as never, {
+        context: "Execution session spawn headless wait candidate",
+        wrapperKey: "headlessContext"
+      })
+    ).toThrow(
+      "Execution session spawn headless wait candidate requires a headlessContext wrapper."
+    );
+
+    expect(() =>
+      normalizeHeadlessContextWrapper(
+        {
+          headlessContext: {}
+        },
+        {
+          context: "Execution session spawn headless wait candidate",
+          wrapperKey: "headlessContext"
+        }
+      )
+    ).toThrow(
+      "Execution session spawn headless wait candidate requires headlessContext to include context and headlessView objects."
+    );
   });
 
   it("should reject non-object target wrappers and wrappers missing the nested key", () => {
@@ -111,6 +155,87 @@ describe("control-plane runtime-state headless-wrapper-guards helpers", () => {
         wrapperKey: "headlessWaitTargetBatch"
       })
     ).toBe(wrapper);
+  });
+
+  it("should return the same headless view batch wrapper reference when nested objects are valid", () => {
+    const wrapper = {
+      headlessRecordBatch: {
+        results: []
+      },
+      view: {}
+    };
+
+    expect(
+      normalizeHeadlessViewBatchWrapper(wrapper, {
+        context: "Execution session spawn headless context batch",
+        wrapperKey: "headlessViewBatch"
+      })
+    ).toBe(wrapper);
+  });
+
+  it("should reject malformed headless view batch wrappers", () => {
+    expect(() =>
+      normalizeHeadlessViewBatchWrapper(null as never, {
+        context: "Execution session spawn headless context batch",
+        wrapperKey: "headlessViewBatch"
+      })
+    ).toThrow(
+      "Execution session spawn headless context batch requires a headlessViewBatch wrapper."
+    );
+
+    expect(() =>
+      normalizeHeadlessViewBatchWrapper(
+        {
+          headlessRecordBatch: []
+        },
+        {
+          context: "Execution session spawn headless context batch",
+          wrapperKey: "headlessViewBatch"
+        }
+      )
+    ).toThrow(
+      "Execution session spawn headless context batch requires headlessViewBatch to include headlessRecordBatch and view objects."
+    );
+  });
+
+  it("should return the same headless context batch wrapper reference when nested objects are valid", () => {
+    const wrapper = {
+      headlessViewBatch: {},
+      results: []
+    };
+
+    expect(
+      normalizeHeadlessContextBatchWrapper(wrapper, {
+        context: "Execution session spawn headless wait candidate batch",
+        wrapperKey: "headlessContextBatch"
+      })
+    ).toBe(wrapper);
+  });
+
+  it("should reject malformed headless context batch wrappers", () => {
+    expect(() =>
+      normalizeHeadlessContextBatchWrapper(undefined as never, {
+        context: "Execution session spawn headless wait candidate batch",
+        wrapperKey: "headlessContextBatch"
+      })
+    ).toThrow(
+      "Execution session spawn headless wait candidate batch requires a headlessContextBatch wrapper."
+    );
+
+    expect(() =>
+      normalizeHeadlessContextBatchWrapper(
+        {
+          headlessViewBatch: {},
+          results: {}
+        },
+        {
+          context: "Execution session spawn headless wait candidate batch",
+          wrapperKey: "headlessContextBatch"
+        }
+      )
+    ).toThrow(
+      "Execution session spawn headless wait candidate batch requires headlessContextBatch to include headlessViewBatch and results."
+    );
   });
 
   it("should reject malformed batch wrappers", () => {

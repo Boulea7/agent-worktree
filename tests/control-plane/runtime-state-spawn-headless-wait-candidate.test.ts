@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   buildExecutionSessionView,
   deriveExecutionSessionSpawnHeadlessContext,
@@ -183,6 +184,42 @@ describe(
           }
         }
       });
+    });
+
+    it("should reject malformed headless context wrappers before deriving readiness", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitCandidate({
+          headlessContext: null
+        } as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitCandidate({
+          headlessContext: null
+        } as never)
+      ).toThrow(
+        "Execution session spawn headless wait candidate requires a headlessContext wrapper."
+      );
+    });
+
+    it("should reject headless contexts that omit context or headlessView objects", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitCandidate({
+          headlessContext: {
+            context: undefined,
+            headlessView: {}
+          }
+        } as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitCandidate({
+          headlessContext: {
+            context: undefined,
+            headlessView: {}
+          }
+        } as never)
+      ).toThrow(
+        "Execution session spawn headless wait candidate requires headlessContext to include context and headlessView objects."
+      );
     });
   }
 );

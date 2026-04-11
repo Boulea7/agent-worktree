@@ -351,7 +351,7 @@ describe("control-plane runtime-state spawn-headless-apply-batch helpers", () =>
     expect(items).toEqual(itemsSnapshot);
   });
 
-  it("should stop later items when headless-input derivation fails after spawn apply succeeds", async () => {
+  it("should stop later items before invokeSpawn when headless-input preflight fails", async () => {
     const invokedSessionIds: string[] = [];
 
     await expect(
@@ -393,7 +393,7 @@ describe("control-plane runtime-state spawn-headless-apply-batch helpers", () =>
         }
       })
     ).rejects.toThrow("bridge failed");
-    expect(invokedSessionIds).toEqual(["thr_parent_1", "thr_parent_2"]);
+    expect(invokedSessionIds).toEqual(["thr_parent_1"]);
   });
 
 });

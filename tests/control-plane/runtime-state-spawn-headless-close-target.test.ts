@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   buildExecutionSessionView,
   deriveExecutionSessionCloseTarget,
@@ -81,6 +82,17 @@ describe(
       expect(result.headlessCloseCandidate).toBe(headlessCloseCandidate);
       expect(result).not.toHaveProperty("target");
       expect(result).not.toHaveProperty("closeTarget");
+    });
+
+    it("should fail loudly when the supplied wrapper does not include a headless close candidate", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseTarget({} as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseTarget({} as never)
+      ).toThrow(
+        "Execution session spawn headless close target requires a headlessCloseCandidate wrapper."
+      );
     });
   }
 );

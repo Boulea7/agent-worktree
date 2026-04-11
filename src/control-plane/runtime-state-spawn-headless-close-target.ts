@@ -1,4 +1,5 @@
 import { deriveExecutionSessionCloseTarget } from "./runtime-state-close-target.js";
+import { normalizeHeadlessTargetWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import type {
   ExecutionSessionSpawnHeadlessCloseTarget,
   ExecutionSessionSpawnHeadlessCloseTargetInput
@@ -7,12 +8,17 @@ import type {
 export function deriveExecutionSessionSpawnHeadlessCloseTarget(
   input: ExecutionSessionSpawnHeadlessCloseTargetInput
 ): ExecutionSessionSpawnHeadlessCloseTarget {
+  const normalizedInput = normalizeHeadlessTargetWrapper(input, {
+    context: "Execution session spawn headless close target",
+    nestedKey: "headlessCloseCandidate",
+    wrapperKey: "headlessCloseCandidate"
+  });
   const target = deriveExecutionSessionCloseTarget({
-    candidate: input.headlessCloseCandidate.candidate
+    candidate: normalizedInput.headlessCloseCandidate.candidate
   });
 
   return {
-    headlessCloseCandidate: input.headlessCloseCandidate,
+    headlessCloseCandidate: normalizedInput.headlessCloseCandidate,
     ...(target === undefined ? {} : { target })
   };
 }

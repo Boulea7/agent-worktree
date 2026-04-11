@@ -97,6 +97,32 @@ describe("control-plane runtime-state spawn-target helpers", () => {
     });
   });
 
+  it("should canonicalize padded attempt and session identifiers in the derived spawn target", () => {
+    const candidate = deriveExecutionSessionSpawnCandidate({
+      view: buildExecutionSessionView([
+        createRecord({
+          attemptId: "  att_active  ",
+          sessionId: "  thr_active  ",
+          sourceKind: "direct",
+          lifecycleState: "active"
+        })
+      ]),
+      selector: {
+        sessionId: "thr_active"
+      }
+    });
+
+    expect(
+      deriveExecutionSessionSpawnTarget({
+        candidate: candidate!
+      })
+    ).toEqual({
+      attemptId: "att_active",
+      runtime: "codex-cli",
+      sessionId: "thr_active"
+    });
+  });
+
   it("should return undefined when the candidate has an unknown session", () => {
     const candidate = deriveExecutionSessionSpawnCandidate({
       view: buildExecutionSessionView([

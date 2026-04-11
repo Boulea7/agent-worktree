@@ -61,6 +61,27 @@ describe("control-plane runtime-state spawn-headless-wait-request helpers", () =
     });
   });
 
+  it("should preserve descendant coverage blockers when the headless wait target cannot produce a request", () => {
+    const headlessWaitTarget = createHeadlessWaitTarget({
+      attemptId: "att_child_wait_request_descendant_blocked",
+      parentAttemptId: "att_parent_wait_request_descendant_blocked",
+      sessionId: "thr_child_wait_request_descendant_blocked",
+      sourceKind: "delegated",
+      descendantCoverage: "incomplete"
+    });
+
+    expect(
+      deriveExecutionSessionSpawnHeadlessWaitRequest({
+        headlessWaitTarget
+      })
+    ).toEqual({
+      headlessWaitTarget
+    });
+    expect(
+      headlessWaitTarget.headlessWaitCandidate.candidate.readiness.blockingReasons
+    ).toContain("descendant_coverage_incomplete");
+  });
+
   it("should fail loudly when the supplied headless wait target wrapper is invalid", () => {
     expect(() =>
       deriveExecutionSessionSpawnHeadlessWaitRequest({
@@ -144,12 +165,16 @@ describe("control-plane runtime-state spawn-headless-wait-request helpers", () =
 function createHeadlessWaitTarget(overrides: {
   attemptId: string;
   sourceKind: "direct" | "fork" | "delegated";
+  descendantCoverage?: "complete" | "incomplete";
   parentAttemptId?: string;
   sessionId?: string;
 }) {
   const headlessContext = createHeadlessContext({
     attemptId: overrides.attemptId,
     sourceKind: overrides.sourceKind,
+    ...(overrides.descendantCoverage === undefined
+      ? {}
+      : { descendantCoverage: overrides.descendantCoverage }),
     ...(overrides.parentAttemptId === undefined
       ? {}
       : { parentAttemptId: overrides.parentAttemptId }),
@@ -168,6 +193,7 @@ function createHeadlessWaitTarget(overrides: {
 function createHeadlessContext(overrides: {
   attemptId: string;
   sourceKind: "direct" | "fork" | "delegated";
+  descendantCoverage?: "complete" | "incomplete";
   parentAttemptId?: string;
   sessionId?: string;
 }) {
@@ -187,7 +213,7 @@ function createHeadlessContext(overrides: {
       : { sessionId: overrides.sessionId })
   });
   const headlessView = {
-    descendantCoverage: "complete",
+    descendantCoverage: overrides.descendantCoverage ?? "complete",
     headlessRecord,
     view: buildExecutionSessionView([parentRecord, headlessRecord.record])
   } satisfies ExecutionSessionSpawnHeadlessView;

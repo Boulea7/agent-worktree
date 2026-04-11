@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   deriveExecutionSessionSpawnHeadlessRecordBatch,
   buildExecutionSessionView,
@@ -146,6 +147,54 @@ describe(
         })
       ).toThrow("wait target derivation failed");
       expect(tailCandidateAccessed).toBe(false);
+    });
+
+    it("should fail loudly when the supplied batch wrapper is malformed", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitTargetBatch({} as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitTargetBatch({} as never)
+      ).toThrow(
+        "Execution session spawn headless wait target batch requires a headlessWaitCandidateBatch wrapper."
+      );
+    });
+
+    it("should fail loudly when a batch entry does not include a headless wait candidate wrapper", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitTargetBatch({
+          headlessWaitCandidateBatch: {
+            headlessContextBatch: {
+              headlessViewBatch: {
+                headlessRecordBatch: {
+                  results: []
+                },
+                view: buildExecutionSessionView([])
+              },
+              results: []
+            },
+            results: [{} as never]
+          } as never
+        })
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitTargetBatch({
+          headlessWaitCandidateBatch: {
+            headlessContextBatch: {
+              headlessViewBatch: {
+                headlessRecordBatch: {
+                  results: []
+                },
+                view: buildExecutionSessionView([])
+              },
+              results: []
+            },
+            results: [{} as never]
+          } as never
+        })
+      ).toThrow(
+        "Execution session spawn headless wait target requires headlessWaitCandidate.headlessWaitCandidate to include candidate and headlessContext objects."
+      );
     });
 
     it("should keep every sparse real-builder batch entry blocked when descendant coverage is incomplete", () => {

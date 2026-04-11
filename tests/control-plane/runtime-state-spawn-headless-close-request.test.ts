@@ -44,6 +44,109 @@ describe("control-plane runtime-state spawn-headless-close-request helpers", () 
     });
   });
 
+  it("should preserve descendant coverage blockers when the headless close target cannot produce a request", () => {
+    const headlessCloseTarget = createHeadlessCloseTarget({
+      headlessCloseCandidate: {
+        headlessContext: {
+          context: {
+            childRecords: [],
+            hasChildren: false,
+            hasKnownSession: true,
+            hasParent: true,
+            hasResolvedParent: true,
+            parentRecord: {
+              attemptId: "att_parent_descendant_close",
+              errorEventCount: 0,
+              lifecycleState: "active",
+              origin: "headless_result",
+              runCompleted: false,
+              runtime: "codex-cli",
+              sessionId: "thr_parent_descendant_close",
+              sourceKind: "direct"
+            },
+            record: {
+              attemptId: "att_child_descendant_close",
+              errorEventCount: 0,
+              lifecycleState: "active",
+              origin: "headless_result",
+              runCompleted: false,
+              runtime: "codex-cli",
+              sessionId: "thr_child_descendant_close",
+              sourceKind: "delegated"
+            },
+            selectedBy: "attemptId"
+          },
+          headlessView: {
+            descendantCoverage: "incomplete",
+            headlessRecord: {
+              headlessExecute: {} as never,
+              record: {
+                attemptId: "att_child_descendant_close",
+                errorEventCount: 0,
+                lifecycleState: "active",
+                origin: "headless_result",
+                runCompleted: false,
+                runtime: "codex-cli",
+                sessionId: "thr_child_descendant_close",
+                sourceKind: "delegated"
+              }
+            },
+            view: buildEmptyView()
+          }
+        },
+        candidate: {
+          context: {
+            childRecords: [],
+            hasChildren: false,
+            hasKnownSession: true,
+            hasParent: true,
+            hasResolvedParent: true,
+            parentRecord: {
+              attemptId: "att_parent_descendant_close",
+              errorEventCount: 0,
+              lifecycleState: "active",
+              origin: "headless_result",
+              runCompleted: false,
+              runtime: "codex-cli",
+              sessionId: "thr_parent_descendant_close",
+              sourceKind: "direct"
+            },
+            record: {
+              attemptId: "att_child_descendant_close",
+              errorEventCount: 0,
+              lifecycleState: "active",
+              origin: "headless_result",
+              runCompleted: false,
+              runtime: "codex-cli",
+              sessionId: "thr_child_descendant_close",
+              sourceKind: "delegated"
+            },
+            selectedBy: "attemptId"
+          },
+          readiness: {
+            alreadyFinal: false,
+            blockingReasons: ["descendant_coverage_incomplete"],
+            canClose: false,
+            hasBlockingReasons: true,
+            sessionLifecycleSupported: true,
+            wouldAffectDescendants: false
+          }
+        }
+      }
+    });
+
+    expect(
+      deriveExecutionSessionSpawnHeadlessCloseRequest({
+        headlessCloseTarget
+      })
+    ).toEqual({
+      headlessCloseTarget
+    });
+    expect(
+      headlessCloseTarget.headlessCloseCandidate.candidate.readiness.blockingReasons
+    ).toContain("descendant_coverage_incomplete");
+  });
+
   it("should reject non-object close request seam inputs before reading headlessCloseTarget", () => {
     expect(() =>
       deriveExecutionSessionSpawnHeadlessCloseRequest(undefined as never)

@@ -1,3 +1,4 @@
+import { normalizeHeadlessContextBatchWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import { deriveExecutionSessionSpawnHeadlessWaitCandidate } from "./runtime-state-spawn-headless-wait-candidate.js";
 import type {
   ExecutionSessionSpawnHeadlessWaitCandidate,
@@ -8,9 +9,16 @@ import type {
 export function deriveExecutionSessionSpawnHeadlessWaitCandidateBatch(
   input: ExecutionSessionSpawnHeadlessWaitCandidateBatchInput
 ): ExecutionSessionSpawnHeadlessWaitCandidateBatch {
+  const normalizedBatch = normalizeHeadlessContextBatchWrapper(
+    input.headlessContextBatch,
+    {
+      context: "Execution session spawn headless wait candidate batch",
+      wrapperKey: "headlessContextBatch"
+    }
+  );
   const results: ExecutionSessionSpawnHeadlessWaitCandidate[] = [];
 
-  for (const headlessContext of input.headlessContextBatch.results) {
+  for (const headlessContext of normalizedBatch.results) {
     results.push(
       deriveExecutionSessionSpawnHeadlessWaitCandidate({
         headlessContext
@@ -19,7 +27,7 @@ export function deriveExecutionSessionSpawnHeadlessWaitCandidateBatch(
   }
 
   return {
-    headlessContextBatch: input.headlessContextBatch,
+    headlessContextBatch: normalizedBatch,
     results
   };
 }

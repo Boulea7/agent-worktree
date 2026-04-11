@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   buildExecutionSessionView,
   deriveExecutionSessionSpawnHeadlessContextBatch,
@@ -120,6 +121,21 @@ describe(
       expect(headlessContextBatch.results[0]).toBe(firstContext);
       expect(headlessContextBatch.results[1]).toBe(secondContext);
       expect(headlessContextBatch.headlessViewBatch.view).toBe(sharedView);
+    });
+
+    it("should fail loudly when the supplied headless-context batch wrapper is malformed", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitCandidateBatch({
+          headlessContextBatch: {} as never
+        })
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitCandidateBatch({
+          headlessContextBatch: {} as never
+        })
+      ).toThrow(
+        "Execution session spawn headless wait candidate batch requires headlessContextBatch to include headlessViewBatch and results."
+      );
     });
   }
 );

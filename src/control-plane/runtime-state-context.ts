@@ -1,4 +1,5 @@
 import { ValidationError } from "../core/errors.js";
+import { normalizeRequiredAttemptId } from "./derive.js";
 import {
   listChildExecutionSessions,
   resolveExecutionSessionRecord
@@ -36,20 +37,39 @@ export function deriveExecutionSessionContext(
     return undefined;
   }
 
+  const normalizedRecord = normalizeContextRecord(
+    record,
+    "Execution session context record"
+  );
   const parentRecord =
-    record.parentAttemptId === undefined
+    normalizedRecord.parentAttemptId === undefined
       ? undefined
-      : input.view.index.byAttemptId.get(record.parentAttemptId);
-  const childRecords = listChildExecutionSessions(input.view, record.attemptId);
+      : input.view.index.byAttemptId.get(normalizedRecord.parentAttemptId);
+  const childRecords = listChildExecutionSessions(input.view, normalizedRecord.attemptId).map(
+    (childRecord) =>
+      normalizeContextRecord(
+        childRecord,
+        "Execution session context child record"
+      )
+  );
+  const normalizedParentRecord =
+    parentRecord === undefined
+      ? undefined
+      : normalizeContextRecord(
+          parentRecord,
+          "Execution session context parent record"
+        );
 
   return {
-    record,
+    record: normalizedRecord,
     selectedBy: deriveSelectionKind(input),
-    ...(parentRecord === undefined ? {} : { parentRecord }),
+    ...(normalizedParentRecord === undefined
+      ? {}
+      : { parentRecord: normalizedParentRecord }),
     childRecords,
-    hasKnownSession: record.sessionId !== undefined,
-    hasParent: record.parentAttemptId !== undefined,
-    hasResolvedParent: parentRecord !== undefined,
+    hasKnownSession: normalizedRecord.sessionId !== undefined,
+    hasParent: normalizedRecord.parentAttemptId !== undefined,
+    hasResolvedParent: normalizedParentRecord !== undefined,
     hasChildren: childRecords.length > 0
   };
 }
@@ -62,4 +82,33 @@ function deriveSelectionKind(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function normalizeContextRecord(
+  record: ExecutionSessionContext["record"],
+  context: string
+): ExecutionSessionContext["record"] {
+  return {
+    ...record,
+    attemptId: normalizeRequiredAttemptId(
+      record.attemptId,
+      `${context} attemptId must be a non-empty string.`
+    ),
+    ...(record.parentAttemptId === undefined
+      ? {}
+      : {
+          parentAttemptId: normalizeRequiredAttemptId(
+            record.parentAttemptId,
+            `${context} parentAttemptId must be a non-empty string when present.`
+          )
+        }),
+    ...(record.sessionId === undefined
+      ? {}
+      : {
+          sessionId: normalizeRequiredAttemptId(
+            record.sessionId,
+            `${context} sessionId must be a non-empty string when present.`
+          )
+        })
+  };
 }
