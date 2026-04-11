@@ -34,7 +34,7 @@ In the current Phase 4 compatibility baseline, OpenCode remains descriptor-only 
 
 - `doctor` may report OpenCode in the Tier 1 catalog
 - `compat probe opencode` currently returns a descriptor-only / not-probed result
-- public `compat smoke opencode` remains available as a bounded read-only command, but descriptor-only coverage currently returns `smokeStatus: "not_supported"` with `diagnosis.code: "descriptor_only"`
+- public `compat smoke opencode` remains available as a bounded compatibility command, but descriptor-only coverage currently returns `smokeStatus: "not_supported"` with `diagnosis.code: "descriptor_only"`
 - no public execution, wait, close, spawn, or lifecycle surface exists for OpenCode in `agent-worktree` today
 
 This page describes why OpenCode remains a Tier 1 target and what a future adapter may want to preserve.

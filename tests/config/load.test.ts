@@ -97,6 +97,28 @@ describe("parseProjectConfig", () => {
 
     expect(fresh.extensions).toEqual({});
   });
+
+  it("should reject defaults.execution_mode outside the documented vocabulary", () => {
+    expect(() =>
+      parseProjectConfig({
+        version: "0.x",
+        defaults: {
+          execution_mode: "background_daemon"
+        }
+      })
+    ).toThrow(ValidationError);
+  });
+
+  it("should reject defaults.safety_intent outside the documented vocabulary", () => {
+    expect(() =>
+      parseProjectConfig({
+        version: "0.x",
+        defaults: {
+          safety_intent: "unsafe_unbounded"
+        }
+      })
+    ).toThrow(ValidationError);
+  });
 });
 
 describe("loadProjectConfig", () => {

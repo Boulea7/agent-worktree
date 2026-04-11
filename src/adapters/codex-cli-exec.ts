@@ -84,7 +84,9 @@ export const codexCliCompatibilitySmokeTimeoutMs = 60_000;
 
 export interface CodexExecutionOptions {
   parseEventStream?: (output: string) => CanonicalAdapterEvent[];
-  resolveEnvironment?: () => Promise<NodeJS.ProcessEnv | undefined>;
+  resolveEnvironment?: (input?: {
+    profile?: string;
+  }) => Promise<NodeJS.ProcessEnv | undefined>;
   runner?: SubprocessRunner;
 }
 
@@ -268,8 +270,15 @@ export async function executeCodexHeadless(
   const resolveEnvironment =
     options.resolveEnvironment ??
     (usesDefaultRunner ? resolveCodexCliEnvironment : undefined);
+  const requestedProfile = resolveRequestedCodexProfile(input, command);
   const resolvedEnv =
-    resolveEnvironment === undefined ? undefined : await resolveEnvironment();
+    resolveEnvironment === undefined
+      ? undefined
+      : await resolveEnvironment(
+          requestedProfile === undefined
+            ? {}
+            : { profile: requestedProfile }
+        );
   const executable =
     command.executable === "codex"
       ? (await resolveCodexExecutableForExecution(runner, {
@@ -591,4 +600,30 @@ function validateExplicitCodexProfile(input: HeadlessExecutionInput): void {
   }
 
   normalizeCodexCliProfile(explicitProfile);
+}
+
+function resolveRequestedCodexProfile(
+  input: HeadlessExecutionInput,
+  command: RenderedCommand
+): string | undefined {
+  if ("profile" in input) {
+    const explicitProfile = (input as HeadlessExecutionInput & { profile?: unknown })
+      .profile;
+
+    if (typeof explicitProfile === "string") {
+      return normalizeCodexCliProfile(explicitProfile);
+    }
+  }
+
+  const profileFlagIndex = command.args.indexOf("--profile");
+
+  if (profileFlagIndex === -1) {
+    return undefined;
+  }
+
+  const profileValue = command.args[profileFlagIndex + 1];
+
+  return profileValue === undefined
+    ? undefined
+    : normalizeCodexCliProfile(profileValue);
 }

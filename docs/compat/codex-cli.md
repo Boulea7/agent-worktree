@@ -32,7 +32,7 @@ Codex CLI is a natural baseline for:
 
 ## Current Implementation Boundary
 
-The current `codex-cli` adapter is intentionally limited to a public read-only
+The current `codex-cli` adapter is intentionally limited to a public
 compatibility surface plus bounded internal execution helpers.
 
 Current public compatibility truth:
@@ -46,9 +46,9 @@ Current public compatibility truth:
 
 Implemented now:
 
-- a public read-only `doctor` slice for compatibility diagnostics
-- a public read-only `compat probe codex-cli` slice for bounded compatibility diagnostics
-- a public read-only `compat smoke codex-cli` slice for bounded env-gated live smoke
+- a public `doctor` slice for compatibility diagnostics
+- a public `compat probe codex-cli` slice for bounded compatibility diagnostics
+- a public env-gated `compat smoke codex-cli` slice for bounded live smoke
 - real detection for the `codex exec --json` path
 - machine-checkable command rendering
 - structured degradation for unsupported capabilities

@@ -70,19 +70,22 @@ This repository is currently focused on:
 2. config and runtime-manifest contracts
 3. machine-readable CLI behavior
 4. thin worktree lifecycle commands
-5. public read-only compatibility diagnostics via `agent-worktree doctor`, `agent-worktree compat probe <tool>`, and `agent-worktree compat smoke <tool>`
+5. public compatibility diagnostics via `agent-worktree doctor`, `agent-worktree compat probe <tool>`, and the env-gated bounded live `agent-worktree compat smoke <tool>` path
 6. a bounded internal `codex-cli` execution contract for the first Tier 1 runtime
 7. docs and implementation alignment
 
 The repository now has a thin Phase 4 public compatibility baseline. `compat smoke codex-cli` is the first bounded public compatibility checkpoint for a Tier 1 runtime, while `doctor` and `compat probe` keep the remaining Tier 1 runtimes on explicit descriptor-only boundaries until broader execution-backed work exists.
 
 The public baseline is still intentionally narrow. Today it includes `compat list`, `compat show`, `compat probe`, `compat smoke`, `doctor`, and the thin `attempt create` / `attempt list` / `attempt cleanup` lifecycle commands, all centered on machine-readable contracts.
+The public command tree also still exposes `init`, `attempt attach`, `attempt stop`, `attempt checkpoint`, and `attempt merge` as explicit `NOT_IMPLEMENTED` placeholders; they are visible CLI entries, not implemented lifecycle support.
+Within that narrow JSON surface, `compat list` / `compat show` intentionally expose the catalog field name `tier`, while runtime diagnostics and attempt-facing payloads use `supportTier`; changing one to match the other would either be a breaking rename or a public-output widening.
 
 The internal baseline is wider than the public one. `codex-cli` now has a bounded internal execution path around `codex exec --json`, plus ongoing internal continuation work across verification, selection, promotion/handoff composition, runtime-state/control-plane composition, grouped finalization reporting, and bounded-parallelism Phase 6 prep. Those internal buckets remain intentionally non-public. The current bounded-parallelism prep inside that internal continuation now includes internal-only spawn-budget projection, budget-aware spawn-candidate composition, spawn batch planning, spawn batch item projection, a bounded spawn batch apply convenience seam, a bounded spawn batch headless-apply-items projection seam, a bounded spawn batch headless-apply convenience seam, headless wait/close request projection seams, and the current headless batch bridge through spawn-headless wait/close target-apply batches, without widening any public surface.
 
 That Phase 4 closeout does not mean full runtime orchestration exists. Other runtimes remain descriptor-only, and `resume`, MCP transport execution, public execution commands, public wait/close/spawn commands, and public manifest-backed execution or session-lifecycle semantics remain intentionally deferred. A bounded internal `session` block may still appear in the runtime manifest, but it remains non-public metadata: public CLI output does not expose it, and it is not attach/resume or lifecycle-control truth. The current public promise is compatibility-only: direct-shell verification and the env-gated Vitest smoke harness may support it locally, but the Vitest harness remains narrower and is not a default validation path.
 The current `codex-cli` executable probing policy is intentionally internal: execution helpers may resolve a different `codex` binary than shell `command -v codex` when `PATH` contains shadow binaries, but that is not a public adapter contract. The same is true for internal `--profile` passthrough and relay-compatible env overlays. The bounded parser tolerates obvious non-JSON prelude lines, including bracket-prefixed log noise, while malformed JSON-looking records still fail loudly.
 The current manifest contract also includes a thin lineage/source foundation for attempt provenance. Attempts may record `sourceKind` plus an optional `parentAttemptId`, but this remains audit metadata only: `attempt create` emits `sourceKind: "direct"` today, while delegated runtime behavior, public fork/resume lifecycle semantics, and any public session-backed execution contract remain deferred.
+The current TypeScript export surface intentionally keeps `AttemptVerification` wider than the stricter manifest schema vocabulary so verification ingestion can still classify legacy or unknown payloads internally; the stricter five-value `verification.state` vocabulary applies at manifest validation boundaries, not as a blanket promise that every in-memory verification object is already narrowed.
 
 ## Why This Matters
 

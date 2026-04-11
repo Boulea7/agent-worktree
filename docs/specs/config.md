@@ -66,6 +66,26 @@ extensions: {}
 
 - `extensions`
 
+## Defaults Vocabulary
+
+The current documented `defaults` vocabulary is intentionally small and
+implementation-backed.
+
+`execution_mode` MUST be one of:
+
+- `headless_event_stream`
+- `interactive_terminal`
+
+`safety_intent` MUST be one of:
+
+- `plan_readonly`
+- `workspace_write_with_approval`
+- `workspace_write_auto_edit`
+- `full_access`
+
+Values outside these vocabularies should be rejected rather than carried through
+as open-ended strings.
+
 Anything outside the reserved core fields should be treated as invalid until the spec says otherwise.
 
 ## Precedence Intent

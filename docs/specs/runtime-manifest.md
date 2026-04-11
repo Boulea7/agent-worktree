@@ -39,6 +39,22 @@ The exact storage backend is intentionally unspecified.
 
 These are the minimum fields that early validators should require.
 
+The current `verification.state` vocabulary is intentionally small and
+validation-backed:
+
+- `pending`
+- `passed`
+- `verified`
+- `failed`
+- `error`
+
+Early validators SHOULD reject values outside this set rather than silently
+normalizing them.
+The exported TypeScript `AttemptVerification` object type intentionally remains
+looser than this runtime manifest boundary so internal verification ingestion
+may still classify legacy or unknown payloads before they are rewritten into a
+validated manifest shape.
+
 ## Recommended Early Lifecycle Fields
 
 ```json
@@ -68,6 +84,13 @@ These are the minimum fields that early validators should require.
 ```
 
 These fields are recommended once worktree lifecycle commands begin to land, but they are not required for the earliest manifest validators.
+The current `supportTier` vocabulary is intentionally small and validation-backed:
+
+- `tier1`
+- `experimental`
+
+Early validators SHOULD reject values outside this set rather than silently
+normalizing them.
 `repoRoot` is an additive lifecycle field that records the canonical repository root for the attempt.
 Early consumers SHOULD tolerate its absence, and later producers SHOULD prefer populating it once the worktree lifecycle exists.
 Session-backed execution metadata still remains intentionally non-public in the current phase. The current schema may carry a bounded internal `session` block in the manifest, but public consumers SHOULD NOT read it as attach/resume truth or as a promise of lifecycle control.
@@ -93,6 +116,13 @@ The current source vocabulary is intentionally small:
 These fields are additive provenance metadata, not runtime-control state.
 Early consumers SHOULD tolerate their absence for backward compatibility with older manifests.
 Current producers SHOULD emit `sourceKind: "direct"` for plain `attempt create` flows and SHOULD omit `parentAttemptId` for direct attempts.
+Current validators are stricter than that shorthand:
+
+- `parentAttemptId` MUST NOT appear unless `sourceKind` is present
+- `sourceKind: "direct"` MUST NOT carry `parentAttemptId`
+- non-direct `sourceKind` values MUST carry a non-empty `parentAttemptId`
+- `parentAttemptId` MUST NOT equal `attemptId`
+
 When `parentAttemptId` is present, it is an opaque reference to another attempt record; consumers SHOULD NOT treat it as proof that the parent manifest is still present, valid, or resumable.
 
 ## Required Semantics

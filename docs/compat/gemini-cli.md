@@ -34,7 +34,7 @@ In the current Phase 4 compatibility baseline, Gemini CLI remains descriptor-onl
 
 - `doctor` may report Gemini CLI in the Tier 1 catalog
 - `compat probe gemini-cli` currently returns a descriptor-only / not-probed result
-- public `compat smoke gemini-cli` remains available as a bounded read-only command, but descriptor-only coverage currently returns `smokeStatus: "not_supported"` with `diagnosis.code: "descriptor_only"`
+- public `compat smoke gemini-cli` remains available as a bounded compatibility command, but descriptor-only coverage currently returns `smokeStatus: "not_supported"` with `diagnosis.code: "descriptor_only"`
 - no public execution, wait, close, spawn, or lifecycle surface exists for Gemini CLI in `agent-worktree` today
 
 This page describes Gemini CLI as a Tier 1 compatibility target, not as a currently implemented public runtime path.

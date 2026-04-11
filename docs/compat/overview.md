@@ -19,7 +19,7 @@ The currently implemented boundary is expected to cover:
 
 - a public read-only `doctor` slice for compatibility diagnostics
 - a public read-only `compat probe <tool>` slice for bounded per-runtime probing
-- a public read-only `compat smoke <tool>` slice for bounded env-gated live smoke
+- a public env-gated `compat smoke <tool>` slice for bounded live compatibility smoke
 - explicit allow-list JSON serializers for the current public machine-readable compatibility and attempt lifecycle outputs
 - an explicit public cleanup-outcome vocabulary for `attempt cleanup --json`
 - adapter descriptors derived from the shared capability vocabulary
@@ -41,7 +41,7 @@ Within that boundary, executable probing remains internal to the `codex-cli` exe
 It may resolve a different executable than shell `command -v codex` when `PATH` contains same-name shadow binaries, but that behavior is not part of the public adapter surface and must not be generalized into a runtime-wide command-resolution framework.
 The public `compat probe codex-cli` surface may consume that internal policy only to emit a bounded public result such as `supported`, `unsupported`, or `error` plus a stable diagnosis code; it still must not expose executable paths or probing internals.
 The public `compat smoke codex-cli` surface may consume the same bounded execution foundation only to emit a bounded env-gated live result such as `passed`, `failed`, `skipped`, or `error`; it still must not expose prompt, execution, or session internals.
-Descriptor-only runtimes may still return `smokeStatus: "not_supported"` through the same read-only command surface, but that result does not apply to the current `codex-cli` implementation path.
+Descriptor-only runtimes may still return `smokeStatus: "not_supported"` through the same bounded compatibility command surface, but that result does not apply to the current `codex-cli` implementation path.
 The bounded parser also remains intentionally narrow: obvious non-JSON prelude lines, including bracket-prefixed log noise, may normalize to `unknown`, while malformed JSON-looking records still fail loudly.
 The same boundary now allows a thin internal observation layer on top of canonical events, but that observation is still diagnostic execution metadata rather than a public session or persistence protocol.
 The merged baseline also contains a deeper internal helper chain for runtime-state, runtime-context, spawn, wait, and close composition.
@@ -55,6 +55,15 @@ The first concrete reference path is intentionally narrow:
 - the public `compat smoke` command may report a bounded env-gated live compatibility result for `codex-cli`, but it MUST NOT become a general execution CLI or imply lifecycle support
 - any execution observation summaries remain internal to that bounded path and are not treated as a public compatibility promise
 - other runtimes remain descriptor-level compatibility targets until a later execution-backed phase
+
+In the current baseline, only `codex-cli` has an execution-backed live smoke path.
+Other runtimes may still share the same public `compat smoke <tool>` command shape, but they remain descriptor-only and should resolve to bounded non-execution results such as `not_supported`.
+
+The public CLI tree in this phase may still include explicit `NOT_IMPLEMENTED`
+placeholders such as `init`, `attempt attach`, `attempt stop`, `attempt checkpoint`,
+and `attempt merge`. Those placeholders are command-surface stubs only; they do
+not broaden the implemented compatibility or lifecycle baseline described here.
+Within the existing JSON contract, `compat list` and `compat show` intentionally keep the catalog field name `tier`, while `doctor`, `compat probe`, `compat smoke`, and attempt-facing payloads use `supportTier`. That split is part of the current public surface: replacing one with the other would be a breaking change, while emitting both would widen the public payload shape.
 
 Adapter descriptors in this phase are expected to describe only the capabilities implemented by the thin adapter foundation itself.
 They must not be treated as a one-to-one copy of the broader tool-level compatibility matrix.

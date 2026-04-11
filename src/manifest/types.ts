@@ -1,4 +1,4 @@
-import type { SupportTier } from "../core/capabilities.js";
+import type { RuntimeKind, SupportTier } from "../core/capabilities.js";
 
 export const DEFAULT_MANIFEST_SCHEMA_VERSION = "0.x";
 
@@ -23,6 +23,16 @@ export const attemptSourceKinds = [
 
 export type AttemptSourceKind = (typeof attemptSourceKinds)[number];
 
+export const attemptVerificationStates = [
+  "pending",
+  "passed",
+  "verified",
+  "failed",
+  "error"
+] as const;
+
+export type AttemptVerificationState = (typeof attemptVerificationStates)[number];
+
 export interface AttemptVerification {
   checks: unknown[];
   state: string;
@@ -46,7 +56,7 @@ export interface AttemptManifest {
   attemptId: string;
   parentAttemptId?: string;
   repoRoot?: string;
-  runtime: string;
+  runtime: RuntimeKind;
   schemaVersion: string;
   sourceKind?: AttemptSourceKind;
   status: AttemptStatus;
@@ -56,7 +66,7 @@ export interface AttemptManifest {
   baseRef?: string;
   branch?: string;
   session?: AttemptSession;
-  supportTier?: SupportTier | string;
+  supportTier?: SupportTier;
   timestamps?: AttemptTimestamps;
   worktreePath?: string;
   [key: string]: unknown;

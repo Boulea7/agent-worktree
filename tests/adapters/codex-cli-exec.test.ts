@@ -1720,6 +1720,57 @@ describe("executeCodexHeadless", () => {
     });
   });
 
+  it("should pass the requested profile into default-runner env resolution", async () => {
+    vi.stubEnv("PATH", "/mock/real");
+    const stdout = await readFixture("success.observed.jsonl");
+    const runSubprocess = vi.fn(
+      async (executable: string, args: string[]) => {
+        if (args.at(1) === "--help") {
+          return {
+            exitCode: 0,
+            stdout: "Usage: codex exec\n      --json\n",
+            stderr: ""
+          };
+        }
+
+        return {
+          exitCode: 0,
+          stdout,
+          stderr: ""
+        };
+      }
+    );
+    const resolveCodexCliEnvironment = vi.fn(async () => ({
+      PATH: "/usr/bin:/bin",
+      PROFILE_TOKEN: "profile-token"
+    }));
+    const { executeCodexHeadless: executeWithDefaultRunner } =
+      await loadCodexExecModule({
+        accessImpl: createAccessMock(["/mock/real/codex"]),
+        runSubprocess,
+        resolveCodexCliEnvironment
+      });
+    const adapter = new CodexCliAdapter(getAdapterDescriptor("codex-cli"));
+
+    await executeWithDefaultRunner(
+      {
+        prompt: "Reply with ok",
+        profile: "project-managed",
+        timeoutMs: 5_000
+      } as never,
+      {
+        command: adapter.renderCommand({
+          prompt: "Reply with ok",
+          profile: "project-managed"
+        } as never)
+      }
+    );
+
+    expect(resolveCodexCliEnvironment).toHaveBeenCalledWith({
+      profile: "project-managed"
+    });
+  });
+
   it("should derive observation fields from truncated event streams", async () => {
     const stdout = await readFixture("truncated-stream.jsonl");
     const runCommand = vi.fn(async () => ({
@@ -1920,7 +1971,9 @@ describe("executeCodexHeadless", () => {
 async function loadCodexExecModule(options: {
   accessImpl: typeof import("node:fs/promises").access;
   runSubprocess: typeof import("../../src/adapters/headless.js").runSubprocess;
-  resolveCodexCliEnvironment?: () => Promise<NodeJS.ProcessEnv | undefined>;
+  resolveCodexCliEnvironment?: (input?: {
+    profile?: string;
+  }) => Promise<NodeJS.ProcessEnv | undefined>;
 }): Promise<typeof import("../../src/adapters/codex-cli-exec.js")> {
   vi.resetModules();
   vi.doMock("node:fs/promises", async () => {

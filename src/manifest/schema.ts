@@ -1,22 +1,16 @@
 import { z } from "zod";
 
 import { ValidationError } from "../core/errors.js";
+import { runtimeKinds, supportTiers } from "../core/capabilities.js";
 import {
   attemptSourceKinds,
   attemptStatuses,
+  attemptVerificationStates,
   type AttemptManifest
 } from "./types.js";
 import {
   attemptVerificationCheckStatuses
 } from "../verification/types.js";
-
-const attemptVerificationStates = [
-  "pending",
-  "passed",
-  "verified",
-  "failed",
-  "error"
-] as const;
 
 const attemptVerificationCheckSchema = z.object({
   name: z.string().trim().min(1),
@@ -47,17 +41,17 @@ const attemptTimestampsSchema = z
 
 export const attemptManifestSchema = z
   .object({
-    schemaVersion: z.string(),
+    schemaVersion: z.string().trim().min(1),
     attemptId: z.string().trim().min(1),
-    taskId: z.string(),
-    runtime: z.string(),
-    adapter: z.string(),
+    taskId: z.string().trim().min(1),
+    runtime: z.enum(runtimeKinds),
+    adapter: z.string().trim().min(1),
     sourceKind: z.enum(attemptSourceKinds).optional(),
     parentAttemptId: z.string().trim().min(1).optional(),
     repoRoot: z.string().optional(),
     status: z.enum(attemptStatuses),
     verification: attemptVerificationSchema,
-    supportTier: z.string().optional(),
+    supportTier: z.enum(supportTiers).optional(),
     baseRef: z.string().optional(),
     branch: z.string().optional(),
     worktreePath: z.string().optional(),

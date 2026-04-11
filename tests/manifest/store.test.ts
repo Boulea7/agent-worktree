@@ -4,7 +4,11 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { NotFoundError, ValidationError } from "../../src/core/errors.js";
+import {
+  InvalidManifestError,
+  NotFoundError,
+  ValidationError
+} from "../../src/core/errors.js";
 import {
   listManifests,
   parseManifestContents,
@@ -13,6 +17,7 @@ import {
   writeManifest
 } from "../../src/manifest/store.js";
 import type { AttemptManifest } from "../../src/manifest/types.js";
+import { deriveAttemptVerificationPayload } from "../../src/verification/internal.js";
 
 function createManifest(overrides: Partial<AttemptManifest> = {}): AttemptManifest {
   return {
@@ -61,6 +66,30 @@ describe("manifest store", () => {
     ).toThrow(ValidationError);
   });
 
+  it("should reject blank taskId values", () => {
+    expect(() =>
+      parseManifestContents(
+        JSON.stringify(
+          createManifest({
+            taskId: "   "
+          })
+        )
+      )
+    ).toThrow(ValidationError);
+  });
+
+  it("should reject runtime values outside the current runtime vocabulary", () => {
+    expect(() =>
+      parseManifestContents(
+        JSON.stringify(
+          createManifest({
+            runtime: "future-runtime" as never
+          })
+        )
+      )
+    ).toThrow(ValidationError);
+  });
+
   it("should reject invalid status values", () => {
     expect(() =>
       parseManifestContents(
@@ -79,13 +108,35 @@ describe("manifest store", () => {
         JSON.stringify(
           createManifest({
             verification: {
-              state: "PASS",
+              state: "PASS" as never,
               checks: []
             }
           })
         )
       )
     ).toThrow(ValidationError);
+  });
+
+  it("should reject wide-ingest verification state values when persisting a manifest", async () => {
+    const rootDir = await createTempDirectory();
+
+    await expect(
+      writeManifest(
+        createManifest({
+          verification: deriveAttemptVerificationPayload({
+            state: " legacy_pending ",
+            checks: [
+              {
+                name: "lint",
+                status: "passed",
+                required: true
+              }
+            ]
+          })
+        }),
+        { rootDir }
+      )
+    ).rejects.toThrow(ValidationError);
   });
 
   it("should reject malformed verification checks", () => {
@@ -114,6 +165,10 @@ describe("manifest store", () => {
         )
       )
     ).toThrow(ValidationError);
+  });
+
+  it("should wrap malformed JSON as a ValidationError when parsing manifest contents directly", () => {
+    expect(() => parseManifestContents("{")).toThrow(ValidationError);
   });
 
   it("should serialize and parse the minimal example manifest", () => {
@@ -313,11 +368,24 @@ describe("manifest store", () => {
 
     await expect(
       writeManifest(
+          createManifest({
+            verification: {
+              state: "PASS" as never,
+              checks: []
+            }
+          }),
+        { rootDir }
+      )
+    ).rejects.toThrow(ValidationError);
+  });
+
+  it("should reject manifests whose supportTier is outside the current vocabulary before writing them", async () => {
+    const rootDir = await createTempDirectory();
+
+    await expect(
+      writeManifest(
         createManifest({
-          verification: {
-            state: "PASS",
-            checks: []
-          }
+          supportTier: "gold" as never
         }),
         { rootDir }
       )
@@ -346,14 +414,14 @@ describe("manifest store", () => {
       "utf8"
     );
 
-    await expect(listManifests({ rootDir })).rejects.toThrow(ValidationError);
+    await expect(listManifests({ rootDir })).rejects.toThrow(InvalidManifestError);
   });
 
   it("should fail listing when an attempt directory is missing manifest.json", async () => {
     const rootDir = await createTempDirectory();
     await mkdir(path.join(rootDir, "att_empty"), { recursive: true });
 
-    await expect(listManifests({ rootDir })).rejects.toThrow(ValidationError);
+    await expect(listManifests({ rootDir })).rejects.toThrow(InvalidManifestError);
   });
 
   it("should reject a manifest whose internal attemptId does not match its directory", async () => {
@@ -368,8 +436,45 @@ describe("manifest store", () => {
     );
 
     await expect(readManifest("att_expected", { rootDir })).rejects.toThrow(
-      ValidationError
+      InvalidManifestError
     );
+  });
+
+  it("should raise InvalidManifestError when reading an invalid manifest from disk", async () => {
+    const rootDir = await createTempDirectory();
+    const attemptDirectory = path.join(rootDir, "att_invalid_read");
+
+    await mkdir(attemptDirectory, { recursive: true });
+    await writeFile(
+      path.join(attemptDirectory, "manifest.json"),
+      JSON.stringify({ attemptId: "att_invalid_read" }),
+      "utf8"
+    );
+
+    await expect(readManifest("att_invalid_read", { rootDir })).rejects.toThrow(
+      InvalidManifestError
+    );
+  });
+
+  it("should raise InvalidManifestError when reading a persisted manifest with an invalid supportTier", async () => {
+    const rootDir = await createTempDirectory();
+    const attemptDirectory = path.join(rootDir, "att_invalid_support_tier");
+
+    await mkdir(attemptDirectory, { recursive: true });
+    await writeFile(
+      path.join(attemptDirectory, "manifest.json"),
+      JSON.stringify({
+        ...createManifest({
+          attemptId: "att_invalid_support_tier"
+        }),
+        supportTier: "gold"
+      }),
+      "utf8"
+    );
+
+    await expect(
+      readManifest("att_invalid_support_tier", { rootDir })
+    ).rejects.toThrow(InvalidManifestError);
   });
 
   it("should return an empty list when the manifest store does not exist", async () => {

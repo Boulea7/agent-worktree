@@ -159,6 +159,53 @@ describe("resolveCodexCliEnvironment", () => {
     });
   });
 
+  it("should prefer a profile-specific model_provider when a profile is requested", async () => {
+    const homeDir = await createTempHome();
+    await mkdir(path.join(homeDir, ".codex"), { recursive: true });
+    await writeFile(
+      path.join(homeDir, ".codex", "config.toml"),
+      [
+        'model_provider = "default-relay"',
+        "",
+        "[profiles.project-managed]",
+        'model_provider = "profile-relay"',
+        "",
+        "[model_providers.default-relay]",
+        'env_key = "DEFAULT_TOKEN"',
+        "",
+        "[model_providers.profile-relay]",
+        'env_key = "PROFILE_TOKEN"',
+        ""
+      ].join("\n"),
+      "utf8"
+    );
+    await writeFile(
+      path.join(homeDir, ".codex", "auth.json"),
+      JSON.stringify(
+        {
+          DEFAULT_TOKEN: "default-token",
+          PROFILE_TOKEN: "profile-token"
+        },
+        null,
+        2
+      ),
+      "utf8"
+    );
+
+    await expect(
+      resolveCodexCliEnvironment({
+        homeDir,
+        profile: "project-managed",
+        baseEnv: {
+          PATH: "/usr/bin:/bin"
+        }
+      })
+    ).resolves.toEqual({
+      PATH: "/usr/bin:/bin",
+      PROFILE_TOKEN: "profile-token"
+    });
+  });
+
   it("should prefer active-provider auth fallback over a stale shell token", async () => {
     const homeDir = await createTempHome();
     await mkdir(path.join(homeDir, ".codex"), { recursive: true });
@@ -190,6 +237,64 @@ describe("resolveCodexCliEnvironment", () => {
     ).resolves.toEqual({
       PATH: "/usr/bin:/bin",
       OPENAI_API_KEY: "auth-token"
+    });
+  });
+
+  it("should keep only essential base env keys plus the active provider token", async () => {
+    const homeDir = await createTempHome();
+    await mkdir(path.join(homeDir, ".codex"), { recursive: true });
+    await writeFile(
+      path.join(homeDir, ".codex", "config.toml"),
+      [
+        'model_provider = "ccswitch_active"',
+        "",
+        "[model_providers.ccswitch_active]",
+        'env_key = "OPENAI_API_KEY"',
+        ""
+      ].join("\n"),
+      "utf8"
+    );
+
+    await expect(
+      resolveCodexCliEnvironment({
+        homeDir,
+        baseEnv: {
+          PATH: "/usr/bin:/bin",
+          HOME: "/tmp/example-home",
+          TMPDIR: "/tmp/example-tmp",
+          OPENAI_API_KEY: "shell-token",
+          SECRET_TOKEN: "do-not-forward"
+        }
+      })
+    ).resolves.toEqual({
+      PATH: "/usr/bin:/bin",
+      HOME: "/tmp/example-home",
+      TMPDIR: "/tmp/example-tmp",
+      OPENAI_API_KEY: "shell-token"
+    });
+  });
+
+  it("should not forward unrelated base env secrets when overlay resolution succeeds", async () => {
+    const homeDir = await createTempHome();
+    await mkdir(path.join(homeDir, ".ccswitch"), { recursive: true });
+    await writeFile(
+      path.join(homeDir, ".ccswitch", "codex.env"),
+      "export OPENAI_API_KEY='relay-token'\n",
+      "utf8"
+    );
+
+    await expect(
+      resolveCodexCliEnvironment({
+        homeDir,
+        baseEnv: {
+          PATH: "/usr/bin:/bin",
+          SECRET_TOKEN: "do-not-forward",
+          ANTHROPIC_API_KEY: "also-drop-me"
+        }
+      })
+    ).resolves.toEqual({
+      PATH: "/usr/bin:/bin",
+      OPENAI_API_KEY: "relay-token"
     });
   });
 

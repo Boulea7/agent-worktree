@@ -61,6 +61,37 @@ describe("verification payload ingestion helpers", () => {
     });
   });
 
+  it("should trim and preserve unknown non-empty states for internal ingest", () => {
+    const payload = deriveAttemptVerificationPayload({
+      state: " legacy_pending ",
+      checks: [
+        {
+          name: "lint",
+          status: "passed",
+          required: true
+        }
+      ]
+    });
+
+    expect(payload).toEqual({
+      state: "legacy_pending",
+      checks: [
+        {
+          name: "lint",
+          status: "passed",
+          required: true
+        }
+      ]
+    });
+    expect(deriveAttemptVerificationSummary(payload)).toMatchObject({
+      sourceState: "legacy_pending",
+      overallOutcome: "passed",
+      requiredOutcome: "satisfied",
+      hasComparablePayload: true,
+      isSelectionReady: true
+    });
+  });
+
   it("should produce payloads that remain directly consumable by the summary helper", () => {
     const payload = deriveAttemptVerificationPayload({
       checks: [

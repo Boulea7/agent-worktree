@@ -10,6 +10,7 @@ import path from "node:path";
 
 import {
   AgentWorktreeError,
+  InvalidManifestError,
   NotFoundError,
   RuntimeError,
   ValidationError
@@ -91,7 +92,14 @@ export function serializeManifest(manifest: AttemptManifest): string {
 }
 
 export function parseManifestContents(fileContents: string): AttemptManifest {
-  const parsed = JSON.parse(fileContents) as unknown;
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(fileContents) as unknown;
+  } catch (error) {
+    throw new ValidationError("Invalid attempt manifest.", error);
+  }
+
   return parseManifest(parsed);
 }
 
@@ -202,11 +210,16 @@ function parseManifestForAttempt(
   try {
     manifest = parseManifestContents(fileContents);
   } catch (error) {
-    throw new ValidationError(`Invalid attempt manifest for ${attemptId}.`, error);
+    throw new InvalidManifestError(
+      `Invalid attempt manifest for ${attemptId}.`,
+      error
+    );
   }
 
   if (manifest.attemptId !== attemptId) {
-    throw new ValidationError(`Manifest attemptId mismatch for ${attemptId}.`);
+    throw new InvalidManifestError(
+      `Manifest attemptId mismatch for ${attemptId}.`
+    );
   }
 
   return manifest;
@@ -220,7 +233,10 @@ async function readManifestForList(
     return await readManifest(attemptId, { rootDir });
   } catch (error) {
     if (error instanceof NotFoundError) {
-      throw new ValidationError(`Invalid attempt manifest for ${attemptId}.`, error);
+      throw new InvalidManifestError(
+        `Invalid attempt manifest for ${attemptId}.`,
+        error
+      );
     }
 
     throw error;

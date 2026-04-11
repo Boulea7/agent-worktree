@@ -1744,6 +1744,26 @@ describe("runCli", () => {
     expect(stderr.output).toBe("");
   });
 
+  it("should keep init unimplemented in json mode", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["init", "--json"], {
+      stdout,
+      stderr
+    });
+
+    expect(exitCode).toBe(1);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: false,
+      command: "init",
+      error: {
+        code: "NOT_IMPLEMENTED"
+      }
+    });
+    expect(stderr.output).toBe("");
+  });
+
   it("should keep attempt stop unimplemented in json mode", async () => {
     const stdout = new MemoryWriter();
     const stderr = new MemoryWriter();
@@ -1757,6 +1777,46 @@ describe("runCli", () => {
     expect(JSON.parse(stdout.output)).toMatchObject({
       ok: false,
       command: "attempt.stop",
+      error: {
+        code: "NOT_IMPLEMENTED"
+      }
+    });
+    expect(stderr.output).toBe("");
+  });
+
+  it("should keep attempt checkpoint unimplemented in json mode", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["attempt", "checkpoint", "--json"], {
+      stdout,
+      stderr
+    });
+
+    expect(exitCode).toBe(1);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: false,
+      command: "attempt.checkpoint",
+      error: {
+        code: "NOT_IMPLEMENTED"
+      }
+    });
+    expect(stderr.output).toBe("");
+  });
+
+  it("should keep attempt merge unimplemented in json mode", async () => {
+    const stdout = new MemoryWriter();
+    const stderr = new MemoryWriter();
+
+    const exitCode = await runCli(["attempt", "merge", "--json"], {
+      stdout,
+      stderr
+    });
+
+    expect(exitCode).toBe(1);
+    expect(JSON.parse(stdout.output)).toMatchObject({
+      ok: false,
+      command: "attempt.merge",
       error: {
         code: "NOT_IMPLEMENTED"
       }
