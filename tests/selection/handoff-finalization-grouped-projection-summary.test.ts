@@ -249,6 +249,50 @@ describe("selection handoff-finalization-grouped-projection-summary helpers", ()
     );
   });
 
+  it("should fail loudly when report-ready results mix taskIds after canonicalization", () => {
+    const act = () =>
+      deriveAttemptHandoffFinalizationGroupedProjectionSummary(
+        createReportReadySummary([
+          createInvokedReportReadyEntry({
+            taskId: "task_shared",
+            attemptId: "att_invoked"
+          }),
+          createBlockedReportReadyEntry({
+            taskId: " task_other ",
+            attemptId: "att_blocked"
+          })
+        ])
+      );
+
+    expect(act).toThrow(ValidationError);
+    expect(act).toThrow(
+      "Attempt handoff finalization grouped projection summary requires summary.results from a single taskId."
+    );
+  });
+
+  it("should fail loudly when report-ready results reuse duplicate identities after canonicalization", () => {
+    const act = () =>
+      deriveAttemptHandoffFinalizationGroupedProjectionSummary(
+        createReportReadySummary([
+          createInvokedReportReadyEntry({
+            taskId: "task_shared",
+            attemptId: "att_dup",
+            runtime: "codex-cli"
+          }),
+          createBlockedReportReadyEntry({
+            taskId: " task_shared ",
+            attemptId: " att_dup ",
+            runtime: " codex-cli "
+          })
+        ])
+      );
+
+    expect(act).toThrow(ValidationError);
+    expect(act).toThrow(
+      "Attempt handoff finalization grouped projection summary requires summary.results to use unique (taskId, attemptId, runtime) identities."
+    );
+  });
+
   it("should fail loudly when invoked subgroup arrays contain invalid entries", () => {
     const act = () =>
       deriveAttemptHandoffFinalizationGroupedProjectionSummary({

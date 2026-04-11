@@ -237,6 +237,120 @@ describe("selection handoff-finalization-request-apply helpers", () => {
     expect(invokedAttemptIds).toEqual(["att_supported_1", "att_supported_2"]);
   });
 
+  it("should fail closed before invocation when capability resolution is mixed across requests", async () => {
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      applyAttemptHandoffFinalizationRequestSummary({
+        summary: createRequestSummary({
+          requests: [
+            createRequest({
+              attemptId: "att_supported",
+              runtime: "codex-cli"
+            }),
+            createRequest({
+              attemptId: "att_blocked",
+              runtime: "gemini-cli",
+              sourceKind: "delegated"
+            })
+          ]
+        }),
+        invokeHandoffFinalization,
+        resolveHandoffFinalizationCapability: (runtime) => runtime === "codex-cli"
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyAttemptHandoffFinalizationRequestSummary({
+        summary: createRequestSummary({
+          requests: [
+            createRequest({
+              attemptId: "att_supported",
+              runtime: "codex-cli"
+            }),
+            createRequest({
+              attemptId: "att_blocked",
+              runtime: "gemini-cli",
+              sourceKind: "delegated"
+            })
+          ]
+        }),
+        invokeHandoffFinalization,
+        resolveHandoffFinalizationCapability: (runtime) => runtime === "codex-cli"
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization request apply requires summary.requests to resolve to a uniform capability decision before invocation."
+    );
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
+  it("should fail closed before invocation when capability resolution does not return a boolean", async () => {
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      applyAttemptHandoffFinalizationRequestSummary({
+        summary: createRequestSummary({
+          requests: [
+            createRequest({
+              attemptId: "att_non_boolean_capability",
+              runtime: "codex-cli"
+            })
+          ]
+        }),
+        invokeHandoffFinalization,
+        resolveHandoffFinalizationCapability: (() => "supported") as never
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyAttemptHandoffFinalizationRequestSummary({
+        summary: createRequestSummary({
+          requests: [
+            createRequest({
+              attemptId: "att_non_boolean_capability",
+              runtime: "codex-cli"
+            })
+          ]
+        }),
+        invokeHandoffFinalization,
+        resolveHandoffFinalizationCapability: (() => "supported") as never
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization request apply requires resolveHandoffFinalizationCapability to return a boolean."
+    );
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
+  it("should report mixed-task violations before duplicate identity violations when both are present", async () => {
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      applyAttemptHandoffFinalizationRequestSummary({
+        summary: createRequestSummary({
+          requests: [
+            createRequest({
+              taskId: "task_shared",
+              attemptId: "att_dup",
+              runtime: "codex-cli"
+            }),
+            createRequest({
+              taskId: " task_other ",
+              attemptId: "att_dup",
+              runtime: "codex-cli"
+            }),
+            createRequest({
+              taskId: " task_shared ",
+              attemptId: " att_dup ",
+              runtime: " codex-cli "
+            })
+          ]
+        }),
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization request apply requires summary.requests from a single taskId."
+    );
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
   it("should fail loudly when summary.requests contains explicit undefined entries", async () => {
     const summary = {
       ...createRequestSummary(),

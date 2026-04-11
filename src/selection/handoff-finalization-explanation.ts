@@ -5,6 +5,10 @@ import {
   type AttemptSourceKind,
   type AttemptStatus
 } from "../manifest/types.js";
+import {
+  validateDownstreamSingleTaskBoundary,
+  validateDownstreamUniqueIdentity
+} from "./downstream-identity-guardrails.js";
 import type {
   AttemptHandoffFinalizationConsumerBlockingReason,
   AttemptHandoffFinalizationExplanationCode,
@@ -78,6 +82,14 @@ function validateSummary(
   }
 
   const outcomes = validateOutcomeArray(summary.outcomes, "summary.outcomes");
+  validateDownstreamSingleTaskBoundary(
+    outcomes,
+    "Attempt handoff finalization explanation summary requires summary.outcomes from a single taskId."
+  );
+  validateDownstreamUniqueIdentity(
+    outcomes,
+    "Attempt handoff finalization explanation summary requires summary.outcomes to use unique (taskId, attemptId, runtime) identities."
+  );
 
   if (summary.resultCount !== outcomes.length) {
     throw new ValidationError(

@@ -176,6 +176,76 @@ describe("selection handoff-finalization-explanation helpers", () => {
     });
   });
 
+  it("should fail loudly when summary.outcomes mixes taskIds after canonicalization", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary(
+        createOutcomeSummary([
+          createInvokedOutcome({
+            taskId: "task_shared",
+            attemptId: "att_invoked"
+          }),
+          createBlockedOutcome({
+            taskId: " task_other ",
+            attemptId: "att_blocked"
+          })
+        ])
+      )
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary(
+        createOutcomeSummary([
+          createInvokedOutcome({
+            taskId: "task_shared",
+            attemptId: "att_invoked"
+          }),
+          createBlockedOutcome({
+            taskId: " task_other ",
+            attemptId: "att_blocked"
+          })
+        ])
+      )
+    ).toThrow(
+      "Attempt handoff finalization explanation summary requires summary.outcomes from a single taskId."
+    );
+  });
+
+  it("should fail loudly when summary.outcomes reuses duplicate identities after canonicalization", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary(
+        createOutcomeSummary([
+          createInvokedOutcome({
+            taskId: "task_shared",
+            attemptId: "att_dup",
+            runtime: "codex-cli"
+          }),
+          createBlockedOutcome({
+            taskId: " task_shared ",
+            attemptId: " att_dup ",
+            runtime: " codex-cli "
+          })
+        ])
+      )
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary(
+        createOutcomeSummary([
+          createInvokedOutcome({
+            taskId: "task_shared",
+            attemptId: "att_dup",
+            runtime: "codex-cli"
+          }),
+          createBlockedOutcome({
+            taskId: " task_shared ",
+            attemptId: " att_dup ",
+            runtime: " codex-cli "
+          })
+        ])
+      )
+    ).toThrow(
+      "Attempt handoff finalization explanation summary requires summary.outcomes to use unique (taskId, attemptId, runtime) identities."
+    );
+  });
+
   it("should fail loudly when outcome counts drift from the canonical outcome array", () => {
     expect(() =>
       deriveAttemptHandoffFinalizationExplanationSummary({

@@ -129,6 +129,86 @@ describe("selection handoff-target-apply-batch helpers", () => {
     });
   });
 
+  it("should fail loudly when targets from different taskIds are mixed after normalization", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      applyAttemptHandoffTargetBatch({
+        targets: [
+          createHandoffTarget({
+            taskId: "task_shared",
+            attemptId: "att_a"
+          }),
+          createHandoffTarget({
+            taskId: " task_other ",
+            attemptId: "att_b"
+          })
+        ],
+        invokeHandoff: async (request) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(
+      "Attempt handoff target apply batch requires targets from a single taskId."
+    );
+    expect(invokedAttemptIds).toEqual([]);
+  });
+
+  it("should fail loudly when targets reuse normalized target identities", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      applyAttemptHandoffTargetBatch({
+        targets: [
+          createHandoffTarget({
+            taskId: "task_shared",
+            attemptId: "att_dup",
+            runtime: "codex-cli"
+          }),
+          createHandoffTarget({
+            taskId: " task_shared ",
+            attemptId: " att_dup ",
+            runtime: " codex-cli "
+          })
+        ],
+        invokeHandoff: async (request) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(
+      "Attempt handoff target apply batch requires targets to use unique (taskId, attemptId, runtime) identities."
+    );
+    expect(invokedAttemptIds).toEqual([]);
+  });
+
+  it("should fail before invoking when any target identity field is blank after normalization", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      applyAttemptHandoffTargetBatch({
+        targets: [
+          createHandoffTarget({
+            taskId: "task_shared",
+            attemptId: "att_valid"
+          }),
+          {
+            ...createHandoffTarget({
+              taskId: "task_shared",
+              attemptId: "att_invalid"
+            }),
+            runtime: "   "
+          } as AttemptHandoffTarget
+        ],
+        invokeHandoff: async (request) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(
+      "Attempt handoff target apply batch requires targets entries to include non-empty taskId, attemptId, and runtime strings."
+    );
+    expect(invokedAttemptIds).toEqual([]);
+  });
+
   it("should preserve input order and continue past blocked targets", async () => {
     const targets = [
       createHandoffTarget({
@@ -325,7 +405,7 @@ describe("selection handoff-target-apply-batch helpers", () => {
     ).rejects.toThrow(
       "Attempt handoff target apply batch requires targets entries to be objects."
     );
-    expect(invokedAttemptIds).toEqual(["att_supported_1"]);
+    expect(invokedAttemptIds).toEqual([]);
   });
 
   it("should not mutate the supplied targets", async () => {

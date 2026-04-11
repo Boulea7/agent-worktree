@@ -14,6 +14,10 @@ import {
   attemptHandoffFinalizationRequestBasis,
   deriveCanonicalAttemptHandoffDecisionBlockingReasons
 } from "./handoff-finalization-request-summary-shared.js";
+import {
+  validateDownstreamSingleTaskBoundary,
+  validateDownstreamUniqueIdentity
+} from "./downstream-identity-guardrails.js";
 
 const ATTEMPT_HANDOFF_FINALIZATION_BASIS = "handoff_decision_summary" as const;
 const validAttemptStatuses = new Set<AttemptStatus>(attemptStatuses);
@@ -99,6 +103,14 @@ function validateSummaryConsistency(
   }
 
   validateTargets(summary.targets);
+  validateDownstreamSingleTaskBoundary(
+    summary.targets,
+    "Attempt handoff finalization request summary requires summary.targets from a single taskId."
+  );
+  validateDownstreamUniqueIdentity(
+    summary.targets,
+    "Attempt handoff finalization request summary requires summary.targets to use unique (taskId, attemptId, runtime) identities."
+  );
 
   if (summary.canFinalizeHandoff && summary.targets.length === 0) {
     throw new ValidationError(

@@ -16,6 +16,10 @@ import type {
   AttemptPromotionTargetApply,
   AttemptPromotionTargetApplyBatch
 } from "./types.js";
+import {
+  validateDownstreamSingleTaskBoundary,
+  validateDownstreamUniqueIdentity
+} from "./downstream-identity-guardrails.js";
 
 const ATTEMPT_HANDOFF_REPORT_READY_BASIS =
   "promotion_target_apply_batch" as const;
@@ -39,6 +43,14 @@ export function deriveAttemptHandoffReportReady(
   }
 
   validateBatch(batch);
+  validateDownstreamSingleTaskBoundary(
+    batch.results.map((entry) => entry.handoffTarget),
+    "Attempt handoff report-ready requires batch.results from a single taskId."
+  );
+  validateDownstreamUniqueIdentity(
+    batch.results.map((entry) => entry.handoffTarget),
+    "Attempt handoff report-ready requires batch.results to use unique (taskId, attemptId, runtime) identities."
+  );
 
   const results = batch.results.map(cloneEntry);
 

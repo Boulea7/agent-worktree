@@ -69,14 +69,14 @@ describe("selection handoff-finalization-target helpers", () => {
             runtime: "claude-code"
           }),
           createInvokedExplanationEntry({
-            taskId: "task_one",
+            taskId: "task_shared",
             attemptId: "att_invoked_one",
             runtime: "gemini-cli",
             status: "running",
             sourceKind: "delegated"
           }),
           createInvokedExplanationEntry({
-            taskId: "task_two",
+            taskId: "task_shared",
             attemptId: "att_invoked_two",
             runtime: "codex-cli",
             status: "created",
@@ -93,14 +93,14 @@ describe("selection handoff-finalization-target helpers", () => {
       canFinalizeHandoff: true,
       targets: [
         {
-          taskId: "task_one",
+          taskId: "task_shared",
           attemptId: "att_invoked_one",
           runtime: "gemini-cli",
           status: "running",
           sourceKind: "delegated"
         },
         {
-          taskId: "task_two",
+          taskId: "task_shared",
           attemptId: "att_invoked_two",
           runtime: "codex-cli",
           status: "created",
@@ -138,6 +138,25 @@ describe("selection handoff-finalization-target helpers", () => {
         }
       ]
     });
+  });
+
+  it("should fail loudly when explanation results mix taskIds after canonicalization", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationTargetSummary(
+        createExplanationSummary([
+          createInvokedExplanationEntry({
+            taskId: "task_shared",
+            attemptId: "att_one"
+          }),
+          createInvokedExplanationEntry({
+            taskId: " task_other ",
+            attemptId: "att_two"
+          })
+        ])
+      )
+    ).toThrow(
+      "Attempt handoff report-ready requires batch.results from a single taskId."
+    );
   });
 
   it("should keep the finalization target shape minimal without leaking apply or readiness metadata", () => {
@@ -415,7 +434,7 @@ function createPromotionCandidate(
 function createManifest(
   overrides: {
     attemptId: string;
-    runtime?: string;
+    runtime?: import("../../src/manifest/types.js").AttemptManifest["runtime"];
     sourceKind?: "direct" | "resume" | "fork" | "delegated";
     status?: "created" | "running" | "paused" | "failed" | "verified" | "merged" | "cleaned";
     taskId?: string;

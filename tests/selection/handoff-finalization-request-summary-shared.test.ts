@@ -194,6 +194,84 @@ describe("selection handoff-finalization-request-summary-shared helpers", () => 
       "Attempt handoff finalization request apply requires summary.requests entries to use the existing attempt source-kind vocabulary when provided."
     );
   });
+
+  it("should reject mixed taskIds after request identity normalization", () => {
+    expect(() =>
+      validateAttemptHandoffFinalizationRequestSummaryForApply(
+        createSummary({
+          requests: [
+            createRequest({
+              taskId: "task_shared"
+            }),
+            createRequest({
+              attemptId: "att_other",
+              runtime: "gemini-cli",
+              taskId: " task_other "
+            })
+          ]
+        })
+      )
+    ).toThrow(ValidationError);
+    expect(() =>
+      validateAttemptHandoffFinalizationRequestSummaryForApply(
+        createSummary({
+          requests: [
+            createRequest({
+              taskId: "task_shared"
+            }),
+            createRequest({
+              attemptId: "att_other",
+              runtime: "gemini-cli",
+              taskId: " task_other "
+            })
+          ]
+        })
+      )
+    ).toThrow(
+      "Attempt handoff finalization request apply requires summary.requests from a single taskId."
+    );
+  });
+
+  it("should reject duplicate request identities after normalization", () => {
+    expect(() =>
+      validateAttemptHandoffFinalizationRequestSummaryForApply(
+        createSummary({
+          requests: [
+            createRequest({
+              taskId: "task_shared",
+              attemptId: "att_dup",
+              runtime: "codex-cli"
+            }),
+            createRequest({
+              taskId: " task_shared ",
+              attemptId: " att_dup ",
+              runtime: " codex-cli "
+            })
+          ]
+        })
+      )
+    ).toThrow(ValidationError);
+    expect(() =>
+      validateAttemptHandoffFinalizationRequestSummaryForApply(
+        createSummary({
+          requests: [
+            createRequest({
+              taskId: "task_shared",
+              attemptId: "att_dup",
+              runtime: "codex-cli"
+            }),
+            createRequest({
+              taskId: " task_shared ",
+              attemptId: " att_dup ",
+              runtime: " codex-cli "
+            })
+          ]
+        })
+      )
+    ).toThrow(
+      "Attempt handoff finalization request apply requires summary.requests to use unique (taskId, attemptId, runtime) identities."
+    );
+  });
 });
 
 function createRequest(

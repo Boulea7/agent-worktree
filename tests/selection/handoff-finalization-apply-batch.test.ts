@@ -59,6 +59,92 @@ describe("selection handoff-finalization-apply-batch helpers", () => {
     });
   });
 
+  it("should fail loudly when requests from different taskIds are mixed after normalization", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      applyAttemptHandoffFinalizationBatch({
+        requests: [
+          createFinalizationRequest({
+            taskId: "task_shared",
+            attemptId: "att_a"
+          }),
+          createFinalizationRequest({
+            taskId: " task_other ",
+            attemptId: "att_b"
+          })
+        ],
+        invokeHandoffFinalization: async (
+          request: AttemptHandoffFinalizationRequest
+        ) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization apply batch requires requests from a single taskId."
+    );
+    expect(invokedAttemptIds).toEqual([]);
+  });
+
+  it("should fail loudly when requests reuse normalized request identities", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      applyAttemptHandoffFinalizationBatch({
+        requests: [
+          createFinalizationRequest({
+            taskId: "task_shared",
+            attemptId: "att_dup",
+            runtime: "codex-cli"
+          }),
+          createFinalizationRequest({
+            taskId: " task_shared ",
+            attemptId: " att_dup ",
+            runtime: " codex-cli "
+          })
+        ],
+        invokeHandoffFinalization: async (
+          request: AttemptHandoffFinalizationRequest
+        ) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization apply batch requires requests to use unique (taskId, attemptId, runtime) identities."
+    );
+    expect(invokedAttemptIds).toEqual([]);
+  });
+
+  it("should fail before invoking when any finalization request identity field is blank after normalization", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      applyAttemptHandoffFinalizationBatch({
+        requests: [
+          createFinalizationRequest({
+            taskId: "task_shared",
+            attemptId: "att_valid"
+          }),
+          {
+            ...createFinalizationRequest({
+              taskId: "task_shared",
+              attemptId: "att_invalid"
+            }),
+            runtime: "   "
+          } as AttemptHandoffFinalizationRequest
+        ],
+        invokeHandoffFinalization: async (
+          request: AttemptHandoffFinalizationRequest
+        ) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization apply batch requires requests entries to include non-empty taskId, attemptId, and runtime strings."
+    );
+    expect(invokedAttemptIds).toEqual([]);
+  });
+
   it("should preserve input order and continue past blocked requests", async () => {
     const requests = [
       createFinalizationRequest({
@@ -317,7 +403,7 @@ describe("selection handoff-finalization-apply-batch helpers", () => {
     ).rejects.toThrow(
       "Attempt handoff finalization apply batch requires requests entries to be objects."
     );
-    expect(invokedAttemptIds).toEqual(["att_supported_1"]);
+    expect(invokedAttemptIds).toEqual([]);
   });
 
   it("should not mutate the supplied requests", async () => {

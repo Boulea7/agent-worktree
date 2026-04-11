@@ -533,7 +533,8 @@ export interface AttemptHandoffFinalizationClosureSummary {
 
 export type AttemptHandoffFinalizationCloseoutDecisionBlockingReason =
   | "no_results"
-  | "handoff_finalization_unsupported";
+  | "handoff_finalization_unsupported"
+  | "handoff_finalization_mixed_disposition";
 
 export interface AttemptHandoffFinalizationCloseoutDecisionSummary {
   decisionBasis: "handoff_finalization_closure_summary";

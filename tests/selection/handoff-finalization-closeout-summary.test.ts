@@ -219,6 +219,38 @@ describe("selection handoff-finalization-closeout-summary helpers", () => {
     expect(invokeHandoffFinalization).not.toHaveBeenCalled();
   });
 
+  it("should fail closed before any invocation when finalization capability is mixed", async () => {
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      deriveAttemptHandoffFinalizationCloseoutSummary({
+        summary: createRequestSummary({
+          resultCount: 2,
+          invokedResultCount: 2,
+          blockedResultCount: 0,
+          blockingReasons: [],
+          canFinalizeHandoff: true,
+          requests: [
+            createRequest({
+              attemptId: "att_supported",
+              runtime: "codex-cli"
+            }),
+            createRequest({
+              attemptId: "att_blocked",
+              runtime: "gemini-cli",
+              sourceKind: "delegated"
+            })
+          ]
+        }),
+        invokeHandoffFinalization,
+        resolveHandoffFinalizationCapability: (runtime) => runtime === "codex-cli"
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization request apply requires summary.requests to resolve to a uniform capability decision before invocation."
+    );
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
   it("should surface canonical request-summary errors when the nested summary is null", async () => {
     const invokeHandoffFinalization = vi.fn(async () => undefined);
 
@@ -286,6 +318,94 @@ describe("selection handoff-finalization-closeout-summary helpers", () => {
     ).rejects.toThrow(
       "Attempt handoff finalization request apply requires summary.requests entries to be objects."
     );
+  });
+
+  it("should surface mixed-task request-summary failures from the canonical closeout chain", async () => {
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      deriveAttemptHandoffFinalizationCloseoutSummary({
+        summary: createRequestSummary({
+          requests: [
+            createRequest({
+              taskId: "task_shared"
+            }),
+            createRequest({
+              taskId: " task_other ",
+              attemptId: "att_other",
+              runtime: "gemini-cli"
+            })
+          ]
+        }),
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      deriveAttemptHandoffFinalizationCloseoutSummary({
+        summary: createRequestSummary({
+          requests: [
+            createRequest({
+              taskId: "task_shared"
+            }),
+            createRequest({
+              taskId: " task_other ",
+              attemptId: "att_other",
+              runtime: "gemini-cli"
+            })
+          ]
+        }),
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization request apply requires summary.requests from a single taskId."
+    );
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
+  it("should surface duplicate identity request-summary failures from the canonical closeout chain", async () => {
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      deriveAttemptHandoffFinalizationCloseoutSummary({
+        summary: createRequestSummary({
+          requests: [
+            createRequest({
+              taskId: "task_shared",
+              attemptId: "att_dup",
+              runtime: "codex-cli"
+            }),
+            createRequest({
+              taskId: " task_shared ",
+              attemptId: " att_dup ",
+              runtime: " codex-cli "
+            })
+          ]
+        }),
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      deriveAttemptHandoffFinalizationCloseoutSummary({
+        summary: createRequestSummary({
+          requests: [
+            createRequest({
+              taskId: "task_shared",
+              attemptId: "att_dup",
+              runtime: "codex-cli"
+            }),
+            createRequest({
+              taskId: " task_shared ",
+              attemptId: " att_dup ",
+              runtime: " codex-cli "
+            })
+          ]
+        }),
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization request apply requires summary.requests to use unique (taskId, attemptId, runtime) identities."
+    );
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
   });
 });
 

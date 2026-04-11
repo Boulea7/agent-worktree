@@ -1,4 +1,7 @@
 import { ValidationError } from "../core/errors.js";
+import {
+  validateDownstreamIdentityIngress
+} from "./downstream-identity-guardrails.js";
 import { applyAttemptHandoff } from "./handoff-apply.js";
 import type {
   AttemptHandoffApply,
@@ -10,7 +13,6 @@ export async function applyAttemptHandoffBatch(
   input: AttemptHandoffApplyBatchInput
 ): Promise<AttemptHandoffApplyBatch> {
   validateInput(input);
-  const results: AttemptHandoffApply[] = [];
 
   for (let index = 0; index < input.requests.length; index += 1) {
     if (
@@ -21,7 +23,19 @@ export async function applyAttemptHandoffBatch(
         "Attempt handoff apply batch requires requests entries to be objects."
       );
     }
+  }
 
+  validateDownstreamIdentityIngress(input.requests, {
+    required:
+      "Attempt handoff apply batch requires requests entries to include non-empty taskId, attemptId, and runtime strings.",
+    singleTask:
+      "Attempt handoff apply batch requires requests from a single taskId.",
+    unique:
+      "Attempt handoff apply batch requires requests to use unique (taskId, attemptId, runtime) identities."
+  });
+  const results: AttemptHandoffApply[] = [];
+
+  for (let index = 0; index < input.requests.length; index += 1) {
     const request = input.requests[index] as AttemptHandoffApplyBatchInput["requests"][number];
     const result = await applyAttemptHandoff({
       request,

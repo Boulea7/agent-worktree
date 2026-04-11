@@ -1,5 +1,8 @@
 import { ValidationError } from "../core/errors.js";
 import {
+  validateDownstreamIdentityIngress
+} from "./downstream-identity-guardrails.js";
+import {
   validateSelectionArray,
   validateSelectionObjectArrayEntry,
   validateSelectionObjectInput,
@@ -32,7 +35,6 @@ export async function applyAttemptHandoffTargetBatch(
     input.resolveHandoffCapability,
     "Attempt handoff target apply batch requires resolveHandoffCapability to be a function when provided."
   );
-  const results: AttemptHandoffTargetApply[] = [];
 
   for (let index = 0; index < input.targets.length; index += 1) {
     validateSelectionObjectArrayEntry(
@@ -40,7 +42,19 @@ export async function applyAttemptHandoffTargetBatch(
       index,
       "Attempt handoff target apply batch requires targets entries to be objects."
     );
+  }
 
+  validateDownstreamIdentityIngress(input.targets, {
+    required:
+      "Attempt handoff target apply batch requires targets entries to include non-empty taskId, attemptId, and runtime strings.",
+    singleTask:
+      "Attempt handoff target apply batch requires targets from a single taskId.",
+    unique:
+      "Attempt handoff target apply batch requires targets to use unique (taskId, attemptId, runtime) identities."
+  });
+  const results: AttemptHandoffTargetApply[] = [];
+
+  for (let index = 0; index < input.targets.length; index += 1) {
     const target = input.targets[index]!;
     const result = await applyAttemptHandoffTarget({
       target,

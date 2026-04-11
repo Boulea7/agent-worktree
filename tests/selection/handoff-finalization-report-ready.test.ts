@@ -217,6 +217,72 @@ describe("selection handoff-finalization-report-ready helpers", () => {
     });
   });
 
+  it("should fail loudly when summary.results mixes taskIds after canonicalization", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady(
+        createExplanationSummary([
+          createBlockedExplanationEntry({
+            outcome: {
+              taskId: "task_shared",
+              attemptId: "att_a",
+              runtime: "blocked-cli",
+              status: "created",
+              sourceKind: undefined,
+              invoked: false,
+              blockingReasons: ["handoff_finalization_unsupported"]
+            }
+          }),
+          createInvokedExplanationEntry({
+            outcome: {
+              taskId: " task_other ",
+              attemptId: "att_b",
+              runtime: "codex-cli",
+              status: "running",
+              sourceKind: "delegated",
+              invoked: true,
+              blockingReasons: []
+            }
+          })
+        ])
+      )
+    ).toThrow(
+      "Attempt handoff finalization report-ready requires summary.results from a single taskId."
+    );
+  });
+
+  it("should fail loudly when summary.results reuse normalized downstream identities", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady(
+        createExplanationSummary([
+          createInvokedExplanationEntry({
+            outcome: {
+              taskId: "task_shared",
+              attemptId: "att_dup",
+              runtime: "codex-cli",
+              status: "created",
+              sourceKind: undefined,
+              invoked: true,
+              blockingReasons: []
+            }
+          }),
+          createInvokedExplanationEntry({
+            outcome: {
+              taskId: " task_shared ",
+              attemptId: " att_dup ",
+              runtime: " codex-cli ",
+              status: "running",
+              sourceKind: "delegated",
+              invoked: true,
+              blockingReasons: []
+            }
+          })
+        ])
+      )
+    ).toThrow(
+      "Attempt handoff finalization report-ready requires summary.results to use unique (taskId, attemptId, runtime) identities."
+    );
+  });
+
   it("should fail loudly when explanation subgroups drift from the canonical filtered groups", () => {
     expect(() =>
       deriveAttemptHandoffFinalizationReportReady({

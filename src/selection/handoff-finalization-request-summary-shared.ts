@@ -9,6 +9,7 @@ import type {
   AttemptHandoffDecisionBlockingReason,
   AttemptHandoffFinalizationRequestSummary
 } from "./types.js";
+import { validateDownstreamIdentityIngress } from "./downstream-identity-guardrails.js";
 
 export const attemptHandoffFinalizationRequestBasis =
   "handoff_finalization_target_summary" as const;
@@ -70,6 +71,14 @@ export function validateAttemptHandoffFinalizationRequestSummaryForApply(
   }
 
   validateRequests(summary.requests);
+  validateDownstreamIdentityIngress(summary.requests, {
+    required:
+      "Attempt handoff finalization request apply requires summary.requests entries to use non-empty taskId, attemptId, and runtime strings.",
+    singleTask:
+      "Attempt handoff finalization request apply requires summary.requests from a single taskId.",
+    unique:
+      "Attempt handoff finalization request apply requires summary.requests to use unique (taskId, attemptId, runtime) identities."
+  });
 
   if (summary.canFinalizeHandoff && summary.requests.length === 0) {
     throw new ValidationError(

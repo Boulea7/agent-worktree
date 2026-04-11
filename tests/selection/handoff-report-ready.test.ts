@@ -138,6 +138,46 @@ describe("selection handoff-report-ready helpers", () => {
     });
   });
 
+  it("should fail loudly when batch.results mixes taskIds after canonicalization", () => {
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [
+          createSupportedPromotionTargetApply({
+            taskId: "task_shared",
+            attemptId: "att_one"
+          }),
+          createSupportedPromotionTargetApply({
+            taskId: " task_other ",
+            attemptId: "att_two"
+          })
+        ]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires batch.results from a single taskId."
+    );
+  });
+
+  it("should fail loudly when batch.results reuses duplicate identities after canonicalization", () => {
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [
+          createSupportedPromotionTargetApply({
+            taskId: "task_shared",
+            attemptId: "att_dup",
+            runtime: "codex-cli"
+          }),
+          createSupportedPromotionTargetApply({
+            taskId: " task_shared ",
+            attemptId: " att_dup ",
+            runtime: " codex-cli "
+          })
+        ]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires batch.results to use unique (taskId, attemptId, runtime) identities."
+    );
+  });
+
   it("should fail loudly when an invoked entry still carries blocking reasons", () => {
     const batch = {
       results: [

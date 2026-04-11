@@ -13,6 +13,10 @@ import type {
   AttemptHandoffFinalizationReportReady,
   AttemptHandoffFinalizationReportReadyEntry
 } from "./types.js";
+import {
+  validateDownstreamSingleTaskBoundary,
+  validateDownstreamUniqueIdentity
+} from "./downstream-identity-guardrails.js";
 
 const attemptHandoffFinalizationReportReadyBasis =
   "handoff_finalization_explanation_summary" as const;
@@ -39,6 +43,14 @@ export function deriveAttemptHandoffFinalizationReportReady(
 
   validateSummaryBasis(summary);
   const results = validateExplanationEntryArray(summary.results, "summary.results");
+  validateDownstreamSingleTaskBoundary(
+    results.map((entry) => entry.outcome),
+    "Attempt handoff finalization report-ready requires summary.results from a single taskId."
+  );
+  validateDownstreamUniqueIdentity(
+    results.map((entry) => entry.outcome),
+    "Attempt handoff finalization report-ready requires summary.results to use unique (taskId, attemptId, runtime) identities."
+  );
 
   validateCanonicalSubgroups(summary, results);
 

@@ -3,15 +3,16 @@ import type {
   AttemptHandoffFinalizationClosureSummary,
   AttemptHandoffFinalizationGroupedReportingDispositionSummary
 } from "./types.js";
+import {
+  deriveCanonicalHandoffFinalizationGroupCount,
+  deriveCanonicalHandoffFinalizationReportingDisposition,
+  validateHandoffFinalizationReportingDisposition
+} from "./handoff-finalization-reporting-disposition-shared.js";
 
 const attemptHandoffFinalizationClosureBasis =
   "handoff_finalization_grouped_reporting_disposition_summary" as const;
 const attemptHandoffFinalizationGroupedReportingDispositionBasis =
   "handoff_finalization_grouped_reporting_summary" as const;
-const validReportingDispositions = new Set<
-  AttemptHandoffFinalizationClosureSummary["reportingDisposition"]
->(["empty", "all_invoked", "all_blocked", "mixed"]);
-
 export function deriveAttemptHandoffFinalizationClosureSummary(
   summary: AttemptHandoffFinalizationGroupedReportingDispositionSummary | undefined
 ): AttemptHandoffFinalizationClosureSummary | undefined {
@@ -83,13 +84,17 @@ function validateSummary(
     );
   }
 
-  validateReportingDisposition(summary.reportingDisposition);
+  validateHandoffFinalizationReportingDisposition(
+    summary.reportingDisposition,
+    "Attempt handoff finalization closure summary requires summary.reportingDisposition to use the existing grouped reporting disposition vocabulary."
+  );
 
-  const canonicalReportingDisposition = deriveCanonicalReportingDisposition(
+  const canonicalReportingDisposition =
+    deriveCanonicalHandoffFinalizationReportingDisposition(
     summary.resultCount,
     summary.invokedResultCount,
     summary.blockedResultCount
-  );
+    );
 
   if (summary.reportingDisposition !== canonicalReportingDisposition) {
     throw new ValidationError(
@@ -97,7 +102,7 @@ function validateSummary(
     );
   }
 
-  const canonicalGroupCount = deriveCanonicalGroupCount(
+  const canonicalGroupCount = deriveCanonicalHandoffFinalizationGroupCount(
     summary.reportingDisposition
   );
 
@@ -113,55 +118,6 @@ function validateNonNegativeInteger(value: unknown, fieldName: string): void {
     throw new ValidationError(
       `Attempt handoff finalization closure summary requires ${fieldName} to be a non-negative integer.`
     );
-  }
-}
-
-function validateReportingDisposition(
-  value: unknown
-): asserts value is AttemptHandoffFinalizationClosureSummary["reportingDisposition"] {
-  if (
-    typeof value !== "string" ||
-    !validReportingDispositions.has(
-      value as AttemptHandoffFinalizationClosureSummary["reportingDisposition"]
-    )
-  ) {
-    throw new ValidationError(
-      "Attempt handoff finalization closure summary requires summary.reportingDisposition to use the existing grouped reporting disposition vocabulary."
-    );
-  }
-}
-
-function deriveCanonicalReportingDisposition(
-  resultCount: number,
-  invokedResultCount: number,
-  blockedResultCount: number
-): AttemptHandoffFinalizationClosureSummary["reportingDisposition"] {
-  if (resultCount === 0) {
-    return "empty";
-  }
-
-  if (invokedResultCount === resultCount) {
-    return "all_invoked";
-  }
-
-  if (blockedResultCount === resultCount) {
-    return "all_blocked";
-  }
-
-  return "mixed";
-}
-
-function deriveCanonicalGroupCount(
-  reportingDisposition: AttemptHandoffFinalizationClosureSummary["reportingDisposition"]
-): number {
-  switch (reportingDisposition) {
-    case "empty":
-      return 0;
-    case "all_invoked":
-    case "all_blocked":
-      return 1;
-    case "mixed":
-      return 2;
   }
 }
 

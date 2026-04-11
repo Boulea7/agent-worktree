@@ -11,6 +11,7 @@ import type {
   AttemptHandoffFinalizationConsumerBlockingReason,
   AttemptHandoffFinalizationRequest
 } from "./types.js";
+import { normalizeHandoffFinalizationCapability } from "./handoff-finalization-capability-shared.js";
 import {
   validateSelectionObjectInput,
   validateSelectionOptionalFunction
@@ -46,7 +47,8 @@ export function deriveAttemptHandoffFinalizationConsumer(input: {
   const handoffFinalizationSupported = normalizeHandoffFinalizationCapability(
     input.resolveHandoffFinalizationCapability === undefined
       ? false
-      : input.resolveHandoffFinalizationCapability(runtime)
+      : input.resolveHandoffFinalizationCapability(runtime),
+    "Attempt handoff finalization consumer"
   );
   const blockingReasons: AttemptHandoffFinalizationConsumerBlockingReason[] =
     handoffFinalizationSupported ? [] : ["handoff_finalization_unsupported"];
@@ -66,16 +68,6 @@ export function deriveAttemptHandoffFinalizationConsumer(input: {
       handoffFinalizationSupported
     }
   };
-}
-
-function normalizeHandoffFinalizationCapability(value: unknown): boolean {
-  if (typeof value !== "boolean") {
-    throw new ValidationError(
-      "Attempt handoff finalization consumer requires resolveHandoffFinalizationCapability to return a boolean."
-    );
-  }
-
-  return value;
 }
 
 function normalizeRequiredString(value: unknown, fieldName: string): string {

@@ -127,7 +127,7 @@ describe("selection handoff-finalization-closeout-decision helpers", () => {
     });
   });
 
-  it("should stay advance-ready when closeout results are mixed", () => {
+  it("should derive a mixed-disposition blocker when closeout results are mixed", () => {
     expect(
       deriveAttemptHandoffFinalizationCloseoutDecisionSummary(
         createClosureSummary({
@@ -149,9 +149,9 @@ describe("selection handoff-finalization-closeout-decision helpers", () => {
       blockedResultCount: 2,
       groupCount: 2,
       reportingDisposition: "mixed",
-      blockingReasons: [],
-      canAdvanceFromCloseout: true,
-      hasBlockingReasons: false
+      blockingReasons: ["handoff_finalization_mixed_disposition"],
+      canAdvanceFromCloseout: false,
+      hasBlockingReasons: true
     });
   });
 

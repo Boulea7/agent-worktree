@@ -236,6 +236,66 @@ describe("selection handoff-finalization-grouped-reporting-summary helpers", () 
     );
   });
 
+  it("should fail loudly when grouped projection results mix taskIds across groups after canonicalization", () => {
+    const act = () =>
+      deriveAttemptHandoffFinalizationGroupedReportingSummary(
+        createGroupedProjectionSummary([
+          createBlockedProjectionGroup({
+            results: [
+              createBlockedReportReadyEntry({
+                taskId: "task_shared",
+                attemptId: "att_blocked"
+              })
+            ]
+          }),
+          createInvokedProjectionGroup({
+            results: [
+              createInvokedReportReadyEntry({
+                taskId: " task_other ",
+                attemptId: "att_invoked"
+              })
+            ]
+          })
+        ])
+      );
+
+    expect(act).toThrow(ValidationError);
+    expect(act).toThrow(
+      "Attempt handoff finalization grouped reporting summary requires summary.groups results from a single taskId."
+    );
+  });
+
+  it("should fail loudly when grouped projection results reuse duplicate identities across groups after canonicalization", () => {
+    const act = () =>
+      deriveAttemptHandoffFinalizationGroupedReportingSummary(
+        createGroupedProjectionSummary([
+          createBlockedProjectionGroup({
+            results: [
+              createBlockedReportReadyEntry({
+                taskId: "task_shared",
+                attemptId: "att_dup",
+                runtime: "codex-cli"
+              })
+            ]
+          }),
+          createInvokedProjectionGroup({
+            results: [
+              createInvokedReportReadyEntry({
+                taskId: " task_shared ",
+                attemptId: " att_dup ",
+                runtime: " codex-cli "
+              })
+            ]
+          })
+        ])
+      );
+
+    expect(act).toThrow(ValidationError);
+    expect(act).toThrow(
+      "Attempt handoff finalization grouped reporting summary requires summary.groups results to use unique (taskId, attemptId, runtime) identities."
+    );
+  });
+
   it("should fail loudly when group results rely on inherited array indexes", () => {
     Array.prototype[0] = createBlockedReportReadyEntry();
 

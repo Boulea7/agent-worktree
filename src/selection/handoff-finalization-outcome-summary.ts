@@ -14,6 +14,10 @@ import type {
   AttemptHandoffFinalizationOutcomeSummary,
   AttemptHandoffFinalizationRequest
 } from "./types.js";
+import {
+  validateDownstreamSingleTaskBoundary,
+  validateDownstreamUniqueIdentity
+} from "./downstream-identity-guardrails.js";
 
 const attemptHandoffFinalizationOutcomeBasis =
   "handoff_finalization_apply_batch" as const;
@@ -40,6 +44,14 @@ export function deriveAttemptHandoffFinalizationOutcomeSummary(
 
   const results = validateApplyResultArray(batch.results, "batch.results");
   const outcomes = results.map(deriveOutcome);
+  validateDownstreamSingleTaskBoundary(
+    outcomes,
+    "Attempt handoff finalization outcome summary requires batch.results from a single taskId."
+  );
+  validateDownstreamUniqueIdentity(
+    outcomes,
+    "Attempt handoff finalization outcome summary requires batch.results to use unique (taskId, attemptId, runtime) identities."
+  );
   const blockingReasons = collectBlockingReasons(outcomes);
   const invokedResultCount = outcomes.filter((outcome) => outcome.invoked).length;
   const blockedResultCount = outcomes.length - invokedResultCount;

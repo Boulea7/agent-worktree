@@ -5,6 +5,7 @@ import type {
   AttemptHandoffFinalizationGroupedReportingDispositionSummary,
   AttemptHandoffFinalizationGroupedReportingSummary
 } from "./types.js";
+import { deriveCanonicalHandoffFinalizationReportingDisposition } from "./handoff-finalization-reporting-disposition-shared.js";
 
 const attemptHandoffFinalizationGroupedReportingDispositionBasis =
   "handoff_finalization_grouped_reporting_summary" as const;
@@ -61,7 +62,7 @@ export function deriveAttemptHandoffFinalizationGroupedReportingDispositionSumma
     invokedResultCount,
     blockedResultCount,
     groupCount: groups.length,
-    reportingDisposition: deriveReportingDisposition(
+    reportingDisposition: deriveCanonicalHandoffFinalizationReportingDisposition(
       resultCount,
       invokedResultCount,
       blockedResultCount
@@ -193,26 +194,6 @@ function validateGroupSemantics(
       'Attempt handoff finalization grouped reporting disposition summary requires "handoff_finalization_blocked_unsupported" groups to keep all results blocked.'
     );
   }
-}
-
-function deriveReportingDisposition(
-  resultCount: number,
-  invokedResultCount: number,
-  blockedResultCount: number
-): AttemptHandoffFinalizationGroupedReportingDispositionSummary["reportingDisposition"] {
-  if (resultCount === 0) {
-    return "empty";
-  }
-
-  if (invokedResultCount === resultCount) {
-    return "all_invoked";
-  }
-
-  if (blockedResultCount === resultCount) {
-    return "all_blocked";
-  }
-
-  return "mixed";
 }
 
 function hasOwnIndex(values: readonly unknown[], index: number): boolean {
