@@ -39,6 +39,7 @@ describe("selection promotion-decision helpers", () => {
       decisionBasis: "promotion_explanation_summary",
       taskId: undefined,
       selectedAttemptId: undefined,
+      selectedIdentity: undefined,
       candidateCount: 0,
       comparableCandidateCount: 0,
       promotionReadyCandidateCount: 0,
@@ -74,6 +75,11 @@ describe("selection promotion-decision helpers", () => {
       decisionBasis: "promotion_explanation_summary",
       taskId: "task_shared",
       selectedAttemptId: "att_ready",
+      selectedIdentity: {
+        taskId: "task_shared",
+        attemptId: "att_ready",
+        runtime: "codex-cli"
+      },
       candidateCount: 1,
       comparableCandidateCount: 1,
       promotionReadyCandidateCount: 1,
@@ -221,6 +227,49 @@ describe("selection promotion-decision helpers", () => {
     expect(decision.blockingReasons).toEqual(["verification_incomplete"]);
   });
 
+  it("should preserve canonical selected identity when runtimes differ but attemptId is reused", () => {
+    const summary = createPromotionExplanationSummary([
+      createPromotionCandidate({
+        attemptId: "att_shared",
+        runtime: "codex-cli",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      }),
+      createPromotionCandidate({
+        attemptId: "att_shared",
+        runtime: "gemini-cli",
+        verification: createVerification({
+          state: "pending",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
+        })
+      })
+    ]);
+
+    const decision = deriveAttemptPromotionDecisionSummary(summary);
+
+    expect(decision.selectedIdentity).toEqual({
+      taskId: "task_shared",
+      attemptId: "att_shared",
+      runtime: "codex-cli"
+    });
+    expect(decision.selected?.runtime).toBe("codex-cli");
+    expect(decision.candidateCount).toBe(2);
+  });
+
   it("should fail loudly when comparableCandidateCount drifts from explanation candidates", () => {
     const summary = {
       ...createPromotionExplanationSummary([
@@ -281,6 +330,17 @@ describe("selection promotion-decision helpers", () => {
     ).toThrow(
       "Attempt promotion decision summary requires summary to be an object."
     );
+  });
+
+  it("should fail closed when reading summary.candidates throws through an accessor-shaped input", () => {
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...createPromotionExplanationSummary([]),
+        get candidates() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
   });
 
   it("should fail loudly when summary.candidates is malformed, sparse, or uses duplicate attempt identities", () => {
@@ -352,7 +412,7 @@ describe("selection promotion-decision helpers", () => {
         ]
       })
     ).toThrow(
-      "Attempt promotion decision summary requires summary.candidates to use unique candidate.attemptId values."
+      "Attempt promotion decision summary requires summary.candidates to use unique (taskId, attemptId, runtime) identities."
     );
   });
 
@@ -448,10 +508,45 @@ describe("selection promotion-decision helpers", () => {
     expect(() =>
       deriveAttemptPromotionDecisionSummary({
         ...summary,
+        selectedIdentity: undefined
+      })
+    ).toThrow(
+      "Attempt promotion decision summary requires summary.selectedIdentity to be defined when candidates are present."
+    );
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...summary,
         selected: summary.candidates[1]
       })
     ).toThrow(
       "Attempt promotion decision summary requires summary.selected to match the first candidate."
+    );
+  });
+
+  it("should fail loudly when summary.selected is malformed", () => {
+    const summary = createPromotionExplanationSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...summary,
+        selected: null as never
+      })
+    ).toThrow(
+      "Attempt promotion decision summary requires summary.selected to be an object when candidates are present."
     );
   });
 
@@ -635,6 +730,60 @@ describe("selection promotion-decision helpers", () => {
       })
     ).toThrow(
       "Attempt promotion decision summary requires candidate.blockingRequiredCheckNames to use non-empty string entries."
+    );
+  });
+
+  it("should fail loudly when summary.candidates reuse a normalized (taskId, attemptId, runtime) identity", () => {
+    const summary = createPromotionExplanationSummary([
+      createPromotionCandidate({
+        attemptId: "att_a",
+        runtime: "codex-cli",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      }),
+      createPromotionCandidate({
+        attemptId: "att_b",
+        runtime: "gemini-cli",
+        verification: createVerification({
+          state: "pending",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...summary,
+        taskId: "task_shared",
+        candidates: [
+          {
+            ...summary.candidates[0]!,
+            taskId: "task_shared"
+          },
+          {
+            ...summary.candidates[1]!,
+            taskId: " task_shared ",
+            attemptId: " att_a ",
+            runtime: " codex-cli "
+          }
+        ] as never
+      })
+    ).toThrow(
+      "Attempt promotion decision summary requires summary.candidates to use unique (taskId, attemptId, runtime) identities."
     );
   });
 

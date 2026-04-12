@@ -16,8 +16,15 @@ import type {
   AttemptPromotionExplanationCandidate,
   AttemptPromotionExplanationCode,
   AttemptPromotionExplanationSummary,
-  AttemptPromotionReport
+  AttemptPromotionReport,
+  AttemptSelectedIdentity
 } from "./types.js";
+import {
+  rethrowSelectionAccessError
+} from "./entry-validation.js";
+import {
+  validateDownstreamIdentityIngress
+} from "./downstream-identity-guardrails.js";
 
 const ATTEMPT_PROMOTION_EXPLANATION_BASIS = "promotion_report" as const;
 const ATTEMPT_PROMOTION_REPORT_BASIS = "promotion_audit_summary" as const;
@@ -39,30 +46,40 @@ export function deriveAttemptPromotionExplanationSummary(
     );
   }
 
-  validateReportBasis(report);
-  validateTaskId(report.taskId);
-  validatePromotionReport(report);
+  try {
+    validateReportBasis(report);
+    validateTaskId(report.taskId);
+    validatePromotionReport(report);
 
-  const candidates = report.candidates.map((candidate) =>
-    deriveExplanationCandidate(candidate, report.selectedAttemptId)
-  );
-  const selected =
-    candidates[0] === undefined
-      ? undefined
-      : cloneExplanationCandidate(candidates[0]);
+    const candidates = report.candidates.map((candidate) =>
+      deriveExplanationCandidate(candidate, report.taskId, report.selectedIdentity)
+    );
+    const selected =
+      candidates[0] === undefined
+        ? undefined
+        : cloneExplanationCandidate(candidates[0]);
 
-  return {
-    explanationBasis: ATTEMPT_PROMOTION_EXPLANATION_BASIS,
-    taskId: report.taskId,
-    selectedAttemptId: report.selectedAttemptId,
-    candidateCount: report.candidates.length,
-    comparableCandidateCount: countComparableCandidates(report.candidates),
-    promotionReadyCandidateCount: countPromotionReadyCandidates(report.candidates),
-    recommendedForPromotion:
-      report.candidates[0]?.recommendedForPromotion ?? false,
-    selected,
-    candidates
-  };
+    return {
+      explanationBasis: ATTEMPT_PROMOTION_EXPLANATION_BASIS,
+      taskId: report.taskId,
+      selectedAttemptId: report.selectedAttemptId,
+      selectedIdentity: deriveSelectedIdentity(report.taskId, candidates[0]),
+      candidateCount: report.candidates.length,
+      comparableCandidateCount: countComparableCandidates(report.candidates),
+      promotionReadyCandidateCount: countPromotionReadyCandidates(
+        report.candidates
+      ),
+      recommendedForPromotion:
+        report.candidates[0]?.recommendedForPromotion ?? false,
+      selected,
+      candidates
+    };
+  } catch (error) {
+    rethrowSelectionAccessError(
+      error,
+      "Attempt promotion explanation summary requires report to be a readable object."
+    );
+  }
 }
 
 function validateReportBasis(report: AttemptPromotionReport): void {
@@ -111,6 +128,11 @@ function validatePromotionReport(report: AttemptPromotionReport): void {
         "Attempt promotion explanation summary requires report.selected to be undefined when candidates are empty."
       );
     }
+    if (report.selectedIdentity !== undefined) {
+      throw new ValidationError(
+        "Attempt promotion explanation summary requires report.selectedIdentity to be undefined when candidates are empty."
+      );
+    }
   } else if (report.selectedAttemptId !== report.candidates[0]?.attemptId) {
     throw new ValidationError(
       "Attempt promotion explanation summary requires report.selectedAttemptId to match the first candidate when candidates are present."
@@ -118,7 +140,22 @@ function validatePromotionReport(report: AttemptPromotionReport): void {
   }
 
   report.candidates.forEach(validatePromotionAuditCandidate);
-  validateUniqueCandidateAttemptIds(report.candidates);
+  validateSelectedIdentity(
+    report.taskId,
+    report.selectedIdentity,
+    report.candidates[0]
+  );
+  validateCanonicalCandidateIdentity(report.taskId, report.candidates);
+  validateSelectedCandidate(report.selected, report.candidates.length);
+  validateCandidateGroupEntries(
+    report.promotionReadyCandidates,
+    "report.promotionReadyCandidates"
+  );
+  validateCandidateGroupEntries(
+    report.nonPromotionReadyCandidates,
+    "report.nonPromotionReadyCandidates"
+  );
+  validateCandidateGroupEntries(report.pendingCandidates, "report.pendingCandidates");
 
   if (
     !promotionAuditCandidatesEqual(report.selected, report.candidates[0])
@@ -201,20 +238,25 @@ function validatePromotionReport(report: AttemptPromotionReport): void {
   }
 }
 
-function validateUniqueCandidateAttemptIds(
+function validateCanonicalCandidateIdentity(
+  taskId: AttemptPromotionReport["taskId"],
   candidates: readonly AttemptPromotionAuditCandidate[]
 ): void {
-  const seenAttemptIds = new Set<string>();
-
-  for (const candidate of candidates) {
-    if (seenAttemptIds.has(candidate.attemptId)) {
-      throw new ValidationError(
-        "Attempt promotion explanation summary requires report.candidates to use unique candidate.attemptId values."
-      );
+  validateDownstreamIdentityIngress(
+    candidates.map((candidate) => ({
+      taskId,
+      attemptId: candidate.attemptId,
+      runtime: candidate.runtime
+    })),
+    {
+      required:
+        "Attempt promotion explanation summary requires report.taskId together with candidate.attemptId and candidate.runtime to be non-empty strings when candidates are present.",
+      singleTask:
+        "Attempt promotion explanation summary requires report.candidates to remain within report.taskId.",
+      unique:
+        "Attempt promotion explanation summary requires report.candidates to use unique (taskId, attemptId, runtime) identities."
     }
-
-    seenAttemptIds.add(candidate.attemptId);
-  }
+  );
 }
 
 function validateCandidateEntries(
@@ -224,6 +266,40 @@ function validateCandidateEntries(
     if (!hasOwnIndex(candidates, index) || !isRecord(candidates[index])) {
       throw new ValidationError(
         "Attempt promotion explanation summary requires report.candidates entries to be objects."
+      );
+    }
+  }
+}
+
+function validateSelectedCandidate(
+  selected: AttemptPromotionReport["selected"],
+  candidateCount: number
+): void {
+  if (selected === undefined) {
+    return;
+  }
+
+  if (!isRecord(selected)) {
+    throw new ValidationError(
+      candidateCount === 0
+        ? "Attempt promotion explanation summary requires report.selected to be undefined when candidates are empty."
+        : "Attempt promotion explanation summary requires report.selected to be an object when candidates are present."
+    );
+  }
+}
+
+function validateCandidateGroupEntries(
+  candidates: unknown,
+  fieldName: string
+): void {
+  if (!Array.isArray(candidates)) {
+    return;
+  }
+
+  for (let index = 0; index < candidates.length; index += 1) {
+    if (!hasOwnIndex(candidates, index) || !isRecord(candidates[index])) {
+      throw new ValidationError(
+        `Attempt promotion explanation summary requires ${fieldName} entries to be objects.`
       );
     }
   }
@@ -279,9 +355,15 @@ function validatePromotionAuditCandidate(
 
 function deriveExplanationCandidate(
   candidate: AttemptPromotionAuditCandidate,
-  selectedAttemptId: string | undefined
+  taskId: AttemptPromotionReport["taskId"],
+  selectedIdentity: AttemptPromotionReport["selectedIdentity"]
 ): AttemptPromotionExplanationCandidate {
-  const isSelected = candidate.attemptId === selectedAttemptId;
+  const isSelected =
+    taskId !== undefined &&
+    selectedIdentity !== undefined &&
+    selectedIdentity.taskId === taskId &&
+    selectedIdentity.attemptId === candidate.attemptId &&
+    selectedIdentity.runtime === candidate.runtime;
 
   return {
     attemptId: candidate.attemptId,
@@ -297,6 +379,68 @@ function deriveExplanationCandidate(
     pendingCheckNames: [...candidate.pendingCheckNames],
     skippedCheckNames: [...candidate.skippedCheckNames]
   };
+}
+
+function deriveSelectedIdentity(
+  taskId: AttemptPromotionReport["taskId"],
+  candidate: AttemptPromotionExplanationCandidate | undefined
+): AttemptSelectedIdentity | undefined {
+  if (taskId === undefined || candidate === undefined) {
+    return undefined;
+  }
+
+  return {
+    taskId,
+    attemptId: candidate.attemptId,
+    runtime: candidate.runtime
+  };
+}
+
+function validateSelectedIdentity(
+  taskId: AttemptPromotionReport["taskId"],
+  selectedIdentity: AttemptPromotionReport["selectedIdentity"],
+  candidate: AttemptPromotionAuditCandidate | undefined
+): void {
+  if (selectedIdentity === undefined) {
+    if (candidate === undefined) {
+      return;
+    }
+
+    throw new ValidationError(
+      "Attempt promotion explanation summary requires report.selectedIdentity to be defined when candidates are present."
+    );
+  }
+
+  if (!isRecord(selectedIdentity)) {
+    throw new ValidationError(
+      "Attempt promotion explanation summary requires report.selectedIdentity to be an object when provided."
+    );
+  }
+
+  const normalizedTaskId = validateNonEmptyString(
+    selectedIdentity.taskId,
+    "report.selectedIdentity.taskId"
+  );
+  const normalizedAttemptId = validateNonEmptyString(
+    selectedIdentity.attemptId,
+    "report.selectedIdentity.attemptId"
+  );
+  const normalizedRuntime = validateNonEmptyString(
+    selectedIdentity.runtime,
+    "report.selectedIdentity.runtime"
+  );
+
+  if (
+    taskId === undefined ||
+    candidate === undefined ||
+    normalizedTaskId !== taskId ||
+    normalizedAttemptId !== candidate.attemptId ||
+    normalizedRuntime !== candidate.runtime
+  ) {
+    throw new ValidationError(
+      "Attempt promotion explanation summary requires report.selectedIdentity to match the first candidate."
+    );
+  }
 }
 
 function cloneExplanationCandidate(
@@ -523,12 +667,14 @@ function validateCheckNameList(
   }
 }
 
-function validateNonEmptyString(value: unknown, fieldName: string): void {
+function validateNonEmptyString(value: unknown, fieldName: string): string {
   if (typeof value !== "string" || value.trim().length === 0) {
     throw new ValidationError(
       `Attempt promotion explanation summary requires ${fieldName} to be a non-empty string.`
     );
   }
+
+  return value.trim();
 }
 
 function validateAttemptStatus(value: unknown): void {

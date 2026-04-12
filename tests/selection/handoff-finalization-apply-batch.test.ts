@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { ValidationError } from "../../src/core/errors.js";
+import * as handoffFinalizationApplyModule from "../../src/selection/handoff-finalization-apply.js";
 import { applyAttemptHandoffFinalizationBatch } from "../../src/selection/handoff-finalization-apply-batch.js";
 import type { AttemptHandoffFinalizationRequest } from "../../src/selection/types.js";
 
@@ -42,6 +43,17 @@ describe("selection handoff-finalization-apply-batch helpers", () => {
     ).rejects.toThrow(
       "Attempt handoff finalization apply batch requires resolveHandoffFinalizationCapability to be a function when provided."
     );
+  });
+
+  it("should fail closed when reading requests throws through an accessor-shaped input", async () => {
+    await expect(
+      applyAttemptHandoffFinalizationBatch({
+        get requests() {
+          throw new Error("getter boom");
+        },
+        invokeHandoffFinalization: async () => undefined
+      } as never)
+    ).rejects.toThrow(ValidationError);
   });
 
   it("should return an empty batch result for an empty finalization request list", async () => {
@@ -366,6 +378,28 @@ describe("selection handoff-finalization-apply-batch helpers", () => {
     );
   });
 
+  it("should fail loudly when a finalization request does not produce an apply result", async () => {
+    const applySpy = vi
+      .spyOn(
+        handoffFinalizationApplyModule,
+        "applyAttemptHandoffFinalization"
+      )
+      .mockResolvedValueOnce(undefined as never);
+
+    try {
+      await expect(
+        applyAttemptHandoffFinalizationBatch({
+          requests: [createFinalizationRequest()],
+          invokeHandoffFinalization: async () => undefined
+        })
+      ).rejects.toThrow(
+        "Attempt handoff finalization apply batch requires each request to produce an apply result."
+      );
+    } finally {
+      applySpy.mockRestore();
+    }
+  });
+
   it("should fail loudly when finalization request entries are sparse or non-objects before later helpers run", async () => {
     const sparseRequests = new Array<AttemptHandoffFinalizationRequest>(1);
 
@@ -379,7 +413,7 @@ describe("selection handoff-finalization-apply-batch helpers", () => {
     );
   });
 
-  it("should preserve ordered fail-fast semantics when a later finalization request entry is malformed", async () => {
+  it("should fail preflight before invoking when a later finalization request entry is malformed", async () => {
     const invokedAttemptIds: string[] = [];
 
     await expect(

@@ -10,8 +10,10 @@ import type {
   AttemptPromotionDecisionSummary,
   AttemptPromotionExplanationCandidate,
   AttemptPromotionExplanationCode,
-  AttemptPromotionTarget
+  AttemptPromotionTarget,
+  AttemptSelectedIdentity
 } from "./types.js";
+import { rethrowSelectionAccessError } from "./entry-validation.js";
 
 const ATTEMPT_PROMOTION_TARGET_BASIS = "promotion_decision_summary" as const;
 const ATTEMPT_PROMOTION_DECISION_BASIS =
@@ -42,35 +44,42 @@ export function deriveAttemptPromotionTarget(
     );
   }
 
-  validateDecisionBasis(summary);
-  validatePromotionDecisionSummary(summary);
+  try {
+    validateDecisionBasis(summary);
+    validatePromotionDecisionSummary(summary);
 
-  if (!summary.canPromote) {
-    return undefined;
-  }
+    if (!summary.canPromote) {
+      return undefined;
+    }
 
-  const selected = summary.selected;
+    const selected = summary.selected;
 
-  if (selected === undefined) {
-    throw new ValidationError(
-      "Attempt promotion target requires summary.selected to be defined when summary.canPromote is true."
+    if (selected === undefined) {
+      throw new ValidationError(
+        "Attempt promotion target requires summary.selected to be defined when summary.canPromote is true."
+      );
+    }
+
+    return {
+      targetBasis: ATTEMPT_PROMOTION_TARGET_BASIS,
+      taskId: normalizeTaskId(summary.taskId),
+      attemptId: normalizeRequiredString(
+        selected.attemptId,
+        "summary.selected.attemptId"
+      ),
+      runtime: normalizeRequiredString(
+        selected.runtime,
+        "summary.selected.runtime"
+      ),
+      status: selected.status,
+      sourceKind: selected.sourceKind
+    };
+  } catch (error) {
+    rethrowSelectionAccessError(
+      error,
+      "Attempt promotion target requires summary to be a readable object."
     );
   }
-
-  return {
-    targetBasis: ATTEMPT_PROMOTION_TARGET_BASIS,
-    taskId: normalizeTaskId(summary.taskId),
-    attemptId: normalizeRequiredString(
-      selected.attemptId,
-      "summary.selected.attemptId"
-    ),
-    runtime: normalizeRequiredString(
-      selected.runtime,
-      "summary.selected.runtime"
-    ),
-    status: selected.status,
-    sourceKind: selected.sourceKind
-  };
 }
 
 function validateDecisionBasis(summary: AttemptPromotionDecisionSummary): void {
@@ -147,6 +156,11 @@ function validatePromotionDecisionSummary(
         "Attempt promotion target requires summary.comparableCandidateCount to be 0 when summary.candidateCount is 0."
       );
     }
+    if (summary.selectedIdentity !== undefined) {
+      throw new ValidationError(
+        "Attempt promotion target requires summary.selectedIdentity to be undefined when summary.candidateCount is 0."
+      );
+    }
   } else {
     validateNonEmptyString(
       summary.selectedAttemptId,
@@ -167,6 +181,12 @@ function validatePromotionDecisionSummary(
         "Attempt promotion target requires summary.selectedAttemptId to match summary.selected.attemptId."
       );
     }
+
+    validateSelectedIdentity(
+      summary.taskId,
+      summary.selectedIdentity,
+      summary.selected
+    );
 
     if (
       summary.recommendedForPromotion !==
@@ -353,6 +373,53 @@ function validateSelectedCandidate(
     candidate.skippedCheckNames,
     "summary.selected.skippedCheckNames"
   );
+}
+
+function validateSelectedIdentity(
+  taskId: AttemptPromotionDecisionSummary["taskId"],
+  selectedIdentity: AttemptPromotionDecisionSummary["selectedIdentity"],
+  candidate: AttemptPromotionExplanationCandidate
+): void {
+  if (selectedIdentity === undefined) {
+    throw new ValidationError(
+      "Attempt promotion target requires summary.selectedIdentity to be defined when summary.candidateCount is greater than 0."
+    );
+  }
+
+  if (!isRecord(selectedIdentity)) {
+    throw new ValidationError(
+      "Attempt promotion target requires summary.selectedIdentity to be an object when provided."
+    );
+  }
+
+  const normalizedTaskId = normalizeRequiredString(
+    selectedIdentity.taskId,
+    "summary.selectedIdentity.taskId"
+  );
+  const normalizedAttemptId = normalizeRequiredString(selectedIdentity.attemptId, "summary.selectedIdentity.attemptId");
+  const normalizedRuntime = normalizeRequiredString(selectedIdentity.runtime, "summary.selectedIdentity.runtime");
+  const normalizedSummaryTaskId = normalizeRequiredString(
+    taskId,
+    "summary.taskId"
+  );
+  const normalizedCandidateAttemptId = normalizeRequiredString(
+    candidate.attemptId,
+    "summary.selected.attemptId"
+  );
+  const normalizedCandidateRuntime = normalizeRequiredString(
+    candidate.runtime,
+    "summary.selected.runtime"
+  );
+
+  if (
+    normalizedTaskId !== normalizedSummaryTaskId ||
+    normalizedAttemptId !== normalizedCandidateAttemptId ||
+    normalizedRuntime !== normalizedCandidateRuntime
+  ) {
+    throw new ValidationError(
+      "Attempt promotion target requires summary.selectedIdentity to match summary.selected taskId, attemptId, and runtime."
+    );
+  }
 }
 
 function deriveBlockingReasons(

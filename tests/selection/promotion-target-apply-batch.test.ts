@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { ValidationError } from "../../src/core/errors.js";
 import type {
@@ -16,6 +16,7 @@ import {
   deriveAttemptVerificationArtifactSummary,
   deriveAttemptVerificationSummary
 } from "../../src/verification/internal.js";
+import * as promotionTargetApplyModule from "../../src/selection/promotion-target-apply.js";
 import type {
   AttemptVerificationArtifactSummary,
   AttemptVerificationCheckStatus,
@@ -93,6 +94,17 @@ describe("selection promotion-target-apply-batch helpers", () => {
     );
   });
 
+  it("should fail closed when reading targets throws through an accessor-shaped input", async () => {
+    await expect(
+      applyAttemptPromotionTargetBatch({
+        get targets() {
+          throw new Error("getter boom");
+        },
+        invokeHandoff: async () => undefined
+      } as never)
+    ).rejects.toThrow(ValidationError);
+  });
+
   it("should return an empty batch result for an empty promotion target list", async () => {
     await expect(
       applyAttemptPromotionTargetBatch({
@@ -104,6 +116,86 @@ describe("selection promotion-target-apply-batch helpers", () => {
     ).resolves.toEqual({
       results: []
     });
+  });
+
+  it("should fail loudly when targets from different taskIds are mixed after normalization", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      applyAttemptPromotionTargetBatch({
+        targets: [
+          createPromotionTarget({
+            taskId: "task_shared",
+            attemptId: "att_a"
+          }),
+          createPromotionTarget({
+            taskId: " task_other ",
+            attemptId: "att_b"
+          })
+        ],
+        invokeHandoff: async (request) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(
+      "Attempt promotion target apply batch requires targets from a single taskId."
+    );
+    expect(invokedAttemptIds).toEqual([]);
+  });
+
+  it("should fail loudly when targets reuse normalized identities", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      applyAttemptPromotionTargetBatch({
+        targets: [
+          createPromotionTarget({
+            taskId: "task_shared",
+            attemptId: "att_dup",
+            runtime: "codex-cli"
+          }),
+          createPromotionTarget({
+            taskId: " task_shared ",
+            attemptId: " att_dup ",
+            runtime: " codex-cli "
+          })
+        ],
+        invokeHandoff: async (request) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(
+      "Attempt promotion target apply batch requires targets to use unique (taskId, attemptId, runtime) identities."
+    );
+    expect(invokedAttemptIds).toEqual([]);
+  });
+
+  it("should fail before invoking when any target identity field is blank after normalization", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      applyAttemptPromotionTargetBatch({
+        targets: [
+          createPromotionTarget({
+            taskId: "task_shared",
+            attemptId: "att_valid"
+          }),
+          {
+            ...createPromotionTarget({
+              taskId: "task_shared",
+              attemptId: "att_invalid"
+            }),
+            runtime: "   "
+          } as AttemptPromotionTarget
+        ],
+        invokeHandoff: async (request) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(
+      "Attempt promotion target apply batch requires targets entries to include non-empty taskId, attemptId, and runtime strings."
+    );
+    expect(invokedAttemptIds).toEqual([]);
   });
 
   it("should preserve input order and continue past blocked targets", async () => {
@@ -267,6 +359,28 @@ describe("selection promotion-target-apply-batch helpers", () => {
     );
   });
 
+  it("should fail loudly when a promotion target does not produce a promotion target-apply result", async () => {
+    const applySpy = vi
+      .spyOn(
+        promotionTargetApplyModule,
+        "applyAttemptPromotionTarget"
+      )
+      .mockResolvedValueOnce(undefined as never);
+
+    try {
+      await expect(
+        applyAttemptPromotionTargetBatch({
+          targets: [createPromotionTarget()],
+          invokeHandoff: async () => undefined
+        })
+      ).rejects.toThrow(
+        "Attempt promotion target apply batch requires each target to produce a promotion target-apply result."
+      );
+    } finally {
+      applySpy.mockRestore();
+    }
+  });
+
   it("should fail loudly when promotion target entries are sparse or non-objects before later helpers run", async () => {
     const sparseTargets = new Array<AttemptPromotionTarget>(1);
 
@@ -280,7 +394,7 @@ describe("selection promotion-target-apply-batch helpers", () => {
     );
   });
 
-  it("should preserve ordered fail-fast semantics when a later promotion target entry is malformed", async () => {
+  it("should fail before invoking when a later promotion target entry is malformed", async () => {
     const invokedAttemptIds: string[] = [];
 
     await expect(
@@ -302,7 +416,39 @@ describe("selection promotion-target-apply-batch helpers", () => {
     ).rejects.toThrow(
       "Attempt promotion target apply batch requires targets entries to be objects."
     );
-    expect(invokedAttemptIds).toEqual(["att_supported_1"]);
+    expect(invokedAttemptIds).toEqual([]);
+  });
+
+  it("should fail before invoking when a later target identity becomes invalid after normalization", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      applyAttemptPromotionTargetBatch({
+        targets: [
+          createPromotionTarget({
+            attemptId: "att_supported_1"
+          }),
+          {
+            ...createPromotionTarget({
+              attemptId: "att_invalid",
+              runtime: "gemini-cli"
+            }),
+            taskId: "   "
+          } as AttemptPromotionTarget,
+          createPromotionTarget({
+            attemptId: "att_supported_2",
+            runtime: "gemini-cli"
+          })
+        ],
+        invokeHandoff: async (request) => {
+          invokedAttemptIds.push(request.attemptId);
+        },
+        resolveHandoffCapability: () => true
+      })
+    ).rejects.toThrow(
+      "Attempt promotion target apply batch requires targets entries to include non-empty taskId, attemptId, and runtime strings."
+    );
+    expect(invokedAttemptIds).toEqual([]);
   });
 
   it("should not mutate the supplied promotion targets", async () => {

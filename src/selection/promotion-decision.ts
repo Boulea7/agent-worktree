@@ -10,8 +10,15 @@ import type {
   AttemptPromotionDecisionSummary,
   AttemptPromotionExplanationCandidate,
   AttemptPromotionExplanationCode,
-  AttemptPromotionExplanationSummary
+  AttemptPromotionExplanationSummary,
+  AttemptSelectedIdentity
 } from "./types.js";
+import {
+  rethrowSelectionAccessError
+} from "./entry-validation.js";
+import {
+  validateDownstreamIdentityIngress
+} from "./downstream-identity-guardrails.js";
 
 const ATTEMPT_PROMOTION_DECISION_BASIS =
   "promotion_explanation_summary" as const;
@@ -35,30 +42,40 @@ export function deriveAttemptPromotionDecisionSummary(
     );
   }
 
-  validateExplanationBasis(summary);
-  validateTaskId(summary.taskId);
-  validatePromotionExplanationSummary(summary);
+  try {
+    validateExplanationBasis(summary);
+    validateTaskId(summary.taskId);
+    validatePromotionExplanationSummary(summary);
 
-  const selected =
-    summary.candidates[0] === undefined
-      ? undefined
-      : cloneExplanationCandidate(summary.candidates[0]);
-  const blockingReasons = deriveBlockingReasons(selected, summary.candidateCount);
+    const selected =
+      summary.candidates[0] === undefined
+        ? undefined
+        : cloneExplanationCandidate(summary.candidates[0]);
+    const blockingReasons = deriveBlockingReasons(selected, summary.candidateCount);
 
-  return {
-    decisionBasis: ATTEMPT_PROMOTION_DECISION_BASIS,
-    taskId: summary.taskId,
-    selectedAttemptId: summary.selectedAttemptId,
-    candidateCount: summary.candidates.length,
-    comparableCandidateCount: countComparableCandidates(summary.candidates),
-    promotionReadyCandidateCount: countPromotionReadyCandidates(summary.candidates),
-    recommendedForPromotion:
-      summary.candidates[0]?.recommendedForPromotion ?? false,
-    selected,
-    blockingReasons,
-    canPromote: blockingReasons.length === 0,
-    hasBlockingReasons: blockingReasons.length > 0
-  };
+    return {
+      decisionBasis: ATTEMPT_PROMOTION_DECISION_BASIS,
+      taskId: summary.taskId,
+      selectedAttemptId: summary.selectedAttemptId,
+      selectedIdentity: deriveSelectedIdentity(summary.taskId, selected),
+      candidateCount: summary.candidates.length,
+      comparableCandidateCount: countComparableCandidates(summary.candidates),
+      promotionReadyCandidateCount: countPromotionReadyCandidates(
+        summary.candidates
+      ),
+      recommendedForPromotion:
+        summary.candidates[0]?.recommendedForPromotion ?? false,
+      selected,
+      blockingReasons,
+      canPromote: blockingReasons.length === 0,
+      hasBlockingReasons: blockingReasons.length > 0
+    };
+  } catch (error) {
+    rethrowSelectionAccessError(
+      error,
+      "Attempt promotion decision summary requires summary to be a readable object."
+    );
+  }
 }
 
 function validateExplanationBasis(
@@ -113,6 +130,11 @@ function validatePromotionExplanationSummary(
         "Attempt promotion decision summary requires summary.selected to be undefined when candidates are empty."
       );
     }
+    if (summary.selectedIdentity !== undefined) {
+      throw new ValidationError(
+        "Attempt promotion decision summary requires summary.selectedIdentity to be undefined when candidates are empty."
+      );
+    }
   } else if (summary.selectedAttemptId !== summary.candidates[0]?.attemptId) {
     throw new ValidationError(
       "Attempt promotion decision summary requires summary.selectedAttemptId to match the first candidate when candidates are present."
@@ -146,7 +168,13 @@ function validatePromotionExplanationSummary(
     }
   });
 
-  validateUniqueCandidateAttemptIds(summary.candidates);
+  validateSelectedIdentity(
+    summary.taskId,
+    summary.selectedIdentity,
+    summary.candidates[0]
+  );
+  validateCanonicalCandidateIdentity(summary.taskId, summary.candidates);
+  validateSelectedCandidate(summary.selected, summary.candidates.length);
 
   if (
     !explanationCandidatesEqual(summary.selected, summary.candidates[0])
@@ -196,20 +224,25 @@ function validateCandidateEntries(
   }
 }
 
-function validateUniqueCandidateAttemptIds(
+function validateCanonicalCandidateIdentity(
+  taskId: AttemptPromotionExplanationSummary["taskId"],
   candidates: readonly AttemptPromotionExplanationCandidate[]
 ): void {
-  const seenAttemptIds = new Set<string>();
-
-  for (const candidate of candidates) {
-    if (seenAttemptIds.has(candidate.attemptId)) {
-      throw new ValidationError(
-        "Attempt promotion decision summary requires summary.candidates to use unique candidate.attemptId values."
-      );
+  validateDownstreamIdentityIngress(
+    candidates.map((candidate) => ({
+      taskId,
+      attemptId: candidate.attemptId,
+      runtime: candidate.runtime
+    })),
+    {
+      required:
+        "Attempt promotion decision summary requires summary.taskId together with candidate.attemptId and candidate.runtime to be non-empty strings when candidates are present.",
+      singleTask:
+        "Attempt promotion decision summary requires summary.candidates to remain within summary.taskId.",
+      unique:
+        "Attempt promotion decision summary requires summary.candidates to use unique (taskId, attemptId, runtime) identities."
     }
-
-    seenAttemptIds.add(candidate.attemptId);
-  }
+  );
 }
 
 function validateComparableCandidateCount(
@@ -274,6 +307,85 @@ function validateExplanationCandidate(
   );
   validateCheckNameList(candidate.pendingCheckNames, "candidate.pendingCheckNames");
   validateCheckNameList(candidate.skippedCheckNames, "candidate.skippedCheckNames");
+}
+
+function validateSelectedCandidate(
+  selected: AttemptPromotionExplanationSummary["selected"],
+  candidateCount: number
+): void {
+  if (selected === undefined) {
+    return;
+  }
+
+  if (!isRecord(selected)) {
+    throw new ValidationError(
+      candidateCount === 0
+        ? "Attempt promotion decision summary requires summary.selected to be undefined when candidates are empty."
+        : "Attempt promotion decision summary requires summary.selected to be an object when candidates are present."
+    );
+  }
+}
+
+function deriveSelectedIdentity(
+  taskId: AttemptPromotionExplanationSummary["taskId"],
+  candidate: AttemptPromotionExplanationCandidate | undefined
+): AttemptSelectedIdentity | undefined {
+  if (taskId === undefined || candidate === undefined) {
+    return undefined;
+  }
+
+  return {
+    taskId,
+    attemptId: candidate.attemptId,
+    runtime: candidate.runtime
+  };
+}
+
+function validateSelectedIdentity(
+  taskId: AttemptPromotionExplanationSummary["taskId"],
+  selectedIdentity: AttemptPromotionExplanationSummary["selectedIdentity"],
+  candidate: AttemptPromotionExplanationCandidate | undefined
+): void {
+  if (selectedIdentity === undefined) {
+    if (candidate === undefined) {
+      return;
+    }
+
+    throw new ValidationError(
+      "Attempt promotion decision summary requires summary.selectedIdentity to be defined when candidates are present."
+    );
+  }
+
+  if (!isRecord(selectedIdentity)) {
+    throw new ValidationError(
+      "Attempt promotion decision summary requires summary.selectedIdentity to be an object when provided."
+    );
+  }
+
+  const normalizedTaskId = validateNonEmptyString(
+    selectedIdentity.taskId,
+    "summary.selectedIdentity.taskId"
+  );
+  const normalizedAttemptId = validateNonEmptyString(
+    selectedIdentity.attemptId,
+    "summary.selectedIdentity.attemptId"
+  );
+  const normalizedRuntime = validateNonEmptyString(
+    selectedIdentity.runtime,
+    "summary.selectedIdentity.runtime"
+  );
+
+  if (
+    taskId === undefined ||
+    candidate === undefined ||
+    normalizedTaskId !== taskId ||
+    normalizedAttemptId !== candidate.attemptId ||
+    normalizedRuntime !== candidate.runtime
+  ) {
+    throw new ValidationError(
+      "Attempt promotion decision summary requires summary.selectedIdentity to match the first candidate."
+    );
+  }
 }
 
 function deriveBlockingReasons(
@@ -450,12 +562,14 @@ function validateCheckNameList(
   }
 }
 
-function validateNonEmptyString(value: unknown, fieldName: string): void {
+function validateNonEmptyString(value: unknown, fieldName: string): string {
   if (typeof value !== "string" || value.trim().length === 0) {
     throw new ValidationError(
       `Attempt promotion decision summary requires ${fieldName} to be a non-empty string.`
     );
   }
+
+  return value.trim();
 }
 
 function validateAttemptStatus(value: unknown): void {

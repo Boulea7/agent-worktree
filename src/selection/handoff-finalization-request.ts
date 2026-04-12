@@ -14,6 +14,7 @@ import {
   attemptHandoffFinalizationRequestBasis,
   deriveCanonicalAttemptHandoffDecisionBlockingReasons
 } from "./handoff-finalization-request-summary-shared.js";
+import { rethrowSelectionAccessError } from "./entry-validation.js";
 import {
   validateDownstreamSingleTaskBoundary,
   validateDownstreamUniqueIdentity
@@ -41,36 +42,46 @@ export function deriveAttemptHandoffFinalizationRequestSummary(
     );
   }
 
-  validateSummaryBasis(summary);
-  validateSummaryConsistency(summary);
+  try {
+    validateSummaryBasis(summary);
+    validateSummaryConsistency(summary);
 
-  if (!summary.canFinalizeHandoff) {
-    return undefined;
+    if (!summary.canFinalizeHandoff) {
+      return undefined;
+    }
+
+    return {
+      requestBasis: attemptHandoffFinalizationRequestBasis,
+      resultCount: summary.resultCount,
+      invokedResultCount: summary.invokedResultCount,
+      blockedResultCount: summary.blockedResultCount,
+      blockingReasons: [...summary.blockingReasons],
+      canFinalizeHandoff: summary.canFinalizeHandoff,
+      requests: summary.targets.map((target) => {
+        validateTaskId(target.taskId);
+        validateNonEmptyString(target.attemptId, "target.attemptId");
+        validateNonEmptyString(target.runtime, "target.runtime");
+        validateAttemptStatus(target.status);
+        validateAttemptSourceKind(target.sourceKind);
+
+        return {
+          taskId: normalizeTaskId(target.taskId),
+          attemptId: normalizeNonEmptyString(
+            target.attemptId,
+            "target.attemptId"
+          ),
+          runtime: normalizeNonEmptyString(target.runtime, "target.runtime"),
+          status: target.status,
+          sourceKind: target.sourceKind
+        };
+      })
+    };
+  } catch (error) {
+    rethrowSelectionAccessError(
+      error,
+      "Attempt handoff finalization request summary requires summary to be a readable object."
+    );
   }
-
-  return {
-    requestBasis: attemptHandoffFinalizationRequestBasis,
-    resultCount: summary.resultCount,
-    invokedResultCount: summary.invokedResultCount,
-    blockedResultCount: summary.blockedResultCount,
-    blockingReasons: [...summary.blockingReasons],
-    canFinalizeHandoff: summary.canFinalizeHandoff,
-    requests: summary.targets.map((target) => {
-      validateTaskId(target.taskId);
-      validateNonEmptyString(target.attemptId, "target.attemptId");
-      validateNonEmptyString(target.runtime, "target.runtime");
-      validateAttemptStatus(target.status);
-      validateAttemptSourceKind(target.sourceKind);
-
-      return {
-        taskId: normalizeTaskId(target.taskId),
-        attemptId: normalizeNonEmptyString(target.attemptId, "target.attemptId"),
-        runtime: normalizeNonEmptyString(target.runtime, "target.runtime"),
-        status: target.status,
-        sourceKind: target.sourceKind
-      };
-    })
-  };
 }
 
 function validateSummaryBasis(summary: AttemptHandoffFinalizationTargetSummary): void {

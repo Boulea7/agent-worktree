@@ -18,6 +18,40 @@ describe("selection handoff-finalization-consumer helpers", () => {
     );
   });
 
+  it("should fail closed when reading the finalization-consumer input through an accessor-shaped input", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationConsumer({
+        get request() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationConsumer({
+        get request() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization consumer input must be a readable object."
+    );
+  });
+
+  it("should fail loudly when request is not an object when provided", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationConsumer({
+        request: null as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationConsumer({
+        request: null as never
+      })
+    ).toThrow(
+      "Attempt handoff finalization consumer requires request to be an object when provided."
+    );
+  });
+
   it("should return undefined when the supplied finalization request is undefined", () => {
     expect(
       deriveAttemptHandoffFinalizationConsumer({

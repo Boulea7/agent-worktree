@@ -53,6 +53,25 @@ describe("selection handoff-finalization-request helpers", () => {
     ).toThrow(ValidationError);
   });
 
+  it("should fail closed when reading the finalization target summary through an accessor-shaped input", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationRequestSummary({
+        get finalizationBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationRequestSummary({
+        get finalizationBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization request summary requires summary to be a readable object."
+    );
+  });
+
   it("should return undefined when the supplied blocked finalization target summary is valid", () => {
     expect(
       deriveAttemptHandoffFinalizationRequestSummary(createFinalizationTargetSummary([]))

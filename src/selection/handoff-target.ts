@@ -9,6 +9,7 @@ import type {
   AttemptHandoffTarget,
   AttemptPromotionTarget
 } from "./types.js";
+import { rethrowSelectionAccessError } from "./entry-validation.js";
 
 const ATTEMPT_PROMOTION_TARGET_BASIS = "promotion_decision_summary" as const;
 const ATTEMPT_HANDOFF_TARGET_BASIS = "promotion_target" as const;
@@ -22,21 +23,38 @@ export function deriveAttemptHandoffTarget(
     return undefined;
   }
 
-  validateTargetBasis(target);
-  const taskId = normalizeRequiredString(target.taskId, "target.taskId");
-  const attemptId = normalizeRequiredString(target.attemptId, "target.attemptId");
-  const runtime = normalizeRequiredString(target.runtime, "target.runtime");
-  validateAttemptStatus(target.status);
-  validateAttemptSourceKind(target.sourceKind);
+  if (!isRecord(target)) {
+    throw new ValidationError(
+      "Attempt handoff target requires target to be an object when provided."
+    );
+  }
 
-  return {
-    handoffBasis: ATTEMPT_HANDOFF_TARGET_BASIS,
-    taskId,
-    attemptId,
-    runtime,
-    status: target.status,
-    sourceKind: target.sourceKind
-  };
+  try {
+    validateTargetBasis(target);
+    const taskId = normalizeRequiredString(target.taskId, "target.taskId");
+    const attemptId = normalizeRequiredString(target.attemptId, "target.attemptId");
+    const runtime = normalizeRequiredString(target.runtime, "target.runtime");
+    validateAttemptStatus(target.status);
+    validateAttemptSourceKind(target.sourceKind);
+
+    return {
+      handoffBasis: ATTEMPT_HANDOFF_TARGET_BASIS,
+      taskId,
+      attemptId,
+      runtime,
+      status: target.status,
+      sourceKind: target.sourceKind
+    };
+  } catch (error) {
+    rethrowSelectionAccessError(
+      error,
+      "Attempt handoff target requires target to be a readable object when provided."
+    );
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function validateTargetBasis(target: AttemptPromotionTarget): void {

@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { ValidationError } from "../../src/core/errors.js";
+import * as handoffApplyModule from "../../src/selection/handoff-apply.js";
 import {
   applyAttemptHandoffBatch,
   type AttemptHandoffRequest
@@ -144,6 +145,28 @@ describe("selection handoff-apply-batch helpers", () => {
       })
     ).rejects.toThrow(
       "Attempt handoff apply batch requires requests entries to include non-empty taskId, attemptId, and runtime strings."
+    );
+    expect(invokedAttemptIds).toEqual([]);
+  });
+
+  it("should fail before invoking when a later request entry is missing from the array", async () => {
+    const invokedAttemptIds: string[] = [];
+    const requests = new Array<AttemptHandoffRequest>(2);
+
+    requests[0] = createHandoffRequest({
+      taskId: "task_shared",
+      attemptId: "att_valid"
+    });
+
+    await expect(
+      applyAttemptHandoffBatch({
+        requests,
+        invokeHandoff: async (request: AttemptHandoffRequest) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(
+      "Attempt handoff apply batch requires requests entries to be objects."
     );
     expect(invokedAttemptIds).toEqual([]);
   });
@@ -343,7 +366,7 @@ describe("selection handoff-apply-batch helpers", () => {
     expect(invokedAttemptIds).toEqual(["att_supported_1", "att_supported_2"]);
   });
 
-  it("should fail loudly when a batch entry does not produce an apply result", async () => {
+  it("should fail loudly when a batch entry is malformed before any apply result could be produced", async () => {
     const requests = [undefined] as unknown as readonly AttemptHandoffRequest[];
 
     await expect(
@@ -360,6 +383,25 @@ describe("selection handoff-apply-batch helpers", () => {
     ).rejects.toThrow(
       "Attempt handoff apply batch requires requests entries to be objects."
     );
+  });
+
+  it("should fail loudly when a request does not produce an apply result", async () => {
+    const applySpy = vi
+      .spyOn(handoffApplyModule, "applyAttemptHandoff")
+      .mockResolvedValueOnce(undefined as never);
+
+    try {
+      await expect(
+        applyAttemptHandoffBatch({
+          requests: [createHandoffRequest()],
+          invokeHandoff: async () => undefined
+        })
+      ).rejects.toThrow(
+        "Attempt handoff apply batch requires each request to produce an apply result."
+      );
+    } finally {
+      applySpy.mockRestore();
+    }
   });
 
   it("should not mutate the supplied requests", async () => {

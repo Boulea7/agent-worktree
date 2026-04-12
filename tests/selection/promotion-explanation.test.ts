@@ -39,6 +39,7 @@ describe("selection promotion-explanation helpers", () => {
       explanationBasis: "promotion_report",
       taskId: undefined,
       selectedAttemptId: undefined,
+      selectedIdentity: undefined,
       candidateCount: 0,
       comparableCandidateCount: 0,
       promotionReadyCandidateCount: 0,
@@ -72,6 +73,11 @@ describe("selection promotion-explanation helpers", () => {
       explanationBasis: "promotion_report",
       taskId: "task_shared",
       selectedAttemptId: "att_ready",
+      selectedIdentity: {
+        taskId: "task_shared",
+        attemptId: "att_ready",
+        runtime: "codex-cli"
+      },
       candidateCount: 1,
       comparableCandidateCount: 1,
       promotionReadyCandidateCount: 1,
@@ -154,6 +160,11 @@ describe("selection promotion-explanation helpers", () => {
     const explanation = deriveAttemptPromotionExplanationSummary(report);
 
     expect(explanation.selectedAttemptId).toBe("att_ready");
+    expect(explanation.selectedIdentity).toEqual({
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli"
+    });
     expect(explanation.candidates.map((candidate) => candidate.attemptId)).toEqual([
       "att_ready",
       "att_pending",
@@ -204,6 +215,65 @@ describe("selection promotion-explanation helpers", () => {
     expect(explanation.candidates[1]?.attemptId).toBe("att_b");
     expect(explanation.candidates[1]?.explanationCode).toBe("promotion_ready");
     expect(explanation.candidates[1]?.isSelected).toBe(false);
+  });
+
+  it("should keep selection canonical when runtimes differ but attemptId is reused", () => {
+    const report = createPromotionReport([
+      createPromotionCandidate({
+        attemptId: "att_shared",
+        runtime: "codex-cli",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      }),
+      createPromotionCandidate({
+        attemptId: "att_shared",
+        runtime: "gemini-cli",
+        verification: createVerification({
+          state: "pending",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
+        })
+      })
+    ]);
+
+    const explanation = deriveAttemptPromotionExplanationSummary(report);
+
+    expect(explanation.selectedIdentity).toEqual({
+      taskId: "task_shared",
+      attemptId: "att_shared",
+      runtime: "codex-cli"
+    });
+    expect(
+      explanation.candidates.map((candidate) => ({
+        runtime: candidate.runtime,
+        isSelected: candidate.isSelected,
+        explanationCode: candidate.explanationCode
+      }))
+    ).toEqual([
+      {
+        runtime: "codex-cli",
+        isSelected: true,
+        explanationCode: "selected"
+      },
+      {
+        runtime: "gemini-cli",
+        isSelected: false,
+        explanationCode: "required_checks_pending"
+      }
+    ]);
   });
 
   it("should derive required_checks_failed when required checks failed or errored", () => {
@@ -512,6 +582,31 @@ describe("selection promotion-explanation helpers", () => {
     );
   });
 
+  it("should fail loudly when report.selectedIdentity is missing while candidates are present", () => {
+    const report = {
+      ...createPromotionReport([
+        createPromotionCandidate({
+          attemptId: "att_ready",
+          verification: createVerification({
+            state: "verified",
+            checks: [
+              {
+                name: "lint",
+                required: true,
+                status: "passed"
+              }
+            ]
+          })
+        })
+      ]),
+      selectedIdentity: undefined
+    };
+
+    expect(() => deriveAttemptPromotionExplanationSummary(report)).toThrow(
+      "Attempt promotion explanation summary requires report.selectedIdentity to be defined when candidates are present."
+    );
+  });
+
   it("should fail loudly when the supplied promotion report container is malformed", () => {
     expect(() =>
       deriveAttemptPromotionExplanationSummaryDirect(null as never)
@@ -527,6 +622,17 @@ describe("selection promotion-explanation helpers", () => {
     ).toThrow(
       "Attempt promotion explanation summary requires report to be an object."
     );
+  });
+
+  it("should fail closed when reading report.candidates throws through an accessor-shaped input", () => {
+    expect(() =>
+      deriveAttemptPromotionExplanationSummary({
+        ...createPromotionReport([]),
+        get candidates() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
   });
 
   it("should fail loudly when report.candidates is malformed or sparse", () => {
@@ -599,6 +705,33 @@ describe("selection promotion-explanation helpers", () => {
     );
     expect(() => deriveAttemptPromotionExplanationSummary(mismatchedReport)).toThrow(
       "Attempt promotion explanation summary requires report.selected to match the first candidate."
+    );
+  });
+
+  it("should fail loudly when report.selected is malformed", () => {
+    const report = createPromotionReport([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(() =>
+      deriveAttemptPromotionExplanationSummary({
+        ...report,
+        selected: null as never
+      })
+    ).toThrow(
+      "Attempt promotion explanation summary requires report.selected to be an object when candidates are present."
     );
   });
 
@@ -721,6 +854,46 @@ describe("selection promotion-explanation helpers", () => {
     );
   });
 
+  it("should fail loudly when canonical report subgroup entries are malformed", () => {
+    const report = createPromotionReport([
+      createPromotionCandidate({
+        attemptId: "att_pending",
+        verification: createVerification({
+          state: "pending",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
+        })
+      }),
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(() =>
+      deriveAttemptPromotionExplanationSummary({
+        ...report,
+        promotionReadyCandidates: [null] as never
+      })
+    ).toThrow(
+      "Attempt promotion explanation summary requires report.promotionReadyCandidates entries to be objects."
+    );
+  });
+
   it("should fail loudly when report.taskId is neither a string nor undefined", () => {
     const report = {
       ...createPromotionReport([
@@ -819,7 +992,61 @@ describe("selection promotion-explanation helpers", () => {
         ]
       })
     ).toThrow(
-      "Attempt promotion explanation summary requires report.candidates to use unique candidate.attemptId values."
+      "Attempt promotion explanation summary requires report.candidates to use unique (taskId, attemptId, runtime) identities."
+    );
+  });
+
+  it("should fail loudly when report.candidates reuse a normalized (taskId, attemptId, runtime) identity", () => {
+    const report = createPromotionReport([
+      createPromotionCandidate({
+        attemptId: "att_a",
+        runtime: "codex-cli",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      }),
+      createPromotionCandidate({
+        attemptId: "att_b",
+        runtime: "gemini-cli",
+        verification: createVerification({
+          state: "pending",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(() =>
+      deriveAttemptPromotionExplanationSummary({
+        ...report,
+        taskId: "task_shared",
+        candidates: [
+          {
+            ...report.candidates[0]!,
+            taskId: "task_shared"
+          },
+          {
+            ...report.candidates[1]!,
+            taskId: " task_shared ",
+            attemptId: " att_a ",
+            runtime: " codex-cli "
+          }
+        ] as never
+      })
+    ).toThrow(
+      "Attempt promotion explanation summary requires report.candidates to use unique (taskId, attemptId, runtime) identities."
     );
   });
 
