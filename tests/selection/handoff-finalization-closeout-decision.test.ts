@@ -178,6 +178,35 @@ describe("selection handoff-finalization-closeout-decision helpers", () => {
     );
   });
 
+  it("should fail closed when reading closure booleans throws through an accessor-shaped input", () => {
+    const summary = createClosureSummary({
+      resultCount: 1,
+      invokedResultCount: 1,
+      blockedResultCount: 0,
+      groupCount: 1,
+      reportingDisposition: "all_invoked",
+      hasResults: true,
+      allResultsInvoked: true,
+      allResultsBlocked: false,
+      hasMixedDisposition: false
+    });
+    Object.defineProperty(summary, "hasResults", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    const act = () =>
+      deriveAttemptHandoffFinalizationCloseoutDecisionSummary(summary as never);
+
+    expect(act).toThrow(ValidationError);
+    expect(act).toThrow(
+      "Attempt handoff finalization closeout decision summary requires summary.hasResults to match the canonical result-count derivation."
+    );
+  });
+
   it("should fail loudly when the closeout booleans drift from canonical count-derived state", () => {
     const act = () =>
       deriveAttemptHandoffFinalizationCloseoutDecisionSummary(

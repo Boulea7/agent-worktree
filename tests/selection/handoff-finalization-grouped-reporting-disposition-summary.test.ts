@@ -227,6 +227,27 @@ describe(
       }
     });
 
+    it("should fail closed when reading a grouped reporting group field throws through an accessor-shaped input", () => {
+      const group = createBlockedReportingGroup();
+      Object.defineProperty(group, "groupKey", {
+        configurable: true,
+        enumerable: true,
+        get() {
+          throw new Error("getter boom");
+        }
+      });
+
+      const act = () =>
+        deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary(
+          createGroupedReportingSummary([group as never])
+        );
+
+      expect(act).toThrow(ValidationError);
+      expect(act).toThrow(
+        "Attempt handoff finalization grouped reporting disposition summary requires each groupKey to use the existing handoff-finalization explanation vocabulary."
+      );
+    });
+
     it("should fail loudly when a grouped reporting group count split stops adding up to the group total", () => {
       const act = () =>
         deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary(

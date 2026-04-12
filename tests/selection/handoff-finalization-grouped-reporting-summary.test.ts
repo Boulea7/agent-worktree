@@ -185,6 +185,30 @@ describe("selection handoff-finalization-grouped-reporting-summary helpers", () 
     }
   });
 
+  it("should fail closed when reading groupKey throws through an accessor-shaped input", () => {
+    const group = createBlockedProjectionGroup();
+    Object.defineProperty(group, "groupKey", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedReportingSummary(
+        createGroupedProjectionSummary([group as never])
+      )
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedReportingSummary(
+        createGroupedProjectionSummary([group as never])
+      )
+    ).toThrow(
+      "Attempt handoff finalization grouped reporting summary requires each groupKey to use the existing handoff-finalization explanation vocabulary."
+    );
+  });
+
   it("should still accept own grouped projection entries that shadow inherited array indexes", () => {
     Array.prototype[0] = createBlockedProjectionGroup({
       results: [createBlockedReportReadyEntry({ attemptId: "att_inherited" })]

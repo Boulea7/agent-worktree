@@ -1,4 +1,5 @@
 import { ValidationError } from "../core/errors.js";
+import { readSelectionValue } from "./entry-validation.js";
 import {
   validateDownstreamSingleTaskBoundary,
   validateDownstreamUniqueIdentity
@@ -55,13 +56,27 @@ function validateSummary(summary: AttemptHandoffFinalizationReportReady): void {
     );
   }
 
-  if (summary.reportBasis !== attemptHandoffFinalizationReportReadyBasis) {
+  if (
+    readSelectionValue(
+      summary,
+      "reportBasis",
+      'Attempt handoff finalization grouped projection summary requires summary.reportBasis to be "handoff_finalization_explanation_summary".'
+    ) !== attemptHandoffFinalizationReportReadyBasis
+  ) {
     throw new ValidationError(
       'Attempt handoff finalization grouped projection summary requires summary.reportBasis to be "handoff_finalization_explanation_summary".'
     );
   }
 
-  if (!Array.isArray(summary.results)) {
+  if (
+    !Array.isArray(
+      readSelectionValue(
+        summary,
+        "results",
+        "Attempt handoff finalization grouped projection summary requires summary.results to be an array."
+      )
+    )
+  ) {
     throw new ValidationError(
       "Attempt handoff finalization grouped projection summary requires summary.results to be an array."
     );
@@ -75,13 +90,31 @@ function validateCanonicalSubgroups(
   const invokedResults = results.filter((entry) => entry.invoked);
   const blockedResults = results.filter((entry) => !entry.invoked);
 
-  if (!reportReadyEntryArraysEqual(summary.invokedResults, invokedResults)) {
+  if (
+    !reportReadyEntryArraysEqual(
+      readSelectionValue(
+        summary,
+        "invokedResults",
+        "Attempt handoff finalization grouped projection summary requires summary.invokedResults to match the stable filtered invoked subgroup."
+      ),
+      invokedResults
+    )
+  ) {
     throw new ValidationError(
       "Attempt handoff finalization grouped projection summary requires summary.invokedResults to match the stable filtered invoked subgroup."
     );
   }
 
-  if (!reportReadyEntryArraysEqual(summary.blockedResults, blockedResults)) {
+  if (
+    !reportReadyEntryArraysEqual(
+      readSelectionValue(
+        summary,
+        "blockedResults",
+        "Attempt handoff finalization grouped projection summary requires summary.blockedResults to match the stable filtered blocked subgroup."
+      ),
+      blockedResults
+    )
+  ) {
     throw new ValidationError(
       "Attempt handoff finalization grouped projection summary requires summary.blockedResults to match the stable filtered blocked subgroup."
     );

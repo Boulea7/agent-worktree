@@ -1,4 +1,5 @@
 import { ValidationError } from "../core/errors.js";
+import { readSelectionValue } from "./entry-validation.js";
 import type {
   AttemptHandoffFinalizationClosureSummary,
   AttemptHandoffFinalizationGroupedReportingDispositionSummary
@@ -56,7 +57,11 @@ function validateSummary(
   }
 
   if (
-    summary.groupedReportingDispositionBasis !==
+    readSelectionValue(
+      summary,
+      "groupedReportingDispositionBasis",
+      'Attempt handoff finalization closure summary requires summary.groupedReportingDispositionBasis to be "handoff_finalization_grouped_reporting_summary".'
+    ) !==
     attemptHandoffFinalizationGroupedReportingDispositionBasis
   ) {
     throw new ValidationError(
@@ -64,16 +69,38 @@ function validateSummary(
     );
   }
 
-  validateNonNegativeInteger(summary.resultCount, "summary.resultCount");
   validateNonNegativeInteger(
-    summary.invokedResultCount,
+    readSelectionValue(
+      summary,
+      "resultCount",
+      "Attempt handoff finalization closure summary requires summary.resultCount to be a non-negative integer."
+    ),
+    "summary.resultCount"
+  );
+  validateNonNegativeInteger(
+    readSelectionValue(
+      summary,
+      "invokedResultCount",
+      "Attempt handoff finalization closure summary requires summary.invokedResultCount to be a non-negative integer."
+    ),
     "summary.invokedResultCount"
   );
   validateNonNegativeInteger(
-    summary.blockedResultCount,
+    readSelectionValue(
+      summary,
+      "blockedResultCount",
+      "Attempt handoff finalization closure summary requires summary.blockedResultCount to be a non-negative integer."
+    ),
     "summary.blockedResultCount"
   );
-  validateNonNegativeInteger(summary.groupCount, "summary.groupCount");
+  validateNonNegativeInteger(
+    readSelectionValue(
+      summary,
+      "groupCount",
+      "Attempt handoff finalization closure summary requires summary.groupCount to be a non-negative integer."
+    ),
+    "summary.groupCount"
+  );
 
   if (
     summary.invokedResultCount + summary.blockedResultCount !==
@@ -85,7 +112,11 @@ function validateSummary(
   }
 
   validateHandoffFinalizationReportingDisposition(
-    summary.reportingDisposition,
+    readSelectionValue(
+      summary,
+      "reportingDisposition",
+      "Attempt handoff finalization closure summary requires summary.reportingDisposition to use the existing grouped reporting disposition vocabulary."
+    ),
     "Attempt handoff finalization closure summary requires summary.reportingDisposition to use the existing grouped reporting disposition vocabulary."
   );
 

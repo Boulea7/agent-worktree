@@ -164,6 +164,31 @@ describe("selection handoff-finalization-closure-summary helpers", () => {
     );
   });
 
+  it("should fail closed when reading reportingDisposition throws through an accessor-shaped input", () => {
+    const summary = createDispositionSummary({
+      resultCount: 1,
+      invokedResultCount: 1,
+      blockedResultCount: 0,
+      groupCount: 1,
+      reportingDisposition: "all_invoked"
+    });
+    Object.defineProperty(summary, "reportingDisposition", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    const act = () =>
+      deriveAttemptHandoffFinalizationClosureSummary(summary as never);
+
+    expect(act).toThrow(ValidationError);
+    expect(act).toThrow(
+      "Attempt handoff finalization closure summary requires summary.reportingDisposition to use the existing grouped reporting disposition vocabulary."
+    );
+  });
+
   it("should fail loudly when the count split stops adding up", () => {
     const act = () =>
       deriveAttemptHandoffFinalizationClosureSummary(

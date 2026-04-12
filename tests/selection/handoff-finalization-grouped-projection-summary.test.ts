@@ -232,6 +232,68 @@ describe("selection handoff-finalization-grouped-projection-summary helpers", ()
     }
   });
 
+  it("should fail closed when reading report-ready entry fields throws through an accessor-shaped input", () => {
+    const entry = createBlockedReportReadyEntry();
+    Object.defineProperty(entry, "taskId", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedProjectionSummary(
+        createReportReadySummary([entry])
+      )
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedProjectionSummary(
+        createReportReadySummary([entry])
+      )
+    ).toThrow(
+      "Attempt handoff finalization grouped projection summary requires entry.taskId to be a non-empty string."
+    );
+  });
+
+  it("should fail closed when a report-ready entry only provides identity fields through the prototype chain", () => {
+    const entry = Object.create(createBlockedReportReadyEntry(), {
+      explanationCode: {
+        configurable: true,
+        enumerable: true,
+        value: "handoff_finalization_blocked_unsupported"
+      },
+      invoked: {
+        configurable: true,
+        enumerable: true,
+        value: false
+      },
+      blockingReasons: {
+        configurable: true,
+        enumerable: true,
+        value: ["handoff_finalization_unsupported"]
+      },
+      status: {
+        configurable: true,
+        enumerable: true,
+        value: "created"
+      }
+    });
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedProjectionSummary(
+        createReportReadySummary([entry as never])
+      )
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedProjectionSummary(
+        createReportReadySummary([entry as never])
+      )
+    ).toThrow(
+      "Attempt handoff finalization grouped projection summary requires entry.taskId to be a non-empty string."
+    );
+  });
+
   it("should fail loudly when report-ready subgroups drift from the canonical filtered groups", () => {
     expect(() =>
       deriveAttemptHandoffFinalizationGroupedProjectionSummary({

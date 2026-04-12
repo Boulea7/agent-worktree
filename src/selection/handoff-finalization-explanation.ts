@@ -5,6 +5,7 @@ import {
   type AttemptSourceKind,
   type AttemptStatus
 } from "../manifest/types.js";
+import { readSelectionValue } from "./entry-validation.js";
 import {
   validateDownstreamSingleTaskBoundary,
   validateDownstreamUniqueIdentity
@@ -58,30 +59,65 @@ function validateSummary(
     );
   }
 
-  if (summary.outcomeBasis !== attemptHandoffFinalizationOutcomeBasis) {
+  if (
+    readSelectionValue(
+      summary,
+      "outcomeBasis",
+      'Attempt handoff finalization explanation summary requires summary.outcomeBasis to be "handoff_finalization_apply_batch".'
+    ) !== attemptHandoffFinalizationOutcomeBasis
+  ) {
     throw new ValidationError(
       'Attempt handoff finalization explanation summary requires summary.outcomeBasis to be "handoff_finalization_apply_batch".'
     );
   }
 
-  validateNonNegativeInteger(summary.resultCount, "summary.resultCount");
   validateNonNegativeInteger(
-    summary.invokedResultCount,
+    readSelectionValue(
+      summary,
+      "resultCount",
+      "Attempt handoff finalization explanation summary requires summary.resultCount to be a non-negative integer."
+    ),
+    "summary.resultCount"
+  );
+  validateNonNegativeInteger(
+    readSelectionValue(
+      summary,
+      "invokedResultCount",
+      "Attempt handoff finalization explanation summary requires summary.invokedResultCount to be a non-negative integer."
+    ),
     "summary.invokedResultCount"
   );
   validateNonNegativeInteger(
-    summary.blockedResultCount,
+    readSelectionValue(
+      summary,
+      "blockedResultCount",
+      "Attempt handoff finalization explanation summary requires summary.blockedResultCount to be a non-negative integer."
+    ),
     "summary.blockedResultCount"
   );
-  validateBlockingReasons(summary.blockingReasons, "summary.blockingReasons");
+  const summaryBlockingReasons = readSelectionValue(
+    summary,
+    "blockingReasons",
+    "Attempt handoff finalization explanation summary requires summary.blockingReasons to be an array."
+  );
+  validateBlockingReasons(summaryBlockingReasons, "summary.blockingReasons");
 
-  if (!Array.isArray(summary.outcomes)) {
+  const outcomesValue = readSelectionValue(
+    summary,
+    "outcomes",
+    "Attempt handoff finalization explanation summary requires summary.outcomes to be an array."
+  );
+
+  if (!Array.isArray(outcomesValue)) {
     throw new ValidationError(
       "Attempt handoff finalization explanation summary requires summary.outcomes to be an array."
     );
   }
 
-  const outcomes = validateOutcomeArray(summary.outcomes, "summary.outcomes");
+  const outcomes = validateOutcomeArray(
+    outcomesValue as AttemptHandoffFinalizationOutcome[],
+    "summary.outcomes"
+  );
   validateDownstreamSingleTaskBoundary(
     outcomes,
     "Attempt handoff finalization explanation summary requires summary.outcomes from a single taskId."
@@ -114,7 +150,12 @@ function validateSummary(
 
   const blockingReasons = collectBlockingReasons(outcomes);
 
-  if (!stringArraysEqual(summary.blockingReasons, blockingReasons)) {
+  if (
+    !stringArraysEqual(
+      summaryBlockingReasons as string[],
+      blockingReasons
+    )
+  ) {
     throw new ValidationError(
       "Attempt handoff finalization explanation summary requires summary.blockingReasons to match the stable blocking-reason union derived from summary.outcomes."
     );
@@ -132,33 +173,73 @@ function validateOutcome(outcome: unknown): AttemptHandoffFinalizationOutcome {
 
   const outcomeRecord = outcome as unknown as AttemptHandoffFinalizationOutcome;
 
-  const taskId = normalizeRequiredString(outcomeRecord.taskId, "outcome.taskId");
+  const taskId = normalizeRequiredString(
+    readSelectionValue(
+      outcomeRecord,
+      "taskId",
+      "Attempt handoff finalization explanation summary requires outcome.taskId to be a non-empty string."
+    ),
+    "outcome.taskId"
+  );
   const attemptId = normalizeRequiredString(
-    outcomeRecord.attemptId,
+    readSelectionValue(
+      outcomeRecord,
+      "attemptId",
+      "Attempt handoff finalization explanation summary requires outcome.attemptId to be a non-empty string."
+    ),
     "outcome.attemptId"
   );
-  const runtime = normalizeRequiredString(outcomeRecord.runtime, "outcome.runtime");
-  validateAttemptStatus(outcomeRecord.status, "outcome.status");
-  validateAttemptSourceKind(outcomeRecord.sourceKind, "outcome.sourceKind");
+  const runtime = normalizeRequiredString(
+    readSelectionValue(
+      outcomeRecord,
+      "runtime",
+      "Attempt handoff finalization explanation summary requires outcome.runtime to be a non-empty string."
+    ),
+    "outcome.runtime"
+  );
+  const status = readSelectionValue(
+    outcomeRecord,
+    "status",
+    "Attempt handoff finalization explanation summary requires outcome.status to use the existing attempt status vocabulary."
+  );
+  validateAttemptStatus(status, "outcome.status");
+  const sourceKind = readSelectionValue(
+    outcomeRecord,
+    "sourceKind",
+    "Attempt handoff finalization explanation summary requires outcome.sourceKind to use the existing attempt source-kind vocabulary when provided."
+  );
+  validateAttemptSourceKind(sourceKind, "outcome.sourceKind");
 
-  if (typeof outcomeRecord.invoked !== "boolean") {
+  const invoked = readSelectionValue(
+    outcomeRecord,
+    "invoked",
+    "Attempt handoff finalization explanation summary requires outcome.invoked to be a boolean."
+  );
+
+  if (typeof invoked !== "boolean") {
     throw new ValidationError(
       "Attempt handoff finalization explanation summary requires outcome.invoked to be a boolean."
     );
   }
 
   validateBlockingReasons(
-    outcomeRecord.blockingReasons,
+    readSelectionValue(
+      outcomeRecord,
+      "blockingReasons",
+      "Attempt handoff finalization explanation summary requires outcome.blockingReasons to be an array."
+    ),
     "outcome.blockingReasons"
   );
 
-  if (outcomeRecord.invoked && outcomeRecord.blockingReasons.length > 0) {
+  const blockingReasons = outcomeRecord.blockingReasons;
+
+  if (invoked && blockingReasons.length > 0) {
     throw new ValidationError(
       "Attempt handoff finalization explanation summary requires invoked outcomes to use empty blockingReasons."
     );
   }
 
-  if (!outcomeRecord.invoked && outcomeRecord.blockingReasons.length === 0) {
+  if (!invoked && blockingReasons.length === 0) {
     throw new ValidationError(
       "Attempt handoff finalization explanation summary requires blocked outcomes to keep blockingReasons."
     );
@@ -168,10 +249,10 @@ function validateOutcome(outcome: unknown): AttemptHandoffFinalizationOutcome {
     taskId,
     attemptId,
     runtime,
-    status: outcomeRecord.status,
-    sourceKind: outcomeRecord.sourceKind,
-    invoked: outcomeRecord.invoked,
-    blockingReasons: [...outcomeRecord.blockingReasons]
+    status: status as AttemptStatus,
+    sourceKind: sourceKind as AttemptSourceKind | undefined,
+    invoked,
+    blockingReasons: [...blockingReasons]
   };
 }
 
@@ -236,11 +317,21 @@ function validateBlockingReasons(value: unknown, fieldName: string): void {
   }
 
   for (let index = 0; index < value.length; index += 1) {
+    let entryValue: unknown;
+
+    try {
+      entryValue = value[index];
+    } catch {
+      throw new ValidationError(
+        `Attempt handoff finalization explanation summary requires ${fieldName} to use the existing handoff-finalization blocker vocabulary.`
+      );
+    }
+
     if (
       !hasOwnIndex(value, index) ||
-      typeof value[index] !== "string" ||
+      typeof entryValue !== "string" ||
       !validBlockingReasons.has(
-        value[index] as AttemptHandoffFinalizationConsumerBlockingReason
+        entryValue as AttemptHandoffFinalizationConsumerBlockingReason
       )
     ) {
       throw new ValidationError(

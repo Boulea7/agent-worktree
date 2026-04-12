@@ -5,6 +5,7 @@ import {
   type AttemptSourceKind,
   type AttemptStatus
 } from "../manifest/types.js";
+import { readSelectionValue } from "./entry-validation.js";
 import type {
   AttemptHandoffFinalizationConsumerBlockingReason,
   AttemptHandoffFinalizationExplanationCode,
@@ -33,47 +34,85 @@ export function validateAndCloneAttemptHandoffFinalizationReportReadyEntry(
   const reportReadyEntry =
     entry as unknown as AttemptHandoffFinalizationReportReadyEntry;
   const taskId = normalizeRequiredString(
-    reportReadyEntry.taskId,
+    readSelectionValue(
+      reportReadyEntry,
+      "taskId",
+      `${context} requires entry.taskId to be a non-empty string.`
+    ),
     "entry.taskId",
     context
   );
   const attemptId = normalizeRequiredString(
-    reportReadyEntry.attemptId,
+    readSelectionValue(
+      reportReadyEntry,
+      "attemptId",
+      `${context} requires entry.attemptId to be a non-empty string.`
+    ),
     "entry.attemptId",
     context
   );
   const runtime = normalizeRequiredString(
-    reportReadyEntry.runtime,
+    readSelectionValue(
+      reportReadyEntry,
+      "runtime",
+      `${context} requires entry.runtime to be a non-empty string.`
+    ),
     "entry.runtime",
     context
   );
-  validateAttemptStatus(reportReadyEntry.status, "entry.status", context);
+  const status = readSelectionValue(
+    reportReadyEntry,
+    "status",
+    `${context} requires entry.status to use the existing attempt status vocabulary.`
+  );
+  validateAttemptStatus(status, "entry.status", context);
+  const sourceKind = readSelectionValue(
+    reportReadyEntry,
+    "sourceKind",
+    `${context} requires entry.sourceKind to use the existing attempt source-kind vocabulary when provided.`
+  );
   validateAttemptSourceKind(
-    reportReadyEntry.sourceKind,
+    sourceKind,
     "entry.sourceKind",
     context
   );
   validateBlockingReasons(
-    reportReadyEntry.blockingReasons,
+    readSelectionValue(
+      reportReadyEntry,
+      "blockingReasons",
+      `${context} requires entry.blockingReasons to be an array.`
+    ),
     "entry.blockingReasons",
     context
   );
 
-  if (typeof reportReadyEntry.invoked !== "boolean") {
+  const invoked = readSelectionValue(
+    reportReadyEntry,
+    "invoked",
+    `${context} requires entry.invoked to be a boolean.`
+  );
+
+  if (typeof invoked !== "boolean") {
     throw new ValidationError(
       `${context} requires entry.invoked to be a boolean.`
     );
   }
 
-  if (!validExplanationCodes.has(reportReadyEntry.explanationCode)) {
+  const explanationCode = readSelectionValue(
+    reportReadyEntry,
+    "explanationCode",
+    `${context} requires entry.explanationCode to use the existing handoff-finalization explanation vocabulary.`
+  );
+
+  if (!validExplanationCodes.has(explanationCode as AttemptHandoffFinalizationExplanationCode)) {
     throw new ValidationError(
       `${context} requires entry.explanationCode to use the existing handoff-finalization explanation vocabulary.`
     );
   }
 
   if (
-    reportReadyEntry.invoked &&
-    reportReadyEntry.explanationCode !== "handoff_finalization_invoked"
+    invoked &&
+    explanationCode !== "handoff_finalization_invoked"
   ) {
     throw new ValidationError(
       `${context} requires invoked entries to use "handoff_finalization_invoked".`
@@ -81,22 +120,23 @@ export function validateAndCloneAttemptHandoffFinalizationReportReadyEntry(
   }
 
   if (
-    !reportReadyEntry.invoked &&
-    reportReadyEntry.explanationCode !==
-      "handoff_finalization_blocked_unsupported"
+    !invoked &&
+    explanationCode !== "handoff_finalization_blocked_unsupported"
   ) {
     throw new ValidationError(
       `${context} requires blocked entries to use "handoff_finalization_blocked_unsupported".`
     );
   }
 
-  if (reportReadyEntry.invoked && reportReadyEntry.blockingReasons.length > 0) {
+  const blockingReasons = reportReadyEntry.blockingReasons;
+
+  if (invoked && blockingReasons.length > 0) {
     throw new ValidationError(
       `${context} requires invoked entries to use empty blockingReasons.`
     );
   }
 
-  if (!reportReadyEntry.invoked && reportReadyEntry.blockingReasons.length === 0) {
+  if (!invoked && blockingReasons.length === 0) {
     throw new ValidationError(
       `${context} requires blocked entries to keep blockingReasons.`
     );
@@ -106,11 +146,11 @@ export function validateAndCloneAttemptHandoffFinalizationReportReadyEntry(
     taskId,
     attemptId,
     runtime,
-    status: reportReadyEntry.status,
-    sourceKind: reportReadyEntry.sourceKind,
-    explanationCode: reportReadyEntry.explanationCode,
-    invoked: reportReadyEntry.invoked,
-    blockingReasons: [...reportReadyEntry.blockingReasons]
+    status: status as AttemptStatus,
+    sourceKind: sourceKind as AttemptSourceKind | undefined,
+    explanationCode: explanationCode as AttemptHandoffFinalizationExplanationCode,
+    invoked,
+    blockingReasons: [...blockingReasons]
   };
 }
 
@@ -169,11 +209,21 @@ function validateBlockingReasons(
   }
 
   for (let index = 0; index < value.length; index += 1) {
+    let entryValue: unknown;
+
+    try {
+      entryValue = value[index];
+    } catch {
+      throw new ValidationError(
+        `${context} requires ${fieldName} to use the existing handoff-finalization blocker vocabulary.`
+      );
+    }
+
     if (
       !Object.prototype.hasOwnProperty.call(value, index) ||
-      typeof value[index] !== "string" ||
+      typeof entryValue !== "string" ||
       !validBlockingReasons.has(
-        value[index] as AttemptHandoffFinalizationConsumerBlockingReason
+        entryValue as AttemptHandoffFinalizationConsumerBlockingReason
       )
     ) {
       throw new ValidationError(

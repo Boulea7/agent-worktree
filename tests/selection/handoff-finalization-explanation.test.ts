@@ -246,6 +246,68 @@ describe("selection handoff-finalization-explanation helpers", () => {
     );
   });
 
+  it("should fail closed when reading outcome identity fields throws through an accessor-shaped input", () => {
+    const outcome = createBlockedOutcome();
+    Object.defineProperty(outcome, "taskId", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary(
+        createOutcomeSummary([outcome])
+      )
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary(
+        createOutcomeSummary([outcome])
+      )
+    ).toThrow(
+      "Attempt handoff finalization explanation summary requires outcome.taskId to be a non-empty string."
+    );
+  });
+
+  it("should reject outcomes that only provide required identity fields through the prototype chain", () => {
+    const outcome = Object.create(createBlockedOutcome(), {
+      invoked: {
+        configurable: true,
+        enumerable: true,
+        value: false
+      },
+      blockingReasons: {
+        configurable: true,
+        enumerable: true,
+        value: ["handoff_finalization_unsupported"]
+      },
+      status: {
+        configurable: true,
+        enumerable: true,
+        value: "created"
+      },
+      sourceKind: {
+        configurable: true,
+        enumerable: true,
+        value: undefined
+      }
+    });
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary(
+        createOutcomeSummary([outcome as never])
+      )
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationExplanationSummary(
+        createOutcomeSummary([outcome as never])
+      )
+    ).toThrow(
+      "Attempt handoff finalization explanation summary requires outcome.taskId to be a non-empty string."
+    );
+  });
+
   it("should fail loudly when outcome counts drift from the canonical outcome array", () => {
     expect(() =>
       deriveAttemptHandoffFinalizationExplanationSummary({

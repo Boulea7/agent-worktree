@@ -1,4 +1,5 @@
 import { ValidationError } from "../core/errors.js";
+import { readSelectionValue } from "./entry-validation.js";
 import {
   validateDownstreamSingleTaskBoundary,
   validateDownstreamUniqueIdentity
@@ -79,23 +80,52 @@ function validateSummary(
     );
   }
 
-  if (summary.groupedProjectionBasis !== attemptHandoffFinalizationGroupedProjectionBasis) {
+  if (
+    readSelectionValue(
+      summary,
+      "groupedProjectionBasis",
+      'Attempt handoff finalization grouped reporting summary requires summary.groupedProjectionBasis to be "handoff_finalization_report_ready".'
+    ) !== attemptHandoffFinalizationGroupedProjectionBasis
+  ) {
     throw new ValidationError(
       'Attempt handoff finalization grouped reporting summary requires summary.groupedProjectionBasis to be "handoff_finalization_report_ready".'
     );
   }
 
-  validateNonNegativeInteger(summary.resultCount, "summary.resultCount");
   validateNonNegativeInteger(
-    summary.invokedResultCount,
+    readSelectionValue(
+      summary,
+      "resultCount",
+      "Attempt handoff finalization grouped reporting summary requires summary.resultCount to be a non-negative integer."
+    ),
+    "summary.resultCount"
+  );
+  validateNonNegativeInteger(
+    readSelectionValue(
+      summary,
+      "invokedResultCount",
+      "Attempt handoff finalization grouped reporting summary requires summary.invokedResultCount to be a non-negative integer."
+    ),
     "summary.invokedResultCount"
   );
   validateNonNegativeInteger(
-    summary.blockedResultCount,
+    readSelectionValue(
+      summary,
+      "blockedResultCount",
+      "Attempt handoff finalization grouped reporting summary requires summary.blockedResultCount to be a non-negative integer."
+    ),
     "summary.blockedResultCount"
   );
 
-  if (!Array.isArray(summary.groups)) {
+  if (
+    !Array.isArray(
+      readSelectionValue(
+        summary,
+        "groups",
+        "Attempt handoff finalization grouped reporting summary requires summary.groups to be an array."
+      )
+    )
+  ) {
     throw new ValidationError(
       "Attempt handoff finalization grouped reporting summary requires summary.groups to be an array."
     );
@@ -117,44 +147,73 @@ function validateGroups(
     }
 
     const group = groups[index] as AttemptHandoffFinalizationGroupedProjectionGroup;
-    validateGroupKey(group.groupKey);
+    const groupKey = readSelectionValue(
+      group,
+      "groupKey",
+      "Attempt handoff finalization grouped reporting summary requires each groupKey to use the existing handoff-finalization explanation vocabulary."
+    );
+    validateGroupKey(groupKey);
 
-    if (seenGroupKeys.has(group.groupKey)) {
+    if (
+      seenGroupKeys.has(groupKey as AttemptHandoffFinalizationExplanationCode)
+    ) {
       throw new ValidationError(
         "Attempt handoff finalization grouped reporting summary requires summary.groups to keep a single canonical group per explanation code."
       );
     }
 
-    seenGroupKeys.add(group.groupKey);
-    validateNonNegativeInteger(group.resultCount, "group.resultCount");
+    seenGroupKeys.add(groupKey as AttemptHandoffFinalizationExplanationCode);
+    const resultCount = readSelectionValue(
+      group,
+      "resultCount",
+      "Attempt handoff finalization grouped reporting summary requires group.resultCount to be a non-negative integer."
+    );
+    validateNonNegativeInteger(resultCount, "group.resultCount");
     validateNonNegativeInteger(
-      group.invokedResultCount,
+      readSelectionValue(
+        group,
+        "invokedResultCount",
+        "Attempt handoff finalization grouped reporting summary requires group.invokedResultCount to be a non-negative integer."
+      ),
       "group.invokedResultCount"
     );
     validateNonNegativeInteger(
-      group.blockedResultCount,
+      readSelectionValue(
+        group,
+        "blockedResultCount",
+        "Attempt handoff finalization grouped reporting summary requires group.blockedResultCount to be a non-negative integer."
+      ),
       "group.blockedResultCount"
     );
 
-    if (!Array.isArray(group.results)) {
+    const groupResults = readSelectionValue(
+      group,
+      "results",
+      "Attempt handoff finalization grouped reporting summary requires each group results to be an array."
+    );
+
+    if (!Array.isArray(groupResults)) {
       throw new ValidationError(
         "Attempt handoff finalization grouped reporting summary requires each group results to be an array."
       );
     }
 
-    if (group.resultCount !== group.results.length) {
+    if (resultCount !== groupResults.length) {
       throw new ValidationError(
         "Attempt handoff finalization grouped reporting summary requires each group resultCount to match group.results.length."
       );
     }
 
-    if (group.invokedResultCount + group.blockedResultCount !== group.resultCount) {
+    if (group.invokedResultCount + group.blockedResultCount !== resultCount) {
       throw new ValidationError(
         "Attempt handoff finalization grouped reporting summary requires each group count split to add up to group.resultCount."
       );
     }
 
-    const results = validateGroupResults(group.groupKey, group.results);
+    const results = validateGroupResults(
+      groupKey as AttemptHandoffFinalizationExplanationCode,
+      groupResults as AttemptHandoffFinalizationReportReadyEntry[]
+    );
     validatedEntries.push(...results);
     const invokedResultCount = results.filter((entry) => entry.invoked).length;
     const blockedResultCount = results.length - invokedResultCount;
@@ -172,8 +231,8 @@ function validateGroups(
     }
 
     validatedGroups.push({
-      groupKey: group.groupKey,
-      resultCount: group.resultCount,
+      groupKey: groupKey as AttemptHandoffFinalizationExplanationCode,
+      resultCount: resultCount as number,
       invokedResultCount: group.invokedResultCount,
       blockedResultCount: group.blockedResultCount
     });

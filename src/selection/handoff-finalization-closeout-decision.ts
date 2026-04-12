@@ -1,4 +1,5 @@
 import { ValidationError } from "../core/errors.js";
+import { readSelectionValue } from "./entry-validation.js";
 import type {
   AttemptHandoffFinalizationCloseoutDecisionBlockingReason,
   AttemptHandoffFinalizationCloseoutDecisionSummary,
@@ -50,24 +51,56 @@ function validateSummary(
     );
   }
 
-  if (summary.closureBasis !== attemptHandoffFinalizationClosureBasis) {
+  if (
+    readSelectionValue(
+      summary,
+      "closureBasis",
+      'Attempt handoff finalization closeout decision summary requires summary.closureBasis to be "handoff_finalization_grouped_reporting_disposition_summary".'
+    ) !== attemptHandoffFinalizationClosureBasis
+  ) {
     throw new ValidationError(
       'Attempt handoff finalization closeout decision summary requires summary.closureBasis to be "handoff_finalization_grouped_reporting_disposition_summary".'
     );
   }
 
-  validateNonNegativeInteger(summary.resultCount, "summary.resultCount");
   validateNonNegativeInteger(
-    summary.invokedResultCount,
+    readSelectionValue(
+      summary,
+      "resultCount",
+      "Attempt handoff finalization closeout decision summary requires summary.resultCount to be a non-negative integer."
+    ),
+    "summary.resultCount"
+  );
+  validateNonNegativeInteger(
+    readSelectionValue(
+      summary,
+      "invokedResultCount",
+      "Attempt handoff finalization closeout decision summary requires summary.invokedResultCount to be a non-negative integer."
+    ),
     "summary.invokedResultCount"
   );
   validateNonNegativeInteger(
-    summary.blockedResultCount,
+    readSelectionValue(
+      summary,
+      "blockedResultCount",
+      "Attempt handoff finalization closeout decision summary requires summary.blockedResultCount to be a non-negative integer."
+    ),
     "summary.blockedResultCount"
   );
-  validateNonNegativeInteger(summary.groupCount, "summary.groupCount");
+  validateNonNegativeInteger(
+    readSelectionValue(
+      summary,
+      "groupCount",
+      "Attempt handoff finalization closeout decision summary requires summary.groupCount to be a non-negative integer."
+    ),
+    "summary.groupCount"
+  );
   validateHandoffFinalizationReportingDisposition(
-    summary.reportingDisposition,
+    readSelectionValue(
+      summary,
+      "reportingDisposition",
+      "Attempt handoff finalization closeout decision summary requires summary.reportingDisposition to use the existing grouped reporting disposition vocabulary."
+    ),
     "Attempt handoff finalization closeout decision summary requires summary.reportingDisposition to use the existing grouped reporting disposition vocabulary."
   );
 
@@ -90,25 +123,49 @@ function validateSummary(
     summary.invokedResultCount > 0 &&
     summary.blockedResultCount > 0;
 
-  if (summary.hasResults !== hasResults) {
+  if (
+    readSelectionValue(
+      summary,
+      "hasResults",
+      "Attempt handoff finalization closeout decision summary requires summary.hasResults to match the canonical result-count derivation."
+    ) !== hasResults
+  ) {
     throw new ValidationError(
       "Attempt handoff finalization closeout decision summary requires summary.hasResults to match the canonical result-count derivation."
     );
   }
 
-  if (summary.allResultsInvoked !== allResultsInvoked) {
+  if (
+    readSelectionValue(
+      summary,
+      "allResultsInvoked",
+      "Attempt handoff finalization closeout decision summary requires summary.allResultsInvoked to match the canonical count-derived state."
+    ) !== allResultsInvoked
+  ) {
     throw new ValidationError(
       "Attempt handoff finalization closeout decision summary requires summary.allResultsInvoked to match the canonical count-derived state."
     );
   }
 
-  if (summary.allResultsBlocked !== allResultsBlocked) {
+  if (
+    readSelectionValue(
+      summary,
+      "allResultsBlocked",
+      "Attempt handoff finalization closeout decision summary requires summary.allResultsBlocked to match the canonical count-derived state."
+    ) !== allResultsBlocked
+  ) {
     throw new ValidationError(
       "Attempt handoff finalization closeout decision summary requires summary.allResultsBlocked to match the canonical count-derived state."
     );
   }
 
-  if (summary.hasMixedDisposition !== hasMixedDisposition) {
+  if (
+    readSelectionValue(
+      summary,
+      "hasMixedDisposition",
+      "Attempt handoff finalization closeout decision summary requires summary.hasMixedDisposition to match the canonical count-derived state."
+    ) !== hasMixedDisposition
+  ) {
     throw new ValidationError(
       "Attempt handoff finalization closeout decision summary requires summary.hasMixedDisposition to match the canonical count-derived state."
     );
