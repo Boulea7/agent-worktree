@@ -256,6 +256,36 @@ describe("selection handoff-finalization-grouped-projection-summary helpers", ()
     );
   });
 
+  it("should fail closed when a report-ready results array entry throws through an accessor-shaped index", () => {
+    const results = [createBlockedReportReadyEntry()];
+    Object.defineProperty(results, "0", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedProjectionSummary({
+        reportBasis: "handoff_finalization_explanation_summary",
+        results: results as never,
+        invokedResults: [],
+        blockedResults: results as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedProjectionSummary({
+        reportBasis: "handoff_finalization_explanation_summary",
+        results: results as never,
+        invokedResults: [],
+        blockedResults: results as never
+      })
+    ).toThrow(
+      "Attempt handoff finalization grouped projection summary requires summary.results entries to be objects."
+    );
+  });
+
   it("should fail closed when a report-ready entry only provides identity fields through the prototype chain", () => {
     const entry = Object.create(createBlockedReportReadyEntry(), {
       explanationCode: {

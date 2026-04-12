@@ -22,20 +22,20 @@ export function deriveAttemptHandoffFinalizationCloseoutDecisionSummary(
     return undefined;
   }
 
-  validateSummary(summary);
+  const normalizedSummary = validateSummary(summary);
   const blockingReasons = deriveBlockingReasons(
-    summary.resultCount,
-    summary.invokedResultCount,
-    summary.blockedResultCount
+    normalizedSummary.resultCount,
+    normalizedSummary.invokedResultCount,
+    normalizedSummary.blockedResultCount
   );
 
   return {
     decisionBasis: attemptHandoffFinalizationCloseoutDecisionBasis,
-    resultCount: summary.resultCount,
-    invokedResultCount: summary.invokedResultCount,
-    blockedResultCount: summary.blockedResultCount,
-    groupCount: summary.groupCount,
-    reportingDisposition: summary.reportingDisposition,
+    resultCount: normalizedSummary.resultCount,
+    invokedResultCount: normalizedSummary.invokedResultCount,
+    blockedResultCount: normalizedSummary.blockedResultCount,
+    groupCount: normalizedSummary.groupCount,
+    reportingDisposition: normalizedSummary.reportingDisposition,
     blockingReasons,
     canAdvanceFromCloseout: blockingReasons.length === 0,
     hasBlockingReasons: blockingReasons.length > 0
@@ -44,7 +44,13 @@ export function deriveAttemptHandoffFinalizationCloseoutDecisionSummary(
 
 function validateSummary(
   summary: AttemptHandoffFinalizationClosureSummary
-): void {
+): {
+  resultCount: number;
+  invokedResultCount: number;
+  blockedResultCount: number;
+  groupCount: number;
+  reportingDisposition: AttemptHandoffFinalizationClosureSummary["reportingDisposition"];
+} {
   if (!isRecord(summary)) {
     throw new ValidationError(
       "Attempt handoff finalization closeout decision summary requires summary to be an object."
@@ -63,65 +69,58 @@ function validateSummary(
     );
   }
 
-  validateNonNegativeInteger(
-    readSelectionValue(
-      summary,
-      "resultCount",
-      "Attempt handoff finalization closeout decision summary requires summary.resultCount to be a non-negative integer."
-    ),
-    "summary.resultCount"
+  const resultCount = readSelectionValue(
+    summary,
+    "resultCount",
+    "Attempt handoff finalization closeout decision summary requires summary.resultCount to be a non-negative integer."
   );
-  validateNonNegativeInteger(
-    readSelectionValue(
-      summary,
-      "invokedResultCount",
-      "Attempt handoff finalization closeout decision summary requires summary.invokedResultCount to be a non-negative integer."
-    ),
-    "summary.invokedResultCount"
+  validateNonNegativeInteger(resultCount, "summary.resultCount");
+  const invokedResultCount = readSelectionValue(
+    summary,
+    "invokedResultCount",
+    "Attempt handoff finalization closeout decision summary requires summary.invokedResultCount to be a non-negative integer."
   );
-  validateNonNegativeInteger(
-    readSelectionValue(
-      summary,
-      "blockedResultCount",
-      "Attempt handoff finalization closeout decision summary requires summary.blockedResultCount to be a non-negative integer."
-    ),
-    "summary.blockedResultCount"
+  validateNonNegativeInteger(invokedResultCount, "summary.invokedResultCount");
+  const blockedResultCount = readSelectionValue(
+    summary,
+    "blockedResultCount",
+    "Attempt handoff finalization closeout decision summary requires summary.blockedResultCount to be a non-negative integer."
   );
-  validateNonNegativeInteger(
-    readSelectionValue(
-      summary,
-      "groupCount",
-      "Attempt handoff finalization closeout decision summary requires summary.groupCount to be a non-negative integer."
-    ),
-    "summary.groupCount"
+  validateNonNegativeInteger(blockedResultCount, "summary.blockedResultCount");
+  const groupCount = readSelectionValue(
+    summary,
+    "groupCount",
+    "Attempt handoff finalization closeout decision summary requires summary.groupCount to be a non-negative integer."
+  );
+  validateNonNegativeInteger(groupCount, "summary.groupCount");
+  const reportingDisposition = readSelectionValue(
+    summary,
+    "reportingDisposition",
+    "Attempt handoff finalization closeout decision summary requires summary.reportingDisposition to use the existing grouped reporting disposition vocabulary."
   );
   validateHandoffFinalizationReportingDisposition(
-    readSelectionValue(
-      summary,
-      "reportingDisposition",
-      "Attempt handoff finalization closeout decision summary requires summary.reportingDisposition to use the existing grouped reporting disposition vocabulary."
-    ),
+    reportingDisposition,
     "Attempt handoff finalization closeout decision summary requires summary.reportingDisposition to use the existing grouped reporting disposition vocabulary."
   );
 
   if (
-    summary.invokedResultCount + summary.blockedResultCount !==
-    summary.resultCount
+    (invokedResultCount as number) + (blockedResultCount as number) !==
+    (resultCount as number)
   ) {
     throw new ValidationError(
       "Attempt handoff finalization closeout decision summary requires summary.invokedResultCount plus summary.blockedResultCount to equal summary.resultCount."
     );
   }
 
-  const hasResults = summary.resultCount > 0;
+  const hasResults = (resultCount as number) > 0;
   const allResultsInvoked =
-    hasResults && summary.invokedResultCount === summary.resultCount;
+    hasResults && (invokedResultCount as number) === (resultCount as number);
   const allResultsBlocked =
-    hasResults && summary.blockedResultCount === summary.resultCount;
+    hasResults && (blockedResultCount as number) === (resultCount as number);
   const hasMixedDisposition =
     hasResults &&
-    summary.invokedResultCount > 0 &&
-    summary.blockedResultCount > 0;
+    (invokedResultCount as number) > 0 &&
+    (blockedResultCount as number) > 0;
 
   if (
     readSelectionValue(
@@ -173,26 +172,35 @@ function validateSummary(
 
   const canonicalReportingDisposition =
     deriveCanonicalHandoffFinalizationReportingDisposition(
-    summary.resultCount,
-    summary.invokedResultCount,
-    summary.blockedResultCount
+    resultCount as number,
+    invokedResultCount as number,
+    blockedResultCount as number
     );
 
-  if (summary.reportingDisposition !== canonicalReportingDisposition) {
+  if (reportingDisposition !== canonicalReportingDisposition) {
     throw new ValidationError(
       "Attempt handoff finalization closeout decision summary requires summary.reportingDisposition to match the canonical disposition derived from the result counts."
     );
   }
 
   const canonicalGroupCount = deriveCanonicalHandoffFinalizationGroupCount(
-    summary.reportingDisposition
+    reportingDisposition as AttemptHandoffFinalizationClosureSummary["reportingDisposition"]
   );
 
-  if (summary.groupCount !== canonicalGroupCount) {
+  if (groupCount !== canonicalGroupCount) {
     throw new ValidationError(
       "Attempt handoff finalization closeout decision summary requires summary.groupCount to match the canonical group count derived from summary.reportingDisposition."
     );
   }
+
+  return {
+    resultCount: resultCount as number,
+    invokedResultCount: invokedResultCount as number,
+    blockedResultCount: blockedResultCount as number,
+    groupCount: groupCount as number,
+    reportingDisposition:
+      reportingDisposition as AttemptHandoffFinalizationClosureSummary["reportingDisposition"]
+  };
 }
 
 function deriveBlockingReasons(

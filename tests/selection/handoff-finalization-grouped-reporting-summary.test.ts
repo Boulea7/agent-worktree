@@ -209,6 +209,67 @@ describe("selection handoff-finalization-grouped-reporting-summary helpers", () 
     );
   });
 
+  it("should fail closed when a grouped projection groups array entry throws through an accessor-shaped index", () => {
+    const groups = [createBlockedProjectionGroup()];
+    Object.defineProperty(groups, "0", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedReportingSummary({
+        groupedProjectionBasis: "handoff_finalization_report_ready",
+        resultCount: 1,
+        invokedResultCount: 0,
+        blockedResultCount: 1,
+        groups: groups as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedReportingSummary({
+        groupedProjectionBasis: "handoff_finalization_report_ready",
+        resultCount: 1,
+        invokedResultCount: 0,
+        blockedResultCount: 1,
+        groups: groups as never
+      })
+    ).toThrow(
+      "Attempt handoff finalization grouped reporting summary requires summary.groups entries to be objects."
+    );
+  });
+
+  it("should fail closed when a group results array entry throws through an accessor-shaped index", () => {
+    const results = [createBlockedReportReadyEntry()];
+    Object.defineProperty(results, "0", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+    const group = createBlockedProjectionGroup();
+    group.results = results as never;
+    group.resultCount = 1;
+    group.invokedResultCount = 0;
+    group.blockedResultCount = 1;
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedReportingSummary(
+        createGroupedProjectionSummary([group])
+      )
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedReportingSummary(
+        createGroupedProjectionSummary([group])
+      )
+    ).toThrow(
+      "Attempt handoff finalization grouped reporting summary requires group.results entries to be objects."
+    );
+  });
+
   it("should still accept own grouped projection entries that shadow inherited array indexes", () => {
     Array.prototype[0] = createBlockedProjectionGroup({
       results: [createBlockedReportReadyEntry({ attemptId: "att_inherited" })]

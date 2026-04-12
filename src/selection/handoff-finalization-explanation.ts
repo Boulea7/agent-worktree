@@ -71,30 +71,32 @@ function validateSummary(
     );
   }
 
-  validateNonNegativeInteger(
-    readSelectionValue(
-      summary,
-      "resultCount",
-      "Attempt handoff finalization explanation summary requires summary.resultCount to be a non-negative integer."
-    ),
-    "summary.resultCount"
+  const resultCount = readSelectionValue(
+    summary,
+    "resultCount",
+    "Attempt handoff finalization explanation summary requires summary.resultCount to be a non-negative integer."
   );
+  validateNonNegativeInteger(resultCount, "summary.resultCount");
   validateNonNegativeInteger(
-    readSelectionValue(
+    (readSelectionValue(
       summary,
       "invokedResultCount",
       "Attempt handoff finalization explanation summary requires summary.invokedResultCount to be a non-negative integer."
-    ),
+    )) as unknown,
     "summary.invokedResultCount"
   );
-  validateNonNegativeInteger(
-    readSelectionValue(
-      summary,
-      "blockedResultCount",
-      "Attempt handoff finalization explanation summary requires summary.blockedResultCount to be a non-negative integer."
-    ),
-    "summary.blockedResultCount"
+  const invokedResultCountValue = readSelectionValue(
+    summary,
+    "invokedResultCount",
+    "Attempt handoff finalization explanation summary requires summary.invokedResultCount to be a non-negative integer."
   );
+  validateNonNegativeInteger(invokedResultCountValue, "summary.invokedResultCount");
+  const blockedResultCountValue = readSelectionValue(
+    summary,
+    "blockedResultCount",
+    "Attempt handoff finalization explanation summary requires summary.blockedResultCount to be a non-negative integer."
+  );
+  validateNonNegativeInteger(blockedResultCountValue, "summary.blockedResultCount");
   const summaryBlockingReasons = readSelectionValue(
     summary,
     "blockingReasons",
@@ -127,7 +129,7 @@ function validateSummary(
     "Attempt handoff finalization explanation summary requires summary.outcomes to use unique (taskId, attemptId, runtime) identities."
   );
 
-  if (summary.resultCount !== outcomes.length) {
+  if (resultCount !== outcomes.length) {
     throw new ValidationError(
       "Attempt handoff finalization explanation summary requires summary.resultCount to match summary.outcomes.length."
     );
@@ -136,13 +138,13 @@ function validateSummary(
   const invokedResultCount = outcomes.filter((outcome) => outcome.invoked).length;
   const blockedResultCount = outcomes.length - invokedResultCount;
 
-  if (summary.invokedResultCount !== invokedResultCount) {
+  if (invokedResultCountValue !== invokedResultCount) {
     throw new ValidationError(
       "Attempt handoff finalization explanation summary requires summary.invokedResultCount to match the invoked count derived from summary.outcomes."
     );
   }
 
-  if (summary.blockedResultCount !== blockedResultCount) {
+  if (blockedResultCountValue !== blockedResultCount) {
     throw new ValidationError(
       "Attempt handoff finalization explanation summary requires summary.blockedResultCount to match the blocked count derived from summary.outcomes."
     );
@@ -222,16 +224,15 @@ function validateOutcome(outcome: unknown): AttemptHandoffFinalizationOutcome {
     );
   }
 
-  validateBlockingReasons(
-    readSelectionValue(
-      outcomeRecord,
-      "blockingReasons",
-      "Attempt handoff finalization explanation summary requires outcome.blockingReasons to be an array."
-    ),
-    "outcome.blockingReasons"
+  const blockingReasonsValue = readSelectionValue(
+    outcomeRecord,
+    "blockingReasons",
+    "Attempt handoff finalization explanation summary requires outcome.blockingReasons to be an array."
   );
+  validateBlockingReasons(blockingReasonsValue, "outcome.blockingReasons");
 
-  const blockingReasons = outcomeRecord.blockingReasons;
+  const blockingReasons =
+    blockingReasonsValue as AttemptHandoffFinalizationConsumerBlockingReason[];
 
   if (invoked && blockingReasons.length > 0) {
     throw new ValidationError(

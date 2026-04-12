@@ -140,13 +140,24 @@ function validateGroups(
   const validatedEntries: AttemptHandoffFinalizationReportReadyEntry[] = [];
 
   for (let index = 0; index < groups.length; index += 1) {
-    if (!hasOwnIndex(groups, index) || !isRecord(groups[index])) {
+    if (!hasOwnIndex(groups, index)) {
       throw new ValidationError(
         "Attempt handoff finalization grouped reporting summary requires summary.groups entries to be objects."
       );
     }
 
-    const group = groups[index] as AttemptHandoffFinalizationGroupedProjectionGroup;
+    const group = readArrayEntry(
+      groups,
+      index,
+      "Attempt handoff finalization grouped reporting summary requires summary.groups entries to be objects."
+    );
+
+    if (!isRecord(group)) {
+      throw new ValidationError(
+        "Attempt handoff finalization grouped reporting summary requires summary.groups entries to be objects."
+      );
+    }
+
     const groupKey = readSelectionValue(
       group,
       "groupKey",
@@ -204,7 +215,18 @@ function validateGroups(
       );
     }
 
-    if (group.invokedResultCount + group.blockedResultCount !== resultCount) {
+    const invokedResultCountValue = readSelectionValue(
+      group,
+      "invokedResultCount",
+      "Attempt handoff finalization grouped reporting summary requires group.invokedResultCount to be a non-negative integer."
+    ) as number;
+    const blockedResultCountValue = readSelectionValue(
+      group,
+      "blockedResultCount",
+      "Attempt handoff finalization grouped reporting summary requires group.blockedResultCount to be a non-negative integer."
+    ) as number;
+
+    if (invokedResultCountValue + blockedResultCountValue !== resultCount) {
       throw new ValidationError(
         "Attempt handoff finalization grouped reporting summary requires each group count split to add up to group.resultCount."
       );
@@ -218,13 +240,13 @@ function validateGroups(
     const invokedResultCount = results.filter((entry) => entry.invoked).length;
     const blockedResultCount = results.length - invokedResultCount;
 
-    if (group.invokedResultCount !== invokedResultCount) {
+    if (invokedResultCountValue !== invokedResultCount) {
       throw new ValidationError(
         "Attempt handoff finalization grouped reporting summary requires each group invokedResultCount to match the canonical invoked count derived from group.results."
       );
     }
 
-    if (group.blockedResultCount !== blockedResultCount) {
+    if (blockedResultCountValue !== blockedResultCount) {
       throw new ValidationError(
         "Attempt handoff finalization grouped reporting summary requires each group blockedResultCount to match the canonical blocked count derived from group.results."
       );
@@ -233,8 +255,8 @@ function validateGroups(
     validatedGroups.push({
       groupKey: groupKey as AttemptHandoffFinalizationExplanationCode,
       resultCount: resultCount as number,
-      invokedResultCount: group.invokedResultCount,
-      blockedResultCount: group.blockedResultCount
+      invokedResultCount: invokedResultCountValue,
+      blockedResultCount: blockedResultCountValue
     });
   }
 
@@ -257,14 +279,26 @@ function validateGroupResults(
   const validatedResults: AttemptHandoffFinalizationReportReadyEntry[] = [];
 
   for (let index = 0; index < results.length; index += 1) {
-    if (!hasOwnIndex(results, index) || !isRecord(results[index])) {
+    if (!hasOwnIndex(results, index)) {
+      throw new ValidationError(
+        "Attempt handoff finalization grouped reporting summary requires group.results entries to be objects."
+      );
+    }
+
+    const resultEntry = readArrayEntry(
+      results,
+      index,
+      "Attempt handoff finalization grouped reporting summary requires group.results entries to be objects."
+    );
+
+    if (!isRecord(resultEntry)) {
       throw new ValidationError(
         "Attempt handoff finalization grouped reporting summary requires group.results entries to be objects."
       );
     }
 
     const entry = validateReportReadyEntry(
-      results[index] as AttemptHandoffFinalizationReportReadyEntry
+      resultEntry as unknown as AttemptHandoffFinalizationReportReadyEntry
     );
 
     if (entry.explanationCode !== groupKey) {
@@ -309,6 +343,18 @@ function validateNonNegativeInteger(value: unknown, fieldName: string): void {
 
 function hasOwnIndex(values: readonly unknown[], index: number): boolean {
   return Object.prototype.hasOwnProperty.call(values, index);
+}
+
+function readArrayEntry(
+  values: readonly unknown[],
+  index: number,
+  message: string
+): unknown {
+  try {
+    return values[index];
+  } catch {
+    throw new ValidationError(message);
+  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

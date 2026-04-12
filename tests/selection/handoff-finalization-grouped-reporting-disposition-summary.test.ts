@@ -248,6 +248,32 @@ describe(
       );
     });
 
+    it("should fail closed when a grouped reporting groups array entry throws through an accessor-shaped index", () => {
+      const groups = [createBlockedReportingGroup()];
+      Object.defineProperty(groups, "0", {
+        configurable: true,
+        enumerable: true,
+        get() {
+          throw new Error("getter boom");
+        }
+      });
+
+      const act = () =>
+        deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary({
+          groupedReportingBasis:
+            "handoff_finalization_grouped_projection_summary",
+          resultCount: 1,
+          invokedResultCount: 0,
+          blockedResultCount: 1,
+          groups: groups as never
+        });
+
+      expect(act).toThrow(ValidationError);
+      expect(act).toThrow(
+        "Attempt handoff finalization grouped reporting disposition summary requires summary.groups entries to be objects."
+      );
+    });
+
     it("should fail loudly when a grouped reporting group count split stops adding up to the group total", () => {
       const act = () =>
         deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary(

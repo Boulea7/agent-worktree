@@ -76,15 +76,12 @@ export function validateAndCloneAttemptHandoffFinalizationReportReadyEntry(
     "entry.sourceKind",
     context
   );
-  validateBlockingReasons(
-    readSelectionValue(
-      reportReadyEntry,
-      "blockingReasons",
-      `${context} requires entry.blockingReasons to be an array.`
-    ),
-    "entry.blockingReasons",
-    context
+  const blockingReasonsValue = readSelectionValue(
+    reportReadyEntry,
+    "blockingReasons",
+    `${context} requires entry.blockingReasons to be an array.`
   );
+  validateBlockingReasons(blockingReasonsValue, "entry.blockingReasons", context);
 
   const invoked = readSelectionValue(
     reportReadyEntry,
@@ -128,7 +125,8 @@ export function validateAndCloneAttemptHandoffFinalizationReportReadyEntry(
     );
   }
 
-  const blockingReasons = reportReadyEntry.blockingReasons;
+  const blockingReasons =
+    blockingReasonsValue as AttemptHandoffFinalizationConsumerBlockingReason[];
 
   if (invoked && blockingReasons.length > 0) {
     throw new ValidationError(

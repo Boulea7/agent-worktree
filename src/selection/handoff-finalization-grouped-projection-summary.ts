@@ -168,7 +168,19 @@ function validateReportReadyEntryArray(
   const validatedEntries: AttemptHandoffFinalizationReportReadyEntry[] = [];
 
   for (let index = 0; index < entries.length; index += 1) {
-    if (!hasOwnIndex(entries, index) || !isRecord(entries[index])) {
+    if (!hasOwnIndex(entries, index)) {
+      throw new ValidationError(
+        `Attempt handoff finalization grouped projection summary requires ${fieldName} entries to be objects.`
+      );
+    }
+
+    const entry = readArrayEntry(
+      entries,
+      index,
+      `Attempt handoff finalization grouped projection summary requires ${fieldName} entries to be objects.`
+    );
+
+    if (!isRecord(entry)) {
       throw new ValidationError(
         `Attempt handoff finalization grouped projection summary requires ${fieldName} entries to be objects.`
       );
@@ -176,7 +188,7 @@ function validateReportReadyEntryArray(
 
     validatedEntries.push(
       validateReportReadyEntry(
-        entries[index] as AttemptHandoffFinalizationReportReadyEntry
+        entry as unknown as AttemptHandoffFinalizationReportReadyEntry
       )
     );
   }
@@ -205,18 +217,43 @@ function reportReadyEntryArraysEqual(
     if (
       !hasOwnIndex(left, index) ||
       !hasOwnIndex(right, index) ||
-      !isRecord(left[index]) ||
-      !isRecord(right[index])
+      !isRecord(
+        readArrayEntry(
+          left,
+          index,
+          "Attempt handoff finalization grouped projection summary requires summary results arrays to contain objects."
+        )
+      ) ||
+      !isRecord(
+        readArrayEntry(
+          right,
+          index,
+          "Attempt handoff finalization grouped projection summary requires summary results arrays to contain objects."
+        )
+      )
     ) {
       return false;
     }
 
     try {
       const entry = validateReportReadyEntry(
-        left[index] as AttemptHandoffFinalizationReportReadyEntry
+        readArrayEntry(
+          left,
+          index,
+          "Attempt handoff finalization grouped projection summary requires summary results arrays to contain objects."
+        ) as AttemptHandoffFinalizationReportReadyEntry
       );
 
-      if (!reportReadyEntryEqual(entry, right[index]!)) {
+      if (
+        !reportReadyEntryEqual(
+          entry,
+          readArrayEntry(
+            right,
+            index,
+            "Attempt handoff finalization grouped projection summary requires summary results arrays to contain objects."
+          ) as AttemptHandoffFinalizationReportReadyEntry
+        )
+      ) {
         return false;
       }
     } catch {
@@ -229,6 +266,18 @@ function reportReadyEntryArraysEqual(
 
 function hasOwnIndex(values: readonly unknown[], index: number): boolean {
   return Object.prototype.hasOwnProperty.call(values, index);
+}
+
+function readArrayEntry(
+  values: readonly unknown[],
+  index: number,
+  message: string
+): unknown {
+  try {
+    return values[index];
+  } catch {
+    throw new ValidationError(message);
+  }
 }
 
 function reportReadyEntryEqual(
