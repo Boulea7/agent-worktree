@@ -1,6 +1,6 @@
 import {
   normalizeBatchWrapper,
-  normalizeBatchWrapperItems
+  normalizeBatchWrapperObjectItems
 } from "./runtime-state-batch-wrapper-guards.js";
 import { consumeExecutionSessionClose } from "./runtime-state-close-consume.js";
 import type {
@@ -16,11 +16,12 @@ export async function consumeExecutionSessionCloseBatch(
     input,
     "Execution session close consume batch input must be an object."
   );
-  const consumers = normalizeBatchWrapperItems<
+  const consumers = normalizeBatchWrapperObjectItems<
     ExecutionSessionCloseConsumeBatchInput["consumers"][number]
   >(
     normalizedInput.consumers,
-    "Execution session close consume batch requires consumers to be an array."
+    "Execution session close consume batch requires consumers to be an array.",
+    "Execution session close consume batch requires consumers entries to be objects."
   );
 
   const results: ExecutionSessionCloseConsume[] = [];

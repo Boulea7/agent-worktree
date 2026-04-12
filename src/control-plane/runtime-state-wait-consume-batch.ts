@@ -1,6 +1,6 @@
 import {
   normalizeBatchWrapper,
-  normalizeBatchWrapperItems
+  normalizeBatchWrapperObjectItems
 } from "./runtime-state-batch-wrapper-guards.js";
 import { consumeExecutionSessionWait } from "./runtime-state-wait-consume.js";
 import type {
@@ -16,11 +16,12 @@ export async function consumeExecutionSessionWaitBatch(
     input,
     "Execution session wait consume batch input must be an object."
   );
-  const consumers = normalizeBatchWrapperItems<
+  const consumers = normalizeBatchWrapperObjectItems<
     ExecutionSessionWaitConsumeBatchInput["consumers"][number]
   >(
     normalizedInput.consumers,
-    "Execution session wait consume batch requires consumers to be an array."
+    "Execution session wait consume batch requires consumers to be an array.",
+    "Execution session wait consume batch requires consumers entries to be objects."
   );
 
   const results: ExecutionSessionWaitConsume[] = [];

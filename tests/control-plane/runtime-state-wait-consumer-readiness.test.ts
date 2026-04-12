@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   deriveExecutionSessionWaitConsumerReadiness,
   type ExecutionSessionWaitRequest
@@ -54,6 +55,105 @@ describe("control-plane runtime-state wait-consumer-readiness helpers", () => {
         request: createWaitRequest()
       }).blockingReasons
     ).toEqual(["session_lifecycle_unsupported"]);
+  });
+
+  it("should fail loudly when the capability resolver does not return a boolean", () => {
+    expect(() =>
+      deriveExecutionSessionWaitConsumerReadiness({
+        request: createWaitRequest(),
+        resolveSessionLifecycleCapability: () => "true" as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionWaitConsumerReadiness({
+        request: createWaitRequest(),
+        resolveSessionLifecycleCapability: () => "true" as never
+      })
+    ).toThrow(
+      "Execution session wait consumer readiness requires resolveSessionLifecycleCapability to return a boolean."
+    );
+  });
+
+  it("should fail loudly when the capability resolver is not a function", () => {
+    expect(() =>
+      deriveExecutionSessionWaitConsumerReadiness({
+        request: createWaitRequest(),
+        resolveSessionLifecycleCapability: "yes" as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionWaitConsumerReadiness({
+        request: createWaitRequest(),
+        resolveSessionLifecycleCapability: "yes" as never
+      })
+    ).toThrow(
+      "Execution session wait consumer readiness requires resolveSessionLifecycleCapability to be a function when provided."
+    );
+  });
+
+  it("should fail loudly when the top-level wait-consumer-readiness input or request is malformed", () => {
+    expect(() =>
+      deriveExecutionSessionWaitConsumerReadiness(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionWaitConsumerReadiness(undefined as never)
+    ).toThrow(
+      "Execution session wait consumer readiness input must be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionWaitConsumerReadiness({
+        request: null as never
+      })
+    ).toThrow(
+      "Execution session wait consumer readiness requires request to be an object."
+    );
+  });
+
+  it("should fail loudly when request identifiers or timeout are invalid at the readiness seam", () => {
+    expect(() =>
+      deriveExecutionSessionWaitConsumerReadiness({
+        request: {
+          ...createWaitRequest(),
+          attemptId: "   "
+        } as never
+      })
+    ).toThrow(
+      "Execution session wait request attemptId must be a non-empty string."
+    );
+
+    expect(() =>
+      deriveExecutionSessionWaitConsumerReadiness({
+        request: {
+          ...createWaitRequest(),
+          runtime: "   "
+        } as never
+      })
+    ).toThrow(
+      "Execution session wait request runtime must be a non-empty string."
+    );
+
+    expect(() =>
+      deriveExecutionSessionWaitConsumerReadiness({
+        request: {
+          ...createWaitRequest(),
+          sessionId: "   "
+        } as never
+      })
+    ).toThrow(
+      "Execution session wait request sessionId must be a non-empty string."
+    );
+
+    expect(() =>
+      deriveExecutionSessionWaitConsumerReadiness({
+        request: {
+          ...createWaitRequest(),
+          timeoutMs: 0
+        } as never
+      })
+    ).toThrow(
+      "Execution session wait request timeoutMs must be a finite integer greater than 0."
+    );
   });
 
   it("should not mutate the supplied wait request", () => {

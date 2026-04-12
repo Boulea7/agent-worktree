@@ -39,6 +39,40 @@ describe("control-plane runtime-state close-apply-batch helpers", () => {
     );
   });
 
+  it("should fail loudly when request entries are sparse or non-object before invoking", async () => {
+    const invokeClose = vi.fn(async () => undefined);
+    const sparseRequests = new Array<ExecutionSessionCloseRequest>(1);
+
+    await expect(
+      applyExecutionSessionCloseBatch({
+        requests: sparseRequests,
+        invokeClose
+      })
+    ).rejects.toThrow(
+      "Execution session close apply batch requires requests entries to be objects."
+    );
+
+    await expect(
+      applyExecutionSessionCloseBatch({
+        requests: [0] as never,
+        invokeClose
+      })
+    ).rejects.toThrow(
+      "Execution session close apply batch requires requests entries to be objects."
+    );
+
+    await expect(
+      applyExecutionSessionCloseBatch({
+        requests: [createCloseRequest(), 0] as never,
+        invokeClose
+      })
+    ).rejects.toThrow(
+      "Execution session close apply batch requires requests entries to be objects."
+    );
+
+    expect(invokeClose).not.toHaveBeenCalled();
+  });
+
   it("should return an empty batch result for an empty request list", async () => {
     await expect(
       applyExecutionSessionCloseBatch({

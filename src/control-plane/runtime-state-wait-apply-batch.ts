@@ -1,6 +1,6 @@
 import {
   normalizeBatchWrapper,
-  normalizeBatchWrapperItems
+  normalizeBatchWrapperObjectItems
 } from "./runtime-state-batch-wrapper-guards.js";
 import { applyExecutionSessionWait } from "./runtime-state-wait-apply.js";
 import type {
@@ -16,11 +16,12 @@ export async function applyExecutionSessionWaitBatch(
     input,
     "Execution session wait apply batch input must be an object."
   );
-  const requests = normalizeBatchWrapperItems<
+  const requests = normalizeBatchWrapperObjectItems<
     ExecutionSessionWaitApplyBatchInput["requests"][number]
   >(
     normalizedInput.requests,
-    "Execution session wait apply batch requires requests to be an array."
+    "Execution session wait apply batch requires requests to be an array.",
+    "Execution session wait apply batch requires requests entries to be objects."
   );
 
   const results: ExecutionSessionWaitApply[] = [];

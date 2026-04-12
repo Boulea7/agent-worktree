@@ -40,6 +40,40 @@ describe("control-plane runtime-state close-consume-batch helpers", () => {
     );
   });
 
+  it("should fail loudly when consumer entries are sparse or non-object before invoking", async () => {
+    const invokeClose = vi.fn(async () => undefined);
+    const sparseConsumers = new Array<ExecutionSessionCloseConsumer>(1);
+
+    await expect(
+      consumeExecutionSessionCloseBatch({
+        consumers: sparseConsumers,
+        invokeClose
+      })
+    ).rejects.toThrow(
+      "Execution session close consume batch requires consumers entries to be objects."
+    );
+
+    await expect(
+      consumeExecutionSessionCloseBatch({
+        consumers: [0] as never,
+        invokeClose
+      })
+    ).rejects.toThrow(
+      "Execution session close consume batch requires consumers entries to be objects."
+    );
+
+    await expect(
+      consumeExecutionSessionCloseBatch({
+        consumers: [createCloseConsumer(), 0] as never,
+        invokeClose
+      })
+    ).rejects.toThrow(
+      "Execution session close consume batch requires consumers entries to be objects."
+    );
+
+    expect(invokeClose).not.toHaveBeenCalled();
+  });
+
   it("should return an empty batch result for an empty consumer list", async () => {
     await expect(
       consumeExecutionSessionCloseBatch({

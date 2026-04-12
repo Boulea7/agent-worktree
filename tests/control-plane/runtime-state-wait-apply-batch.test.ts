@@ -39,6 +39,40 @@ describe("control-plane runtime-state wait-apply-batch helpers", () => {
     );
   });
 
+  it("should fail loudly when request entries are sparse or non-object before invoking", async () => {
+    const invokeWait = vi.fn(async () => undefined);
+    const sparseRequests = new Array<ExecutionSessionWaitRequest>(1);
+
+    await expect(
+      applyExecutionSessionWaitBatch({
+        requests: sparseRequests,
+        invokeWait
+      })
+    ).rejects.toThrow(
+      "Execution session wait apply batch requires requests entries to be objects."
+    );
+
+    await expect(
+      applyExecutionSessionWaitBatch({
+        requests: [0] as never,
+        invokeWait
+      })
+    ).rejects.toThrow(
+      "Execution session wait apply batch requires requests entries to be objects."
+    );
+
+    await expect(
+      applyExecutionSessionWaitBatch({
+        requests: [createWaitRequest(), 0] as never,
+        invokeWait
+      })
+    ).rejects.toThrow(
+      "Execution session wait apply batch requires requests entries to be objects."
+    );
+
+    expect(invokeWait).not.toHaveBeenCalled();
+  });
+
   it("should return an empty batch result for an empty request list", async () => {
     await expect(
       applyExecutionSessionWaitBatch({

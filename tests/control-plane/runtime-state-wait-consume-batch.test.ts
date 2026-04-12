@@ -40,6 +40,40 @@ describe("control-plane runtime-state wait-consume-batch helpers", () => {
     );
   });
 
+  it("should fail loudly when consumer entries are sparse or non-object before invoking", async () => {
+    const invokeWait = vi.fn(async () => undefined);
+    const sparseConsumers = new Array<ExecutionSessionWaitConsumer>(1);
+
+    await expect(
+      consumeExecutionSessionWaitBatch({
+        consumers: sparseConsumers,
+        invokeWait
+      })
+    ).rejects.toThrow(
+      "Execution session wait consume batch requires consumers entries to be objects."
+    );
+
+    await expect(
+      consumeExecutionSessionWaitBatch({
+        consumers: [0] as never,
+        invokeWait
+      })
+    ).rejects.toThrow(
+      "Execution session wait consume batch requires consumers entries to be objects."
+    );
+
+    await expect(
+      consumeExecutionSessionWaitBatch({
+        consumers: [createWaitConsumer(), 0] as never,
+        invokeWait
+      })
+    ).rejects.toThrow(
+      "Execution session wait consume batch requires consumers entries to be objects."
+    );
+
+    expect(invokeWait).not.toHaveBeenCalled();
+  });
+
   it("should return an empty batch result for an empty consumer list", async () => {
     await expect(
       consumeExecutionSessionWaitBatch({

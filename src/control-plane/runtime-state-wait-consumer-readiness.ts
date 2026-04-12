@@ -1,4 +1,6 @@
+import { ValidationError } from "../core/errors.js";
 import { adapterSupportsCapability } from "../adapters/catalog.js";
+import { normalizeExecutionSessionWaitRequest } from "./runtime-state-wait-request.js";
 import type {
   ExecutionSessionWaitConsumerBlockingReason,
   ExecutionSessionWaitConsumerReadiness,
@@ -8,7 +10,13 @@ import type {
 export function deriveExecutionSessionWaitConsumerReadiness(
   input: ExecutionSessionWaitConsumerReadinessInput
 ): ExecutionSessionWaitConsumerReadiness {
-  const sessionLifecycleSupported = resolveSessionLifecycleCapability(input);
+  validateWaitConsumerReadinessInput(input);
+  const request = normalizeExecutionSessionWaitRequest(input.request);
+
+  const sessionLifecycleSupported = resolveSessionLifecycleCapability(
+    request,
+    input.resolveSessionLifecycleCapability
+  );
   const blockingReasons: ExecutionSessionWaitConsumerBlockingReason[] = [];
 
   if (!sessionLifecycleSupported) {
@@ -23,15 +31,55 @@ export function deriveExecutionSessionWaitConsumerReadiness(
   };
 }
 
-function resolveSessionLifecycleCapability(
+function validateWaitConsumerReadinessInput(
   input: ExecutionSessionWaitConsumerReadinessInput
+): void {
+  if (typeof input !== "object" || input === null || Array.isArray(input)) {
+    throw new ValidationError(
+      "Execution session wait consumer readiness input must be an object."
+    );
+  }
+
+  if (
+    typeof input.request !== "object" ||
+    input.request === null ||
+    Array.isArray(input.request)
+  ) {
+    throw new ValidationError(
+      "Execution session wait consumer readiness requires request to be an object."
+    );
+  }
+
+  if (
+    input.resolveSessionLifecycleCapability !== undefined &&
+    typeof input.resolveSessionLifecycleCapability !== "function"
+  ) {
+    throw new ValidationError(
+      "Execution session wait consumer readiness requires resolveSessionLifecycleCapability to be a function when provided."
+    );
+  }
+}
+
+function resolveSessionLifecycleCapability(
+  request: ExecutionSessionWaitConsumerReadinessInput["request"],
+  resolveCapability:
+    | ExecutionSessionWaitConsumerReadinessInput["resolveSessionLifecycleCapability"]
+    | undefined
 ): boolean {
-  if (input.resolveSessionLifecycleCapability !== undefined) {
-    return input.resolveSessionLifecycleCapability(input.request.runtime);
+  if (resolveCapability !== undefined) {
+    const supported = resolveCapability(request.runtime);
+
+    if (typeof supported !== "boolean") {
+      throw new ValidationError(
+        "Execution session wait consumer readiness requires resolveSessionLifecycleCapability to return a boolean."
+      );
+    }
+
+    return supported;
   }
 
   try {
-    return adapterSupportsCapability(input.request.runtime, "sessionLifecycle");
+    return adapterSupportsCapability(request.runtime, "sessionLifecycle");
   } catch {
     return false;
   }

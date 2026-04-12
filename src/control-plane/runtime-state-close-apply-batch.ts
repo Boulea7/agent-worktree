@@ -1,6 +1,6 @@
 import {
   normalizeBatchWrapper,
-  normalizeBatchWrapperItems
+  normalizeBatchWrapperObjectItems
 } from "./runtime-state-batch-wrapper-guards.js";
 import { applyExecutionSessionClose } from "./runtime-state-close-apply.js";
 import type {
@@ -16,11 +16,12 @@ export async function applyExecutionSessionCloseBatch(
     input,
     "Execution session close apply batch input must be an object."
   );
-  const requests = normalizeBatchWrapperItems<
+  const requests = normalizeBatchWrapperObjectItems<
     ExecutionSessionCloseApplyBatchInput["requests"][number]
   >(
     normalizedInput.requests,
-    "Execution session close apply batch requires requests to be an array."
+    "Execution session close apply batch requires requests to be an array.",
+    "Execution session close apply batch requires requests entries to be objects."
   );
 
   const results: ExecutionSessionCloseApply[] = [];
