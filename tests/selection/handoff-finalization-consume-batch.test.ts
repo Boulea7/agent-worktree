@@ -68,6 +68,17 @@ describe("selection handoff-finalization-consume-batch helpers", () => {
     );
   });
 
+  it("should fail closed when reading consumers throws through an accessor-shaped input", async () => {
+    await expect(
+      consumeAttemptHandoffFinalizationBatch({
+        get consumers() {
+          throw new Error("getter boom");
+        },
+        invokeHandoffFinalization: async () => undefined
+      } as never)
+    ).rejects.toThrow(ValidationError);
+  });
+
   it("should fail loudly when consumer entries are sparse before deeper consumer validation runs", async () => {
     const sparseConsumers = new Array<AttemptHandoffFinalizationConsumer>(1);
 

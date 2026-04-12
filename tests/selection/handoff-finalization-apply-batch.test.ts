@@ -157,6 +157,43 @@ describe("selection handoff-finalization-apply-batch helpers", () => {
     expect(invokedAttemptIds).toEqual([]);
   });
 
+  it("should fail closed when reading a later request entry throws through an accessor-shaped array slot", async () => {
+    const invokedAttemptIds: string[] = [];
+    const requests = [createFinalizationRequest()];
+
+    Object.defineProperty(requests, 1, {
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+    requests.length = 2;
+
+    await expect(
+      applyAttemptHandoffFinalizationBatch({
+        requests: requests as AttemptHandoffFinalizationRequest[],
+        invokeHandoffFinalization: async (
+          request: AttemptHandoffFinalizationRequest
+        ) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyAttemptHandoffFinalizationBatch({
+        requests: requests as AttemptHandoffFinalizationRequest[],
+        invokeHandoffFinalization: async (
+          request: AttemptHandoffFinalizationRequest
+        ) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(
+      "Attempt handoff finalization apply batch requires requests entries to be objects."
+    );
+    expect(invokedAttemptIds).toEqual([]);
+  });
+
   it("should preserve input order and continue past blocked requests", async () => {
     const requests = [
       createFinalizationRequest({

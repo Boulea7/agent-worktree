@@ -203,6 +203,23 @@ describe("selection handoff-target-apply helpers", () => {
     );
   });
 
+  it("should fail loudly when the supplied handoff target is not an object", async () => {
+    await expect(
+      applyAttemptHandoffTarget({
+        target: null as never,
+        invokeHandoff: async () => undefined
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyAttemptHandoffTarget({
+        target: null as never,
+        invokeHandoff: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Attempt handoff request requires target to be an object when provided."
+    );
+  });
+
   it("should surface invoker failures directly without returning a partial target apply result", async () => {
     const expectedError = new Error("handoff failed");
 

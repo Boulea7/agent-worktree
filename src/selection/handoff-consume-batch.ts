@@ -1,4 +1,9 @@
 import { ValidationError } from "../core/errors.js";
+import {
+  normalizeSelectionArrayProperty,
+  normalizeSelectionObjectArrayEntry,
+  normalizeSelectionRequiredFunctionProperty
+} from "./entry-validation.js";
 import { consumeAttemptHandoff } from "./handoff-consume.js";
 import type {
   AttemptHandoffConsume,
@@ -9,21 +14,17 @@ import type {
 export async function consumeAttemptHandoffBatch(
   input: AttemptHandoffConsumeBatchInput
 ): Promise<AttemptHandoffConsumeBatch> {
-  validateInput(input);
-  const { consumers, invokeHandoff } = input;
+  const { consumers, invokeHandoff } = validateInput(input);
   const results: AttemptHandoffConsume[] = [];
 
   for (let index = 0; index < consumers.length; index += 1) {
-    if (
-      !Object.prototype.hasOwnProperty.call(consumers, index) ||
-      !isRecord(consumers[index])
-    ) {
-      throw new ValidationError(
-        "Attempt handoff consume batch requires consumers entries to be objects."
-      );
-    }
-
-    const consumer = consumers[index] as AttemptHandoffConsumeBatchInput["consumers"][number];
+    const consumer = normalizeSelectionObjectArrayEntry<
+      AttemptHandoffConsumeBatchInput["consumers"][number]
+    >(
+      consumers,
+      index,
+      "Attempt handoff consume batch requires consumers entries to be objects."
+    );
     results.push(
       await consumeAttemptHandoff({
         consumer,
@@ -37,24 +38,27 @@ export async function consumeAttemptHandoffBatch(
   };
 }
 
-function validateInput(value: unknown): void {
+function validateInput(
+  value: unknown
+): Pick<AttemptHandoffConsumeBatchInput, "consumers" | "invokeHandoff"> {
   if (!isRecord(value)) {
     throw new ValidationError(
       "Attempt handoff consume batch input must be an object."
     );
   }
 
-  if (!Array.isArray(value.consumers)) {
-    throw new ValidationError(
+  return {
+    consumers: normalizeSelectionArrayProperty(
+      value,
+      "consumers",
       "Attempt handoff consume batch requires consumers to be an array."
-    );
-  }
-
-  if (typeof value.invokeHandoff !== "function") {
-    throw new ValidationError(
+    ) as AttemptHandoffConsumeBatchInput["consumers"],
+    invokeHandoff: normalizeSelectionRequiredFunctionProperty(
+      value,
+      "invokeHandoff",
       "Attempt handoff consume batch requires invokeHandoff to be a function."
-    );
-  }
+    ) as AttemptHandoffConsumeBatchInput["invokeHandoff"]
+  };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

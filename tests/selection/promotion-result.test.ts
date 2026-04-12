@@ -27,6 +27,30 @@ import type {
 } from "../../src/verification/internal.js";
 
 describe("selection promotion-result helpers", () => {
+  it("should fail loudly when the supplied candidate container is malformed or sparse", () => {
+    expect(() => deriveAttemptPromotionResult(null as never)).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptPromotionResult(null as never)).toThrow(
+      "Attempt promotion result requires candidates to be an array."
+    );
+
+    expect(() =>
+      deriveAttemptPromotionResult([null] as unknown as AttemptPromotionCandidate[])
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionResult([null] as unknown as AttemptPromotionCandidate[])
+    ).toThrow(
+      "Attempt promotion result requires candidates entries to be objects."
+    );
+
+    const sparseCandidates = new Array<AttemptPromotionCandidate>(1);
+
+    expect(() => deriveAttemptPromotionResult(sparseCandidates)).toThrow(
+      "Attempt promotion result requires candidates entries to be objects."
+    );
+  });
+
   it("should return a stable empty promotion result for an empty candidate list", () => {
     expect(deriveAttemptPromotionResult([])).toEqual({
       promotionResultBasis: "promotion_candidate",
@@ -174,6 +198,27 @@ describe("selection promotion-result helpers", () => {
     );
     expect(() => deriveAttemptPromotionResult(candidates)).toThrow(
       "Attempt promotion result requires candidates from a single taskId."
+    );
+  });
+
+  it("should fail loudly when candidates reuse a normalized canonical identity", () => {
+    const candidates = [
+      createPromotionCandidate({
+        attemptId: "att_dup",
+        runtime: "codex-cli"
+      }),
+      createPromotionCandidate({
+        attemptId: " att_dup ",
+        runtime: " codex-cli " as never,
+        taskId: " task_shared "
+      })
+    ];
+
+    expect(() => deriveAttemptPromotionResult(candidates)).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptPromotionResult(candidates)).toThrow(
+      "Attempt promotion result requires candidates to use unique (taskId, attemptId, runtime) identities."
     );
   });
 

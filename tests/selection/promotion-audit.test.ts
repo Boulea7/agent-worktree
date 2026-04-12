@@ -31,6 +31,7 @@ describe("selection promotion-audit helpers", () => {
       auditBasis: "promotion_result",
       taskId: undefined,
       selectedAttemptId: undefined,
+      selectedIdentity: undefined,
       candidateCount: 0,
       comparableCandidateCount: 0,
       promotionReadyCandidateCount: 0,
@@ -72,6 +73,11 @@ describe("selection promotion-audit helpers", () => {
       auditBasis: "promotion_result",
       taskId: "task_shared",
       selectedAttemptId: "att_ready",
+      selectedIdentity: {
+        taskId: "task_shared",
+        attemptId: "att_ready",
+        runtime: "codex-cli"
+      },
       candidateCount: 1,
       comparableCandidateCount: 1,
       promotionReadyCandidateCount: 1,
@@ -196,6 +202,11 @@ describe("selection promotion-audit helpers", () => {
     const auditSummary = deriveAttemptPromotionAuditSummary(result);
 
     expect(auditSummary.selectedAttemptId).toBe("att_ready");
+    expect(auditSummary.selectedIdentity).toEqual({
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli"
+    });
     expect(auditSummary.candidateCount).toBe(3);
     expect(auditSummary.comparableCandidateCount).toBe(2);
     expect(auditSummary.promotionReadyCandidateCount).toBe(1);
@@ -216,6 +227,131 @@ describe("selection promotion-audit helpers", () => {
     );
     expect(() => deriveAttemptPromotionAuditSummary(result)).toThrow(
       'Attempt promotion audit summary requires result.promotionResultBasis to be "promotion_candidate".'
+    );
+  });
+
+  it("should fail loudly when the supplied promotion result wrapper is malformed", () => {
+    expect(() => deriveAttemptPromotionAuditSummary(null as never)).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptPromotionAuditSummary(null as never)).toThrow(
+      "Attempt promotion audit summary requires result to be an object."
+    );
+  });
+
+  it("should fail loudly when result.selected is malformed", () => {
+    const canonical = deriveAttemptPromotionResult([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(() =>
+      deriveAttemptPromotionAuditSummary({
+        ...canonical,
+        selected: null as never
+      })
+    ).toThrow(
+      "Attempt promotion audit summary requires result.selected to be an object when provided."
+    );
+  });
+
+  it("should preserve canonical selected identity when runtimes differ but attemptId is reused", () => {
+    const result = deriveAttemptPromotionResult([
+      createPromotionCandidate({
+        attemptId: "att_shared",
+        runtime: "codex-cli",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      }),
+      createPromotionCandidate({
+        attemptId: "att_shared",
+        runtime: "gemini-cli",
+        verification: createVerification({
+          state: "pending",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(deriveAttemptPromotionAuditSummary(result).selectedIdentity).toEqual({
+      taskId: "task_shared",
+      attemptId: "att_shared",
+      runtime: "codex-cli"
+    });
+  });
+
+  it("should fail loudly when result.candidates reuse a canonical (taskId, attemptId, runtime) identity", () => {
+    const result = deriveAttemptPromotionResult([
+      createPromotionCandidate({
+        attemptId: "att_a",
+        runtime: "codex-cli",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      }),
+      createPromotionCandidate({
+        attemptId: "att_b",
+        runtime: "gemini-cli",
+        verification: createVerification({
+          state: "pending",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
+        })
+      })
+    ]);
+
+    expect(() =>
+      deriveAttemptPromotionAuditSummary({
+        ...result,
+        candidates: [
+          result.candidates[0]!,
+          {
+            ...result.candidates[1]!,
+            taskId: " task_shared ",
+            attemptId: " att_a ",
+            runtime: " codex-cli "
+          }
+        ]
+      })
+    ).toThrow(
+      "Attempt promotion audit summary requires result.candidates to use unique (taskId, attemptId, runtime) identities."
     );
   });
 

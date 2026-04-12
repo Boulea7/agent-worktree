@@ -1,6 +1,8 @@
 import { ValidationError } from "../core/errors.js";
 import {
-  validateSelectionObjectArrayEntry
+  normalizeSelectionArrayProperty,
+  normalizeSelectionObjectArrayEntry,
+  normalizeSelectionRequiredFunctionProperty,
 } from "./entry-validation.js";
 import { consumeAttemptHandoffFinalization } from "./handoff-finalization-consume.js";
 import type {
@@ -13,17 +15,16 @@ export async function consumeAttemptHandoffFinalizationBatch(
   input: AttemptHandoffFinalizationConsumeBatchInput
 ): Promise<AttemptHandoffFinalizationConsumeBatch> {
   const normalizedInput = normalizeBatchInput(input);
-  const consumers = normalizeConsumers(normalizedInput.consumers);
   const results: AttemptHandoffFinalizationConsume[] = [];
 
-  for (let index = 0; index < consumers.length; index += 1) {
-    validateSelectionObjectArrayEntry(
-      consumers,
+  for (let index = 0; index < normalizedInput.consumers.length; index += 1) {
+    const consumer = normalizeSelectionObjectArrayEntry<
+      AttemptHandoffFinalizationConsumeBatchInput["consumers"][number]
+    >(
+      normalizedInput.consumers,
       index,
       "Attempt handoff finalization consume batch requires consumers entries to be objects."
     );
-
-    const consumer = consumers[index]!;
     results.push(
       await consumeAttemptHandoffFinalization({
         consumer,
@@ -39,7 +40,10 @@ export async function consumeAttemptHandoffFinalizationBatch(
 
 function normalizeBatchInput(
   value: unknown
-): AttemptHandoffFinalizationConsumeBatchInput {
+): Pick<
+  AttemptHandoffFinalizationConsumeBatchInput,
+  "consumers" | "invokeHandoffFinalization"
+> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new ValidationError(
       "Attempt handoff finalization consume batch input must be an object."
@@ -48,23 +52,16 @@ function normalizeBatchInput(
 
   const normalizedValue = value as Record<string, unknown>;
 
-  if (typeof normalizedValue.invokeHandoffFinalization !== "function") {
-    throw new ValidationError(
-      "Attempt handoff finalization consume batch requires invokeHandoffFinalization to be a function."
-    );
-  }
-
-  return value as AttemptHandoffFinalizationConsumeBatchInput;
-}
-
-function normalizeConsumers(
-  value: unknown
-): AttemptHandoffFinalizationConsumeBatchInput["consumers"] {
-  if (!Array.isArray(value)) {
-    throw new ValidationError(
+  return {
+    consumers: normalizeSelectionArrayProperty(
+      normalizedValue,
+      "consumers",
       "Attempt handoff finalization consume batch requires consumers to be an array."
-    );
-  }
-
-  return value;
+    ) as AttemptHandoffFinalizationConsumeBatchInput["consumers"],
+    invokeHandoffFinalization: normalizeSelectionRequiredFunctionProperty(
+      normalizedValue,
+      "invokeHandoffFinalization",
+      "Attempt handoff finalization consume batch requires invokeHandoffFinalization to be a function."
+    ) as AttemptHandoffFinalizationConsumeBatchInput["invokeHandoffFinalization"]
+  };
 }

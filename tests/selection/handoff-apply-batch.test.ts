@@ -171,6 +171,32 @@ describe("selection handoff-apply-batch helpers", () => {
     expect(invokedAttemptIds).toEqual([]);
   });
 
+  it("should ignore unrelated enumerable getters while normalizing batch input", async () => {
+    await expect(
+      applyAttemptHandoffBatch({
+        requests: [createHandoffRequest()],
+        invokeHandoff: async () => undefined,
+        get queue() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).resolves.toEqual({
+      results: [
+        {
+          consumer: {
+            request: createHandoffRequest(),
+            readiness: createBlockedReadiness()
+          },
+          consume: {
+            request: createHandoffRequest(),
+            readiness: createBlockedReadiness(),
+            invoked: false
+          }
+        }
+      ]
+    });
+  });
+
   it("should preserve input order and continue past blocked requests", async () => {
     const requests = [
       createHandoffRequest({

@@ -3,11 +3,11 @@ import {
   validateDownstreamIdentityIngress
 } from "./downstream-identity-guardrails.js";
 import {
-  validateSelectionArray,
-  validateSelectionObjectArrayEntry,
+  normalizeSelectionObjectArrayEntry,
   validateSelectionObjectInput,
-  validateSelectionOptionalFunction,
-  validateSelectionRequiredFunction
+  normalizeSelectionArrayProperty,
+  normalizeSelectionOptionalFunctionProperty,
+  normalizeSelectionRequiredFunctionProperty
 } from "./entry-validation.js";
 import { applyAttemptHandoffTarget } from "./handoff-target-apply.js";
 import type {
@@ -23,28 +23,36 @@ export async function applyAttemptHandoffTargetBatch(
     input,
     "Attempt handoff target apply batch input must be an object."
   );
-  validateSelectionArray(
-    input.targets,
+  const targets = normalizeSelectionArrayProperty(
+    input,
+    "targets",
     "Attempt handoff target apply batch requires targets to be an array."
-  );
-  validateSelectionRequiredFunction(
-    input.invokeHandoff,
+  ) as AttemptHandoffTargetApplyBatchInput["targets"];
+  const invokeHandoff = normalizeSelectionRequiredFunctionProperty(
+    input,
+    "invokeHandoff",
     "Attempt handoff target apply batch requires invokeHandoff to be a function."
-  );
-  validateSelectionOptionalFunction(
-    input.resolveHandoffCapability,
+  ) as AttemptHandoffTargetApplyBatchInput["invokeHandoff"];
+  const resolveHandoffCapability = normalizeSelectionOptionalFunctionProperty(
+    input,
+    "resolveHandoffCapability",
     "Attempt handoff target apply batch requires resolveHandoffCapability to be a function when provided."
-  );
+  ) as AttemptHandoffTargetApplyBatchInput["resolveHandoffCapability"];
+  const normalizedTargets: AttemptHandoffTargetApplyBatchInput["targets"][number][] = [];
 
-  for (let index = 0; index < input.targets.length; index += 1) {
-    validateSelectionObjectArrayEntry(
-      input.targets,
-      index,
-      "Attempt handoff target apply batch requires targets entries to be objects."
+  for (let index = 0; index < targets.length; index += 1) {
+    normalizedTargets.push(
+      normalizeSelectionObjectArrayEntry<
+        AttemptHandoffTargetApplyBatchInput["targets"][number]
+      >(
+        targets,
+        index,
+        "Attempt handoff target apply batch requires targets entries to be objects."
+      )
     );
   }
 
-  validateDownstreamIdentityIngress(input.targets, {
+  validateDownstreamIdentityIngress(normalizedTargets, {
     required:
       "Attempt handoff target apply batch requires targets entries to include non-empty taskId, attemptId, and runtime strings.",
     singleTask:
@@ -54,15 +62,15 @@ export async function applyAttemptHandoffTargetBatch(
   });
   const results: AttemptHandoffTargetApply[] = [];
 
-  for (let index = 0; index < input.targets.length; index += 1) {
-    const target = input.targets[index]!;
+  for (let index = 0; index < normalizedTargets.length; index += 1) {
+    const target = normalizedTargets[index]!;
     const result = await applyAttemptHandoffTarget({
       target,
-      invokeHandoff: input.invokeHandoff,
-      ...(input.resolveHandoffCapability === undefined
+      invokeHandoff,
+      ...(resolveHandoffCapability === undefined
         ? {}
         : {
-            resolveHandoffCapability: input.resolveHandoffCapability
+            resolveHandoffCapability
           })
     });
 

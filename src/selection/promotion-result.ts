@@ -13,6 +13,9 @@ import type {
 import {
   validatePromotionArtifactSummaryCheckNameLists
 } from "./promotion-artifact-summary-guardrails.js";
+import {
+  validateDownstreamIdentityIngress
+} from "./downstream-identity-guardrails.js";
 import { normalizePromotionAttemptSourceKind } from "./promotion-source-kind.js";
 import type {
   AttemptPromotionCandidate,
@@ -27,6 +30,14 @@ const validAttemptStatuses = new Set<AttemptStatus>(attemptStatuses);
 export function deriveAttemptPromotionResult(
   candidates: readonly AttemptPromotionCandidate[]
 ): AttemptPromotionResult {
+  if (!Array.isArray(candidates)) {
+    throw new ValidationError(
+      "Attempt promotion result requires candidates to be an array."
+    );
+  }
+
+  validateCandidateEntries(candidates);
+
   const firstCandidate = candidates[0];
 
   if (firstCandidate === undefined) {
@@ -51,6 +62,7 @@ export function deriveAttemptPromotionResult(
   );
 
   validateTaskBoundary(validatedCandidates, taskId);
+  validateCanonicalCandidateIdentity(validatedCandidates);
 
   const sortedCandidates = [...validatedCandidates].sort(
     compareAttemptPromotionCandidates
@@ -78,15 +90,19 @@ function compareAttemptPromotionCandidates(
   left: AttemptPromotionCandidate,
   right: AttemptPromotionCandidate
 ): number {
-  return compareAttemptVerificationCandidates(
-    {
-      attemptId: left.attemptId,
-      summary: left.summary
-    },
-    {
-      attemptId: right.attemptId,
-      summary: right.summary
-    }
+  return (
+    compareAttemptVerificationCandidates(
+      {
+        attemptId: left.attemptId,
+        summary: left.summary
+      },
+      {
+        attemptId: right.attemptId,
+        summary: right.summary
+      }
+    ) ||
+    left.runtime.localeCompare(right.runtime) ||
+    left.taskId.localeCompare(right.taskId)
   );
 }
 
@@ -131,6 +147,18 @@ function validatePromotionCandidate(
   validateSummaryConsistency(candidate.summary, candidate.artifactSummary.summary);
 }
 
+function validateCandidateEntries(
+  candidates: readonly unknown[]
+): void {
+  for (let index = 0; index < candidates.length; index += 1) {
+    if (!hasOwnIndex(candidates, index) || !isRecord(candidates[index])) {
+      throw new ValidationError(
+        "Attempt promotion result requires candidates entries to be objects."
+      );
+    }
+  }
+}
+
 function validateTaskBoundary(
   candidates: readonly AttemptPromotionCandidate[],
   taskId: string
@@ -147,6 +175,19 @@ function validateTaskBoundary(
       );
     }
   }
+}
+
+function validateCanonicalCandidateIdentity(
+  candidates: readonly AttemptPromotionCandidate[]
+): void {
+  validateDownstreamIdentityIngress(candidates, {
+    required:
+      "Attempt promotion result requires candidates entries to include non-empty taskId, attemptId, and runtime strings.",
+    singleTask:
+      "Attempt promotion result requires candidates from a single taskId.",
+    unique:
+      "Attempt promotion result requires candidates to use unique (taskId, attemptId, runtime) identities."
+  });
 }
 
 function validateRecommendationConsistency(
@@ -238,4 +279,8 @@ function countsEqual(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasOwnIndex(values: readonly unknown[], index: number): boolean {
+  return Object.prototype.hasOwnProperty.call(values, index);
 }
