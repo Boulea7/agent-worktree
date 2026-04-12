@@ -64,6 +64,10 @@ For committed repository truth, start with `SPEC.md`, then `README.md`, then thi
 - [Development Phases](maintainers/development-phases.md)
 - [Automation Readiness](maintainers/automation-readiness.md)
 - [Future Super Agent Harness Planning (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/README.md)
+- [Future Harness Reuse Map](maintainers/future-super-agent-harness/reuse-map-from-deerflow-and-current-codebase.md)
+- [Future Harness Sandbox and Extensibility Notes](maintainers/future-super-agent-harness/sandbox-skills-and-extensibility.md)
+- [Future Harness Memory and State Notes](maintainers/future-super-agent-harness/memory-state-and-persistence.md)
+- [Future Harness Vision and Positioning](maintainers/future-super-agent-harness/vision-and-positioning.md)
 
 ## Decisions
 
