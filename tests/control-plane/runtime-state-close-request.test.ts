@@ -86,6 +86,30 @@ describe("control-plane runtime-state close-request helpers", () => {
     ).toThrow("Execution session close request target must be an object.");
   });
 
+  it("should reject close targets that come only from the prototype chain", () => {
+    const input = Object.create({
+      target: createCloseTarget()
+    });
+
+    expect(() =>
+      deriveExecutionSessionCloseRequest(input as never)
+    ).toThrow("Execution session close request target must be an object.");
+  });
+
+  it("should reject accessor-shaped close targets whose getter throws", () => {
+    const input = {};
+    Object.defineProperty(input, "target", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionCloseRequest(input as never)
+    ).toThrow("Execution session close request target must be an object.");
+  });
+
   it("should reject non-object close request inputs before reading target", () => {
     expect(() =>
       deriveExecutionSessionCloseRequest(undefined as never)

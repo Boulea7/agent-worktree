@@ -57,6 +57,35 @@ describe("control-plane runtime-state wait-target-apply-batch helpers", () => {
     );
   });
 
+  it("should reject inherited targets and accessor-shaped invokeWait callbacks", async () => {
+    const inheritedInput = Object.create({
+      targets: [createWaitTarget()]
+    });
+    inheritedInput.invokeWait = async () => undefined;
+
+    await expect(
+      applyExecutionSessionWaitTargetBatch(inheritedInput as never)
+    ).rejects.toThrow(
+      "Execution session wait target apply batch requires targets to be an array."
+    );
+
+    const accessorInput = {
+      targets: [createWaitTarget()]
+    };
+    Object.defineProperty(accessorInput, "invokeWait", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    await expect(
+      applyExecutionSessionWaitTargetBatch(accessorInput as never)
+    ).rejects.toThrow(
+      "Execution session wait target apply batch requires invokeWait to be a function."
+    );
+  });
+
   it("should fail loudly when wait target entries are sparse or non-object before invoking", async () => {
     let invokedCount = 0;
     const sparseTargets = new Array<ExecutionSessionWaitTarget>(1);

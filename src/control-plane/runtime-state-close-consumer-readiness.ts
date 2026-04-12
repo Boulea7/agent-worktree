@@ -1,5 +1,9 @@
 import { ValidationError } from "../core/errors.js";
 import { adapterSupportsCapability } from "../adapters/catalog.js";
+import {
+  readOptionalBatchWrapperProperty,
+  readRequiredBatchWrapperProperty
+} from "./runtime-state-batch-wrapper-guards.js";
 import { normalizeExecutionSessionCloseRequest } from "./runtime-state-close-request.js";
 import type {
   ExecutionSessionCloseConsumerBlockingReason,
@@ -40,19 +44,27 @@ function validateCloseConsumerReadinessInput(
     );
   }
 
-  if (
-    typeof input.request !== "object" ||
-    input.request === null ||
-    Array.isArray(input.request)
-  ) {
+  const request = readRequiredBatchWrapperProperty(
+    input,
+    "request",
+    "Execution session close consumer readiness requires request to be an object."
+  );
+
+  if (typeof request !== "object" || request === null || Array.isArray(request)) {
     throw new ValidationError(
       "Execution session close consumer readiness requires request to be an object."
     );
   }
 
+  const resolveSessionLifecycleCapability = readOptionalBatchWrapperProperty(
+    input,
+    "resolveSessionLifecycleCapability",
+    "Execution session close consumer readiness requires resolveSessionLifecycleCapability to be a function when provided."
+  );
+
   if (
-    input.resolveSessionLifecycleCapability !== undefined &&
-    typeof input.resolveSessionLifecycleCapability !== "function"
+    resolveSessionLifecycleCapability !== undefined &&
+    typeof resolveSessionLifecycleCapability !== "function"
   ) {
     throw new ValidationError(
       "Execution session close consumer readiness requires resolveSessionLifecycleCapability to be a function when provided."

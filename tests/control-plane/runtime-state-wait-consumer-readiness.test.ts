@@ -110,6 +110,34 @@ describe("control-plane runtime-state wait-consumer-readiness helpers", () => {
     );
   });
 
+  it("should reject inherited request wrappers and accessor-shaped resolvers", () => {
+    const inheritedInput = Object.create({
+      request: createWaitRequest()
+    });
+
+    expect(() =>
+      deriveExecutionSessionWaitConsumerReadiness(inheritedInput as never)
+    ).toThrow(
+      "Execution session wait consumer readiness requires request to be an object."
+    );
+
+    const accessorInput = {
+      request: createWaitRequest()
+    };
+    Object.defineProperty(accessorInput, "resolveSessionLifecycleCapability", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionWaitConsumerReadiness(accessorInput as never)
+    ).toThrow(
+      "Execution session wait consumer readiness requires resolveSessionLifecycleCapability to be a function when provided."
+    );
+  });
+
   it("should fail loudly when request identifiers or timeout are invalid at the readiness seam", () => {
     expect(() =>
       deriveExecutionSessionWaitConsumerReadiness({

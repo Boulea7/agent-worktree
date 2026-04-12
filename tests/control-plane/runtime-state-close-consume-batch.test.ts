@@ -40,6 +40,35 @@ describe("control-plane runtime-state close-consume-batch helpers", () => {
     );
   });
 
+  it("should reject inherited consumer containers and accessor-shaped invokeClose callbacks", async () => {
+    const inheritedInput = Object.create({
+      consumers: [createCloseConsumer()]
+    });
+    inheritedInput.invokeClose = async () => undefined;
+
+    await expect(
+      consumeExecutionSessionCloseBatch(inheritedInput as never)
+    ).rejects.toThrow(
+      "Execution session close consume batch requires consumers to be an array."
+    );
+
+    const accessorInput = {
+      consumers: [createCloseConsumer()]
+    };
+    Object.defineProperty(accessorInput, "invokeClose", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    await expect(
+      consumeExecutionSessionCloseBatch(accessorInput as never)
+    ).rejects.toThrow(
+      "Execution session close consume requires invokeClose to be a function."
+    );
+  });
+
   it("should fail loudly when consumer entries are sparse or non-object before invoking", async () => {
     const invokeClose = vi.fn(async () => undefined);
     const sparseConsumers = new Array<ExecutionSessionCloseConsumer>(1);

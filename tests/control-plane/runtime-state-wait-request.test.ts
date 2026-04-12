@@ -137,6 +137,30 @@ describe("control-plane runtime-state wait-request helpers", () => {
     ).toThrow("Execution session wait request target must be an object.");
   });
 
+  it("should reject wait targets that come only from the prototype chain", () => {
+    const input = Object.create({
+      target: createWaitTarget()
+    });
+
+    expect(() =>
+      deriveExecutionSessionWaitRequest(input as never)
+    ).toThrow("Execution session wait request target must be an object.");
+  });
+
+  it("should reject accessor-shaped wait targets whose getter throws", () => {
+    const input = {};
+    Object.defineProperty(input, "target", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionWaitRequest(input as never)
+    ).toThrow("Execution session wait request target must be an object.");
+  });
+
   it("should reject non-object wait request inputs before reading target", () => {
     expect(() =>
       deriveExecutionSessionWaitRequest(undefined as never)

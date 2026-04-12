@@ -1,4 +1,5 @@
 import { ValidationError } from "../core/errors.js";
+import { readRequiredBatchWrapperProperty } from "./runtime-state-batch-wrapper-guards.js";
 import type {
   ExecutionSessionCloseRequest,
   ExecutionSessionCloseRequestInput
@@ -13,21 +14,23 @@ export function deriveExecutionSessionCloseRequest(
     );
   }
 
-  if (
-    typeof input.target !== "object" ||
-    input.target === null ||
-    Array.isArray(input.target)
-  ) {
+  const target = readRequiredBatchWrapperProperty<Record<string, unknown>>(
+    input,
+    "target",
+    "Execution session close request target must be an object."
+  );
+
+  if (typeof target !== "object" || target === null || Array.isArray(target)) {
     throw new ValidationError(
       "Execution session close request target must be an object."
     );
   }
 
   return normalizeExecutionSessionCloseRequest({
-    attemptId: input.target.attemptId,
-    runtime: input.target.runtime,
-    sessionId: input.target.sessionId
-  });
+    attemptId: target.attemptId,
+    runtime: target.runtime,
+    sessionId: target.sessionId
+  } as ExecutionSessionCloseRequest);
 }
 
 export function normalizeExecutionSessionCloseRequest(

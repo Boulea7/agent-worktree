@@ -57,6 +57,35 @@ describe("control-plane runtime-state close-target-apply-batch helpers", () => {
     );
   });
 
+  it("should reject inherited targets and accessor-shaped invokeClose callbacks", async () => {
+    const inheritedInput = Object.create({
+      targets: [createCloseTarget()]
+    });
+    inheritedInput.invokeClose = async () => undefined;
+
+    await expect(
+      applyExecutionSessionCloseTargetBatch(inheritedInput as never)
+    ).rejects.toThrow(
+      "Execution session close target apply batch requires targets to be an array."
+    );
+
+    const accessorInput = {
+      targets: [createCloseTarget()]
+    };
+    Object.defineProperty(accessorInput, "invokeClose", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    await expect(
+      applyExecutionSessionCloseTargetBatch(accessorInput as never)
+    ).rejects.toThrow(
+      "Execution session close target apply batch requires invokeClose to be a function."
+    );
+  });
+
   it("should fail loudly when close target entries are sparse or non-object before invoking", async () => {
     let invokedCount = 0;
     const sparseTargets = new Array<ExecutionSessionCloseTarget>(1);

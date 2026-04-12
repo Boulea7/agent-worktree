@@ -110,6 +110,34 @@ describe("control-plane runtime-state close-consumer-readiness helpers", () => {
     );
   });
 
+  it("should reject inherited request wrappers and accessor-shaped resolvers", () => {
+    const inheritedInput = Object.create({
+      request: createCloseRequest()
+    });
+
+    expect(() =>
+      deriveExecutionSessionCloseConsumerReadiness(inheritedInput as never)
+    ).toThrow(
+      "Execution session close consumer readiness requires request to be an object."
+    );
+
+    const accessorInput = {
+      request: createCloseRequest()
+    };
+    Object.defineProperty(accessorInput, "resolveSessionLifecycleCapability", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionCloseConsumerReadiness(accessorInput as never)
+    ).toThrow(
+      "Execution session close consumer readiness requires resolveSessionLifecycleCapability to be a function when provided."
+    );
+  });
+
   it("should fail loudly when request identifiers are invalid at the readiness seam", () => {
     expect(() =>
       deriveExecutionSessionCloseConsumerReadiness({
