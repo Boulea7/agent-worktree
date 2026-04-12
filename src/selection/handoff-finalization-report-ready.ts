@@ -9,6 +9,7 @@ import {
   accessSelectionValue,
   rethrowSelectionAccessError,
   validateSelectionArray,
+  validateSelectionObjectArrayEntries,
   validateSelectionObjectInput
 } from "./entry-validation.js";
 import type {
@@ -92,6 +93,8 @@ function normalizeExplanationSummary(
 ): AttemptHandoffFinalizationExplanationSummary {
   const explanationBasis = accessSelectionValue(summary, "explanationBasis");
   const results = accessSelectionValue(summary, "results");
+  const invokedResults = accessSelectionValue(summary, "invokedResults");
+  const blockedResults = accessSelectionValue(summary, "blockedResults");
 
   if (explanationBasis !== attemptHandoffFinalizationExplanationBasis) {
     throw new ValidationError(
@@ -103,14 +106,30 @@ function normalizeExplanationSummary(
     results,
     "Attempt handoff finalization report-ready requires summary.results to be an array."
   );
+  validateSelectionArray(
+    invokedResults,
+    "Attempt handoff finalization report-ready requires summary.invokedResults to be an array."
+  );
+  validateSelectionArray(
+    blockedResults,
+    "Attempt handoff finalization report-ready requires summary.blockedResults to be an array."
+  );
+  validateSelectionObjectArrayEntries(
+    invokedResults,
+    "Attempt handoff finalization report-ready requires summary.invokedResults entries to be objects."
+  );
+  validateSelectionObjectArrayEntries(
+    blockedResults,
+    "Attempt handoff finalization report-ready requires summary.blockedResults entries to be objects."
+  );
 
   return {
     explanationBasis: attemptHandoffFinalizationExplanationBasis,
     results: results as AttemptHandoffFinalizationExplanationEntry[],
-    invokedResults: (accessSelectionValue(summary, "invokedResults") ??
-      []) as AttemptHandoffFinalizationExplanationEntry[],
-    blockedResults: (accessSelectionValue(summary, "blockedResults") ??
-      []) as AttemptHandoffFinalizationExplanationEntry[]
+    invokedResults:
+      invokedResults as AttemptHandoffFinalizationExplanationEntry[],
+    blockedResults:
+      blockedResults as AttemptHandoffFinalizationExplanationEntry[]
   };
 }
 

@@ -132,6 +132,33 @@ describe("selection handoff-finalization-report-ready helpers", () => {
     );
   });
 
+  it("should fail loudly when summary.invokedResults or summary.blockedResults is omitted", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady({
+        explanationBasis: "handoff_finalization_outcome_summary",
+        results: []
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady({
+        explanationBasis: "handoff_finalization_outcome_summary",
+        results: []
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization report-ready requires summary.invokedResults to be an array."
+    );
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady({
+        explanationBasis: "handoff_finalization_outcome_summary",
+        results: [],
+        invokedResults: []
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization report-ready requires summary.blockedResults to be an array."
+    );
+  });
+
   it("should fail loudly when summary.results contains sparse slots", () => {
     const sparseResults = new Array<AttemptHandoffFinalizationExplanationEntry>(1);
 
@@ -335,7 +362,7 @@ describe("selection handoff-finalization-report-ready helpers", () => {
         invokedResults: sparseInvokedResults
       })
     ).toThrow(
-      "Attempt handoff finalization report-ready requires summary.invokedResults to match the stable filtered invoked subgroup."
+      "Attempt handoff finalization report-ready requires summary.invokedResults entries to be objects."
     );
   });
 

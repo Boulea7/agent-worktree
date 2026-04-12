@@ -187,8 +187,8 @@ describe("selection handoff-finalization-target helpers", () => {
     expect(summary).not.toHaveProperty("readiness");
   });
 
-  it("should ignore raw subgroup drift and rely on the canonicalized explanation results when deriving finalization targets", () => {
-    expect(
+  it("should fail closed when subgroup accessors throw instead of silently rebuilding subgroup projections", () => {
+    expect(() =>
       deriveAttemptHandoffFinalizationTargetSummary({
         explanationBasis: "handoff_report_ready",
         results: [createInvokedExplanationEntry()],
@@ -199,23 +199,38 @@ describe("selection handoff-finalization-target helpers", () => {
           throw new Error("getter boom");
         }
       } as never)
-    ).toEqual({
-      finalizationBasis: "handoff_decision_summary",
-      resultCount: 1,
-      invokedResultCount: 1,
-      blockedResultCount: 0,
-      blockingReasons: [],
-      canFinalizeHandoff: true,
-      targets: [
-        {
-          taskId: "task_shared",
-          attemptId: "att_ready",
-          runtime: "codex-cli",
-          status: "created",
-          sourceKind: undefined
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationTargetSummary({
+        explanationBasis: "handoff_report_ready",
+        results: [createInvokedExplanationEntry()],
+        get invokedResults() {
+          throw new Error("getter boom");
+        },
+        get blockedResults() {
+          throw new Error("getter boom");
         }
-      ]
-    });
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization target summary requires summary to be a readable object."
+    );
+  });
+
+  it("should fail loudly when invokedResults or blockedResults is omitted", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationTargetSummary({
+        explanationBasis: "handoff_report_ready",
+        results: [createInvokedExplanationEntry()]
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationTargetSummary({
+        explanationBasis: "handoff_report_ready",
+        results: [createInvokedExplanationEntry()]
+      } as never)
+    ).toThrow(
+      "Attempt handoff decision summary requires summary.invokedResults to be an array."
+    );
   });
 
   it("should derive a stable finalization target summary through the canonical handoff chain", async () => {

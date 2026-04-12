@@ -77,6 +77,8 @@ function deriveCanonicalExplanationSummary(
   }
 
   const results = accessSelectionValue(summary, "results");
+  const invokedResults = accessSelectionValue(summary, "invokedResults");
+  const blockedResults = accessSelectionValue(summary, "blockedResults");
 
   validateSelectionArray(
     results,
@@ -86,9 +88,28 @@ function deriveCanonicalExplanationSummary(
     results,
     "Attempt handoff finalization target summary requires summary.results entries to be objects."
   );
+  validateSelectionArray(
+    invokedResults,
+    "Attempt handoff decision summary requires summary.invokedResults to be an array."
+  );
+  validateSelectionObjectArrayEntries(
+    invokedResults,
+    "Attempt handoff decision summary requires summary.invokedResults entries to be objects."
+  );
+  validateSelectionArray(
+    blockedResults,
+    "Attempt handoff decision summary requires summary.blockedResults to be an array."
+  );
+  validateSelectionObjectArrayEntries(
+    blockedResults,
+    "Attempt handoff decision summary requires summary.blockedResults entries to be objects."
+  );
 
-  const explanationResults =
-    results as AttemptHandoffExplanationSummary["results"];
+  const explanationResults = results as AttemptHandoffExplanationSummary["results"];
+  const explanationInvokedResults =
+    invokedResults as AttemptHandoffExplanationSummary["invokedResults"];
+  const explanationBlockedResults =
+    blockedResults as AttemptHandoffExplanationSummary["blockedResults"];
 
   const canonicalSummary = deriveAttemptHandoffExplanationSummary({
     reportBasis: "promotion_target_apply_batch",
@@ -96,23 +117,28 @@ function deriveCanonicalExplanationSummary(
       handoffTarget: entry.handoffTarget,
       targetApply: entry.targetApply
     })),
-    invokedResults: explanationResults
-      .filter((entry) => entry.invoked)
-      .map((entry) => ({
-        handoffTarget: entry.handoffTarget,
-        targetApply: entry.targetApply
-      })),
-    blockedResults: explanationResults
-      .filter((entry) => !entry.invoked)
-      .map((entry) => ({
-        handoffTarget: entry.handoffTarget,
-        targetApply: entry.targetApply
-      }))
+    invokedResults: explanationInvokedResults.map((entry) => ({
+      handoffTarget: entry.handoffTarget,
+      targetApply: entry.targetApply
+    })),
+    blockedResults: explanationBlockedResults.map((entry) => ({
+      handoffTarget: entry.handoffTarget,
+      targetApply: entry.targetApply
+    }))
   });
 
   if (canonicalSummary === undefined) {
     throw new ValidationError(
       "Attempt handoff finalization target summary requires summary.results to produce a canonical explanation summary."
+    );
+  }
+
+  if (
+    canonicalSummary.invokedResults.length !== explanationInvokedResults.length ||
+    canonicalSummary.blockedResults.length !== explanationBlockedResults.length
+  ) {
+    throw new ValidationError(
+      "Attempt handoff finalization target summary requires summary subgroup projections to match the canonical explanation summary."
     );
   }
 
