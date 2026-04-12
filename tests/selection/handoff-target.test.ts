@@ -91,6 +91,23 @@ describe("selection handoff-target helpers", () => {
     );
   });
 
+  it("should reject promotion targets that only provide required identity fields through the prototype chain", () => {
+    const target = Object.create(createPromotionTarget(), {
+      targetBasis: {
+        configurable: true,
+        enumerable: true,
+        value: "promotion_decision_summary"
+      }
+    });
+
+    expect(() => deriveAttemptHandoffTarget(target as never)).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptHandoffTarget(target as never)).toThrow(
+      "Attempt handoff target requires target.taskId to be a non-empty string."
+    );
+  });
+
   it("should fail loudly when target.taskId is not a non-empty string", () => {
     const target = {
       ...createPromotionTarget(),

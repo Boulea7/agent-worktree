@@ -16,6 +16,7 @@ import type {
   AttemptPromotionTargetApply,
   AttemptPromotionTargetApplyBatch
 } from "./types.js";
+import { readSelectionValue } from "./entry-validation.js";
 import {
   validateDownstreamSingleTaskBoundary,
   validateDownstreamUniqueIdentity
@@ -42,17 +43,15 @@ export function deriveAttemptHandoffReportReady(
     );
   }
 
-  validateBatch(batch);
+  const results = validateBatch(batch);
   validateDownstreamSingleTaskBoundary(
-    batch.results.map((entry) => entry.handoffTarget),
+    results.map((entry) => entry.handoffTarget),
     "Attempt handoff report-ready requires batch.results from a single taskId."
   );
   validateDownstreamUniqueIdentity(
-    batch.results.map((entry) => entry.handoffTarget),
+    results.map((entry) => entry.handoffTarget),
     "Attempt handoff report-ready requires batch.results to use unique (taskId, attemptId, runtime) identities."
   );
-
-  const results = batch.results.map(cloneEntry);
 
   return {
     reportBasis: ATTEMPT_HANDOFF_REPORT_READY_BASIS,
@@ -64,60 +63,88 @@ export function deriveAttemptHandoffReportReady(
   };
 }
 
-function validateBatch(batch: AttemptPromotionTargetApplyBatch): void {
-  if (!Array.isArray(batch.results)) {
+function validateBatch(
+  batch: AttemptPromotionTargetApplyBatch
+): AttemptHandoffReportReadyEntry[] {
+  const results = readSelectionValue(
+    batch,
+    "results",
+    "Attempt handoff report-ready requires batch.results to be an array."
+  );
+
+  if (!Array.isArray(results)) {
     throw new ValidationError(
       "Attempt handoff report-ready requires batch.results to be an array."
     );
   }
 
-  for (let index = 0; index < batch.results.length; index += 1) {
-    if (!hasOwnIndex(batch.results, index)) {
+  const normalizedEntries: AttemptHandoffReportReadyEntry[] = [];
+
+  for (let index = 0; index < results.length; index += 1) {
+    if (!hasOwnIndex(results, index)) {
       throw new ValidationError(
         "Attempt handoff report-ready requires each batch result to be an object."
       );
     }
 
-    validatePromotionTargetApplyEntry(batch.results[index]!);
+    let entry: unknown;
+
+    try {
+      entry = results[index];
+    } catch {
+      throw new ValidationError(
+        "Attempt handoff report-ready requires each batch result to be an object."
+      );
+    }
+
+    normalizedEntries.push(validatePromotionTargetApplyEntry(entry));
   }
+
+  return normalizedEntries;
 }
 
 function validatePromotionTargetApplyEntry(
-  entry: AttemptPromotionTargetApply
-): void {
+  entry: unknown
+): AttemptHandoffReportReadyEntry {
   if (!isRecord(entry)) {
     throw new ValidationError(
       "Attempt handoff report-ready requires each batch result to be an object."
     );
   }
 
-  validateHandoffTarget(entry.handoffTarget);
-  validateTargetApply(entry.targetApply);
+  const handoffTarget = validateHandoffTarget(
+    readSelectionValue(
+      entry,
+      "handoffTarget",
+      "Attempt handoff report-ready requires entry.handoffTarget to be an object."
+    )
+  );
+  const targetApply = validateTargetApply(
+    readSelectionValue(
+      entry,
+      "targetApply",
+      "Attempt handoff report-ready requires entry.targetApply to be an object."
+    )
+  );
 
   assertRequestMatchesTarget(
-    entry.targetApply.request,
-    entry.handoffTarget,
+    targetApply.request,
+    handoffTarget,
     "targetApply.request"
   );
   assertRequestMatchesTarget(
-    entry.targetApply.apply.consumer.request,
-    entry.handoffTarget,
+    targetApply.apply.consumer.request,
+    handoffTarget,
     "targetApply.apply.consumer.request"
   );
   assertRequestMatchesTarget(
-    entry.targetApply.apply.consume.request,
-    entry.handoffTarget,
+    targetApply.apply.consume.request,
+    handoffTarget,
     "targetApply.apply.consume.request"
   );
 
-  const consumerReadiness = entry.targetApply.apply.consumer.readiness;
-  const consumeReadiness = entry.targetApply.apply.consume.readiness;
-
-  validateReadiness(
-    consumerReadiness,
-    "targetApply.apply.consumer.readiness"
-  );
-  validateReadiness(consumeReadiness, "targetApply.apply.consume.readiness");
+  const consumerReadiness = targetApply.apply.consumer.readiness;
+  const consumeReadiness = targetApply.apply.consume.readiness;
 
   if (!readinessEqual(consumerReadiness, consumeReadiness)) {
     throw new ValidationError(
@@ -125,108 +152,231 @@ function validatePromotionTargetApplyEntry(
     );
   }
 
-  if (typeof entry.targetApply.apply.consume.invoked !== "boolean") {
-    throw new ValidationError(
-      "Attempt handoff report-ready requires targetApply.apply.consume.invoked to be a boolean."
-    );
-  }
-
-  if (entry.targetApply.apply.consume.invoked) {
+  if (targetApply.apply.consume.invoked) {
     assertSupportedReadiness(consumerReadiness);
-    return;
+  } else {
+    assertBlockedReadiness(consumerReadiness);
   }
 
-  assertBlockedReadiness(consumerReadiness);
+  return {
+    handoffTarget,
+    targetApply
+  };
 }
 
-function validateHandoffTarget(target: AttemptHandoffTarget): void {
+function validateHandoffTarget(target: unknown): AttemptHandoffTarget {
   if (!isRecord(target)) {
     throw new ValidationError(
       "Attempt handoff report-ready requires entry.handoffTarget to be an object."
     );
   }
 
-  if (target.handoffBasis !== ATTEMPT_HANDOFF_TARGET_BASIS) {
+  const handoffBasis = readSelectionValue(
+    target,
+    "handoffBasis",
+    'Attempt handoff report-ready requires entry.handoffTarget.handoffBasis to be "promotion_target".'
+  );
+
+  if (handoffBasis !== ATTEMPT_HANDOFF_TARGET_BASIS) {
     throw new ValidationError(
       'Attempt handoff report-ready requires entry.handoffTarget.handoffBasis to be "promotion_target".'
     );
   }
 
-  validateTaskId(target.taskId, "entry.handoffTarget.taskId");
-  validateNonEmptyString(
-    target.attemptId,
+  const taskId = normalizeTaskId(
+    readSelectionValue(
+      target,
+      "taskId",
+      "Attempt handoff report-ready requires entry.handoffTarget.taskId to be a non-empty string."
+    ),
+    "entry.handoffTarget.taskId"
+  );
+  const attemptId = normalizeNonEmptyString(
+    readSelectionValue(
+      target,
+      "attemptId",
+      "Attempt handoff report-ready requires entry.handoffTarget.attemptId to be a non-empty string."
+    ),
     "Attempt handoff report-ready requires entry.handoffTarget.attemptId to be a non-empty string."
   );
-  validateNonEmptyString(
-    target.runtime,
+  const runtime = normalizeNonEmptyString(
+    readSelectionValue(
+      target,
+      "runtime",
+      "Attempt handoff report-ready requires entry.handoffTarget.runtime to be a non-empty string."
+    ),
     "Attempt handoff report-ready requires entry.handoffTarget.runtime to be a non-empty string."
   );
-  validateAttemptStatus(target.status, "entry.handoffTarget.status");
+  const status = readSelectionValue(
+    target,
+    "status",
+    "Attempt handoff report-ready requires entry.handoffTarget.status to use the existing attempt status vocabulary."
+  );
+  validateAttemptStatus(status, "entry.handoffTarget.status");
+  const sourceKind = readSelectionValue(
+    target,
+    "sourceKind",
+    "Attempt handoff report-ready requires entry.handoffTarget.sourceKind to use the existing attempt source-kind vocabulary when provided."
+  );
   validateAttemptSourceKind(
-    target.sourceKind,
+    sourceKind,
     "entry.handoffTarget.sourceKind"
   );
+
+  return {
+    handoffBasis: ATTEMPT_HANDOFF_TARGET_BASIS,
+    taskId,
+    attemptId,
+    runtime,
+    status: status as AttemptStatus,
+    sourceKind: sourceKind as AttemptSourceKind | undefined
+  };
 }
 
-function validateTargetApply(targetApply: AttemptHandoffTargetApply): void {
+function validateTargetApply(targetApply: unknown): AttemptHandoffTargetApply {
   if (!isRecord(targetApply)) {
     throw new ValidationError(
       "Attempt handoff report-ready requires entry.targetApply to be an object."
     );
   }
 
-  validateRequest(targetApply.request, "entry.targetApply.request");
-
-  if (!isRecord(targetApply.apply)) {
-    throw new ValidationError(
-      "Attempt handoff report-ready requires entry.targetApply.apply to be an object."
-    );
-  }
-
-  if (!isRecord(targetApply.apply.consumer)) {
-    throw new ValidationError(
-      "Attempt handoff report-ready requires entry.targetApply.apply.consumer to be an object."
-    );
-  }
-
-  validateRequest(
-    targetApply.apply.consumer.request,
+  const request = validateRequest(
+    readSelectionValue(
+      targetApply,
+      "request",
+      "Attempt handoff report-ready requires entry.targetApply.request to be an object."
+    ),
+    "entry.targetApply.request"
+  );
+  const apply = readSelectionObject(
+    targetApply,
+    "apply",
+    "Attempt handoff report-ready requires entry.targetApply.apply to be an object."
+  );
+  const consumer = readSelectionObject(
+    apply,
+    "consumer",
+    "Attempt handoff report-ready requires entry.targetApply.apply.consumer to be an object."
+  );
+  const consume = readSelectionObject(
+    apply,
+    "consume",
+    "Attempt handoff report-ready requires entry.targetApply.apply.consume to be an object."
+  );
+  const consumerRequest = validateRequest(
+    readSelectionValue(
+      consumer,
+      "request",
+      "Attempt handoff report-ready requires entry.targetApply.apply.consumer.request to be an object."
+    ),
     "entry.targetApply.apply.consumer.request"
   );
+  const consumerReadiness = validateReadiness(
+    readSelectionValue(
+      consumer,
+      "readiness",
+      "Attempt handoff report-ready requires targetApply.apply.consumer.readiness to be an object."
+    ),
+    "targetApply.apply.consumer.readiness"
+  );
+  const consumeRequest = validateRequest(
+    readSelectionValue(
+      consume,
+      "request",
+      "Attempt handoff report-ready requires entry.targetApply.apply.consume.request to be an object."
+    ),
+    "entry.targetApply.apply.consume.request"
+  );
+  const consumeReadiness = validateReadiness(
+    readSelectionValue(
+      consume,
+      "readiness",
+      "Attempt handoff report-ready requires targetApply.apply.consume.readiness to be an object."
+    ),
+    "targetApply.apply.consume.readiness"
+  );
+  const invoked = readSelectionValue(
+    consume,
+    "invoked",
+    "Attempt handoff report-ready requires targetApply.apply.consume.invoked to be a boolean."
+  );
 
-  if (!isRecord(targetApply.apply.consume)) {
+  if (typeof invoked !== "boolean") {
     throw new ValidationError(
-      "Attempt handoff report-ready requires entry.targetApply.apply.consume to be an object."
+      "Attempt handoff report-ready requires targetApply.apply.consume.invoked to be a boolean."
     );
   }
 
-  validateRequest(
-    targetApply.apply.consume.request,
-    "entry.targetApply.apply.consume.request"
-  );
+  return {
+    request,
+    apply: {
+      consumer: {
+        request: consumerRequest,
+        readiness: consumerReadiness
+      },
+      consume: {
+        request: consumeRequest,
+        readiness: consumeReadiness,
+        invoked
+      }
+    }
+  };
 }
 
 function validateRequest(
-  request: AttemptHandoffRequest,
+  request: unknown,
   fieldName: string
-): void {
+): AttemptHandoffRequest {
   if (!isRecord(request)) {
     throw new ValidationError(
       `Attempt handoff report-ready requires ${fieldName} to be an object.`
     );
   }
 
-  validateTaskId(request.taskId, `${fieldName}.taskId`);
-  validateNonEmptyString(
-    request.attemptId,
+  const taskId = normalizeTaskId(
+    readSelectionValue(
+      request,
+      "taskId",
+      `Attempt handoff report-ready requires ${fieldName}.taskId to be a non-empty string.`
+    ),
+    `${fieldName}.taskId`
+  );
+  const attemptId = normalizeNonEmptyString(
+    readSelectionValue(
+      request,
+      "attemptId",
+      `Attempt handoff report-ready requires ${fieldName}.attemptId to be a non-empty string.`
+    ),
     `Attempt handoff report-ready requires ${fieldName}.attemptId to be a non-empty string.`
   );
-  validateNonEmptyString(
-    request.runtime,
+  const runtime = normalizeNonEmptyString(
+    readSelectionValue(
+      request,
+      "runtime",
+      `Attempt handoff report-ready requires ${fieldName}.runtime to be a non-empty string.`
+    ),
     `Attempt handoff report-ready requires ${fieldName}.runtime to be a non-empty string.`
   );
-  validateAttemptStatus(request.status, `${fieldName}.status`);
-  validateAttemptSourceKind(request.sourceKind, `${fieldName}.sourceKind`);
+  const status = readSelectionValue(
+    request,
+    "status",
+    `Attempt handoff report-ready requires ${fieldName}.status to use the existing attempt status vocabulary.`
+  );
+  validateAttemptStatus(status, `${fieldName}.status`);
+  const sourceKind = readSelectionValue(
+    request,
+    "sourceKind",
+    `Attempt handoff report-ready requires ${fieldName}.sourceKind to use the existing attempt source-kind vocabulary when provided.`
+  );
+  validateAttemptSourceKind(sourceKind, `${fieldName}.sourceKind`);
+
+  return {
+    taskId,
+    attemptId,
+    runtime,
+    status: status as AttemptStatus,
+    sourceKind: sourceKind as AttemptSourceKind | undefined
+  };
 }
 
 function assertRequestMatchesTarget(
@@ -251,28 +401,44 @@ function assertRequestMatchesTarget(
 }
 
 function validateReadiness(
-  readiness: AttemptHandoffConsumerReadiness,
+  readiness: unknown,
   fieldName: string
-): void {
+): AttemptHandoffConsumerReadiness {
   if (!isRecord(readiness)) {
     throw new ValidationError(
       `Attempt handoff report-ready requires ${fieldName} to be an object.`
     );
   }
 
-  if (!Array.isArray(readiness.blockingReasons)) {
+  const blockingReasons = readSelectionValue(
+    readiness,
+    "blockingReasons",
+    `Attempt handoff report-ready requires ${fieldName}.blockingReasons to be an array.`
+  );
+
+  if (!Array.isArray(blockingReasons)) {
     throw new ValidationError(
       `Attempt handoff report-ready requires ${fieldName}.blockingReasons to be an array.`
     );
   }
 
-  for (let index = 0; index < readiness.blockingReasons.length; index += 1) {
-    const blockingReason = readiness.blockingReasons[index];
+  for (let index = 0; index < blockingReasons.length; index += 1) {
+    let blockingReason: unknown;
+
+    try {
+      blockingReason = blockingReasons[index];
+    } catch {
+      throw new ValidationError(
+        `Attempt handoff report-ready requires ${fieldName}.blockingReasons to use the existing handoff consumer blocker vocabulary.`
+      );
+    }
 
     if (
-      !hasOwnIndex(readiness.blockingReasons, index) ||
+      !hasOwnIndex(blockingReasons, index) ||
       typeof blockingReason !== "string" ||
-      !validBlockingReasons.has(blockingReason)
+      !validBlockingReasons.has(
+        blockingReason as AttemptHandoffConsumerBlockingReason
+      )
     ) {
       throw new ValidationError(
         `Attempt handoff report-ready requires ${fieldName}.blockingReasons to use the existing handoff consumer blocker vocabulary.`
@@ -280,19 +446,34 @@ function validateReadiness(
     }
   }
 
+  const canConsumeHandoff = readSelectionValue(
+    readiness,
+    "canConsumeHandoff",
+    `Attempt handoff report-ready requires ${fieldName}.canConsumeHandoff to be a boolean.`
+  );
   validateBoolean(
-    readiness.canConsumeHandoff,
+    canConsumeHandoff,
     `${fieldName}.canConsumeHandoff`
   );
+  const hasBlockingReasons = readSelectionValue(
+    readiness,
+    "hasBlockingReasons",
+    `Attempt handoff report-ready requires ${fieldName}.hasBlockingReasons to be a boolean.`
+  );
   validateBoolean(
-    readiness.hasBlockingReasons,
+    hasBlockingReasons,
     `${fieldName}.hasBlockingReasons`
   );
-  validateBoolean(readiness.handoffSupported, `${fieldName}.handoffSupported`);
+  const handoffSupported = readSelectionValue(
+    readiness,
+    "handoffSupported",
+    `Attempt handoff report-ready requires ${fieldName}.handoffSupported to be a boolean.`
+  );
+  validateBoolean(handoffSupported, `${fieldName}.handoffSupported`);
 
   if (
-    readiness.canConsumeHandoff !==
-    (readiness.blockingReasons.length === 0)
+    canConsumeHandoff !==
+    (blockingReasons.length === 0)
   ) {
     throw new ValidationError(
       `Attempt handoff report-ready requires ${fieldName}.canConsumeHandoff to match whether blockingReasons is empty.`
@@ -300,19 +481,26 @@ function validateReadiness(
   }
 
   if (
-    readiness.hasBlockingReasons !==
-    (readiness.blockingReasons.length > 0)
+    hasBlockingReasons !==
+    (blockingReasons.length > 0)
   ) {
     throw new ValidationError(
       `Attempt handoff report-ready requires ${fieldName}.hasBlockingReasons to match whether blockingReasons is non-empty.`
     );
   }
 
-  if (readiness.handoffSupported !== readiness.canConsumeHandoff) {
+  if (handoffSupported !== canConsumeHandoff) {
     throw new ValidationError(
       `Attempt handoff report-ready requires ${fieldName}.handoffSupported to match ${fieldName}.canConsumeHandoff.`
     );
   }
+
+  return {
+    blockingReasons: [...blockingReasons],
+    canConsumeHandoff: canConsumeHandoff as boolean,
+    hasBlockingReasons: hasBlockingReasons as boolean,
+    handoffSupported: handoffSupported as boolean
+  };
 }
 
 function assertSupportedReadiness(
@@ -343,90 +531,6 @@ function assertBlockedReadiness(
       "Attempt handoff report-ready requires blocked entries to use the canonical blocked readiness shape."
     );
   }
-}
-
-function cloneEntry(
-  entry: AttemptPromotionTargetApply
-): AttemptHandoffReportReadyEntry {
-  return {
-    handoffTarget: cloneHandoffTarget(entry.handoffTarget),
-    targetApply: cloneTargetApply(entry.targetApply)
-  };
-}
-
-function cloneHandoffTarget(target: AttemptHandoffTarget): AttemptHandoffTarget {
-  return {
-    handoffBasis: target.handoffBasis,
-    taskId: normalizeTaskId(target.taskId, "entry.handoffTarget.taskId"),
-    attemptId: normalizeNonEmptyString(
-      target.attemptId,
-      "Attempt handoff report-ready requires entry.handoffTarget.attemptId to be a non-empty string."
-    ),
-    runtime: normalizeNonEmptyString(
-      target.runtime,
-      "Attempt handoff report-ready requires entry.handoffTarget.runtime to be a non-empty string."
-    ),
-    status: target.status,
-    sourceKind: target.sourceKind
-  };
-}
-
-function cloneTargetApply(
-  targetApply: AttemptHandoffTargetApply
-): AttemptHandoffTargetApply {
-  return {
-    request: cloneRequest(
-      targetApply.request,
-      "entry.targetApply.request"
-    ),
-    apply: {
-      consumer: {
-        request: cloneRequest(
-          targetApply.apply.consumer.request,
-          "entry.targetApply.apply.consumer.request"
-        ),
-        readiness: cloneReadiness(targetApply.apply.consumer.readiness)
-      },
-      consume: {
-        request: cloneRequest(
-          targetApply.apply.consume.request,
-          "entry.targetApply.apply.consume.request"
-        ),
-        readiness: cloneReadiness(targetApply.apply.consume.readiness),
-        invoked: targetApply.apply.consume.invoked
-      }
-    }
-  };
-}
-
-function cloneRequest(
-  request: AttemptHandoffRequest,
-  fieldPath: string
-): AttemptHandoffRequest {
-  return {
-    taskId: normalizeTaskId(request.taskId, `${fieldPath}.taskId`),
-    attemptId: normalizeNonEmptyString(
-      request.attemptId,
-      `Attempt handoff report-ready requires ${fieldPath}.attemptId to be a non-empty string.`
-    ),
-    runtime: normalizeNonEmptyString(
-      request.runtime,
-      `Attempt handoff report-ready requires ${fieldPath}.runtime to be a non-empty string.`
-    ),
-    status: request.status,
-    sourceKind: request.sourceKind
-  };
-}
-
-function cloneReadiness(
-  readiness: AttemptHandoffConsumerReadiness
-): AttemptHandoffConsumerReadiness {
-  return {
-    blockingReasons: [...readiness.blockingReasons],
-    canConsumeHandoff: readiness.canConsumeHandoff,
-    hasBlockingReasons: readiness.hasBlockingReasons,
-    handoffSupported: readiness.handoffSupported
-  };
 }
 
 function readinessEqual(
@@ -507,6 +611,20 @@ function validateBoolean(value: unknown, fieldName: string): void {
       `Attempt handoff report-ready requires ${fieldName} to be a boolean.`
     );
   }
+}
+
+function readSelectionObject(
+  container: Record<string, unknown>,
+  key: string,
+  message: string
+): Record<string, unknown> {
+  const value = readSelectionValue(container, key, message);
+
+  if (!isRecord(value)) {
+    throw new ValidationError(message);
+  }
+
+  return value;
 }
 
 function hasOwnIndex(array: readonly unknown[], index: number): boolean {

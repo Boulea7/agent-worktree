@@ -78,6 +78,48 @@ describe("selection handoff-finalization-closeout-decision-apply helpers", () =>
     );
   });
 
+  it("should fail closed when callback fields are accessor-shaped", async () => {
+    await expect(
+      applyCloseoutDecisionSummary({
+        summary: createRequestSummary(),
+        get invokeHandoffFinalization() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyCloseoutDecisionSummary({
+        summary: createRequestSummary(),
+        get invokeHandoffFinalization() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).rejects.toThrow(
+      "Attempt handoff finalization closeout decision apply requires invokeHandoffFinalization to be a function."
+    );
+
+    await expect(
+      applyCloseoutDecisionSummary({
+        summary: createRequestSummary(),
+        invokeHandoffFinalization: async () => undefined,
+        get resolveHandoffFinalizationCapability() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyCloseoutDecisionSummary({
+        summary: createRequestSummary(),
+        invokeHandoffFinalization: async () => undefined,
+        get resolveHandoffFinalizationCapability() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).rejects.toThrow(
+      "Attempt handoff finalization closeout decision apply requires resolveHandoffFinalizationCapability to be a function when provided."
+    );
+  });
+
   it("should return undefined for the post-apply helper when the supplied request summary cannot finalize handoff", async () => {
     const invokeHandoffFinalization = vi.fn(async () => undefined);
 

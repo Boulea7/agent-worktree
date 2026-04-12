@@ -10,7 +10,7 @@ export function validateSelectionObjectInput(
 }
 
 export function accessSelectionValue(
-  container: Record<string, unknown>,
+  container: object,
   key: string
 ): unknown {
   const descriptor = Object.getOwnPropertyDescriptor(container, key);
@@ -27,7 +27,7 @@ export function accessSelectionValue(
 }
 
 export function readSelectionValue(
-  container: Record<string, unknown>,
+  container: object,
   key: string,
   message: string
 ): unknown {
@@ -39,7 +39,7 @@ export function readSelectionValue(
 }
 
 export function normalizeSelectionArrayProperty(
-  container: Record<string, unknown>,
+  container: object,
   key: string,
   message: string
 ): readonly unknown[] {
@@ -49,7 +49,7 @@ export function normalizeSelectionArrayProperty(
 }
 
 export function normalizeSelectionRequiredFunctionProperty(
-  container: Record<string, unknown>,
+  container: object,
   key: string,
   message: string
 ): (...args: never[]) => unknown {
@@ -59,7 +59,7 @@ export function normalizeSelectionRequiredFunctionProperty(
 }
 
 export function normalizeSelectionOptionalFunctionProperty(
-  container: Record<string, unknown>,
+  container: object,
   key: string,
   message: string
 ): ((...args: never[]) => unknown) | undefined {
