@@ -450,6 +450,134 @@ describe(
       );
     });
 
+    it("should reject inherited or getter-backed top-level headlessWaitTargetBatch wrappers", async () => {
+      const validBatch = {
+        headlessWaitCandidateBatch: {
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildEmptyView()
+            },
+            results: []
+          },
+          results: []
+        },
+        results: []
+      };
+      const inheritedInput = Object.create({
+        headlessWaitTargetBatch: validBatch
+      });
+      inheritedInput.invokeWait = async () => undefined;
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch(inheritedInput as never)
+      ).rejects.toThrow(ValidationError);
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch(inheritedInput as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless wait target apply batch requires a headlessWaitTargetBatch wrapper."
+      );
+
+      const accessorInput = {
+        invokeWait: async () => undefined
+      };
+      Object.defineProperty(accessorInput, "headlessWaitTargetBatch", {
+        enumerable: true,
+        get() {
+          throw new Error("boom");
+        }
+      });
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch(accessorInput as never)
+      ).rejects.toThrow(ValidationError);
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch(accessorInput as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless wait target apply batch requires a headlessWaitTargetBatch wrapper."
+      );
+    });
+
+    it("should snapshot invokeWait once for the whole batch", async () => {
+      let invokeWaitReads = 0;
+      const invokedSessionIds: string[] = [];
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch({
+          headlessWaitTargetBatch: {
+            headlessWaitCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            results: [
+              createHeadlessWaitTarget({
+                target: {
+                  attemptId: "att_snapshot_wait_1",
+                  runtime: "supported-cli",
+                  sessionId: "thr_snapshot_wait_1"
+                }
+              }),
+              createHeadlessWaitTarget({
+                target: {
+                  attemptId: "att_snapshot_wait_2",
+                  runtime: "supported-cli",
+                  sessionId: "thr_snapshot_wait_2"
+                }
+              })
+            ]
+          },
+          get invokeWait() {
+            invokeWaitReads += 1;
+
+            if (invokeWaitReads > 1) {
+              throw new Error("invokeWait getter read twice");
+            }
+
+            return async ({ sessionId }: { sessionId: string }) => {
+              invokedSessionIds.push(sessionId);
+            };
+          },
+          resolveSessionLifecycleCapability: () => true
+        } as never)
+      ).resolves.toMatchObject({
+        results: [
+          {
+            apply: {
+              apply: {
+                consume: {
+                  invoked: true
+                }
+              }
+            }
+          },
+          {
+            apply: {
+              apply: {
+                consume: {
+                  invoked: true
+                }
+              }
+            }
+          }
+        ]
+      });
+      expect(invokeWaitReads).toBe(1);
+      expect(invokedSessionIds).toEqual([
+        "thr_snapshot_wait_1",
+        "thr_snapshot_wait_2"
+      ]);
+    });
+
     it("should fail fast on the first supported invoker error in batch mode", async () => {
       const expectedError = new Error("wait failed");
       const invokedSessionIds: string[] = [];

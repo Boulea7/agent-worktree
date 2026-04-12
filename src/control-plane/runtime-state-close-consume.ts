@@ -1,4 +1,8 @@
 import { ValidationError } from "../core/errors.js";
+import {
+  normalizeBatchWrapper,
+  readRequiredBatchWrapperProperty
+} from "./runtime-state-batch-wrapper-guards.js";
 import { normalizeExecutionSessionCloseRequest } from "./runtime-state-close-request.js";
 import type {
   ExecutionSessionCloseConsumerBlockingReason,
@@ -15,22 +19,33 @@ const validBlockingReasons =
 export async function consumeExecutionSessionClose(
   input: ExecutionSessionCloseConsumeInput
 ): Promise<ExecutionSessionCloseConsume> {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) {
-    throw new ValidationError(
-      "Execution session close consume input must be an object."
-    );
-  }
-
-  const { consumer, invokeClose } = input;
-  validateConsumer(consumer);
+  const normalizedInput = normalizeBatchWrapper<ExecutionSessionCloseConsumeInput>(
+    input,
+    "Execution session close consume input must be an object."
+  );
+  const consumer = readRequiredBatchWrapperProperty<
+    ExecutionSessionCloseConsumeInput["consumer"]
+  >(
+    normalizedInput,
+    "consumer",
+    "Execution session close consume requires consumer to be an object."
+  );
+  const invokeClose = readRequiredBatchWrapperProperty<
+    ExecutionSessionCloseConsumeInput["invokeClose"]
+  >(
+    normalizedInput,
+    "invokeClose",
+    "Execution session close consume requires invokeClose to be a function."
+  );
+  const { readiness, request: requestInput } = validateConsumer(consumer);
   validateInvokeClose(invokeClose);
-  const request = normalizeExecutionSessionCloseRequest(consumer.request);
-  validateReadiness(consumer.readiness);
+  const request = normalizeExecutionSessionCloseRequest(requestInput);
+  validateReadiness(readiness);
 
-  if (!consumer.readiness.canConsumeClose) {
+  if (!readiness.canConsumeClose) {
     return {
       request,
-      readiness: consumer.readiness,
+      readiness,
       invoked: false
     };
   }
@@ -39,7 +54,7 @@ export async function consumeExecutionSessionClose(
 
   return {
     request,
-    readiness: consumer.readiness,
+    readiness,
     invoked: true
   };
 }
@@ -52,43 +67,82 @@ function validateInvokeClose(value: unknown): void {
   }
 }
 
-function validateConsumer(value: unknown): void {
+function validateConsumer(value: unknown): {
+  readiness: ExecutionSessionCloseConsumerReadiness;
+  request: ExecutionSessionCloseConsumeInput["consumer"]["request"];
+} {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new ValidationError(
       "Execution session close consume requires consumer to be an object."
     );
   }
 
-  const consumer = value as {
-    readiness?: unknown;
-  };
+  const consumer = value as object;
+  const readiness = readRequiredBatchWrapperProperty(
+    consumer,
+    "readiness",
+    "Execution session close consume requires consumer.readiness to be an object."
+  );
 
   if (
-    typeof consumer.readiness !== "object" ||
-    consumer.readiness === null ||
-    Array.isArray(consumer.readiness)
+    typeof readiness !== "object" ||
+    readiness === null ||
+    Array.isArray(readiness)
   ) {
     throw new ValidationError(
       "Execution session close consume requires consumer.readiness to be an object."
     );
   }
+
+  const request = readRequiredBatchWrapperProperty<
+    ExecutionSessionCloseConsumeInput["consumer"]["request"]
+  >(
+    consumer,
+    "request",
+    "Execution session close consume requires consumer.request to be an object."
+  );
+
+  return {
+    readiness: readiness as ExecutionSessionCloseConsumerReadiness,
+    request
+  };
 }
 
 function validateReadiness(
   value: ExecutionSessionCloseConsumerReadiness
 ): void {
-  if (!Array.isArray(value.blockingReasons)) {
+  let blockingReasons: unknown;
+
+  try {
+    blockingReasons = value.blockingReasons;
+  } catch {
     throw new ValidationError(
       "Execution session close consume requires consumer.readiness.blockingReasons to be an array."
     );
   }
 
-  for (let index = 0; index < value.blockingReasons.length; index += 1) {
+  if (!Array.isArray(blockingReasons)) {
+    throw new ValidationError(
+      "Execution session close consume requires consumer.readiness.blockingReasons to be an array."
+    );
+  }
+
+  for (let index = 0; index < blockingReasons.length; index += 1) {
+    let blockingReason: unknown;
+
+    try {
+      blockingReason = blockingReasons[index];
+    } catch {
+      throw new ValidationError(
+        "Execution session close consume requires consumer.readiness.blockingReasons to use the existing close consumer blocker vocabulary."
+      );
+    }
+
     if (
-      !hasOwnIndex(value.blockingReasons, index) ||
-      typeof value.blockingReasons[index] !== "string" ||
+      !hasOwnIndex(blockingReasons, index) ||
+      typeof blockingReason !== "string" ||
       !validBlockingReasons.has(
-        value.blockingReasons[index] as ExecutionSessionCloseConsumerBlockingReason
+        blockingReason as ExecutionSessionCloseConsumerBlockingReason
       )
     ) {
       throw new ValidationError(
@@ -97,39 +151,69 @@ function validateReadiness(
     }
   }
 
-  if (typeof value.canConsumeClose !== "boolean") {
+  let canConsumeClose: unknown;
+
+  try {
+    canConsumeClose = value.canConsumeClose;
+  } catch {
     throw new ValidationError(
       "Execution session close consume requires consumer.readiness.canConsumeClose to be a boolean."
     );
   }
 
-  if (typeof value.hasBlockingReasons !== "boolean") {
+  if (typeof canConsumeClose !== "boolean") {
+    throw new ValidationError(
+      "Execution session close consume requires consumer.readiness.canConsumeClose to be a boolean."
+    );
+  }
+
+  let hasBlockingReasons: unknown;
+
+  try {
+    hasBlockingReasons = value.hasBlockingReasons;
+  } catch {
     throw new ValidationError(
       "Execution session close consume requires consumer.readiness.hasBlockingReasons to be a boolean."
     );
   }
 
-  if (typeof value.sessionLifecycleSupported !== "boolean") {
+  if (typeof hasBlockingReasons !== "boolean") {
+    throw new ValidationError(
+      "Execution session close consume requires consumer.readiness.hasBlockingReasons to be a boolean."
+    );
+  }
+
+  let sessionLifecycleSupported: unknown;
+
+  try {
+    sessionLifecycleSupported = value.sessionLifecycleSupported;
+  } catch {
     throw new ValidationError(
       "Execution session close consume requires consumer.readiness.sessionLifecycleSupported to be a boolean."
     );
   }
 
-  const hasBlockingReasons = value.blockingReasons.length > 0;
+  if (typeof sessionLifecycleSupported !== "boolean") {
+    throw new ValidationError(
+      "Execution session close consume requires consumer.readiness.sessionLifecycleSupported to be a boolean."
+    );
+  }
 
-  if (value.canConsumeClose !== !hasBlockingReasons) {
+  const derivedHasBlockingReasons = blockingReasons.length > 0;
+
+  if (canConsumeClose !== !derivedHasBlockingReasons) {
     throw new ValidationError(
       "Execution session close consume requires consumer.readiness.canConsumeClose to match whether blockingReasons is empty."
     );
   }
 
-  if (value.hasBlockingReasons !== hasBlockingReasons) {
+  if (hasBlockingReasons !== derivedHasBlockingReasons) {
     throw new ValidationError(
       "Execution session close consume requires consumer.readiness.hasBlockingReasons to match whether blockingReasons is non-empty."
     );
   }
 
-  if (value.sessionLifecycleSupported !== value.canConsumeClose) {
+  if (sessionLifecycleSupported !== canConsumeClose) {
     throw new ValidationError(
       "Execution session close consume requires consumer.readiness.sessionLifecycleSupported to match consumer.readiness.canConsumeClose."
     );

@@ -215,6 +215,38 @@ describe("control-plane runtime-state wait-apply helpers", () => {
     );
   });
 
+  it("should snapshot invokeWait once before reusing it across the apply flow", async () => {
+    let invokeWaitReads = 0;
+    const seenSessionIds: string[] = [];
+
+    await expect(
+      applyExecutionSessionWait({
+        request: createWaitRequest(),
+        get invokeWait() {
+          invokeWaitReads += 1;
+
+          if (invokeWaitReads > 1) {
+            throw new Error("invokeWait getter read twice");
+          }
+
+          return async ({ sessionId }: { sessionId: string }) => {
+            seenSessionIds.push(sessionId);
+          };
+        },
+        resolveSessionLifecycleCapability: () => true
+      } as never)
+    ).resolves.toMatchObject({
+      consume: {
+        invoked: true,
+        request: {
+          sessionId: "thr_active"
+        }
+      }
+    });
+    expect(invokeWaitReads).toBe(1);
+    expect(seenSessionIds).toEqual(["thr_active"]);
+  });
+
   it("should surface invoker failures directly without returning a partial apply result", async () => {
     const expectedError = new Error("wait failed");
 

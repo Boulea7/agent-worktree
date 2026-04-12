@@ -150,6 +150,51 @@ describe("control-plane runtime-state wait-consumer helpers", () => {
     );
   });
 
+  it("should reject inherited request wrappers and read getter-backed requests once", () => {
+    const inheritedInput = Object.create({
+      request: createWaitRequest()
+    });
+
+    expect(() =>
+      deriveExecutionSessionWaitConsumer(inheritedInput as never)
+    ).toThrow(
+      "Execution session wait consumer requires request to be an object."
+    );
+
+    let requestReads = 0;
+
+    expect(
+      deriveExecutionSessionWaitConsumer({
+        get request() {
+          requestReads += 1;
+
+          if (requestReads > 1) {
+            throw new Error("request getter read twice");
+          }
+
+          return createWaitRequest({
+            timeoutMs: 25
+          });
+        },
+        resolveSessionLifecycleCapability: () => true
+      } as never)
+    ).toEqual({
+      request: {
+        attemptId: "att_active",
+        runtime: "codex-cli",
+        sessionId: "thr_active",
+        timeoutMs: 25
+      },
+      readiness: {
+        blockingReasons: [],
+        canConsumeWait: true,
+        hasBlockingReasons: false,
+        sessionLifecycleSupported: true
+      }
+    });
+    expect(requestReads).toBe(1);
+  });
+
   it("should continue surfacing downstream request validation failures", () => {
     expect(() =>
       deriveExecutionSessionWaitConsumer({

@@ -189,6 +189,44 @@ describe(
       );
     });
 
+    it("should reject inherited or getter-backed top-level headlessViewBatch wrappers", () => {
+      const validHeadlessViewBatch = {
+        headlessRecordBatch: {
+          results: []
+        },
+        view: buildExecutionSessionView([])
+      } satisfies ExecutionSessionSpawnHeadlessViewBatch;
+      const inheritedInput = Object.create({
+        headlessViewBatch: validHeadlessViewBatch
+      });
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch(inheritedInput as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch(inheritedInput as never)
+      ).toThrow(
+        "Execution session spawn headless context batch requires a headlessViewBatch wrapper."
+      );
+
+      const accessorInput = {};
+      Object.defineProperty(accessorInput, "headlessViewBatch", {
+        enumerable: true,
+        get() {
+          throw new Error("boom");
+        }
+      });
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch(accessorInput as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch(accessorInput as never)
+      ).toThrow(
+        "Execution session spawn headless context batch requires a headlessViewBatch wrapper."
+      );
+    });
+
     it("should fail loudly when headlessRecordBatch.results is missing from the wrapper", () => {
       expect(() =>
         deriveExecutionSessionSpawnHeadlessContextBatch({

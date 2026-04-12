@@ -1,6 +1,7 @@
-import { ValidationError } from "../core/errors.js";
 import {
-  normalizeBatchWrapperObjectItems
+  normalizeBatchWrapper,
+  normalizeBatchWrapperObjectItems,
+  readRequiredBatchWrapperProperty
 } from "./runtime-state-batch-wrapper-guards.js";
 import { normalizeHeadlessTargetBatchWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import { deriveExecutionSessionSpawnHeadlessCloseRequest } from "./runtime-state-spawn-headless-close-request.js";
@@ -13,14 +14,20 @@ import type {
 export function deriveExecutionSessionSpawnHeadlessCloseRequestBatch(
   input: ExecutionSessionSpawnHeadlessCloseRequestBatchInput
 ): ExecutionSessionSpawnHeadlessCloseRequestBatch {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) {
-    throw new ValidationError(
+  const normalizedInput =
+    normalizeBatchWrapper<ExecutionSessionSpawnHeadlessCloseRequestBatchInput>(
+      input,
       "Execution session spawn headless close request batch input must be an object."
     );
-  }
 
   const headlessCloseTargetBatch = normalizeHeadlessCloseTargetBatch(
-    input.headlessCloseTargetBatch
+    readRequiredBatchWrapperProperty<
+      ExecutionSessionSpawnHeadlessCloseRequestBatchInput["headlessCloseTargetBatch"]
+    >(
+      normalizedInput,
+      "headlessCloseTargetBatch",
+      "Execution session spawn headless close request batch requires a headlessCloseTargetBatch wrapper."
+    )
   );
   const headlessCloseTargets = normalizeBatchWrapperObjectItems<
     ExecutionSessionSpawnHeadlessCloseRequestBatch["headlessCloseTargetBatch"]["results"][number]

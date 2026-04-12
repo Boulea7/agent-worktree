@@ -66,7 +66,13 @@ export function normalizeBatchWrapperObjectItems<Item extends object>(
   const items = normalizeBatchWrapperItems<unknown>(value, itemsMessage);
 
   for (let index = 0; index < items.length; index += 1) {
-    if (!hasOwnIndex(items, index) || !isRecord(items[index])) {
+    if (!hasOwnIndex(items, index)) {
+      throw new ValidationError(entryMessage);
+    }
+
+    const item = readArrayIndex(items, index, entryMessage);
+
+    if (!isRecord(item)) {
       throw new ValidationError(entryMessage);
     }
   }
@@ -76,6 +82,18 @@ export function normalizeBatchWrapperObjectItems<Item extends object>(
 
 function hasOwnIndex(values: readonly unknown[], index: number): boolean {
   return Object.prototype.hasOwnProperty.call(values, index);
+}
+
+function readArrayIndex(
+  values: readonly unknown[],
+  index: number,
+  message: string
+): unknown {
+  try {
+    return values[index];
+  } catch {
+    throw new ValidationError(message);
+  }
 }
 
 function hasOwnProperty(value: object, key: string): boolean {

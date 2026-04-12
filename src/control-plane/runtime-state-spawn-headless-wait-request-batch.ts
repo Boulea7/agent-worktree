@@ -1,6 +1,8 @@
-import { ValidationError } from "../core/errors.js";
 import {
-  normalizeBatchWrapperObjectItems
+  normalizeBatchWrapper,
+  normalizeBatchWrapperObjectItems,
+  readOptionalBatchWrapperProperty,
+  readRequiredBatchWrapperProperty
 } from "./runtime-state-batch-wrapper-guards.js";
 import { normalizeHeadlessTargetBatchWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import { deriveExecutionSessionSpawnHeadlessWaitRequest } from "./runtime-state-spawn-headless-wait-request.js";
@@ -13,14 +15,25 @@ import type {
 export function deriveExecutionSessionSpawnHeadlessWaitRequestBatch(
   input: ExecutionSessionSpawnHeadlessWaitRequestBatchInput
 ): ExecutionSessionSpawnHeadlessWaitRequestBatch {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) {
-    throw new ValidationError(
+  const normalizedInput =
+    normalizeBatchWrapper<ExecutionSessionSpawnHeadlessWaitRequestBatchInput>(
+      input,
       "Execution session spawn headless wait request batch input must be an object."
     );
-  }
 
   const headlessWaitTargetBatch = normalizeHeadlessWaitTargetBatch(
-    input.headlessWaitTargetBatch
+    readRequiredBatchWrapperProperty<
+      ExecutionSessionSpawnHeadlessWaitRequestBatchInput["headlessWaitTargetBatch"]
+    >(
+      normalizedInput,
+      "headlessWaitTargetBatch",
+      "Execution session spawn headless wait request batch requires a headlessWaitTargetBatch wrapper."
+    )
+  );
+  const timeoutMs = readOptionalBatchWrapperProperty<number>(
+    normalizedInput,
+    "timeoutMs",
+    "Execution session wait request timeoutMs must be a finite integer greater than 0."
   );
   const headlessWaitTargets = normalizeBatchWrapperObjectItems<
     ExecutionSessionSpawnHeadlessWaitRequestBatch["headlessWaitTargetBatch"]["results"][number]
@@ -35,7 +48,7 @@ export function deriveExecutionSessionSpawnHeadlessWaitRequestBatch(
     results.push(
       deriveExecutionSessionSpawnHeadlessWaitRequest({
         headlessWaitTarget,
-        ...(input.timeoutMs === undefined ? {} : { timeoutMs: input.timeoutMs })
+        ...(timeoutMs === undefined ? {} : { timeoutMs })
       })
     );
   }

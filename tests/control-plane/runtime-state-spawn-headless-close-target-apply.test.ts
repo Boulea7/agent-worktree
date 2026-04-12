@@ -440,6 +440,134 @@ describe(
       );
     });
 
+    it("should reject inherited or getter-backed top-level headlessCloseTargetBatch wrappers", async () => {
+      const validBatch = {
+        headlessCloseCandidateBatch: {
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildEmptyView()
+            },
+            results: []
+          },
+          results: []
+        },
+        results: []
+      };
+      const inheritedInput = Object.create({
+        headlessCloseTargetBatch: validBatch
+      });
+      inheritedInput.invokeClose = async () => undefined;
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch(inheritedInput as never)
+      ).rejects.toThrow(ValidationError);
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch(inheritedInput as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless close target apply batch requires a headlessCloseTargetBatch wrapper."
+      );
+
+      const accessorInput = {
+        invokeClose: async () => undefined
+      };
+      Object.defineProperty(accessorInput, "headlessCloseTargetBatch", {
+        enumerable: true,
+        get() {
+          throw new Error("boom");
+        }
+      });
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch(accessorInput as never)
+      ).rejects.toThrow(ValidationError);
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch(accessorInput as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless close target apply batch requires a headlessCloseTargetBatch wrapper."
+      );
+    });
+
+    it("should snapshot invokeClose once for the whole batch", async () => {
+      let invokeCloseReads = 0;
+      const invokedSessionIds: string[] = [];
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch({
+          headlessCloseTargetBatch: {
+            headlessCloseCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            results: [
+              createHeadlessCloseTarget({
+                target: {
+                  attemptId: "att_snapshot_close_1",
+                  runtime: "supported-cli",
+                  sessionId: "thr_snapshot_close_1"
+                }
+              }),
+              createHeadlessCloseTarget({
+                target: {
+                  attemptId: "att_snapshot_close_2",
+                  runtime: "supported-cli",
+                  sessionId: "thr_snapshot_close_2"
+                }
+              })
+            ]
+          },
+          get invokeClose() {
+            invokeCloseReads += 1;
+
+            if (invokeCloseReads > 1) {
+              throw new Error("invokeClose getter read twice");
+            }
+
+            return async ({ sessionId }: { sessionId: string }) => {
+              invokedSessionIds.push(sessionId);
+            };
+          },
+          resolveSessionLifecycleCapability: () => true
+        } as never)
+      ).resolves.toMatchObject({
+        results: [
+          {
+            apply: {
+              apply: {
+                consume: {
+                  invoked: true
+                }
+              }
+            }
+          },
+          {
+            apply: {
+              apply: {
+                consume: {
+                  invoked: true
+                }
+              }
+            }
+          }
+        ]
+      });
+      expect(invokeCloseReads).toBe(1);
+      expect(invokedSessionIds).toEqual([
+        "thr_snapshot_close_1",
+        "thr_snapshot_close_2"
+      ]);
+    });
+
     it("should fail fast on the first supported invoker error in batch mode", async () => {
       const expectedError = new Error("close failed");
       const invokedSessionIds: string[] = [];

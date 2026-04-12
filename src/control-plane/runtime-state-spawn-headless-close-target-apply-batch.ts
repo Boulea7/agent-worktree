@@ -1,6 +1,8 @@
-import { ValidationError } from "../core/errors.js";
 import {
-  normalizeBatchWrapperObjectItems
+  normalizeBatchWrapper,
+  normalizeBatchWrapperObjectItems,
+  readOptionalBatchWrapperProperty,
+  readRequiredBatchWrapperProperty
 } from "./runtime-state-batch-wrapper-guards.js";
 import { normalizeHeadlessTargetBatchWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import { applyExecutionSessionSpawnHeadlessCloseTarget } from "./runtime-state-spawn-headless-close-target-apply.js";
@@ -13,15 +15,36 @@ import type {
 export async function applyExecutionSessionSpawnHeadlessCloseTargetBatch(
   input: ExecutionSessionSpawnHeadlessCloseTargetApplyBatchInput
 ): Promise<ExecutionSessionSpawnHeadlessCloseTargetApplyBatch> {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) {
-    throw new ValidationError(
+  const normalizedInput =
+    normalizeBatchWrapper<ExecutionSessionSpawnHeadlessCloseTargetApplyBatchInput>(
+      input,
       "Execution session spawn headless close target apply batch input must be an object."
     );
-  }
 
   const headlessCloseTargetBatch = normalizeHeadlessCloseTargetBatch(
-    input.headlessCloseTargetBatch
+    readRequiredBatchWrapperProperty<
+      ExecutionSessionSpawnHeadlessCloseTargetApplyBatchInput["headlessCloseTargetBatch"]
+    >(
+      normalizedInput,
+      "headlessCloseTargetBatch",
+      "Execution session spawn headless close target apply batch requires a headlessCloseTargetBatch wrapper."
+    )
   );
+  const invokeClose = readRequiredBatchWrapperProperty<
+    ExecutionSessionSpawnHeadlessCloseTargetApplyBatchInput["invokeClose"]
+  >(
+    normalizedInput,
+    "invokeClose",
+    "Execution session close target apply requires invokeClose to be a function."
+  );
+  const resolveSessionLifecycleCapability =
+    readOptionalBatchWrapperProperty<
+      ExecutionSessionSpawnHeadlessCloseTargetApplyBatchInput["resolveSessionLifecycleCapability"]
+    >(
+      normalizedInput,
+      "resolveSessionLifecycleCapability",
+      "Execution session close target apply requires resolveSessionLifecycleCapability to be a function when provided."
+    );
   const headlessCloseTargets = normalizeBatchWrapperObjectItems<
     ExecutionSessionSpawnHeadlessCloseTargetApplyBatch["headlessCloseTargetBatch"]["results"][number]
   >(
@@ -35,13 +58,10 @@ export async function applyExecutionSessionSpawnHeadlessCloseTargetBatch(
     results.push(
       await applyExecutionSessionSpawnHeadlessCloseTarget({
         headlessCloseTarget,
-        invokeClose: input.invokeClose,
-        ...(input.resolveSessionLifecycleCapability === undefined
+        invokeClose,
+        ...(resolveSessionLifecycleCapability === undefined
           ? {}
-          : {
-              resolveSessionLifecycleCapability:
-                input.resolveSessionLifecycleCapability
-            })
+          : { resolveSessionLifecycleCapability })
       })
     );
   }

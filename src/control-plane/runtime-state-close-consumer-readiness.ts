@@ -1,6 +1,7 @@
 import { ValidationError } from "../core/errors.js";
 import { adapterSupportsCapability } from "../adapters/catalog.js";
 import {
+  normalizeBatchWrapper,
   readOptionalBatchWrapperProperty,
   readRequiredBatchWrapperProperty
 } from "./runtime-state-batch-wrapper-guards.js";
@@ -14,12 +15,13 @@ import type {
 export function deriveExecutionSessionCloseConsumerReadiness(
   input: ExecutionSessionCloseConsumerReadinessInput
 ): ExecutionSessionCloseConsumerReadiness {
-  validateCloseConsumerReadinessInput(input);
-  const request = normalizeExecutionSessionCloseRequest(input.request);
+  const { request: requestInput, resolveSessionLifecycleCapability: capabilityResolver } =
+    validateCloseConsumerReadinessInput(input);
+  const request = normalizeExecutionSessionCloseRequest(requestInput);
 
-  const sessionLifecycleSupported = resolveSessionLifecycleCapability(
+  const sessionLifecycleSupported = resolveCloseSessionLifecycleCapability(
     request,
-    input.resolveSessionLifecycleCapability
+    capabilityResolver
   );
   const blockingReasons: ExecutionSessionCloseConsumerBlockingReason[] = [];
 
@@ -37,15 +39,21 @@ export function deriveExecutionSessionCloseConsumerReadiness(
 
 function validateCloseConsumerReadinessInput(
   input: ExecutionSessionCloseConsumerReadinessInput
-): void {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) {
-    throw new ValidationError(
+): {
+  request: ExecutionSessionCloseConsumerReadinessInput["request"];
+  resolveSessionLifecycleCapability:
+    | ExecutionSessionCloseConsumerReadinessInput["resolveSessionLifecycleCapability"]
+    | undefined;
+} {
+  const normalizedInput =
+    normalizeBatchWrapper<ExecutionSessionCloseConsumerReadinessInput>(
+      input,
       "Execution session close consumer readiness input must be an object."
     );
-  }
-
-  const request = readRequiredBatchWrapperProperty(
-    input,
+  const request = readRequiredBatchWrapperProperty<
+    ExecutionSessionCloseConsumerReadinessInput["request"]
+  >(
+    normalizedInput,
     "request",
     "Execution session close consumer readiness requires request to be an object."
   );
@@ -56,8 +64,10 @@ function validateCloseConsumerReadinessInput(
     );
   }
 
-  const resolveSessionLifecycleCapability = readOptionalBatchWrapperProperty(
-    input,
+  const resolveSessionLifecycleCapability = readOptionalBatchWrapperProperty<
+    ExecutionSessionCloseConsumerReadinessInput["resolveSessionLifecycleCapability"]
+  >(
+    normalizedInput,
     "resolveSessionLifecycleCapability",
     "Execution session close consumer readiness requires resolveSessionLifecycleCapability to be a function when provided."
   );
@@ -70,9 +80,14 @@ function validateCloseConsumerReadinessInput(
       "Execution session close consumer readiness requires resolveSessionLifecycleCapability to be a function when provided."
     );
   }
+
+  return {
+    request,
+    resolveSessionLifecycleCapability
+  };
 }
 
-function resolveSessionLifecycleCapability(
+function resolveCloseSessionLifecycleCapability(
   request: ExecutionSessionCloseConsumerReadinessInput["request"],
   resolveCapability:
     | ExecutionSessionCloseConsumerReadinessInput["resolveSessionLifecycleCapability"]

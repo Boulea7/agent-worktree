@@ -117,6 +117,34 @@ describe("control-plane runtime-state batch-wrapper-guards helpers", () => {
     }
   });
 
+  it("should convert accessor-backed index failures into validation errors", () => {
+    const results = [{}];
+    Object.defineProperty(results, "0", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    expect(() =>
+      normalizeBatchWrapperObjectItems(
+        results,
+        "Execution session spawn headless wait target batch requires headlessWaitCandidateBatch.results to be an array.",
+        "Execution session spawn headless wait target batch requires headlessWaitCandidateBatch.results entries to be objects."
+      )
+    ).toThrow(ValidationError);
+    expect(() =>
+      normalizeBatchWrapperObjectItems(
+        results,
+        "Execution session spawn headless wait target batch requires headlessWaitCandidateBatch.results to be an array.",
+        "Execution session spawn headless wait target batch requires headlessWaitCandidateBatch.results entries to be objects."
+      )
+    ).toThrow(
+      "Execution session spawn headless wait target batch requires headlessWaitCandidateBatch.results entries to be objects."
+    );
+  });
+
   it("should read required own properties and reject inherited or throwing properties", () => {
     const wrapper = {
       consumers: []

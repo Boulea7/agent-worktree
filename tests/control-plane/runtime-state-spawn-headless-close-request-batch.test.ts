@@ -105,6 +105,53 @@ describe(
       );
     });
 
+    it("should reject inherited or getter-backed top-level headlessCloseTargetBatch wrappers", () => {
+      const validBatch = {
+        headlessCloseCandidateBatch: {
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildEmptyView()
+            },
+            results: []
+          },
+          results: []
+        },
+        results: []
+      } satisfies ExecutionSessionSpawnHeadlessCloseTargetBatch;
+      const inheritedInput = Object.create({
+        headlessCloseTargetBatch: validBatch
+      });
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseRequestBatch(inheritedInput as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseRequestBatch(inheritedInput as never)
+      ).toThrow(
+        "Execution session spawn headless close request batch requires a headlessCloseTargetBatch wrapper."
+      );
+
+      const accessorInput = {};
+      Object.defineProperty(accessorInput, "headlessCloseTargetBatch", {
+        enumerable: true,
+        get() {
+          throw new Error("boom");
+        }
+      });
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseRequestBatch(accessorInput as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseRequestBatch(accessorInput as never)
+      ).toThrow(
+        "Execution session spawn headless close request batch requires a headlessCloseTargetBatch wrapper."
+      );
+    });
+
     it("should fail loudly when headlessCloseTargetBatch.results entries are sparse or non-object", () => {
       const sparseResults = new Array(1);
 

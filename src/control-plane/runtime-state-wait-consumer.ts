@@ -1,4 +1,9 @@
 import { ValidationError } from "../core/errors.js";
+import {
+  normalizeBatchWrapper,
+  readOptionalBatchWrapperProperty,
+  readRequiredBatchWrapperProperty
+} from "./runtime-state-batch-wrapper-guards.js";
 import { normalizeExecutionSessionWaitRequest } from "./runtime-state-wait-request.js";
 import {
   deriveExecutionSessionWaitConsumerReadiness
@@ -11,33 +16,46 @@ import type {
 export function deriveExecutionSessionWaitConsumer(
   input: ExecutionSessionWaitConsumerInput
 ): ExecutionSessionWaitConsumer {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) {
-    throw new ValidationError(
-      "Execution session wait consumer input must be an object."
-    );
-  }
+  const normalizedInput = normalizeBatchWrapper<ExecutionSessionWaitConsumerInput>(
+    input,
+    "Execution session wait consumer input must be an object."
+  );
+  const requestInput = readRequiredBatchWrapperProperty<
+    ExecutionSessionWaitConsumerInput["request"]
+  >(
+    normalizedInput,
+    "request",
+    "Execution session wait consumer requires request to be an object."
+  );
 
   if (
-    typeof input.request !== "object" ||
-    input.request === null ||
-    Array.isArray(input.request)
+    typeof requestInput !== "object" ||
+    requestInput === null ||
+    Array.isArray(requestInput)
   ) {
     throw new ValidationError(
       "Execution session wait consumer requires request to be an object."
     );
   }
 
-  const request = normalizeExecutionSessionWaitRequest(input.request);
+  const request = normalizeExecutionSessionWaitRequest(requestInput);
+  const resolveSessionLifecycleCapability =
+    readOptionalBatchWrapperProperty<
+      ExecutionSessionWaitConsumerInput["resolveSessionLifecycleCapability"]
+    >(
+      normalizedInput,
+      "resolveSessionLifecycleCapability",
+      "Execution session wait consumer readiness requires resolveSessionLifecycleCapability to be a function when provided."
+    );
 
   return {
     request,
     readiness: deriveExecutionSessionWaitConsumerReadiness({
       request,
-      ...(input.resolveSessionLifecycleCapability === undefined
+      ...(resolveSessionLifecycleCapability === undefined
         ? {}
         : {
-            resolveSessionLifecycleCapability:
-              input.resolveSessionLifecycleCapability
+            resolveSessionLifecycleCapability
           })
     })
   };

@@ -259,6 +259,75 @@ describe("control-plane runtime-state close-consume helpers", () => {
     );
   });
 
+  it("should fail closed when nested readiness fields throw through accessor-shaped inputs", async () => {
+    const consumer = createCloseConsumer({
+      readiness: {
+        blockingReasons: [],
+        canConsumeClose: true,
+        hasBlockingReasons: false,
+        sessionLifecycleSupported: true
+      }
+    });
+    Object.defineProperty(consumer.readiness, "canConsumeClose", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    await expect(
+      consumeExecutionSessionClose({
+        consumer,
+        invokeClose: async () => undefined
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeExecutionSessionClose({
+        consumer,
+        invokeClose: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Execution session close consume requires consumer.readiness.canConsumeClose to be a boolean."
+    );
+  });
+
+  it("should read consumer.readiness once before reusing the validated snapshot", async () => {
+    let readinessReads = 0;
+    const invokeClose = vi.fn(async () => undefined);
+    const consumer = {
+      request: createCloseRequest(),
+      get readiness() {
+        readinessReads += 1;
+
+        if (readinessReads > 1) {
+          throw new Error("readiness getter read twice");
+        }
+
+        return {
+          blockingReasons: [],
+          canConsumeClose: true,
+          hasBlockingReasons: false,
+          sessionLifecycleSupported: true
+        };
+      }
+    } as never;
+
+    await expect(
+      consumeExecutionSessionClose({
+        consumer,
+        invokeClose
+      })
+    ).resolves.toMatchObject({
+      invoked: true,
+      request: {
+        sessionId: "thr_active"
+      }
+    });
+    expect(readinessReads).toBe(1);
+    expect(invokeClose).toHaveBeenCalledTimes(1);
+  });
+
   it("should fail loudly with a validation error when consumer.request uses non-string identifiers", async () => {
     const consumer = createCloseConsumer({
       request: createCloseRequest({

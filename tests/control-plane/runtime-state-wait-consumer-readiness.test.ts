@@ -138,6 +138,33 @@ describe("control-plane runtime-state wait-consumer-readiness helpers", () => {
     );
   });
 
+  it("should read the request wrapper once before reusing the normalized snapshot", () => {
+    let requestReads = 0;
+
+    expect(
+      deriveExecutionSessionWaitConsumerReadiness({
+        get request() {
+          requestReads += 1;
+
+          if (requestReads > 1) {
+            throw new Error("request getter read twice");
+          }
+
+          return createWaitRequest({
+            runtime: "supported-cli"
+          });
+        },
+        resolveSessionLifecycleCapability: () => true
+      } as never)
+    ).toEqual({
+      blockingReasons: [],
+      canConsumeWait: true,
+      hasBlockingReasons: false,
+      sessionLifecycleSupported: true
+    });
+    expect(requestReads).toBe(1);
+  });
+
   it("should fail loudly when request identifiers or timeout are invalid at the readiness seam", () => {
     expect(() =>
       deriveExecutionSessionWaitConsumerReadiness({

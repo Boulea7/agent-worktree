@@ -1,5 +1,10 @@
 import { consumeExecutionSessionClose } from "./runtime-state-close-consume.js";
 import { deriveExecutionSessionCloseConsumer } from "./runtime-state-close-consumer.js";
+import {
+  normalizeBatchWrapper,
+  readOptionalBatchWrapperProperty,
+  readRequiredBatchWrapperProperty
+} from "./runtime-state-batch-wrapper-guards.js";
 import { normalizeExecutionSessionCloseRequest } from "./runtime-state-close-request.js";
 import { ValidationError } from "../core/errors.js";
 import type {
@@ -10,20 +15,23 @@ import type {
 export async function applyExecutionSessionClose(
   input: ExecutionSessionCloseApplyInput
 ): Promise<ExecutionSessionCloseApply> {
-  validateCloseApplyInput(input);
-  const request = normalizeExecutionSessionCloseRequest(input.request);
+  const {
+    invokeClose,
+    request: requestInput,
+    resolveSessionLifecycleCapability
+  } = validateCloseApplyInput(input);
+  const request = normalizeExecutionSessionCloseRequest(requestInput);
   const consumer = deriveExecutionSessionCloseConsumer({
     request,
-    ...(input.resolveSessionLifecycleCapability === undefined
+    ...(resolveSessionLifecycleCapability === undefined
       ? {}
       : {
-          resolveSessionLifecycleCapability:
-            input.resolveSessionLifecycleCapability
+          resolveSessionLifecycleCapability
         })
   });
   const consume = await consumeExecutionSessionClose({
     consumer,
-    invokeClose: input.invokeClose
+    invokeClose
   });
 
   return {
@@ -32,25 +40,59 @@ export async function applyExecutionSessionClose(
   };
 }
 
-function validateCloseApplyInput(input: ExecutionSessionCloseApplyInput): void {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) {
-    throw new ValidationError(
-      "Execution session close apply input must be an object."
-    );
-  }
+function validateCloseApplyInput(input: ExecutionSessionCloseApplyInput): {
+  invokeClose: ExecutionSessionCloseApplyInput["invokeClose"];
+  request: ExecutionSessionCloseApplyInput["request"];
+  resolveSessionLifecycleCapability:
+    | ExecutionSessionCloseApplyInput["resolveSessionLifecycleCapability"]
+    | undefined;
+} {
+  const normalizedInput = normalizeBatchWrapper<ExecutionSessionCloseApplyInput>(
+    input,
+    "Execution session close apply input must be an object."
+  );
+  const request = readRequiredBatchWrapperProperty<
+    ExecutionSessionCloseApplyInput["request"]
+  >(
+    normalizedInput,
+    "request",
+    "Execution session close consumer requires request to be an object."
+  );
+  const invokeClose = readRequiredBatchWrapperProperty<
+    ExecutionSessionCloseApplyInput["invokeClose"]
+  >(
+    normalizedInput,
+    "invokeClose",
+    "Execution session close apply requires invokeClose to be a function."
+  );
 
-  if (typeof input.invokeClose !== "function") {
+  if (typeof invokeClose !== "function") {
     throw new ValidationError(
       "Execution session close apply requires invokeClose to be a function."
     );
   }
 
+  const resolveSessionLifecycleCapability =
+    readOptionalBatchWrapperProperty<
+      ExecutionSessionCloseApplyInput["resolveSessionLifecycleCapability"]
+    >(
+      normalizedInput,
+      "resolveSessionLifecycleCapability",
+      "Execution session close apply requires resolveSessionLifecycleCapability to be a function when provided."
+    );
+
   if (
-    input.resolveSessionLifecycleCapability !== undefined &&
-    typeof input.resolveSessionLifecycleCapability !== "function"
+    resolveSessionLifecycleCapability !== undefined &&
+    typeof resolveSessionLifecycleCapability !== "function"
   ) {
     throw new ValidationError(
       "Execution session close apply requires resolveSessionLifecycleCapability to be a function when provided."
     );
   }
+
+  return {
+    invokeClose,
+    request,
+    resolveSessionLifecycleCapability
+  };
 }
