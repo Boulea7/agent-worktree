@@ -49,10 +49,15 @@ export function deriveAttemptPromotionExplanationSummary(
   try {
     validateReportBasis(report);
     validateTaskId(report.taskId);
-    validatePromotionReport(report);
+    const normalizedTaskId = normalizeOptionalTaskId(report.taskId);
+    validatePromotionReport(report, normalizedTaskId);
 
     const candidates = report.candidates.map((candidate) =>
-      deriveExplanationCandidate(candidate, report.taskId, report.selectedIdentity)
+      deriveExplanationCandidate(
+        candidate,
+        normalizedTaskId,
+        report.selectedIdentity
+      )
     );
     const selected =
       candidates[0] === undefined
@@ -61,9 +66,9 @@ export function deriveAttemptPromotionExplanationSummary(
 
     return {
       explanationBasis: ATTEMPT_PROMOTION_EXPLANATION_BASIS,
-      taskId: report.taskId,
+      taskId: normalizedTaskId,
       selectedAttemptId: report.selectedAttemptId,
-      selectedIdentity: deriveSelectedIdentity(report.taskId, candidates[0]),
+      selectedIdentity: deriveSelectedIdentity(normalizedTaskId, candidates[0]),
       candidateCount: report.candidates.length,
       comparableCandidateCount: countComparableCandidates(report.candidates),
       promotionReadyCandidateCount: countPromotionReadyCandidates(
@@ -101,7 +106,10 @@ function validateTaskId(value: unknown): void {
   }
 }
 
-function validatePromotionReport(report: AttemptPromotionReport): void {
+function validatePromotionReport(
+  report: AttemptPromotionReport,
+  normalizedTaskId: AttemptPromotionReport["taskId"]
+): void {
   if (!Array.isArray(report.candidates)) {
     throw new ValidationError(
       "Attempt promotion explanation summary requires report.candidates to be an array."
@@ -141,11 +149,11 @@ function validatePromotionReport(report: AttemptPromotionReport): void {
 
   report.candidates.forEach(validatePromotionAuditCandidate);
   validateSelectedIdentity(
-    report.taskId,
+    normalizedTaskId,
     report.selectedIdentity,
     report.candidates[0]
   );
-  validateCanonicalCandidateIdentity(report.taskId, report.candidates);
+  validateCanonicalCandidateIdentity(normalizedTaskId, report.candidates);
   validateSelectedCandidate(report.selected, report.candidates.length);
   validateCandidateGroupEntries(
     report.promotionReadyCandidates,
@@ -359,11 +367,13 @@ function deriveExplanationCandidate(
   selectedIdentity: AttemptPromotionReport["selectedIdentity"]
 ): AttemptPromotionExplanationCandidate {
   const isSelected =
-    taskId !== undefined &&
-    selectedIdentity !== undefined &&
-    selectedIdentity.taskId === taskId &&
-    selectedIdentity.attemptId === candidate.attemptId &&
-    selectedIdentity.runtime === candidate.runtime;
+    normalizeComparableString(taskId) !== undefined &&
+    normalizeComparableString(selectedIdentity?.taskId) ===
+      normalizeComparableString(taskId) &&
+    normalizeComparableString(selectedIdentity?.attemptId) ===
+      normalizeComparableString(candidate.attemptId) &&
+    normalizeComparableString(selectedIdentity?.runtime) ===
+      normalizeComparableString(candidate.runtime);
 
   return {
     attemptId: candidate.attemptId,
@@ -385,14 +395,22 @@ function deriveSelectedIdentity(
   taskId: AttemptPromotionReport["taskId"],
   candidate: AttemptPromotionExplanationCandidate | undefined
 ): AttemptSelectedIdentity | undefined {
-  if (taskId === undefined || candidate === undefined) {
+  const normalizedTaskId = normalizeComparableString(taskId);
+  const normalizedAttemptId = normalizeComparableString(candidate?.attemptId);
+  const normalizedRuntime = normalizeComparableString(candidate?.runtime);
+
+  if (
+    normalizedTaskId === undefined ||
+    normalizedAttemptId === undefined ||
+    normalizedRuntime === undefined
+  ) {
     return undefined;
   }
 
   return {
-    taskId,
-    attemptId: candidate.attemptId,
-    runtime: candidate.runtime
+    taskId: normalizedTaskId,
+    attemptId: normalizedAttemptId,
+    runtime: normalizedRuntime
   };
 }
 
@@ -433,9 +451,9 @@ function validateSelectedIdentity(
   if (
     taskId === undefined ||
     candidate === undefined ||
-    normalizedTaskId !== taskId ||
-    normalizedAttemptId !== candidate.attemptId ||
-    normalizedRuntime !== candidate.runtime
+    normalizedTaskId !== normalizeComparableString(taskId) ||
+    normalizedAttemptId !== normalizeComparableString(candidate.attemptId) ||
+    normalizedRuntime !== normalizeComparableString(candidate.runtime)
   ) {
     throw new ValidationError(
       "Attempt promotion explanation summary requires report.selectedIdentity to match the first candidate."
@@ -460,6 +478,22 @@ function cloneExplanationCandidate(
     pendingCheckNames: [...candidate.pendingCheckNames],
     skippedCheckNames: [...candidate.skippedCheckNames]
   };
+}
+
+function normalizeOptionalTaskId(
+  value: AttemptPromotionReport["taskId"]
+): AttemptPromotionReport["taskId"] {
+  return value === undefined ? undefined : value.trim();
+}
+
+function normalizeComparableString(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+
+  return normalized.length > 0 ? normalized : undefined;
 }
 
 function deriveExplanationCode(

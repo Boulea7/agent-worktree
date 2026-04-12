@@ -12,7 +12,8 @@ import {
   deriveAttemptPromotionDecisionSummary,
   deriveAttemptPromotionExplanationSummary,
   deriveAttemptPromotionReport,
-  deriveAttemptPromotionResult
+  deriveAttemptPromotionResult,
+  deriveAttemptPromotionTarget
 } from "../../src/selection/internal.js";
 import type {
   AttemptPromotionCandidate,
@@ -268,6 +269,55 @@ describe("selection promotion-decision helpers", () => {
     });
     expect(decision.selected?.runtime).toBe("codex-cli");
     expect(decision.candidateCount).toBe(2);
+  });
+
+  it("should preserve canonical selected identity through explanation, decision, and target derivation when the incoming report identity carries surrounding whitespace", () => {
+    const report = deriveAttemptPromotionReport(
+      deriveAttemptPromotionAuditSummary(
+        deriveAttemptPromotionResult([
+          createPromotionCandidate({
+            attemptId: "att_ready",
+            runtime: "codex-cli",
+            verification: createVerification({
+              state: "verified",
+              checks: [
+                {
+                  name: "lint",
+                  required: true,
+                  status: "passed"
+                }
+              ]
+            })
+          })
+        ])
+      )
+    );
+
+    const explanation = deriveAttemptPromotionExplanationSummary({
+      ...report,
+      taskId: "  task_shared  ",
+      selectedIdentity: {
+        taskId: "  task_shared  ",
+        attemptId: "  att_ready  ",
+        runtime: "  codex-cli  "
+      }
+    });
+    const decision = deriveAttemptPromotionDecisionSummary(explanation);
+
+    expect(decision.taskId).toBe("task_shared");
+    expect(decision.selectedIdentity).toEqual({
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli"
+    });
+    expect(deriveAttemptPromotionTarget(decision)).toEqual({
+      targetBasis: "promotion_decision_summary",
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli",
+      status: "created",
+      sourceKind: undefined
+    });
   });
 
   it("should fail loudly when comparableCandidateCount drifts from explanation candidates", () => {

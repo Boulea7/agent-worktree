@@ -45,7 +45,8 @@ export function deriveAttemptPromotionDecisionSummary(
   try {
     validateExplanationBasis(summary);
     validateTaskId(summary.taskId);
-    validatePromotionExplanationSummary(summary);
+    const normalizedTaskId = normalizeOptionalTaskId(summary.taskId);
+    validatePromotionExplanationSummary(summary, normalizedTaskId);
 
     const selected =
       summary.candidates[0] === undefined
@@ -55,9 +56,9 @@ export function deriveAttemptPromotionDecisionSummary(
 
     return {
       decisionBasis: ATTEMPT_PROMOTION_DECISION_BASIS,
-      taskId: summary.taskId,
+      taskId: normalizedTaskId,
       selectedAttemptId: summary.selectedAttemptId,
-      selectedIdentity: deriveSelectedIdentity(summary.taskId, selected),
+      selectedIdentity: deriveSelectedIdentity(normalizedTaskId, selected),
       candidateCount: summary.candidates.length,
       comparableCandidateCount: countComparableCandidates(summary.candidates),
       promotionReadyCandidateCount: countPromotionReadyCandidates(
@@ -100,7 +101,8 @@ function validateTaskId(value: unknown): void {
 }
 
 function validatePromotionExplanationSummary(
-  summary: AttemptPromotionExplanationSummary
+  summary: AttemptPromotionExplanationSummary,
+  normalizedTaskId: AttemptPromotionExplanationSummary["taskId"]
 ): void {
   if (!Array.isArray(summary.candidates)) {
     throw new ValidationError(
@@ -169,11 +171,11 @@ function validatePromotionExplanationSummary(
   });
 
   validateSelectedIdentity(
-    summary.taskId,
+    normalizedTaskId,
     summary.selectedIdentity,
     summary.candidates[0]
   );
-  validateCanonicalCandidateIdentity(summary.taskId, summary.candidates);
+  validateCanonicalCandidateIdentity(normalizedTaskId, summary.candidates);
   validateSelectedCandidate(summary.selected, summary.candidates.length);
 
   if (
@@ -330,14 +332,22 @@ function deriveSelectedIdentity(
   taskId: AttemptPromotionExplanationSummary["taskId"],
   candidate: AttemptPromotionExplanationCandidate | undefined
 ): AttemptSelectedIdentity | undefined {
-  if (taskId === undefined || candidate === undefined) {
+  const normalizedTaskId = normalizeComparableString(taskId);
+  const normalizedAttemptId = normalizeComparableString(candidate?.attemptId);
+  const normalizedRuntime = normalizeComparableString(candidate?.runtime);
+
+  if (
+    normalizedTaskId === undefined ||
+    normalizedAttemptId === undefined ||
+    normalizedRuntime === undefined
+  ) {
     return undefined;
   }
 
   return {
-    taskId,
-    attemptId: candidate.attemptId,
-    runtime: candidate.runtime
+    taskId: normalizedTaskId,
+    attemptId: normalizedAttemptId,
+    runtime: normalizedRuntime
   };
 }
 
@@ -378,9 +388,9 @@ function validateSelectedIdentity(
   if (
     taskId === undefined ||
     candidate === undefined ||
-    normalizedTaskId !== taskId ||
-    normalizedAttemptId !== candidate.attemptId ||
-    normalizedRuntime !== candidate.runtime
+    normalizedTaskId !== normalizeComparableString(taskId) ||
+    normalizedAttemptId !== normalizeComparableString(candidate.attemptId) ||
+    normalizedRuntime !== normalizeComparableString(candidate.runtime)
   ) {
     throw new ValidationError(
       "Attempt promotion decision summary requires summary.selectedIdentity to match the first candidate."
@@ -560,6 +570,22 @@ function validateCheckNameList(
       `Attempt promotion decision summary requires ${fieldName} to use non-empty string entries.`
     );
   }
+}
+
+function normalizeOptionalTaskId(
+  value: AttemptPromotionExplanationSummary["taskId"]
+): AttemptPromotionExplanationSummary["taskId"] {
+  return value === undefined ? undefined : value.trim();
+}
+
+function normalizeComparableString(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+
+  return normalized.length > 0 ? normalized : undefined;
 }
 
 function validateNonEmptyString(value: unknown, fieldName: string): string {

@@ -276,6 +276,46 @@ describe("selection promotion-explanation helpers", () => {
     ]);
   });
 
+  it("should canonicalize selected identity when the incoming report identity carries surrounding whitespace", () => {
+    const report = createPromotionReport([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        runtime: "codex-cli",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]);
+
+    const explanation = deriveAttemptPromotionExplanationSummary({
+      ...report,
+      taskId: "  task_shared  ",
+      selectedIdentity: {
+        taskId: "  task_shared  ",
+        attemptId: "  att_ready  ",
+        runtime: "  codex-cli  "
+      }
+    });
+
+    expect(explanation.taskId).toBe("task_shared");
+    expect(explanation.selectedIdentity).toEqual({
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli"
+    });
+    expect(explanation.selectedAttemptId).toBe("att_ready");
+    expect(explanation.selected?.isSelected).toBe(true);
+    expect(explanation.selected?.explanationCode).toBe("selected");
+    expect(explanation.candidates[0]?.isSelected).toBe(true);
+  });
+
   it("should derive required_checks_failed when required checks failed or errored", () => {
     const report = createPromotionReport([
       createPromotionCandidate({
