@@ -96,6 +96,80 @@ describe("control-plane runtime-state spawn-headless-view-batch helpers", () => 
       })
     ).toThrow("Duplicate execution session record for attempt att_child_view_a.");
   });
+
+  it("should fail closed when a headless-record batch result entry is null", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessViewBatch({
+        headlessRecordBatch: {
+          results: [null]
+        } as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessViewBatch({
+        headlessRecordBatch: {
+          results: [null]
+        } as never
+      })
+    ).toThrow(
+      "Execution session spawn headless view batch requires headlessRecordBatch.results entries to include record objects."
+    );
+  });
+
+  it("should fail closed when a headless-record batch result entry omits record", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessViewBatch({
+        headlessRecordBatch: {
+          results: [{}]
+        } as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessViewBatch({
+        headlessRecordBatch: {
+          results: [{}]
+        } as never
+      })
+    ).toThrow(
+      "Execution session spawn headless view batch requires headlessRecordBatch.results entries to include record objects."
+    );
+  });
+
+  it("should fail closed when a later headless-record batch entry comes only from the prototype chain", () => {
+    const inheritedResults = [createHeadlessRecord({
+      attemptId: "att_root_view",
+      sessionId: "thr_root_view",
+      sourceKind: "direct"
+    })];
+    const inheritedEntry = createHeadlessRecord({
+      attemptId: "att_proto_view",
+      sessionId: "thr_proto_view",
+      sourceKind: "fork",
+      parentAttemptId: "att_root_view"
+    });
+
+    Object.setPrototypeOf(inheritedResults, Object.assign([], {
+      1: inheritedEntry
+    }));
+    inheritedResults.length = 2;
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessViewBatch({
+        headlessRecordBatch: {
+          results: inheritedResults as never
+        }
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessViewBatch({
+        headlessRecordBatch: {
+          results: inheritedResults as never
+        }
+      })
+    ).toThrow(
+      "Execution session spawn headless view batch requires headlessRecordBatch.results entries to include record objects."
+    );
+  });
 });
 
 function createHeadlessRecordBatch(

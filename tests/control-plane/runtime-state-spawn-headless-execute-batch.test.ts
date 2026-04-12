@@ -11,6 +11,46 @@ import {
 } from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-headless-execute-batch helpers", () => {
+  it("should fail loudly when the top-level spawn-headless-execute batch input is malformed", async () => {
+    await expect(
+      executeExecutionSessionSpawnHeadlessBatch(undefined as never)
+    ).rejects.toThrow(/spawn headless execute batch input must be an object/i);
+
+    await expect(
+      executeExecutionSessionSpawnHeadlessBatch({
+        items: undefined as never,
+        invokeSpawn: async () => undefined,
+        executeHeadless: async () => createHeadlessExecutionResult()
+      })
+    ).rejects.toThrow(/requires items to be an array/i);
+
+    await expect(
+      executeExecutionSessionSpawnHeadlessBatch({
+        items: [],
+        invokeSpawn: undefined as never,
+        executeHeadless: async () => createHeadlessExecutionResult()
+      })
+    ).rejects.toThrow(/requires invokeSpawn to be a function/i);
+
+    await expect(
+      executeExecutionSessionSpawnHeadlessBatch({
+        items: [],
+        invokeSpawn: async () => undefined,
+        executeHeadless: undefined as never
+      })
+    ).rejects.toThrow(/requires executeHeadless to be a function/i);
+
+    await expect(
+      executeExecutionSessionSpawnHeadlessBatch({
+        items: [null] as never,
+        invokeSpawn: async () => undefined,
+        executeHeadless: async () => createHeadlessExecutionResult()
+      })
+    ).rejects.toThrow(
+      "Execution session spawn headless execute batch requires items entries to be objects."
+    );
+  });
+
   it("should return an empty batch result without invoking spawn or headless execution", async () => {
     const invokeSpawn = vi.fn(async () => undefined);
     const executeHeadless = vi.fn(async () =>
@@ -31,6 +71,115 @@ describe("control-plane runtime-state spawn-headless-execute-batch helpers", () 
     ).resolves.toEqual({
       results: []
     });
+    expect(invokeSpawn).not.toHaveBeenCalled();
+    expect(executeHeadless).not.toHaveBeenCalled();
+  });
+
+  it("should reject malformed later batch entries before any spawn or execution side effect happens", async () => {
+    const invokeSpawn = vi.fn(async () => undefined);
+    const executeHeadless = vi.fn(async () => createHeadlessExecutionResult());
+
+    await expect(
+      executeExecutionSessionSpawnHeadlessBatch({
+        items: [
+          {
+            childAttemptId: "att_child_1",
+            request: createSpawnRequest({
+              parentAttemptId: "att_parent_1",
+              parentSessionId: "thr_parent_1"
+            }),
+            execution: {
+              prompt: "child one"
+            }
+          },
+          null as never
+        ],
+        invokeSpawn,
+        executeHeadless
+      })
+    ).rejects.toThrow(
+      "Execution session spawn headless execute batch requires items entries to be objects."
+    );
+    expect(invokeSpawn).not.toHaveBeenCalled();
+    expect(executeHeadless).not.toHaveBeenCalled();
+  });
+
+  it("should reject sparse batch holes before any spawn or execution side effect happens", async () => {
+    const invokeSpawn = vi.fn(async () => undefined);
+    const executeHeadless = vi.fn(async () => createHeadlessExecutionResult());
+    const items = new Array<{
+      childAttemptId: string;
+      request: ExecutionSessionSpawnRequest;
+      execution: {
+        prompt: string;
+      };
+    }>(2);
+
+    items[0] = {
+      childAttemptId: "att_child_1",
+      request: createSpawnRequest({
+        parentAttemptId: "att_parent_1",
+        parentSessionId: "thr_parent_1"
+      }),
+      execution: {
+        prompt: "child one"
+      }
+    };
+
+    await expect(
+      executeExecutionSessionSpawnHeadlessBatch({
+        items,
+        invokeSpawn,
+        executeHeadless
+      })
+    ).rejects.toThrow(
+      "Execution session spawn headless execute batch requires items entries to be objects."
+    );
+    expect(invokeSpawn).not.toHaveBeenCalled();
+    expect(executeHeadless).not.toHaveBeenCalled();
+  });
+
+  it("should reject inherited batch indexes before any spawn or execution side effect happens", async () => {
+    const invokeSpawn = vi.fn(async () => undefined);
+    const executeHeadless = vi.fn(async () => createHeadlessExecutionResult());
+    const prototype = {
+      1: {
+        childAttemptId: "att_child_proto",
+        request: createSpawnRequest({
+          parentAttemptId: "att_parent_proto",
+          parentSessionId: "thr_parent_proto"
+        }),
+        execution: {
+          prompt: "proto child"
+        }
+      }
+    };
+    const items = Object.setPrototypeOf(
+      [
+        {
+          childAttemptId: "att_child_1",
+          request: createSpawnRequest({
+            parentAttemptId: "att_parent_1",
+            parentSessionId: "thr_parent_1"
+          }),
+          execution: {
+            prompt: "child one"
+          }
+        }
+      ],
+      prototype
+    );
+    items.length = 2;
+
+    await expect(
+      executeExecutionSessionSpawnHeadlessBatch({
+        items: items as never,
+        invokeSpawn,
+        executeHeadless
+      })
+    ).rejects.toThrow(
+      "Execution session spawn headless execute batch requires items entries to be objects."
+    );
     expect(invokeSpawn).not.toHaveBeenCalled();
     expect(executeHeadless).not.toHaveBeenCalled();
   });

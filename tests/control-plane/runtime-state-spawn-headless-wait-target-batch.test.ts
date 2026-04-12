@@ -103,7 +103,7 @@ describe(
       expect(batchSnapshot).toEqual(headlessWaitCandidateBatch);
     });
 
-    it("should fail fast on the first wait-target derivation error and stop later items", () => {
+    it("should fail fast on the first malformed wrapped wait candidate and stop later items", () => {
       const validHeadlessWaitCandidate = createHeadlessWaitCandidate({
         attemptId: "att_child_wait_target_batch_valid",
         parentAttemptId: "att_root_wait_target_batch_fail",
@@ -145,7 +145,9 @@ describe(
             ]
           } as unknown as ExecutionSessionSpawnHeadlessWaitCandidateBatch
         })
-      ).toThrow("wait target derivation failed");
+      ).toThrow(
+        "Execution session spawn headless wait target requires headlessWaitCandidate to include candidate and headlessContext objects."
+      );
       expect(tailCandidateAccessed).toBe(false);
     });
 
@@ -193,11 +195,11 @@ describe(
           } as never
         })
       ).toThrow(
-        "Execution session spawn headless wait target requires headlessWaitCandidate.headlessWaitCandidate to include candidate and headlessContext objects."
+        "Execution session spawn headless wait target requires headlessWaitCandidate to include candidate and headlessContext objects."
       );
     });
 
-    it("should keep every sparse real-builder batch entry blocked when descendant coverage is incomplete", () => {
+    it("should keep every real-builder batch entry blocked when descendant coverage is incomplete", () => {
       const headlessRecordBatch = deriveExecutionSessionSpawnHeadlessRecordBatch({
         items: [
           createHeadlessExecute({

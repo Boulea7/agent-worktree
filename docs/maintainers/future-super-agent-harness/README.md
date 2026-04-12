@@ -48,3 +48,17 @@ This directory is not a product promise for `main`.
 - Treat DeerFlow as a future-branch reference, not a `main` roadmap rewrite.
 - Keep Anthropic/Claude Code `agent teams` distinct from DeerFlow-style hierarchical delegation.
 - Escalate any future public contract change into RFC/spec work instead of silently widening this directory into a contract layer.
+
+## Read This First For P6+
+
+For any future implementation slice that lands in Phase 6 or later, read this directory before touching code. The minimum required set is:
+
+- `README.md`
+- `reuse-map-from-deerflow-and-current-codebase.md`
+- `sandbox-skills-and-extensibility.md`
+- `memory-state-and-persistence.md`
+- `vision-and-positioning.md`
+
+These files are the current synthesis point for local Claude Code and DeerFlow research. They should be treated as the default design brief for future-branch work on sandboxing, subagents/delegation, memory, task coordination, or extension/runtime boundaries.
+
+When a future slice overlaps reusable substrate, prefer direct reuse or code-guided adaptation from vetted upstreams before building a clean-room implementation. Keep any local upstream checkout in ignored paths such as `.local/vendor/` or `.local/upstreams/`, and do not commit upstream AI-facing guidance files such as `AGENTS.md` or `CLAUDE.md` from those checkouts.

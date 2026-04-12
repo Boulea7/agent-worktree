@@ -1,4 +1,7 @@
 import { ValidationError } from "../core/errors.js";
+import {
+  normalizeBatchWrapperObjectItems
+} from "./runtime-state-batch-wrapper-guards.js";
 import { deriveExecutionSessionSpawnHeadlessCloseTarget } from "./runtime-state-spawn-headless-close-target.js";
 import { normalizeHeadlessTargetBatchWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import type {
@@ -24,13 +27,21 @@ export function deriveExecutionSessionSpawnHeadlessCloseTargetBatch(
   const normalizedBatch = normalizeHeadlessTargetBatchWrapper(
     input.headlessCloseCandidateBatch,
     {
-    context: "Execution session spawn headless close target batch",
-    wrapperKey: "headlessCloseCandidateBatch"
+      context: "Execution session spawn headless close target batch",
+      wrapperKey: "headlessCloseCandidateBatch",
+      companionKey: "headlessContextBatch"
     }
+  );
+  const headlessCloseCandidates = normalizeBatchWrapperObjectItems<
+    ExecutionSessionSpawnHeadlessCloseTargetBatch["headlessCloseCandidateBatch"]["results"][number]
+  >(
+    normalizedBatch.results,
+    "Execution session spawn headless close target batch requires headlessCloseCandidateBatch.results to be an array.",
+    "Execution session spawn headless close target batch requires headlessCloseCandidateBatch.results entries to be objects."
   );
   const results: ExecutionSessionSpawnHeadlessCloseTarget[] = [];
 
-  for (const headlessCloseCandidate of normalizedBatch.results) {
+  for (const headlessCloseCandidate of headlessCloseCandidates) {
     results.push(
       deriveExecutionSessionSpawnHeadlessCloseTarget({
         headlessCloseCandidate

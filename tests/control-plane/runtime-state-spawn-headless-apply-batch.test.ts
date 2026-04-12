@@ -6,6 +6,35 @@ import {
 } from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-headless-apply-batch helpers", () => {
+  it("should fail loudly when the top-level spawn-headless-apply batch input is malformed", async () => {
+    await expect(
+      applyExecutionSessionSpawnHeadlessInputBatch(undefined as never)
+    ).rejects.toThrow(/spawn headless apply batch input must be an object/i);
+
+    await expect(
+      applyExecutionSessionSpawnHeadlessInputBatch({
+        items: undefined as never,
+        invokeSpawn: async () => undefined
+      })
+    ).rejects.toThrow(/requires items to be an array/i);
+
+    await expect(
+      applyExecutionSessionSpawnHeadlessInputBatch({
+        items: [],
+        invokeSpawn: undefined as never
+      })
+    ).rejects.toThrow(/requires invokeSpawn to be a function/i);
+
+    await expect(
+      applyExecutionSessionSpawnHeadlessInputBatch({
+        items: [null] as never,
+        invokeSpawn: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Execution session spawn headless apply batch requires items entries to be objects."
+    );
+  });
+
   it("should return an empty batch result without invoking spawn", async () => {
     const invokeSpawn = vi.fn(async () => undefined);
 
@@ -17,6 +46,106 @@ describe("control-plane runtime-state spawn-headless-apply-batch helpers", () =>
     ).resolves.toEqual({
       results: []
     });
+    expect(invokeSpawn).not.toHaveBeenCalled();
+  });
+
+  it("should reject malformed later batch entries before any spawn side effect happens", async () => {
+    const invokeSpawn = vi.fn(async () => undefined);
+
+    await expect(
+      applyExecutionSessionSpawnHeadlessInputBatch({
+        items: [
+          {
+            childAttemptId: "att_child_1",
+            request: createSpawnRequest({
+              parentAttemptId: "att_parent_1",
+              parentSessionId: "thr_parent_1"
+            }),
+            execution: {
+              prompt: "child one"
+            }
+          },
+          null as never
+        ],
+        invokeSpawn
+      })
+    ).rejects.toThrow(
+      "Execution session spawn headless apply batch requires items entries to be objects."
+    );
+    expect(invokeSpawn).not.toHaveBeenCalled();
+  });
+
+  it("should reject sparse batch holes before any spawn side effect happens", async () => {
+    const invokeSpawn = vi.fn(async () => undefined);
+    const items = new Array<{
+      childAttemptId: string;
+      request: ExecutionSessionSpawnRequest;
+      execution: {
+        prompt: string;
+      };
+    }>(2);
+
+    items[0] = {
+      childAttemptId: "att_child_1",
+      request: createSpawnRequest({
+        parentAttemptId: "att_parent_1",
+        parentSessionId: "thr_parent_1"
+      }),
+      execution: {
+        prompt: "child one"
+      }
+    };
+
+    await expect(
+      applyExecutionSessionSpawnHeadlessInputBatch({
+        items,
+        invokeSpawn
+      })
+    ).rejects.toThrow(
+      "Execution session spawn headless apply batch requires items entries to be objects."
+    );
+    expect(invokeSpawn).not.toHaveBeenCalled();
+  });
+
+  it("should reject inherited batch indexes before any spawn side effect happens", async () => {
+    const invokeSpawn = vi.fn(async () => undefined);
+    const prototype = {
+      1: {
+        childAttemptId: "att_child_proto",
+        request: createSpawnRequest({
+          parentAttemptId: "att_parent_proto",
+          parentSessionId: "thr_parent_proto"
+        }),
+        execution: {
+          prompt: "proto child"
+        }
+      }
+    };
+    const items = Object.setPrototypeOf(
+      [
+        {
+          childAttemptId: "att_child_1",
+          request: createSpawnRequest({
+            parentAttemptId: "att_parent_1",
+            parentSessionId: "thr_parent_1"
+          }),
+          execution: {
+            prompt: "child one"
+          }
+        }
+      ],
+      prototype
+    );
+    items.length = 2;
+
+    await expect(
+      applyExecutionSessionSpawnHeadlessInputBatch({
+        items: items as never,
+        invokeSpawn
+      })
+    ).rejects.toThrow(
+      "Execution session spawn headless apply batch requires items entries to be objects."
+    );
     expect(invokeSpawn).not.toHaveBeenCalled();
   });
 

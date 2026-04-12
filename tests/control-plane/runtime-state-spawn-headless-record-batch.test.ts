@@ -1,12 +1,24 @@
 import { describe, expect, it } from "vitest";
 
 import type { HeadlessExecutionResult } from "../../src/adapters/types.js";
+import { ValidationError } from "../../src/core/errors.js";
 import {
   deriveExecutionSessionSpawnHeadlessRecordBatch,
   type ExecutionSessionSpawnHeadlessExecute
 } from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-headless-record-batch helpers", () => {
+  it("should fail loudly when the top-level headless-record batch input is malformed", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessRecordBatch(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessRecordBatch(undefined as never)
+    ).toThrow(
+      "Execution session spawn headless record batch input must be an object."
+    );
+  });
+
   it("should return an empty batch result when given no items", () => {
     expect(
       deriveExecutionSessionSpawnHeadlessRecordBatch({
@@ -89,6 +101,21 @@ describe("control-plane runtime-state spawn-headless-record-batch helpers", () =
     expect(result).not.toHaveProperty("spawnHeadlessView");
     expect(result).not.toHaveProperty("spawnHeadlessViewBatch");
     expect(items).toEqual(itemsSnapshot);
+  });
+
+  it("should fail loudly when a batch entry is not an object", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessRecordBatch({
+        items: [null] as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessRecordBatch({
+        items: [null] as never
+      })
+    ).toThrow(
+      "Execution session spawn headless record batch requires items entries to be objects."
+    );
   });
 
   it("should fail fast on the first record derivation error", () => {

@@ -1,3 +1,7 @@
+import {
+  normalizeBatchWrapper,
+  normalizeBatchWrapperObjectItems
+} from "./runtime-state-batch-wrapper-guards.js";
 import { deriveExecutionSessionSpawnHeadlessInput } from "./runtime-state-spawn-headless-input.js";
 import type {
   ExecutionSessionSpawnHeadlessInput,
@@ -8,9 +12,21 @@ import type {
 export function deriveExecutionSessionSpawnHeadlessInputBatch(
   input: ExecutionSessionSpawnHeadlessInputBatchInput
 ): ExecutionSessionSpawnHeadlessInputBatch {
+  const normalizedInput =
+    normalizeBatchWrapper<ExecutionSessionSpawnHeadlessInputBatchInput>(
+      input,
+      "Execution session spawn headless input batch input must be an object."
+    );
+  const items = normalizeBatchWrapperObjectItems<
+    ExecutionSessionSpawnHeadlessInputBatchInput["items"][number]
+  >(
+    normalizedInput.items,
+    "Execution session spawn headless input batch requires items to be an array.",
+    "Execution session spawn headless input batch requires items entries to be objects."
+  );
   const results: ExecutionSessionSpawnHeadlessInput[] = [];
 
-  for (const item of input.items) {
+  for (const item of items) {
     results.push(deriveExecutionSessionSpawnHeadlessInput(item));
   }
 

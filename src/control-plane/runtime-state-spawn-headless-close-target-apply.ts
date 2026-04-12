@@ -10,6 +10,12 @@ import type {
 export async function applyExecutionSessionSpawnHeadlessCloseTarget(
   input: ExecutionSessionSpawnHeadlessCloseTargetApplyInput
 ): Promise<ExecutionSessionSpawnHeadlessCloseTargetApply> {
+  if (typeof input !== "object" || input === null || Array.isArray(input)) {
+    throw new ValidationError(
+      "Execution session spawn headless close target apply input must be an object."
+    );
+  }
+
   const headlessCloseTarget = normalizeHeadlessCloseTarget(
     input.headlessCloseTarget
   );

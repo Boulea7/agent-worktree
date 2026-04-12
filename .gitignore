@@ -1,5 +1,7 @@
 # Local AI handoff and research state
 .local/
+.local/vendor/
+.local/upstreams/
 *.local.md
 .worktrees/
 

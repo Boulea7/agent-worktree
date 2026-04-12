@@ -199,6 +199,21 @@ describe("control-plane runtime-state spawn-headless-close-request helpers", () 
     );
   });
 
+  it("should reject nested headless close candidates whose companion omits context or headlessView", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessCloseRequest({
+        headlessCloseTarget: {
+          headlessCloseCandidate: {
+            candidate: {} as never,
+            headlessContext: {} as never
+          }
+        } as ExecutionSessionSpawnHeadlessCloseTarget
+      })
+    ).toThrow(
+      "Execution session spawn headless close request requires headlessCloseTarget.headlessCloseCandidate.headlessContext to include context and headlessView objects."
+    );
+  });
+
   it("should not mutate the supplied headless close target and should keep the result shape minimal", () => {
     const headlessCloseTarget = createHeadlessCloseTarget({
       target: {

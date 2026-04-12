@@ -10,6 +10,60 @@ import {
 } from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-headless-context helpers", () => {
+  it("should fail loudly when the supplied headless context input or nested objects are malformed", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessContext(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessContext(undefined as never)
+    ).toThrow(
+      "Execution session spawn headless context input must be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessContext({} as never)
+    ).toThrow(
+      "Execution session spawn headless context requires headlessView to be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessContext({
+        headlessView: {
+          headlessRecord: null,
+          view: {}
+        }
+      } as never)
+    ).toThrow(
+      "Execution session spawn headless context requires headlessView.headlessRecord to be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessContext({
+        headlessView: {
+          headlessRecord: {
+            record: null
+          },
+          view: {}
+        }
+      } as never)
+    ).toThrow(
+      "Execution session spawn headless context requires headlessView.headlessRecord.record to be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessContext({
+        headlessView: {
+          headlessRecord: {
+            record: {}
+          },
+          view: null
+        }
+      } as never)
+    ).toThrow(
+      "Execution session spawn headless context requires headlessView.view to be an object."
+    );
+  });
+
   it("should derive context from the selected attemptId within the supplied headless view", () => {
     const rootRecord = createRecord({
       attemptId: "att_parent_context",

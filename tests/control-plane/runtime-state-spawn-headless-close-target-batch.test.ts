@@ -103,7 +103,7 @@ describe(
       expect(headlessCloseCandidateBatch).toEqual(batchSnapshot);
     });
 
-    it("should fail fast on the first close-target derivation error and stop later items", () => {
+    it("should fail fast on the first malformed wrapped close candidate and stop later items", () => {
       const validHeadlessCloseCandidate = createHeadlessCloseCandidate({
         attemptId: "att_child_close_target_batch_valid",
         parentAttemptId: "att_root_close_target_batch_fail",
@@ -146,7 +146,9 @@ describe(
             ]
           } as unknown as ExecutionSessionSpawnHeadlessCloseCandidateBatch
         })
-      ).toThrow("close target derivation failed");
+      ).toThrow(
+        "Execution session spawn headless close target requires headlessCloseCandidate to include candidate and headlessContext objects."
+      );
       expect(tailCandidateAccessed).toBe(false);
     });
 
@@ -194,11 +196,11 @@ describe(
           } as never
         })
       ).toThrow(
-        "Execution session spawn headless close target requires headlessCloseCandidate.headlessCloseCandidate to include candidate and headlessContext objects."
+        "Execution session spawn headless close target requires headlessCloseCandidate to include candidate and headlessContext objects."
       );
     });
 
-    it("should keep every sparse real-builder batch entry blocked when descendant coverage is incomplete", () => {
+    it("should keep every real-builder batch entry blocked when descendant coverage is incomplete", () => {
       const headlessRecordBatch = deriveExecutionSessionSpawnHeadlessRecordBatch({
         items: [
           createHeadlessExecute({

@@ -14,6 +14,17 @@ import {
 describe(
   "control-plane runtime-state spawn-headless-context-batch helpers",
   () => {
+    it("should fail loudly when the top-level headless-view batch input is malformed", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch(undefined as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch(undefined as never)
+      ).toThrow(
+        "Execution session spawn headless context batch input must be an object."
+      );
+    });
+
     it("should return an empty ordered result list for an empty headless-view batch", () => {
       const headlessViewBatch = {
         descendantCoverage: "complete",
@@ -175,6 +186,57 @@ describe(
         })
       ).toThrow(
         "Execution session spawn headless context batch requires headlessViewBatch to include headlessRecordBatch and view objects."
+      );
+    });
+
+    it("should fail loudly when headlessRecordBatch.results is missing from the wrapper", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch({
+          headlessViewBatch: {
+            headlessRecordBatch: {} as never,
+            view: buildExecutionSessionView([])
+          } as ExecutionSessionSpawnHeadlessViewBatch
+        })
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch({
+          headlessViewBatch: {
+            headlessRecordBatch: {} as never,
+            view: buildExecutionSessionView([])
+          } as ExecutionSessionSpawnHeadlessViewBatch
+        })
+      ).toThrow(
+        "Execution session spawn headless context batch requires headlessViewBatch.headlessRecordBatch.results to be an array."
+      );
+    });
+
+    it("should fail loudly when headlessRecordBatch.results entries are sparse or non-object", () => {
+      const sparseResults = new Array(1);
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch({
+          headlessViewBatch: {
+            headlessRecordBatch: {
+              results: sparseResults
+            },
+            view: buildExecutionSessionView([])
+          } as ExecutionSessionSpawnHeadlessViewBatch
+        })
+      ).toThrow(
+        "Execution session spawn headless context batch requires headlessViewBatch.headlessRecordBatch.results entries to be objects."
+      );
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch({
+          headlessViewBatch: {
+            headlessRecordBatch: {
+              results: [0]
+            },
+            view: buildExecutionSessionView([])
+          } as never
+        })
+      ).toThrow(
+        "Execution session spawn headless context batch requires headlessViewBatch.headlessRecordBatch.results entries to be objects."
       );
     });
   }

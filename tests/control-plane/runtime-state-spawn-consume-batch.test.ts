@@ -6,6 +6,26 @@ import {
 } from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-consume-batch helpers", () => {
+  it("should fail loudly when the top-level spawn-consume batch input is malformed", async () => {
+    await expect(
+      consumeExecutionSessionSpawnBatch(undefined as never)
+    ).rejects.toThrow(/spawn consume batch input must be an object/i);
+
+    await expect(
+      consumeExecutionSessionSpawnBatch({
+        requests: undefined as never,
+        invokeSpawn: async () => undefined
+      })
+    ).rejects.toThrow(/requires requests to be an array/i);
+
+    await expect(
+      consumeExecutionSessionSpawnBatch({
+        requests: [],
+        invokeSpawn: undefined as never
+      })
+    ).rejects.toThrow(/requires invokeSpawn to be a function/i);
+  });
+
   it("should return an empty batch result for an empty request list", async () => {
     await expect(
       consumeExecutionSessionSpawnBatch({
@@ -210,6 +230,60 @@ describe("control-plane runtime-state spawn-consume-batch helpers", () => {
       })
     ).rejects.toThrow(/parentSessionId/i);
     expect(invokedSessionIds).toEqual(["thr_parent_1"]);
+  });
+
+  it("should fail preflight on sparse request holes before any invocation happens", async () => {
+    const invokedSessionIds: string[] = [];
+    const requests = new Array<ExecutionSessionSpawnRequest>(2);
+
+    requests[0] = createSpawnRequest({
+      parentAttemptId: "att_parent_1",
+      parentSessionId: "thr_parent_1"
+    });
+
+    await expect(
+      consumeExecutionSessionSpawnBatch({
+        requests,
+        invokeSpawn: async (request: ExecutionSessionSpawnRequest) => {
+          invokedSessionIds.push(request.parentSessionId);
+        }
+      })
+    ).rejects.toThrow(
+      "Execution session spawn consume batch requires requests entries to be objects."
+    );
+    expect(invokedSessionIds).toEqual([]);
+  });
+
+  it("should fail preflight on inherited request indexes before any invocation happens", async () => {
+    const invokedSessionIds: string[] = [];
+    const prototype = {
+      1: createSpawnRequest({
+        parentAttemptId: "att_parent_proto",
+        parentSessionId: "thr_parent_proto"
+      })
+    };
+    const requests = Object.setPrototypeOf(
+      [
+        createSpawnRequest({
+          parentAttemptId: "att_parent_1",
+          parentSessionId: "thr_parent_1"
+        })
+      ],
+      prototype
+    );
+    requests.length = 2;
+
+    await expect(
+      consumeExecutionSessionSpawnBatch({
+        requests: requests as never,
+        invokeSpawn: async (request: ExecutionSessionSpawnRequest) => {
+          invokedSessionIds.push(request.parentSessionId);
+        }
+      })
+    ).rejects.toThrow(
+      "Execution session spawn consume batch requires requests entries to be objects."
+    );
+    expect(invokedSessionIds).toEqual([]);
   });
 });
 

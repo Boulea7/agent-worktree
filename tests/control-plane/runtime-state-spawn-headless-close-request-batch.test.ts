@@ -85,7 +85,7 @@ describe(
       });
     });
 
-    it("should reject malformed headless close request batch wrappers before iterating results", () => {
+    it("should reject malformed headless close request batch wrappers", () => {
       expect(() =>
         deriveExecutionSessionSpawnHeadlessCloseRequestBatch(undefined as never)
       ).toThrow(
@@ -102,6 +102,54 @@ describe(
         })
       ).toThrow(
         "Execution session spawn headless close request batch requires a headlessCloseTargetBatch wrapper."
+      );
+    });
+
+    it("should fail loudly when headlessCloseTargetBatch.results entries are sparse or non-object", () => {
+      const sparseResults = new Array(1);
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseRequestBatch({
+          headlessCloseTargetBatch: {
+            headlessCloseCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            results: sparseResults
+          } as never
+        })
+      ).toThrow(
+        "Execution session spawn headless close request batch requires headlessCloseTargetBatch.results entries to be objects."
+      );
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseRequestBatch({
+          headlessCloseTargetBatch: {
+            headlessCloseCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            results: [0]
+          } as never
+        })
+      ).toThrow(
+        "Execution session spawn headless close request batch requires headlessCloseTargetBatch.results entries to be objects."
       );
     });
 

@@ -15,6 +15,17 @@ import {
 describe(
   "control-plane runtime-state spawn-headless-close-candidate-batch helpers",
   () => {
+    it("should fail loudly when the top-level headless-context batch input is malformed", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseCandidateBatch(undefined as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseCandidateBatch(undefined as never)
+      ).toThrow(
+        "Execution session spawn headless close candidate batch input must be an object."
+      );
+    });
+
     it("should return an empty ordered result list for an empty headless-context batch", () => {
       const headlessContextBatch = deriveEmptyHeadlessContextBatch();
 
@@ -156,6 +167,42 @@ describe(
         })
       ).toThrow(
         "Execution session spawn headless close candidate batch requires headlessContextBatch to include headlessViewBatch and results."
+      );
+    });
+
+    it("should fail loudly when headlessContextBatch.results entries are sparse or non-object", () => {
+      const sparseResults = new Array(1);
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseCandidateBatch({
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildExecutionSessionView([])
+            },
+            results: sparseResults
+          } as never
+        })
+      ).toThrow(
+        "Execution session spawn headless close candidate batch requires headlessContextBatch.results entries to be objects."
+      );
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseCandidateBatch({
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildExecutionSessionView([])
+            },
+            results: [0]
+          } as never
+        })
+      ).toThrow(
+        "Execution session spawn headless close candidate batch requires headlessContextBatch.results entries to be objects."
       );
     });
   }

@@ -3,7 +3,8 @@ import { describe, expect, it } from "vitest";
 import { ValidationError } from "../../src/core/errors.js";
 import {
   normalizeBatchWrapper,
-  normalizeBatchWrapperItems
+  normalizeBatchWrapperItems,
+  normalizeBatchWrapperObjectItems
 } from "../../src/control-plane/runtime-state-batch-wrapper-guards.js";
 
 describe("control-plane runtime-state batch-wrapper-guards helpers", () => {
@@ -65,6 +66,51 @@ describe("control-plane runtime-state batch-wrapper-guards helpers", () => {
         )
       ).toThrow(
         "Execution session close target apply batch requires targets to be an array."
+      );
+    }
+  });
+
+  it("should return the same array reference when all collection entries are objects", () => {
+    const results = [{ candidate: {} }, { candidate: {} }];
+
+    expect(
+      normalizeBatchWrapperObjectItems(
+        results,
+        "Execution session spawn headless wait target batch requires headlessWaitCandidateBatch.results to be an array.",
+        "Execution session spawn headless wait target batch requires headlessWaitCandidateBatch.results entries to be objects."
+      )
+    ).toBe(results);
+  });
+
+  it("should reject sparse, primitive, and null object-entry collections", () => {
+    const sparseResults = new Array(1);
+
+    expect(() =>
+      normalizeBatchWrapperObjectItems(
+        sparseResults,
+        "Execution session spawn headless close target batch requires headlessCloseCandidateBatch.results to be an array.",
+        "Execution session spawn headless close target batch requires headlessCloseCandidateBatch.results entries to be objects."
+      )
+    ).toThrow(
+      "Execution session spawn headless close target batch requires headlessCloseCandidateBatch.results entries to be objects."
+    );
+
+    for (const value of [[null], [0], ["candidate"]]) {
+      expect(() =>
+        normalizeBatchWrapperObjectItems(
+          value,
+          "Execution session spawn headless close target batch requires headlessCloseCandidateBatch.results to be an array.",
+          "Execution session spawn headless close target batch requires headlessCloseCandidateBatch.results entries to be objects."
+        )
+      ).toThrow(ValidationError);
+      expect(() =>
+        normalizeBatchWrapperObjectItems(
+          value,
+          "Execution session spawn headless close target batch requires headlessCloseCandidateBatch.results to be an array.",
+          "Execution session spawn headless close target batch requires headlessCloseCandidateBatch.results entries to be objects."
+        )
+      ).toThrow(
+        "Execution session spawn headless close target batch requires headlessCloseCandidateBatch.results entries to be objects."
       );
     }
   });

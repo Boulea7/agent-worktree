@@ -1,5 +1,67 @@
 import { ValidationError } from "../core/errors.js";
 
+function deriveNestedWrapperPath(
+  wrapperKey: string,
+  nestedKey: string
+): string {
+  return wrapperKey === nestedKey ? wrapperKey : `${wrapperKey}.${nestedKey}`;
+}
+
+function hasOwnProperty(
+  value: Record<string, unknown>,
+  key: string
+): boolean {
+  return Object.prototype.hasOwnProperty.call(value, key);
+}
+
+function readOwnProperty(
+  value: Record<string, unknown>,
+  key: string,
+  message: string
+): unknown {
+  if (!hasOwnProperty(value, key)) {
+    throw new ValidationError(message);
+  }
+
+  try {
+    return value[key];
+  } catch {
+    throw new ValidationError(message);
+  }
+}
+
+function readOwnObjectProperty(
+  value: Record<string, unknown>,
+  key: string,
+  message: string
+): Record<string, unknown> {
+  const property = readOwnProperty(value, key, message);
+
+  if (
+    typeof property !== "object" ||
+    property === null ||
+    Array.isArray(property)
+  ) {
+    throw new ValidationError(message);
+  }
+
+  return property as Record<string, unknown>;
+}
+
+function readOwnArrayProperty(
+  value: Record<string, unknown>,
+  key: string,
+  message: string
+): readonly unknown[] {
+  const property = readOwnProperty(value, key, message);
+
+  if (!Array.isArray(property)) {
+    throw new ValidationError(message);
+  }
+
+  return property;
+}
+
 export function normalizeHeadlessContextWrapper<T>(
   value: T,
   options: {
@@ -14,32 +76,14 @@ export function normalizeHeadlessContextWrapper<T>(
   }
 
   const wrapper = value as Record<string, unknown>;
-  const headlessContext = wrapper[options.wrapperKey];
-
-  if (
-    typeof headlessContext !== "object" ||
-    headlessContext === null ||
-    Array.isArray(headlessContext)
-  ) {
-    throw new ValidationError(
-      `${options.context} requires a ${options.wrapperKey} wrapper.`
-    );
-  }
-
-  if (
-    !("context" in headlessContext) ||
-    typeof headlessContext.context !== "object" ||
-    headlessContext.context === null ||
-    Array.isArray(headlessContext.context) ||
-    !("headlessView" in headlessContext) ||
-    typeof headlessContext.headlessView !== "object" ||
-    headlessContext.headlessView === null ||
-    Array.isArray(headlessContext.headlessView)
-  ) {
-    throw new ValidationError(
-      `${options.context} requires ${options.wrapperKey} to include context and headlessView objects.`
-    );
-  }
+  const headlessContext = readOwnObjectProperty(
+    wrapper,
+    options.wrapperKey,
+    `${options.context} requires a ${options.wrapperKey} wrapper.`
+  );
+  const entryMessage = `${options.context} requires ${options.wrapperKey} to include context and headlessView objects.`;
+  readOwnObjectProperty(headlessContext, "context", entryMessage);
+  readOwnObjectProperty(headlessContext, "headlessView", entryMessage);
 
   return value;
 }
@@ -56,35 +100,39 @@ export function normalizeHeadlessTargetWrapper<T>(
     typeof value !== "object" ||
     value === null ||
     Array.isArray(value) ||
-    !(options.nestedKey in value)
+    !hasOwnProperty(value as Record<string, unknown>, options.nestedKey)
   ) {
     throw new ValidationError(
       `${options.context} requires a ${options.wrapperKey} wrapper.`
     );
   }
 
-  const nested = (value as Record<string, unknown>)[options.nestedKey];
+  const nested = readOwnProperty(
+    value as Record<string, unknown>,
+    options.nestedKey,
+    `${options.context} requires a ${options.wrapperKey} wrapper.`
+  );
+  const nestedPath = deriveNestedWrapperPath(
+    options.wrapperKey,
+    options.nestedKey
+  );
 
   if (typeof nested !== "object" || nested === null || Array.isArray(nested)) {
     throw new ValidationError(
-      `${options.context} requires ${options.wrapperKey}.${options.nestedKey} to be an object.`
+      `${options.context} requires ${nestedPath} to be an object.`
     );
   }
 
-  if (
-    !("candidate" in nested) ||
-    typeof nested.candidate !== "object" ||
-    nested.candidate === null ||
-    Array.isArray(nested.candidate) ||
-    !("headlessContext" in nested) ||
-    typeof nested.headlessContext !== "object" ||
-    nested.headlessContext === null ||
-    Array.isArray(nested.headlessContext)
-  ) {
-    throw new ValidationError(
-      `${options.context} requires ${options.wrapperKey}.${options.nestedKey} to include candidate and headlessContext objects.`
-    );
-  }
+  const nestedMessage = `${options.context} requires ${nestedPath} to include candidate and headlessContext objects.`;
+  readOwnObjectProperty(nested as Record<string, unknown>, "candidate", nestedMessage);
+  const headlessContext = readOwnObjectProperty(
+    nested as Record<string, unknown>,
+    "headlessContext",
+    nestedMessage
+  );
+  const headlessContextMessage = `${options.context} requires ${nestedPath}.headlessContext to include context and headlessView objects.`;
+  readOwnObjectProperty(headlessContext, "context", headlessContextMessage);
+  readOwnObjectProperty(headlessContext, "headlessView", headlessContextMessage);
 
   return value;
 }
@@ -93,6 +141,7 @@ export function normalizeHeadlessTargetBatchWrapper<T>(
   value: T,
   options: {
     context: string;
+    companionKey?: string;
     wrapperKey: string;
   }
 ): T {
@@ -102,7 +151,11 @@ export function normalizeHeadlessTargetBatchWrapper<T>(
     );
   }
 
-  const results = (value as Record<string, unknown>).results;
+  const results = readOwnProperty(
+    value as Record<string, unknown>,
+    "results",
+    `${options.context} requires ${options.wrapperKey}.results to be an array.`
+  );
 
   if (!Array.isArray(results)) {
     throw new ValidationError(
@@ -110,7 +163,49 @@ export function normalizeHeadlessTargetBatchWrapper<T>(
     );
   }
 
+  if (options.companionKey !== undefined) {
+    validateBatchCompanion(value, options);
+  }
+
   return value;
+}
+
+function validateBatchCompanion(
+  value: unknown,
+  options: {
+    context: string;
+    companionKey?: string;
+    wrapperKey: string;
+  }
+): void {
+  const wrapper = value as Record<string, unknown>;
+  const companionKey = options.companionKey;
+
+  if (companionKey === undefined) {
+    return;
+  }
+
+  const companionMessage = `${options.context} requires ${options.wrapperKey} to include a valid ${companionKey} companion wrapper.`;
+  const companion = readOwnObjectProperty(wrapper, companionKey, companionMessage);
+
+  if (companionKey === "headlessContextBatch") {
+    normalizeHeadlessContextBatchWrapper(companion, {
+      context: options.context,
+      wrapperKey: companionKey
+    });
+    return;
+  }
+
+  if (
+    companionKey === "headlessWaitCandidateBatch" ||
+    companionKey === "headlessCloseCandidateBatch"
+  ) {
+    normalizeHeadlessTargetBatchWrapper(companion, {
+      context: options.context,
+      wrapperKey: companionKey,
+      companionKey: "headlessContextBatch"
+    });
+  }
 }
 
 export function normalizeHeadlessViewBatchWrapper<T>(
@@ -127,21 +222,18 @@ export function normalizeHeadlessViewBatchWrapper<T>(
   }
 
   const wrapper = value as Record<string, unknown>;
-
-  if (
-    !("headlessRecordBatch" in wrapper) ||
-    typeof wrapper.headlessRecordBatch !== "object" ||
-    wrapper.headlessRecordBatch === null ||
-    Array.isArray(wrapper.headlessRecordBatch) ||
-    !("view" in wrapper) ||
-    typeof wrapper.view !== "object" ||
-    wrapper.view === null ||
-    Array.isArray(wrapper.view)
-  ) {
-    throw new ValidationError(
-      `${options.context} requires ${options.wrapperKey} to include headlessRecordBatch and view objects.`
-    );
-  }
+  const wrapperMessage = `${options.context} requires ${options.wrapperKey} to include headlessRecordBatch and view objects.`;
+  const headlessRecordBatch = readOwnObjectProperty(
+    wrapper,
+    "headlessRecordBatch",
+    wrapperMessage
+  );
+  readOwnObjectProperty(wrapper, "view", wrapperMessage);
+  readOwnArrayProperty(
+    headlessRecordBatch,
+    "results",
+    `${options.context} requires ${options.wrapperKey}.headlessRecordBatch.results to be an array.`
+  );
 
   return value;
 }
@@ -160,19 +252,28 @@ export function normalizeHeadlessContextBatchWrapper<T>(
   }
 
   const wrapper = value as Record<string, unknown>;
-
-  if (
-    !("headlessViewBatch" in wrapper) ||
-    typeof wrapper.headlessViewBatch !== "object" ||
-    wrapper.headlessViewBatch === null ||
-    Array.isArray(wrapper.headlessViewBatch) ||
-    !("results" in wrapper) ||
-    !Array.isArray(wrapper.results)
-  ) {
-    throw new ValidationError(
-      `${options.context} requires ${options.wrapperKey} to include headlessViewBatch and results.`
-    );
-  }
+  const wrapperMessage = `${options.context} requires ${options.wrapperKey} to include headlessViewBatch and results.`;
+  const headlessViewBatch = readOwnObjectProperty(
+    wrapper,
+    "headlessViewBatch",
+    wrapperMessage
+  );
+  readOwnArrayProperty(wrapper, "results", wrapperMessage);
+  const headlessRecordBatch = readOwnObjectProperty(
+    headlessViewBatch,
+    "headlessRecordBatch",
+    `${options.context} requires ${options.wrapperKey}.headlessViewBatch.headlessRecordBatch.results to be an array.`
+  );
+  readOwnObjectProperty(
+    headlessViewBatch,
+    "view",
+    `${options.context} requires ${options.wrapperKey}.headlessViewBatch.headlessRecordBatch.results to be an array.`
+  );
+  readOwnArrayProperty(
+    headlessRecordBatch,
+    "results",
+    `${options.context} requires ${options.wrapperKey}.headlessViewBatch.headlessRecordBatch.results to be an array.`
+  );
 
   return value;
 }

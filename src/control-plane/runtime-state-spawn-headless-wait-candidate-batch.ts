@@ -1,3 +1,7 @@
+import { normalizeBatchWrapper } from "./runtime-state-batch-wrapper-guards.js";
+import {
+  normalizeBatchWrapperObjectItems
+} from "./runtime-state-batch-wrapper-guards.js";
 import { normalizeHeadlessContextBatchWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import { deriveExecutionSessionSpawnHeadlessWaitCandidate } from "./runtime-state-spawn-headless-wait-candidate.js";
 import type {
@@ -9,16 +13,28 @@ import type {
 export function deriveExecutionSessionSpawnHeadlessWaitCandidateBatch(
   input: ExecutionSessionSpawnHeadlessWaitCandidateBatchInput
 ): ExecutionSessionSpawnHeadlessWaitCandidateBatch {
+  const normalizedInput =
+    normalizeBatchWrapper<ExecutionSessionSpawnHeadlessWaitCandidateBatchInput>(
+      input,
+      "Execution session spawn headless wait candidate batch input must be an object."
+    );
   const normalizedBatch = normalizeHeadlessContextBatchWrapper(
-    input.headlessContextBatch,
+    normalizedInput.headlessContextBatch,
     {
       context: "Execution session spawn headless wait candidate batch",
       wrapperKey: "headlessContextBatch"
     }
   );
+  const headlessContexts = normalizeBatchWrapperObjectItems<
+    ExecutionSessionSpawnHeadlessWaitCandidateBatch["headlessContextBatch"]["results"][number]
+  >(
+    normalizedBatch.results,
+    "Execution session spawn headless wait candidate batch requires headlessContextBatch.results to be an array.",
+    "Execution session spawn headless wait candidate batch requires headlessContextBatch.results entries to be objects."
+  );
   const results: ExecutionSessionSpawnHeadlessWaitCandidate[] = [];
 
-  for (const headlessContext of normalizedBatch.results) {
+  for (const headlessContext of headlessContexts) {
     results.push(
       deriveExecutionSessionSpawnHeadlessWaitCandidate({
         headlessContext

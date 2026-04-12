@@ -21,3 +21,27 @@ export function normalizeBatchWrapperItems<Item>(
 
   return value as Item[];
 }
+
+export function normalizeBatchWrapperObjectItems<Item extends object>(
+  value: unknown,
+  itemsMessage: string,
+  entryMessage: string
+): Item[] {
+  const items = normalizeBatchWrapperItems<unknown>(value, itemsMessage);
+
+  for (let index = 0; index < items.length; index += 1) {
+    if (!hasOwnIndex(items, index) || !isRecord(items[index])) {
+      throw new ValidationError(entryMessage);
+    }
+  }
+
+  return items as Item[];
+}
+
+function hasOwnIndex(values: readonly unknown[], index: number): boolean {
+  return Object.prototype.hasOwnProperty.call(values, index);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}

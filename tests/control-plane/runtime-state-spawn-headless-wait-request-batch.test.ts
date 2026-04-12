@@ -87,7 +87,7 @@ describe(
       });
     });
 
-    it("should reject malformed headless wait request batch wrappers before iterating results", () => {
+    it("should reject malformed headless wait request batch wrappers", () => {
       expect(() =>
         deriveExecutionSessionSpawnHeadlessWaitRequestBatch(undefined as never)
       ).toThrow(
@@ -104,6 +104,54 @@ describe(
         })
       ).toThrow(
         "Execution session spawn headless wait request batch requires a headlessWaitTargetBatch wrapper."
+      );
+    });
+
+    it("should fail loudly when headlessWaitTargetBatch.results entries are sparse or non-object", () => {
+      const sparseResults = new Array(1);
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitRequestBatch({
+          headlessWaitTargetBatch: {
+            headlessWaitCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            results: sparseResults
+          } as never
+        })
+      ).toThrow(
+        "Execution session spawn headless wait request batch requires headlessWaitTargetBatch.results entries to be objects."
+      );
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitRequestBatch({
+          headlessWaitTargetBatch: {
+            headlessWaitCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            results: [0]
+          } as never
+        })
+      ).toThrow(
+        "Execution session spawn headless wait request batch requires headlessWaitTargetBatch.results entries to be objects."
       );
     });
 

@@ -12,6 +12,17 @@ import {
 describe(
   "control-plane runtime-state spawn-headless-wait-target-apply helpers",
   () => {
+    it("should fail loudly when the top-level wait target apply input is malformed", async () => {
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTarget(undefined as never)
+      ).rejects.toThrow(ValidationError);
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTarget(undefined as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless wait target apply input must be an object."
+      );
+    });
+
     it("should return the original wrapper unchanged when no wait target is available", async () => {
       const headlessWaitTarget = createHeadlessWaitTarget();
       let invoked = false;
@@ -75,6 +86,25 @@ describe(
       ).rejects.toThrow(
         "Execution session spawn headless wait target apply requires headlessWaitTarget.headlessWaitCandidate to include candidate and headlessContext objects."
       );
+    });
+
+    it("should reject malformed headlessContext companions before invoking wait", async () => {
+      const invokeWait = vi.fn(async () => undefined);
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTarget({
+          headlessWaitTarget: {
+            headlessWaitCandidate: {
+              candidate: {} as never,
+              headlessContext: {} as never
+            }
+          } as ExecutionSessionSpawnHeadlessWaitTarget,
+          invokeWait
+        })
+      ).rejects.toThrow(
+        "Execution session spawn headless wait target apply requires headlessWaitTarget.headlessWaitCandidate.headlessContext to include context and headlessView objects."
+      );
+      expect(invokeWait).not.toHaveBeenCalled();
     });
 
     it("should compose an apply result from an available wait target without widening the result shape", async () => {

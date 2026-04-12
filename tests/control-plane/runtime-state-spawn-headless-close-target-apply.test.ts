@@ -12,6 +12,17 @@ import {
 describe(
   "control-plane runtime-state spawn-headless-close-target-apply helpers",
   () => {
+    it("should fail loudly when the top-level close target apply input is malformed", async () => {
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTarget(undefined as never)
+      ).rejects.toThrow(ValidationError);
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTarget(undefined as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless close target apply input must be an object."
+      );
+    });
+
     it("should return the original wrapper unchanged when no close target is available", async () => {
       const headlessCloseTarget = createHeadlessCloseTarget();
       let invoked = false;
@@ -75,6 +86,25 @@ describe(
       ).rejects.toThrow(
         "Execution session spawn headless close target apply requires headlessCloseTarget.headlessCloseCandidate to include candidate and headlessContext objects."
       );
+    });
+
+    it("should reject malformed headlessContext companions before invoking close", async () => {
+      const invokeClose = vi.fn(async () => undefined);
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTarget({
+          headlessCloseTarget: {
+            headlessCloseCandidate: {
+              candidate: {} as never,
+              headlessContext: {} as never
+            }
+          } as ExecutionSessionSpawnHeadlessCloseTarget,
+          invokeClose
+        })
+      ).rejects.toThrow(
+        "Execution session spawn headless close target apply requires headlessCloseTarget.headlessCloseCandidate.headlessContext to include context and headlessView objects."
+      );
+      expect(invokeClose).not.toHaveBeenCalled();
     });
 
     it("should compose an apply result from an available close target without widening the result shape", async () => {

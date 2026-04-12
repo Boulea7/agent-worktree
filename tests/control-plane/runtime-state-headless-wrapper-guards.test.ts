@@ -14,7 +14,10 @@ describe("control-plane runtime-state headless-wrapper-guards helpers", () => {
     const wrapper = {
       headlessWaitCandidate: {
         candidate: {},
-        headlessContext: {}
+        headlessContext: {
+          context: {},
+          headlessView: {}
+        }
       }
     };
 
@@ -65,6 +68,44 @@ describe("control-plane runtime-state headless-wrapper-guards helpers", () => {
       )
     ).toThrow(
       "Execution session spawn headless wait candidate requires headlessContext to include context and headlessView objects."
+    );
+  });
+
+  it("should reject prototype-backed wrappers instead of accepting inherited wrapper properties", () => {
+    const prototypeBackedContextWrapper = Object.create({
+      headlessContext: {
+        context: {},
+        headlessView: {}
+      }
+    });
+
+    expect(() =>
+      normalizeHeadlessContextWrapper(prototypeBackedContextWrapper, {
+        context: "Execution session spawn headless wait candidate",
+        wrapperKey: "headlessContext"
+      })
+    ).toThrow(
+      "Execution session spawn headless wait candidate requires a headlessContext wrapper."
+    );
+
+    const prototypeBackedTargetWrapper = Object.create({
+      headlessWaitCandidate: {
+        candidate: {},
+        headlessContext: {
+          context: {},
+          headlessView: {}
+        }
+      }
+    });
+
+    expect(() =>
+      normalizeHeadlessTargetWrapper(prototypeBackedTargetWrapper, {
+        context: "Execution session spawn headless wait request",
+        nestedKey: "headlessWaitCandidate",
+        wrapperKey: "headlessWaitTarget"
+      })
+    ).toThrow(
+      "Execution session spawn headless wait request requires a headlessWaitTarget wrapper."
     );
   });
 
@@ -144,17 +185,64 @@ describe("control-plane runtime-state headless-wrapper-guards helpers", () => {
     );
   });
 
-  it("should return the same batch wrapper reference when results is an array", () => {
+  it("should reject nested wrappers whose headlessContext companion omits context or headlessView", () => {
+    expect(() =>
+      normalizeHeadlessTargetWrapper(
+        {
+          headlessWaitCandidate: {
+            candidate: {},
+            headlessContext: {}
+          }
+        },
+        {
+          context: "Execution session spawn headless wait request",
+          nestedKey: "headlessWaitCandidate",
+          wrapperKey: "headlessWaitTarget"
+        }
+      )
+    ).toThrow(
+      "Execution session spawn headless wait request requires headlessWaitTarget.headlessWaitCandidate.headlessContext to include context and headlessView objects."
+    );
+  });
+
+  it("should return the same batch wrapper reference when the companion wrapper is valid", () => {
     const wrapper = {
+      headlessContextBatch: {
+        headlessViewBatch: {
+          headlessRecordBatch: {
+            results: []
+          },
+          view: {}
+        },
+        results: []
+      },
       results: []
     };
 
     expect(
       normalizeHeadlessTargetBatchWrapper(wrapper, {
         context: "Execution session spawn headless wait request batch",
-        wrapperKey: "headlessWaitTargetBatch"
+        wrapperKey: "headlessWaitCandidateBatch",
+        companionKey: "headlessContextBatch"
       })
     ).toBe(wrapper);
+  });
+
+  it("should reject malformed target batch companions even when results is an array", () => {
+    expect(() =>
+      normalizeHeadlessTargetBatchWrapper(
+        {
+          results: []
+        },
+        {
+          context: "Execution session spawn headless wait request batch",
+          wrapperKey: "headlessWaitCandidateBatch",
+          companionKey: "headlessContextBatch"
+        }
+      )
+    ).toThrow(
+      "Execution session spawn headless wait request batch requires headlessWaitCandidateBatch to include a valid headlessContextBatch companion wrapper."
+    );
   });
 
   it("should return the same headless view batch wrapper reference when nested objects are valid", () => {
@@ -200,7 +288,12 @@ describe("control-plane runtime-state headless-wrapper-guards helpers", () => {
 
   it("should return the same headless context batch wrapper reference when nested objects are valid", () => {
     const wrapper = {
-      headlessViewBatch: {},
+      headlessViewBatch: {
+        headlessRecordBatch: {
+          results: []
+        },
+        view: {}
+      },
       results: []
     };
 
@@ -235,6 +328,24 @@ describe("control-plane runtime-state headless-wrapper-guards helpers", () => {
       )
     ).toThrow(
       "Execution session spawn headless wait candidate batch requires headlessContextBatch to include headlessViewBatch and results."
+    );
+
+    expect(() =>
+      normalizeHeadlessContextBatchWrapper(
+        {
+          headlessViewBatch: {
+            headlessRecordBatch: {},
+            view: {}
+          },
+          results: []
+        },
+        {
+          context: "Execution session spawn headless wait candidate batch",
+          wrapperKey: "headlessContextBatch"
+        }
+      )
+    ).toThrow(
+      "Execution session spawn headless wait candidate batch requires headlessContextBatch.headlessViewBatch.headlessRecordBatch.results to be an array."
     );
   });
 
