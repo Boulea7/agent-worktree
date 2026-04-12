@@ -179,6 +179,54 @@ describe("selection downstream identity guardrails", () => {
     ).toThrow("required-identity");
   });
 
+  it("should fail closed when required identity fields are exposed only through inherited properties", () => {
+    expect(() =>
+      validateDownstreamIdentityIngress(
+        [
+          Object.create({
+            taskId: "task_shared",
+            attemptId: "att_a",
+            runtime: "codex-cli"
+          })
+        ] as Array<{
+          taskId: string;
+          attemptId: string;
+          runtime: string;
+        }>,
+        {
+          required: "required-identity",
+          singleTask: "single-task",
+          unique: "duplicate-identity"
+        }
+      )
+    ).toThrow("required-identity");
+  });
+
+  it("should fail closed when reading a downstream identity field throws", () => {
+    const entry = {
+      get taskId() {
+        throw new Error("getter boom");
+      },
+      attemptId: "att_a",
+      runtime: "codex-cli"
+    };
+
+    expect(() =>
+      validateDownstreamIdentityIngress([entry], {
+        required: "required-identity",
+        singleTask: "single-task",
+        unique: "duplicate-identity"
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      validateDownstreamIdentityIngress([entry], {
+        required: "required-identity",
+        singleTask: "single-task",
+        unique: "duplicate-identity"
+      })
+    ).toThrow("required-identity");
+  });
+
   it("should preserve single-task and duplicate checks when ingress identity is complete", () => {
     expect(() =>
       validateDownstreamIdentityIngress(

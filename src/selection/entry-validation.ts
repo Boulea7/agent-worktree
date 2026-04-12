@@ -9,13 +9,30 @@ export function validateSelectionObjectInput(
   }
 }
 
+export function accessSelectionValue(
+  container: Record<string, unknown>,
+  key: string
+): unknown {
+  const descriptor = Object.getOwnPropertyDescriptor(container, key);
+
+  if (descriptor === undefined) {
+    return undefined;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(descriptor, "value")) {
+    return descriptor.value;
+  }
+
+  return descriptor.get?.call(container);
+}
+
 export function readSelectionValue(
   container: Record<string, unknown>,
   key: string,
   message: string
 ): unknown {
   try {
-    return container[key];
+    return accessSelectionValue(container, key);
   } catch {
     throw new ValidationError(message);
   }

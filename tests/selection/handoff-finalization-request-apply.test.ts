@@ -154,6 +154,27 @@ describe("selection handoff-finalization-request-apply helpers", () => {
     );
   });
 
+  it("should fail closed when reading the supplied request-apply input through an accessor-shaped object", async () => {
+    await expect(
+      applyAttemptHandoffFinalizationRequestSummary({
+        get summary() {
+          throw new Error("getter boom");
+        },
+        invokeHandoffFinalization: async () => undefined
+      } as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyAttemptHandoffFinalizationRequestSummary({
+        get summary() {
+          throw new Error("getter boom");
+        },
+        invokeHandoffFinalization: async () => undefined
+      } as never)
+    ).rejects.toThrow(
+      "Attempt handoff finalization request apply input must be a readable object."
+    );
+  });
+
   it("should return undefined when the supplied request summary cannot finalize handoff", async () => {
     const invokeHandoffFinalization = vi.fn(async () => undefined);
 

@@ -5,6 +5,12 @@ import {
   type AttemptSourceKind,
   type AttemptStatus
 } from "../manifest/types.js";
+import {
+  accessSelectionValue,
+  rethrowSelectionAccessError,
+  validateSelectionArray,
+  validateSelectionObjectInput
+} from "./entry-validation.js";
 import type {
   AttemptHandoffFinalizationConsumerBlockingReason,
   AttemptHandoffFinalizationExplanationCode,
@@ -41,51 +47,71 @@ export function deriveAttemptHandoffFinalizationReportReady(
     return undefined;
   }
 
-  validateSummaryBasis(summary);
-  const results = validateExplanationEntryArray(summary.results, "summary.results");
-  validateDownstreamSingleTaskBoundary(
-    results.map((entry) => entry.outcome),
-    "Attempt handoff finalization report-ready requires summary.results from a single taskId."
-  );
-  validateDownstreamUniqueIdentity(
-    results.map((entry) => entry.outcome),
-    "Attempt handoff finalization report-ready requires summary.results to use unique (taskId, attemptId, runtime) identities."
-  );
-
-  validateCanonicalSubgroups(summary, results);
-
-  return {
-    reportBasis: attemptHandoffFinalizationReportReadyBasis,
-    results: results.map(deriveReportEntry),
-    invokedResults: results
-      .filter((entry) => entry.invoked)
-      .map(deriveReportEntry),
-    blockedResults: results
-      .filter((entry) => !entry.invoked)
-      .map(deriveReportEntry)
-  };
-}
-
-function validateSummaryBasis(
-  summary: AttemptHandoffFinalizationExplanationSummary
-): void {
-  if (!isRecord(summary)) {
-    throw new ValidationError(
+  try {
+    validateSelectionObjectInput(
+      summary,
       "Attempt handoff finalization report-ready requires summary to be an object."
     );
-  }
 
-  if (summary.explanationBasis !== attemptHandoffFinalizationExplanationBasis) {
+    const normalizedSummary = normalizeExplanationSummary(summary);
+    const results = validateExplanationEntryArray(
+      normalizedSummary.results,
+      "summary.results"
+    );
+    validateDownstreamSingleTaskBoundary(
+      results.map((entry) => entry.outcome),
+      "Attempt handoff finalization report-ready requires summary.results from a single taskId."
+    );
+    validateDownstreamUniqueIdentity(
+      results.map((entry) => entry.outcome),
+      "Attempt handoff finalization report-ready requires summary.results to use unique (taskId, attemptId, runtime) identities."
+    );
+
+    validateCanonicalSubgroups(normalizedSummary, results);
+
+    return {
+      reportBasis: attemptHandoffFinalizationReportReadyBasis,
+      results: results.map(deriveReportEntry),
+      invokedResults: results
+        .filter((entry) => entry.invoked)
+        .map(deriveReportEntry),
+      blockedResults: results
+        .filter((entry) => !entry.invoked)
+        .map(deriveReportEntry)
+    };
+  } catch (error) {
+    rethrowSelectionAccessError(
+      error,
+      "Attempt handoff finalization report-ready requires summary to be a readable object."
+    );
+  }
+}
+
+function normalizeExplanationSummary(
+  summary: Record<string, unknown>
+): AttemptHandoffFinalizationExplanationSummary {
+  const explanationBasis = accessSelectionValue(summary, "explanationBasis");
+  const results = accessSelectionValue(summary, "results");
+
+  if (explanationBasis !== attemptHandoffFinalizationExplanationBasis) {
     throw new ValidationError(
       'Attempt handoff finalization report-ready requires summary.explanationBasis to be "handoff_finalization_outcome_summary".'
     );
   }
 
-  if (!Array.isArray(summary.results)) {
-    throw new ValidationError(
-      "Attempt handoff finalization report-ready requires summary.results to be an array."
-    );
-  }
+  validateSelectionArray(
+    results,
+    "Attempt handoff finalization report-ready requires summary.results to be an array."
+  );
+
+  return {
+    explanationBasis: attemptHandoffFinalizationExplanationBasis,
+    results: results as AttemptHandoffFinalizationExplanationEntry[],
+    invokedResults: (accessSelectionValue(summary, "invokedResults") ??
+      []) as AttemptHandoffFinalizationExplanationEntry[],
+    blockedResults: (accessSelectionValue(summary, "blockedResults") ??
+      []) as AttemptHandoffFinalizationExplanationEntry[]
+  };
 }
 
 function validateCanonicalSubgroups(

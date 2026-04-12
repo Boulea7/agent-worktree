@@ -5,60 +5,62 @@ import type {
   AttemptHandoffFinalizationRequest,
   AttemptHandoffFinalizationRequestSummaryApplyInput
 } from "./types.js";
+import {
+  accessSelectionValue,
+  rethrowSelectionAccessError,
+  validateSelectionObjectInput
+} from "./entry-validation.js";
 import { normalizeHandoffFinalizationCapability } from "./handoff-finalization-capability-shared.js";
 import { validateAttemptHandoffFinalizationRequestSummaryForApply } from "./handoff-finalization-request-summary-shared.js";
 
 export async function applyAttemptHandoffFinalizationRequestSummary(
   input: AttemptHandoffFinalizationRequestSummaryApplyInput
 ): Promise<AttemptHandoffFinalizationApplyBatch | undefined> {
-  validateInput(input);
-
-  if (input.summary === undefined) {
-    return undefined;
-  }
-
-  validateAttemptHandoffFinalizationRequestSummaryForApply(input.summary);
-
-  if (!input.summary.canFinalizeHandoff) {
-    return undefined;
-  }
-
-  ensureUniformHandoffFinalizationCapability(
-    input.summary.requests,
-    input.resolveHandoffFinalizationCapability
-  );
-
-  return applyAttemptHandoffFinalizationBatch({
-    requests: input.summary.requests,
-    invokeHandoffFinalization: input.invokeHandoffFinalization,
-    ...(input.resolveHandoffFinalizationCapability === undefined
-      ? {}
-      : {
-          resolveHandoffFinalizationCapability:
-            input.resolveHandoffFinalizationCapability
-      })
-  });
-}
-
-function validateInput(value: unknown): void {
-  if (!isRecord(value)) {
-    throw new ValidationError(
+  try {
+    validateSelectionObjectInput(
+      input,
       "Attempt handoff finalization request apply input must be an object."
     );
-  }
-
-  if (typeof value.invokeHandoffFinalization !== "function") {
-    throw new ValidationError(
+    const summary = accessSelectionValue(input, "summary") as
+      | AttemptHandoffFinalizationRequestSummaryApplyInput["summary"]
+      | undefined;
+    const invokeHandoffFinalization = normalizeRequiredFunction(
+      accessSelectionValue(input, "invokeHandoffFinalization"),
       "Attempt handoff finalization request apply requires invokeHandoffFinalization to be a function."
-    );
-  }
-
-  if (
-    value.resolveHandoffFinalizationCapability !== undefined &&
-    typeof value.resolveHandoffFinalizationCapability !== "function"
-  ) {
-    throw new ValidationError(
+    ) as AttemptHandoffFinalizationRequestSummaryApplyInput["invokeHandoffFinalization"];
+    const resolveHandoffFinalizationCapability = normalizeOptionalFunction(
+      accessSelectionValue(input, "resolveHandoffFinalizationCapability"),
       "Attempt handoff finalization request apply requires resolveHandoffFinalizationCapability to be a function when provided."
+    ) as AttemptHandoffFinalizationRequestSummaryApplyInput["resolveHandoffFinalizationCapability"];
+
+    if (summary === undefined) {
+      return undefined;
+    }
+
+    validateAttemptHandoffFinalizationRequestSummaryForApply(summary);
+
+    if (!summary.canFinalizeHandoff) {
+      return undefined;
+    }
+
+    ensureUniformHandoffFinalizationCapability(
+      summary.requests,
+      resolveHandoffFinalizationCapability
+    );
+
+    return applyAttemptHandoffFinalizationBatch({
+      requests: summary.requests,
+      invokeHandoffFinalization,
+      ...(resolveHandoffFinalizationCapability === undefined
+        ? {}
+        : {
+            resolveHandoffFinalizationCapability
+          })
+    });
+  } catch (error) {
+    rethrowSelectionAccessError(
+      error,
+      "Attempt handoff finalization request apply input must be a readable object."
     );
   }
 }
@@ -95,6 +97,24 @@ function ensureUniformHandoffFinalizationCapability(
   }
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+function normalizeRequiredFunction(
+  value: unknown,
+  message: string
+): (...args: never[]) => unknown {
+  if (typeof value !== "function") {
+    throw new ValidationError(message);
+  }
+
+  return value as (...args: never[]) => unknown;
+}
+
+function normalizeOptionalFunction(
+  value: unknown,
+  message: string
+): ((...args: never[]) => unknown) | undefined {
+  if (value !== undefined && typeof value !== "function") {
+    throw new ValidationError(message);
+  }
+
+  return value as ((...args: never[]) => unknown) | undefined;
 }

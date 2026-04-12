@@ -1,4 +1,5 @@
 import { ValidationError } from "../core/errors.js";
+import { readSelectionValue } from "./entry-validation.js";
 
 interface DownstreamIdentityEntry {
   attemptId: unknown;
@@ -27,9 +28,10 @@ export function validateDownstreamRequiredIdentityFields(
 ): void {
   for (const entry of entries) {
     if (
-      normalizeComparableIdentityPart(entry.taskId) === undefined ||
-      normalizeComparableIdentityPart(entry.attemptId) === undefined ||
-      normalizeComparableIdentityPart(entry.runtime) === undefined
+      normalizeComparableIdentityField(entry, "taskId", message) === undefined ||
+      normalizeComparableIdentityField(entry, "attemptId", message) ===
+        undefined ||
+      normalizeComparableIdentityField(entry, "runtime", message) === undefined
     ) {
       throw new ValidationError(message);
     }
@@ -43,7 +45,11 @@ export function validateDownstreamSingleTaskBoundary(
   let expectedTaskId: string | undefined;
 
   for (const entry of entries) {
-    const normalizedTaskId = normalizeComparableIdentityPart(entry.taskId);
+    const normalizedTaskId = normalizeComparableIdentityField(
+      entry,
+      "taskId",
+      message
+    );
 
     if (normalizedTaskId === undefined) {
       continue;
@@ -67,7 +73,7 @@ export function validateDownstreamUniqueIdentity(
   const seenIdentities = new Set<string>();
 
   for (const entry of entries) {
-    const identity = deriveNormalizedIdentity(entry);
+    const identity = deriveNormalizedIdentity(entry, message);
 
     if (identity === undefined) {
       continue;
@@ -82,11 +88,24 @@ export function validateDownstreamUniqueIdentity(
 }
 
 function deriveNormalizedIdentity(
-  entry: DownstreamIdentityEntry
+  entry: DownstreamIdentityEntry,
+  message: string
 ): string | undefined {
-  const normalizedTaskId = normalizeComparableIdentityPart(entry.taskId);
-  const normalizedAttemptId = normalizeComparableIdentityPart(entry.attemptId);
-  const normalizedRuntime = normalizeComparableIdentityPart(entry.runtime);
+  const normalizedTaskId = normalizeComparableIdentityField(
+    entry,
+    "taskId",
+    message
+  );
+  const normalizedAttemptId = normalizeComparableIdentityField(
+    entry,
+    "attemptId",
+    message
+  );
+  const normalizedRuntime = normalizeComparableIdentityField(
+    entry,
+    "runtime",
+    message
+  );
 
   if (
     normalizedTaskId === undefined ||
@@ -99,6 +118,18 @@ function deriveNormalizedIdentity(
   return `${normalizedTaskId}\u0000${normalizedAttemptId}\u0000${normalizedRuntime}`;
 }
 
+function normalizeComparableIdentityField(
+  entry: DownstreamIdentityEntry,
+  key: keyof DownstreamIdentityEntry,
+  message: string
+): string | undefined {
+  if (!isRecord(entry)) {
+    throw new ValidationError(message);
+  }
+
+  return normalizeComparableIdentityPart(readSelectionValue(entry, key, message));
+}
+
 function normalizeComparableIdentityPart(value: unknown): string | undefined {
   if (typeof value !== "string") {
     return undefined;
@@ -107,4 +138,8 @@ function normalizeComparableIdentityPart(value: unknown): string | undefined {
   const normalizedValue = value.trim();
 
   return normalizedValue.length > 0 ? normalizedValue : undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

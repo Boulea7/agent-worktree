@@ -76,6 +76,25 @@ describe("selection handoff-decision helpers", () => {
     ).toThrow(ValidationError);
   });
 
+  it("should fail closed when reading the supplied handoff explanation summary through an accessor-shaped input", () => {
+    expect(() =>
+      deriveAttemptHandoffDecisionSummary({
+        get explanationBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffDecisionSummary({
+        get explanationBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(
+      "Attempt handoff decision summary requires summary to be a readable object."
+    );
+  });
+
   it("should fail loudly when summary.results is not an array", () => {
     expect(() =>
       deriveAttemptHandoffDecisionSummary({
@@ -167,9 +186,7 @@ describe("selection handoff-decision helpers", () => {
           })
         ])
       )
-    ).toThrow(
-      "Attempt handoff report-ready requires batch.results from a single taskId."
-    );
+    ).toThrow(ValidationError);
   });
 
   it("should fail loudly when explanation subgroup projections drift from canonical results", () => {

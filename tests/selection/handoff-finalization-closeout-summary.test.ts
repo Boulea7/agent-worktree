@@ -117,6 +117,27 @@ describe("selection handoff-finalization-closeout-summary helpers", () => {
     );
   });
 
+  it("should fail closed when reading the supplied closeout-summary input through an accessor-shaped object", async () => {
+    await expect(
+      deriveAttemptHandoffFinalizationCloseoutSummary({
+        get summary() {
+          throw new Error("getter boom");
+        },
+        invokeHandoffFinalization: async () => undefined
+      } as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      deriveAttemptHandoffFinalizationCloseoutSummary({
+        get summary() {
+          throw new Error("getter boom");
+        },
+        invokeHandoffFinalization: async () => undefined
+      } as never)
+    ).rejects.toThrow(
+      "Attempt handoff finalization closeout summary input must be a readable object."
+    );
+  });
+
   it("should return undefined when the supplied request summary cannot finalize handoff", async () => {
     const invokeHandoffFinalization = vi.fn(async () => undefined);
 

@@ -114,6 +114,25 @@ describe("selection handoff-explanation helpers", () => {
     );
   });
 
+  it("should fail closed when reading the supplied handoff report-ready summary through an accessor-shaped input", () => {
+    expect(() =>
+      deriveAttemptHandoffExplanationSummary({
+        get reportBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffExplanationSummary({
+        get reportBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(
+      "Attempt handoff explanation summary requires report to be a readable object."
+    );
+  });
+
   it("should derive a stable invoked explanation entry", () => {
     expect(
       deriveAttemptHandoffExplanationSummary(

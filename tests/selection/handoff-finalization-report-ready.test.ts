@@ -75,6 +75,25 @@ describe("selection handoff-finalization-report-ready helpers", () => {
     );
   });
 
+  it("should fail closed when reading the supplied explanation summary through an accessor-shaped input", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady({
+        get explanationBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady({
+        get explanationBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization report-ready requires summary to be a readable object."
+    );
+  });
+
   it("should fail loudly when the supplied explanation basis drifts from the current finalization explanation layer", () => {
     expect(() =>
       deriveAttemptHandoffFinalizationReportReady({

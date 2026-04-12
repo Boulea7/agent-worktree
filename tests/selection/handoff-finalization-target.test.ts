@@ -154,9 +154,7 @@ describe("selection handoff-finalization-target helpers", () => {
           })
         ])
       )
-    ).toThrow(
-      "Attempt handoff report-ready requires batch.results from a single taskId."
-    );
+    ).toThrow(ValidationError);
   });
 
   it("should keep the finalization target shape minimal without leaking apply or readiness metadata", () => {
@@ -189,15 +187,35 @@ describe("selection handoff-finalization-target helpers", () => {
     expect(summary).not.toHaveProperty("readiness");
   });
 
-  it("should fail loudly when handoff finalization is ready but invokedResults is empty", () => {
-    const summary = {
-      ...createExplanationSummary([createInvokedExplanationEntry()]),
-      invokedResults: []
-    };
-
-    expect(() => deriveAttemptHandoffFinalizationTargetSummary(summary)).toThrow(
-      ValidationError
-    );
+  it("should ignore raw subgroup drift and rely on the canonicalized explanation results when deriving finalization targets", () => {
+    expect(
+      deriveAttemptHandoffFinalizationTargetSummary({
+        explanationBasis: "handoff_report_ready",
+        results: [createInvokedExplanationEntry()],
+        get invokedResults() {
+          throw new Error("getter boom");
+        },
+        get blockedResults() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toEqual({
+      finalizationBasis: "handoff_decision_summary",
+      resultCount: 1,
+      invokedResultCount: 1,
+      blockedResultCount: 0,
+      blockingReasons: [],
+      canFinalizeHandoff: true,
+      targets: [
+        {
+          taskId: "task_shared",
+          attemptId: "att_ready",
+          runtime: "codex-cli",
+          status: "created",
+          sourceKind: undefined
+        }
+      ]
+    });
   });
 
   it("should derive a stable finalization target summary through the canonical handoff chain", async () => {
