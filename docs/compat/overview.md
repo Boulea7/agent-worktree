@@ -45,8 +45,8 @@ The public `compat smoke codex-cli` surface may consume the same bounded executi
 Descriptor-only runtimes may still return `smokeStatus: "not_supported"` through the same bounded compatibility command surface, but that result does not apply to the current `codex-cli` implementation path.
 The bounded parser also remains intentionally narrow: obvious non-JSON prelude lines, including bracket-prefixed log noise, may normalize to `unknown`, while malformed JSON-looking records still fail loudly.
 The same boundary now allows a thin internal observation layer on top of canonical events, but that observation is still diagnostic execution metadata rather than a public session or persistence protocol.
-The merged baseline also contains deeper internal-only composition across runtime-state, runtime-context, spawn, wait, and close seams.
-That current internal continuation now spans the thin Phase 5 closeout chain plus bounded-parallelism Phase 6 prep, but those helpers remain internal-only implementation detail and are not a public lifecycle promise.
+The merged baseline also contains deeper internal-only composition across runtime-state, runtime-context, spawn, wait, and close seams, plus the current internal-only selection closeout chain across report-ready, grouped reporting, closure, and closeout-decision helpers.
+That current internal continuation now spans the thin Phase 5 closeout chain plus bounded-parallelism Phase 6 prep, but those helpers remain internal-only implementation detail and are not a public lifecycle promise. The default `selection` barrel remains empty, and the default `control-plane` barrel remains limited to the current read-only foundational session helpers.
 
 The first concrete reference path is intentionally narrow:
 

@@ -301,7 +301,9 @@ The current public baseline satisfies this Phase 4 test slice through `doctor`, 
 - internal-only verification aggregation tests
 - internal-only selection, promotion, handoff, and handoff-finalization composition tests
 - internal-only grouped finalization reporting tests for stable explanation-code grouping, count rollups, and disposition derivation
+- internal-only closeout-chain tests for report-ready, grouped projection, grouped reporting, closure, and closeout decision composition
 - internal-only barrel-boundary assertions for intentionally narrow default entry points
+- explicit denylist and allowlist tests that keep wider repo-internal selection/control-plane helpers out of the default barrels
 - failure-mode tests for request validation, readiness validation, and fail-fast batch composition across the current internal-only capability buckets
 
 ## Definition Of Done For Future Coding Tasks
