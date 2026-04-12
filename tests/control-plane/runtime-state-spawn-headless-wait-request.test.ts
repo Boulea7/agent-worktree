@@ -149,6 +149,63 @@ describe("control-plane runtime-state spawn-headless-wait-request helpers", () =
     );
   });
 
+  it("should reject wrapper-level targets that come only from the prototype chain", () => {
+    const canonicalTarget = createHeadlessWaitTarget({
+      attemptId: "att_proto_wait_request",
+      parentAttemptId: "att_parent_proto_wait_request",
+      sessionId: "thr_proto_wait_request",
+      sourceKind: "delegated"
+    });
+    const headlessWaitTarget = Object.create({
+      target: canonicalTarget.target
+    });
+    headlessWaitTarget.headlessWaitCandidate = canonicalTarget.headlessWaitCandidate;
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessWaitRequest({
+        headlessWaitTarget
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessWaitRequest({
+        headlessWaitTarget
+      } as never)
+    ).toThrow(
+      "Execution session spawn headless wait request requires headlessWaitTarget.target to be an object when provided."
+    );
+  });
+
+  it("should reject wrapper-level targets whose getter throws", () => {
+    const canonicalTarget = createHeadlessWaitTarget({
+      attemptId: "att_accessor_wait_request",
+      parentAttemptId: "att_parent_accessor_wait_request",
+      sessionId: "thr_accessor_wait_request",
+      sourceKind: "delegated"
+    });
+    const headlessWaitTarget = {
+      headlessWaitCandidate: canonicalTarget.headlessWaitCandidate
+    };
+    Object.defineProperty(headlessWaitTarget, "target", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessWaitRequest({
+        headlessWaitTarget
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessWaitRequest({
+        headlessWaitTarget
+      } as never)
+    ).toThrow(
+      "Execution session spawn headless wait request requires headlessWaitTarget.target to be an object when provided."
+    );
+  });
+
   it("should not mutate the supplied headless wait target and should keep the result shape minimal", () => {
     const headlessWaitTarget = createHeadlessWaitTarget({
       attemptId: "att_child_wait_request_shape",

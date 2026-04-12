@@ -57,6 +57,58 @@ describe(
       );
     });
 
+    it("should reject wrapper-level targets that come only from the prototype chain", async () => {
+      const canonicalTarget = createHeadlessWaitTarget({
+        target: {
+          attemptId: "att_proto_wait_apply",
+          runtime: "supported-cli",
+          sessionId: "thr_proto_wait_apply"
+        }
+      });
+      const headlessWaitTarget = Object.create({
+        target: canonicalTarget.target
+      });
+      headlessWaitTarget.headlessWaitCandidate =
+        canonicalTarget.headlessWaitCandidate;
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTarget({
+          headlessWaitTarget,
+          invokeWait: async () => undefined
+        } as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless wait target apply requires headlessWaitTarget.target to be an object when provided."
+      );
+    });
+
+    it("should reject wrapper-level targets whose getter throws", async () => {
+      const canonicalTarget = createHeadlessWaitTarget({
+        target: {
+          attemptId: "att_accessor_wait_apply",
+          runtime: "supported-cli",
+          sessionId: "thr_accessor_wait_apply"
+        }
+      });
+      const headlessWaitTarget = {
+        headlessWaitCandidate: canonicalTarget.headlessWaitCandidate
+      };
+      Object.defineProperty(headlessWaitTarget, "target", {
+        enumerable: true,
+        get() {
+          throw new Error("boom");
+        }
+      });
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTarget({
+          headlessWaitTarget,
+          invokeWait: async () => undefined
+        } as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless wait target apply requires headlessWaitTarget.target to be an object when provided."
+      );
+    });
+
     it("should reject a malformed nested headless wait candidate wrapper", async () => {
       await expect(
         applyExecutionSessionSpawnHeadlessWaitTarget({

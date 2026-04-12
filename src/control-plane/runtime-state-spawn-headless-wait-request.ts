@@ -1,4 +1,5 @@
 import { ValidationError } from "../core/errors.js";
+import { readOptionalBatchWrapperProperty } from "./runtime-state-batch-wrapper-guards.js";
 import { normalizeHeadlessTargetWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import { deriveExecutionSessionWaitRequest } from "./runtime-state-wait-request.js";
 import type {
@@ -17,18 +18,38 @@ export function deriveExecutionSessionSpawnHeadlessWaitRequest(
   }
 
   const headlessWaitTarget = normalizeHeadlessWaitTarget(input.headlessWaitTarget);
+  const target =
+    readOptionalBatchWrapperProperty<
+      NonNullable<ExecutionSessionSpawnHeadlessWaitTarget["target"]>
+    >(
+      headlessWaitTarget,
+      "target",
+      "Execution session spawn headless wait request requires headlessWaitTarget.target to be an object when provided."
+    );
 
-  if (headlessWaitTarget.target === undefined) {
+  if (target === undefined) {
     return {
       headlessWaitTarget
     };
   }
 
+  if (typeof target !== "object" || target === null || Array.isArray(target)) {
+    throw new ValidationError(
+      "Execution session spawn headless wait request requires headlessWaitTarget.target to be an object when provided."
+    );
+  }
+
+  const timeoutMs = readOptionalBatchWrapperProperty<number>(
+    input,
+    "timeoutMs",
+    "Execution session wait request timeoutMs must be a finite integer greater than 0."
+  );
+
   return {
     headlessWaitTarget,
     request: deriveExecutionSessionWaitRequest({
-      target: headlessWaitTarget.target,
-      ...(input.timeoutMs === undefined ? {} : { timeoutMs: input.timeoutMs })
+      target,
+      ...(timeoutMs === undefined ? {} : { timeoutMs })
     })
   };
 }

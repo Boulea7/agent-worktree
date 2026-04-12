@@ -1,4 +1,5 @@
 import { ValidationError } from "../core/errors.js";
+import { readOptionalBatchWrapperProperty } from "./runtime-state-batch-wrapper-guards.js";
 import { normalizeHeadlessTargetWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import { deriveExecutionSessionCloseRequest } from "./runtime-state-close-request.js";
 import type {
@@ -19,17 +20,31 @@ export function deriveExecutionSessionSpawnHeadlessCloseRequest(
   const headlessCloseTarget = normalizeHeadlessCloseTarget(
     input.headlessCloseTarget
   );
+  const target =
+    readOptionalBatchWrapperProperty<
+      NonNullable<ExecutionSessionSpawnHeadlessCloseTarget["target"]>
+    >(
+      headlessCloseTarget,
+      "target",
+      "Execution session spawn headless close request requires headlessCloseTarget.target to be an object when provided."
+    );
 
-  if (headlessCloseTarget.target === undefined) {
+  if (target === undefined) {
     return {
       headlessCloseTarget
     };
   }
 
+  if (typeof target !== "object" || target === null || Array.isArray(target)) {
+    throw new ValidationError(
+      "Execution session spawn headless close request requires headlessCloseTarget.target to be an object when provided."
+    );
+  }
+
   return {
     headlessCloseTarget,
     request: deriveExecutionSessionCloseRequest({
-      target: headlessCloseTarget.target
+      target
     })
   };
 }

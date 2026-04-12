@@ -1,9 +1,13 @@
 import { ValidationError } from "../core/errors.js";
-import { normalizeBatchWrapperObjectItems } from "./runtime-state-batch-wrapper-guards.js";
+import {
+  normalizeBatchWrapperObjectItems,
+  readRequiredBatchWrapperProperty
+} from "./runtime-state-batch-wrapper-guards.js";
 import { normalizeHeadlessTargetBatchWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import { buildExecutionSessionView } from "./runtime-state-view.js";
 import type {
   ExecutionSessionRecord,
+  ExecutionSessionSpawnHeadlessRecordBatch,
   ExecutionSessionSpawnHeadlessViewBatch,
   ExecutionSessionSpawnHeadlessViewBatchInput
 } from "./types.js";
@@ -11,19 +15,20 @@ import type {
 export function deriveExecutionSessionSpawnHeadlessViewBatch(
   input: ExecutionSessionSpawnHeadlessViewBatchInput
 ): ExecutionSessionSpawnHeadlessViewBatch {
-  if (
-    typeof input !== "object" ||
-    input === null ||
-    Array.isArray(input) ||
-    !("headlessRecordBatch" in input)
-  ) {
+  if (typeof input !== "object" || input === null || Array.isArray(input)) {
     throw new ValidationError(
       "Execution session spawn headless view batch requires a headlessRecordBatch wrapper."
     );
   }
 
+  const headlessRecordBatch =
+    readRequiredBatchWrapperProperty<ExecutionSessionSpawnHeadlessRecordBatch>(
+      input,
+      "headlessRecordBatch",
+      "Execution session spawn headless view batch requires a headlessRecordBatch wrapper."
+    );
   const normalizedBatch = normalizeHeadlessTargetBatchWrapper(
-    input.headlessRecordBatch,
+    headlessRecordBatch,
     {
       context: "Execution session spawn headless view batch",
       wrapperKey: "headlessRecordBatch"
@@ -51,13 +56,27 @@ function validateHeadlessRecordBatchResults(
 
   for (let index = 0; index < normalizedResults.length; index += 1) {
     const result = normalizedResults[index]!;
+    let record: unknown;
 
-    if (
-      !Object.prototype.hasOwnProperty.call(result, "record") ||
-      typeof result.record !== "object" ||
-      result.record === null ||
-      Array.isArray(result.record)
-    ) {
+    try {
+      if (!Object.prototype.hasOwnProperty.call(result, "record")) {
+        throw new ValidationError(
+          "Execution session spawn headless view batch requires headlessRecordBatch.results entries to include record objects."
+        );
+      }
+
+      record = result.record;
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+
+      throw new ValidationError(
+        "Execution session spawn headless view batch requires headlessRecordBatch.results entries to include record objects."
+      );
+    }
+
+    if (typeof record !== "object" || record === null || Array.isArray(record)) {
       throw new ValidationError(
         "Execution session spawn headless view batch requires headlessRecordBatch.results entries to include record objects."
       );

@@ -4,7 +4,9 @@ import { ValidationError } from "../../src/core/errors.js";
 import {
   normalizeBatchWrapper,
   normalizeBatchWrapperItems,
-  normalizeBatchWrapperObjectItems
+  normalizeBatchWrapperObjectItems,
+  readOptionalBatchWrapperProperty,
+  readRequiredBatchWrapperProperty
 } from "../../src/control-plane/runtime-state-batch-wrapper-guards.js";
 
 describe("control-plane runtime-state batch-wrapper-guards helpers", () => {
@@ -113,5 +115,105 @@ describe("control-plane runtime-state batch-wrapper-guards helpers", () => {
         "Execution session spawn headless close target batch requires headlessCloseCandidateBatch.results entries to be objects."
       );
     }
+  });
+
+  it("should read required own properties and reject inherited or throwing properties", () => {
+    const wrapper = {
+      consumers: []
+    };
+
+    expect(
+      readRequiredBatchWrapperProperty(
+        wrapper,
+        "consumers",
+        "Execution session wait consume batch requires consumers to be an array."
+      )
+    ).toBe(wrapper.consumers);
+
+    const inheritedWrapper = Object.create({
+      consumers: []
+    });
+
+    expect(() =>
+      readRequiredBatchWrapperProperty(
+        inheritedWrapper,
+        "consumers",
+        "Execution session wait consume batch requires consumers to be an array."
+      )
+    ).toThrow(
+      "Execution session wait consume batch requires consumers to be an array."
+    );
+
+    const throwingWrapper = {};
+    Object.defineProperty(throwingWrapper, "consumers", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    expect(() =>
+      readRequiredBatchWrapperProperty(
+        throwingWrapper,
+        "consumers",
+        "Execution session wait consume batch requires consumers to be an array."
+      )
+    ).toThrow(
+      "Execution session wait consume batch requires consumers to be an array."
+    );
+  });
+
+  it("should read optional own properties while rejecting inherited or throwing optional properties", () => {
+    const wrapper = {
+      timeoutMs: 250
+    };
+
+    expect(
+      readOptionalBatchWrapperProperty(
+        wrapper,
+        "timeoutMs",
+        "Execution session wait request timeoutMs must be a finite integer greater than 0."
+      )
+    ).toBe(250);
+
+    expect(
+      readOptionalBatchWrapperProperty(
+        {},
+        "timeoutMs",
+        "Execution session wait request timeoutMs must be a finite integer greater than 0."
+      )
+    ).toBeUndefined();
+
+    const inheritedWrapper = Object.create({
+      timeoutMs: 250
+    });
+
+    expect(() =>
+      readOptionalBatchWrapperProperty(
+        inheritedWrapper,
+        "timeoutMs",
+        "Execution session wait request timeoutMs must be a finite integer greater than 0."
+      )
+    ).toThrow(
+      "Execution session wait request timeoutMs must be a finite integer greater than 0."
+    );
+
+    const throwingWrapper = {};
+    Object.defineProperty(throwingWrapper, "timeoutMs", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    expect(() =>
+      readOptionalBatchWrapperProperty(
+        throwingWrapper,
+        "timeoutMs",
+        "Execution session wait request timeoutMs must be a finite integer greater than 0."
+      )
+    ).toThrow(
+      "Execution session wait request timeoutMs must be a finite integer greater than 0."
+    );
   });
 });

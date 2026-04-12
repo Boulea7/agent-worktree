@@ -1,10 +1,15 @@
 import { ValidationError } from "../core/errors.js";
+import {
+  readOptionalBatchWrapperProperty,
+  readRequiredBatchWrapperProperty
+} from "./runtime-state-batch-wrapper-guards.js";
 import { normalizeHeadlessTargetWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import { applyExecutionSessionWaitTarget } from "./runtime-state-wait-target-apply.js";
 import type {
   ExecutionSessionSpawnHeadlessWaitTargetApply,
   ExecutionSessionSpawnHeadlessWaitTarget,
-  ExecutionSessionSpawnHeadlessWaitTargetApplyInput
+  ExecutionSessionSpawnHeadlessWaitTargetApplyInput,
+  ExecutionSessionWaitTargetApplyInput
 } from "./types.js";
 
 export async function applyExecutionSessionSpawnHeadlessWaitTarget(
@@ -17,24 +22,58 @@ export async function applyExecutionSessionSpawnHeadlessWaitTarget(
   }
 
   const headlessWaitTarget = normalizeHeadlessWaitTarget(input.headlessWaitTarget);
+  const target =
+    readOptionalBatchWrapperProperty<
+      NonNullable<ExecutionSessionSpawnHeadlessWaitTarget["target"]>
+    >(
+      headlessWaitTarget,
+      "target",
+      "Execution session spawn headless wait target apply requires headlessWaitTarget.target to be an object when provided."
+    );
 
-  if (headlessWaitTarget.target === undefined) {
+  if (target === undefined) {
     return {
       headlessWaitTarget
     };
   }
 
-  const apply = await applyExecutionSessionWaitTarget({
-    target: headlessWaitTarget.target,
-    invokeWait: input.invokeWait,
-    ...(input.timeoutMs === undefined ? {} : { timeoutMs: input.timeoutMs }),
-    ...(input.resolveSessionLifecycleCapability === undefined
+  if (typeof target !== "object" || target === null || Array.isArray(target)) {
+    throw new ValidationError(
+      "Execution session spawn headless wait target apply requires headlessWaitTarget.target to be an object when provided."
+    );
+  }
+
+  const invokeWait = readRequiredBatchWrapperProperty<
+    ExecutionSessionSpawnHeadlessWaitTargetApplyInput["invokeWait"]
+  >(
+    input,
+    "invokeWait",
+    "Execution session wait target apply requires invokeWait to be a function."
+  );
+  const timeoutMs = readOptionalBatchWrapperProperty<number>(
+    input,
+    "timeoutMs",
+    "Execution session wait request timeoutMs must be a finite integer greater than 0."
+  );
+  const resolveSessionLifecycleCapability =
+    readOptionalBatchWrapperProperty<
+      ExecutionSessionSpawnHeadlessWaitTargetApplyInput["resolveSessionLifecycleCapability"]
+    >(
+      input,
+      "resolveSessionLifecycleCapability",
+      "Execution session wait target apply requires resolveSessionLifecycleCapability to be a function when provided."
+    );
+
+  const applyInput: ExecutionSessionWaitTargetApplyInput = {
+    target,
+    invokeWait,
+    ...(timeoutMs === undefined ? {} : { timeoutMs }),
+    ...(resolveSessionLifecycleCapability === undefined
       ? {}
-      : {
-          resolveSessionLifecycleCapability:
-            input.resolveSessionLifecycleCapability
-        })
-  });
+      : { resolveSessionLifecycleCapability })
+  };
+
+  const apply = await applyExecutionSessionWaitTarget(applyInput);
 
   return {
     headlessWaitTarget,

@@ -57,6 +57,58 @@ describe(
       );
     });
 
+    it("should reject wrapper-level targets that come only from the prototype chain", async () => {
+      const canonicalTarget = createHeadlessCloseTarget({
+        target: {
+          attemptId: "att_proto_close_apply",
+          runtime: "supported-cli",
+          sessionId: "thr_proto_close_apply"
+        }
+      });
+      const headlessCloseTarget = Object.create({
+        target: canonicalTarget.target
+      });
+      headlessCloseTarget.headlessCloseCandidate =
+        canonicalTarget.headlessCloseCandidate;
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTarget({
+          headlessCloseTarget,
+          invokeClose: async () => undefined
+        } as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless close target apply requires headlessCloseTarget.target to be an object when provided."
+      );
+    });
+
+    it("should reject wrapper-level targets whose getter throws", async () => {
+      const canonicalTarget = createHeadlessCloseTarget({
+        target: {
+          attemptId: "att_accessor_close_apply",
+          runtime: "supported-cli",
+          sessionId: "thr_accessor_close_apply"
+        }
+      });
+      const headlessCloseTarget = {
+        headlessCloseCandidate: canonicalTarget.headlessCloseCandidate
+      };
+      Object.defineProperty(headlessCloseTarget, "target", {
+        enumerable: true,
+        get() {
+          throw new Error("boom");
+        }
+      });
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTarget({
+          headlessCloseTarget,
+          invokeClose: async () => undefined
+        } as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless close target apply requires headlessCloseTarget.target to be an object when provided."
+      );
+    });
+
     it("should reject a malformed nested headless close candidate wrapper", async () => {
       await expect(
         applyExecutionSessionSpawnHeadlessCloseTarget({

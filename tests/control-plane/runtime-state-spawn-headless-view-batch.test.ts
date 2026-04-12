@@ -135,6 +135,67 @@ describe("control-plane runtime-state spawn-headless-view-batch helpers", () => 
     );
   });
 
+  it("should fail closed when headlessRecordBatch comes only from the prototype chain", () => {
+    const input = Object.create({
+      headlessRecordBatch: createHeadlessRecordBatch()
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessViewBatch(input as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessViewBatch(input as never)
+    ).toThrow(
+      "Execution session spawn headless view batch requires a headlessRecordBatch wrapper."
+    );
+  });
+
+  it("should fail closed when reading headlessRecordBatch throws", () => {
+    const input = {};
+    Object.defineProperty(input, "headlessRecordBatch", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessViewBatch(input as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessViewBatch(input as never)
+    ).toThrow(
+      "Execution session spawn headless view batch requires a headlessRecordBatch wrapper."
+    );
+  });
+
+  it("should fail closed when reading a result record throws", () => {
+    const resultEntry = {};
+    Object.defineProperty(resultEntry, "record", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessViewBatch({
+        headlessRecordBatch: {
+          results: [resultEntry]
+        } as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessViewBatch({
+        headlessRecordBatch: {
+          results: [resultEntry]
+        } as never
+      })
+    ).toThrow(
+      "Execution session spawn headless view batch requires headlessRecordBatch.results entries to include record objects."
+    );
+  });
+
   it("should fail closed when a later headless-record batch entry comes only from the prototype chain", () => {
     const inheritedResults = [createHeadlessRecord({
       attemptId: "att_root_view",

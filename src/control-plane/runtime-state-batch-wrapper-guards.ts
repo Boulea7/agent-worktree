@@ -11,6 +11,42 @@ export function normalizeBatchWrapper<Wrapper extends object>(
   return value as Wrapper;
 }
 
+export function readRequiredBatchWrapperProperty<T>(
+  value: object,
+  key: string,
+  message: string
+): T {
+  if (!hasOwnProperty(value, key)) {
+    throw new ValidationError(message);
+  }
+
+  try {
+    return (value as Record<string, unknown>)[key] as T;
+  } catch {
+    throw new ValidationError(message);
+  }
+}
+
+export function readOptionalBatchWrapperProperty<T>(
+  value: object,
+  key: string,
+  message: string
+): T | undefined {
+  if (hasOwnProperty(value, key)) {
+    try {
+      return (value as Record<string, unknown>)[key] as T;
+    } catch {
+      throw new ValidationError(message);
+    }
+  }
+
+  if (key in value) {
+    throw new ValidationError(message);
+  }
+
+  return undefined;
+}
+
 export function normalizeBatchWrapperItems<Item>(
   value: unknown,
   itemsMessage: string
@@ -40,6 +76,10 @@ export function normalizeBatchWrapperObjectItems<Item extends object>(
 
 function hasOwnIndex(values: readonly unknown[], index: number): boolean {
   return Object.prototype.hasOwnProperty.call(values, index);
+}
+
+function hasOwnProperty(value: object, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(value, key);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

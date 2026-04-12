@@ -160,6 +160,66 @@ describe("control-plane runtime-state spawn-headless-close-request helpers", () 
     );
   });
 
+  it("should reject wrapper-level targets that come only from the prototype chain", () => {
+    const canonicalTarget = createHeadlessCloseTarget({
+      target: {
+        attemptId: "att_proto_close_request",
+        runtime: "codex-cli",
+        sessionId: "thr_proto_close_request"
+      }
+    });
+    const headlessCloseTarget = Object.create({
+      target: canonicalTarget.target
+    });
+    headlessCloseTarget.headlessCloseCandidate =
+      canonicalTarget.headlessCloseCandidate;
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessCloseRequest({
+        headlessCloseTarget
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessCloseRequest({
+        headlessCloseTarget
+      } as never)
+    ).toThrow(
+      "Execution session spawn headless close request requires headlessCloseTarget.target to be an object when provided."
+    );
+  });
+
+  it("should reject wrapper-level targets whose getter throws", () => {
+    const canonicalTarget = createHeadlessCloseTarget({
+      target: {
+        attemptId: "att_accessor_close_request",
+        runtime: "codex-cli",
+        sessionId: "thr_accessor_close_request"
+      }
+    });
+    const headlessCloseTarget = {
+      headlessCloseCandidate: canonicalTarget.headlessCloseCandidate
+    };
+    Object.defineProperty(headlessCloseTarget, "target", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessCloseRequest({
+        headlessCloseTarget
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessCloseRequest({
+        headlessCloseTarget
+      } as never)
+    ).toThrow(
+      "Execution session spawn headless close request requires headlessCloseTarget.target to be an object when provided."
+    );
+  });
+
   it("should reject malformed headless close target wrappers", () => {
     expect(() =>
       deriveExecutionSessionSpawnHeadlessCloseRequest({
