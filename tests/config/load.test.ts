@@ -70,6 +70,46 @@ describe("parseProjectConfig", () => {
     });
   });
 
+  it("should reject unknown keys inside reserved core namespaces", () => {
+    expect(() =>
+      parseProjectConfig({
+        version: "0.x",
+        runtimes: {
+          codex_cli: {
+            enabled: true
+          }
+        }
+      })
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      parseProjectConfig({
+        version: "0.x",
+        bootstrap: {
+          install: true
+        }
+      })
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      parseProjectConfig({
+        version: "0.x",
+        verify: {
+          lint: true
+        }
+      })
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      parseProjectConfig({
+        version: "0.x",
+        policies: {
+          approvals: "strict"
+        }
+      })
+    ).toThrow(ValidationError);
+  });
+
   it("should return fresh mutable containers on each parse", () => {
     const first = parseProjectConfig({ version: "0.x" });
     first.compatibility.experimental.push("custom-runtime");

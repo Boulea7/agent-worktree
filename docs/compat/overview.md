@@ -37,6 +37,7 @@ That baseline now satisfies the current Phase 4 exit criteria:
 - `compat smoke codex-cli` establishes the current bounded public compatibility checkpoint for one Tier 1 runtime
 - `doctor` and `compat probe` keep the remaining Tier 1 runtimes on explicit and accurate descriptor-only support boundaries
 
+In the current implementation, the only concrete execution-backed probe path is `codex-cli`.
 Within that boundary, executable probing remains internal to the `codex-cli` execution helper.
 It may resolve a different executable than shell `command -v codex` when `PATH` contains same-name shadow binaries, but that behavior is not part of the public adapter surface and must not be generalized into a runtime-wide command-resolution framework.
 The public `compat probe codex-cli` surface may consume that internal policy only to emit a bounded public result such as `supported`, `unsupported`, or `error` plus a stable diagnosis code; it still must not expose executable paths or probing internals.
@@ -44,8 +45,8 @@ The public `compat smoke codex-cli` surface may consume the same bounded executi
 Descriptor-only runtimes may still return `smokeStatus: "not_supported"` through the same bounded compatibility command surface, but that result does not apply to the current `codex-cli` implementation path.
 The bounded parser also remains intentionally narrow: obvious non-JSON prelude lines, including bracket-prefixed log noise, may normalize to `unknown`, while malformed JSON-looking records still fail loudly.
 The same boundary now allows a thin internal observation layer on top of canonical events, but that observation is still diagnostic execution metadata rather than a public session or persistence protocol.
-The merged baseline also contains a deeper internal helper chain for runtime-state, runtime-context, spawn, wait, and close composition.
-That current internal continuation now spans the thin Phase 5 closeout chain plus bounded-parallelism Phase 6 prep, including internal-only spawn-budget, spawn-candidate, spawn-batch-plan, spawn-batch-items, spawn-batch-items-apply, spawn-batch-headless-apply-items, spawn-batch-headless-apply, headless wait/close request projection seams, and the downstream headless batch bridge through spawn-headless wait/close target-apply batches, but those helpers remain internal-only and are not a public lifecycle promise.
+The merged baseline also contains deeper internal-only composition across runtime-state, runtime-context, spawn, wait, and close seams.
+That current internal continuation now spans the thin Phase 5 closeout chain plus bounded-parallelism Phase 6 prep, but those helpers remain internal-only implementation detail and are not a public lifecycle promise.
 
 The first concrete reference path is intentionally narrow:
 
@@ -78,6 +79,7 @@ It is still not expected to cover:
 - manifest-backed execution persistence
 - internal observation summaries promoted into manifest-backed lifecycle state
 
+That deferred persistence scope does not forbid a durable audit manifest or bounded internal session metadata; it only means public execution/session persistence semantics are not implemented in this phase.
 Compatibility docs in this phase still describe mapping and support boundaries first. The `compat smoke codex-cli` surface is a bounded env-gated live compatibility checkpoint rather than a general execution promise, and the Vitest smoke harness remains narrower and is not the repository's default validation path.
 
 ## Support Tiers

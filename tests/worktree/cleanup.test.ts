@@ -441,17 +441,17 @@ describe("cleanupAttempt", () => {
   }, 10_000);
 
   it(
-    "should reject cleanup when a running attempt manifest still records a session",
+    "should reject cleanup when a non-cleaned attempt manifest still records a session",
     async () => {
     const { manifest, manifestRoot, worktreeRoot } = await createFixtureAttempt(
-      "att_running",
-      "Running cleanup"
+      "att_session_blocked",
+      "Session-blocked cleanup"
     );
 
     await writeManifest(
       {
         ...manifest,
-        status: "running",
+        status: "created",
         session: {
           backend: "tmux",
           sessionId: "session-1"
@@ -467,8 +467,58 @@ describe("cleanupAttempt", () => {
         worktreeRoot
       })
     ).rejects.toThrow(ValidationError);
+
+    await expect(
+      cleanupAttempt({
+        attemptId: manifest.attemptId,
+        manifestRoot,
+        worktreeRoot
+      })
+    ).rejects.toThrow(
+      `Attempt ${manifest.attemptId} cannot be cleaned while a session is recorded in the manifest.`
+    );
     }
   );
+
+  it("should keep the already-cleaned fast path even when a cleaned manifest still records a session", async () => {
+    const { manifest, manifestRoot, worktreeRoot } = await createFixtureAttempt(
+      "att_cleaned_session_fast_path",
+      "Already cleaned session fast path"
+    );
+
+    await runGit(["worktree", "remove", manifest.worktreePath!], {
+      cwd: manifest.repoRoot!
+    });
+
+    const manifestWithSession = {
+      ...manifest,
+      status: "cleaned" as const,
+      session: {
+        backend: "tmux",
+        sessionId: "session-cleaned"
+      }
+    };
+
+    await writeManifest(manifestWithSession, { rootDir: manifestRoot });
+
+    await expect(
+      cleanupAttempt({
+        attemptId: manifest.attemptId,
+        manifestRoot,
+        worktreeRoot
+      })
+    ).resolves.toEqual({
+      attempt: manifestWithSession,
+      cleanup: {
+        outcome: "already_cleaned",
+        worktreeRemoved: false
+      }
+    });
+
+    await expect(
+      readManifest(manifest.attemptId, { rootDir: manifestRoot })
+    ).resolves.toEqual(manifestWithSession);
+  });
 
   it("should reject already-cleaned manifests when worktree material still exists", async () => {
     const { manifest, manifestRoot, worktreeRoot } = await createFixtureAttempt(

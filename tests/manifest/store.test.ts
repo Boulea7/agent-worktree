@@ -210,6 +210,127 @@ describe("manifest store", () => {
     await expect(listManifests({ rootDir })).resolves.toEqual([manifest]);
   });
 
+  it("should reject blank lifecycle and session string fields", () => {
+    expect(() =>
+      parseManifestContents(
+        JSON.stringify(
+          createManifest({
+            repoRoot: "   "
+          })
+        )
+      )
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      parseManifestContents(
+        JSON.stringify(
+          createManifest({
+            baseRef: "   "
+          })
+        )
+      )
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      parseManifestContents(
+        JSON.stringify(
+          createManifest({
+            branch: "   "
+          })
+        )
+      )
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      parseManifestContents(
+        JSON.stringify(
+          createManifest({
+            worktreePath: "   "
+          })
+        )
+      )
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      parseManifestContents(
+        JSON.stringify(
+          createManifest({
+            session: {
+              backend: "   ",
+              sessionId: "session-1"
+            }
+          })
+        )
+      )
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      parseManifestContents(
+        JSON.stringify(
+          createManifest({
+            session: {
+              backend: "tmux",
+              sessionId: "   "
+            }
+          })
+        )
+      )
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      parseManifestContents(
+        JSON.stringify(
+          createManifest({
+            timestamps: {
+              createdAt: "   ",
+              updatedAt: "2026-03-20T00:00:00.000Z"
+            }
+          })
+        )
+      )
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      parseManifestContents(
+        JSON.stringify(
+          createManifest({
+            timestamps: {
+              createdAt: "2026-03-20T00:00:00.000Z",
+              updatedAt: "   "
+            }
+          })
+        )
+      )
+    ).toThrow(ValidationError);
+  });
+
+  it("should reject unexpected keys inside the bounded session block", () => {
+    expect(() =>
+      parseManifestContents(
+        JSON.stringify(
+          createManifest({
+            session: {
+              backend: "tmux",
+              sessionId: "session-1",
+              extra: true
+            }
+          })
+        )
+      )
+    ).toThrow(ValidationError);
+  });
+
+  it("should serialize and parse a valid bounded session block", () => {
+    const manifest = createManifest({
+      session: {
+        backend: "codex-cli",
+        sessionId: "session-1"
+      }
+    });
+
+    expect(parseManifestContents(serializeManifest(manifest))).toEqual(manifest);
+  });
+
   it("should serialize and parse valid source metadata", () => {
     const manifest = createManifest({
       sourceKind: "fork",
@@ -475,6 +596,31 @@ describe("manifest store", () => {
     await expect(
       readManifest("att_invalid_support_tier", { rootDir })
     ).rejects.toThrow(InvalidManifestError);
+  });
+
+  it("should raise InvalidManifestError when reading or listing a persisted manifest with an invalid verification state", async () => {
+    const rootDir = await createTempDirectory();
+    const attemptDirectory = path.join(rootDir, "att_invalid_verification_state");
+
+    await mkdir(attemptDirectory, { recursive: true });
+    await writeFile(
+      path.join(attemptDirectory, "manifest.json"),
+      JSON.stringify({
+        ...createManifest({
+          attemptId: "att_invalid_verification_state"
+        }),
+        verification: {
+          state: "legacy_pending",
+          checks: []
+        }
+      }),
+      "utf8"
+    );
+
+    await expect(
+      readManifest("att_invalid_verification_state", { rootDir })
+    ).rejects.toThrow(InvalidManifestError);
+    await expect(listManifests({ rootDir })).rejects.toThrow(InvalidManifestError);
   });
 
   it("should return an empty list when the manifest store does not exist", async () => {

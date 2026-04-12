@@ -108,12 +108,13 @@ Environment-variable and CLI-flag precedence MAY be added later once the overrid
 
 ## Unknown Keys
 
-In future implementation:
+The current implementation already rejects unknown keys at the top level outside the documented contract.
+Within that contract, reserved core namespaces are currently strict:
 
-- unknown keys at the top level should be rejected
+- unknown keys under `runtimes`, `bootstrap`, `verify`, and `policies` are rejected
 - unknown keys under `extensions` may be tolerated
 
-Early implementations SHOULD prefer strict validation for reserved core namespaces and use `extensions` as the only intentionally open-ended top-level namespace.
+`extensions` remains the only intentionally open-ended top-level namespace in the current contract.
 
 ## Out Of Scope For v1 Docs
 

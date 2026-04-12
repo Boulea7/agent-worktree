@@ -36,16 +36,18 @@ const instructionsSchema = z
   })
   .strict();
 
+const reservedEmptyNamespaceSchema = z.object({}).strict();
+
 export const rawProjectConfigSchema = z
   .object({
     version: z.string(),
     compatibility: compatibilitySchema.optional(),
     defaults: defaultsSchema.optional(),
     instructions: instructionsSchema.optional(),
-    runtimes: z.record(z.string(), z.unknown()).optional(),
-    bootstrap: z.record(z.string(), z.unknown()).optional(),
-    verify: z.record(z.string(), z.unknown()).optional(),
-    policies: z.record(z.string(), z.unknown()).optional(),
+    runtimes: reservedEmptyNamespaceSchema.optional(),
+    bootstrap: reservedEmptyNamespaceSchema.optional(),
+    verify: reservedEmptyNamespaceSchema.optional(),
+    policies: reservedEmptyNamespaceSchema.optional(),
     extensions: z.record(z.string(), z.unknown()).optional()
   })
   .strict();

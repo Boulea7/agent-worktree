@@ -202,6 +202,7 @@ The initial `detected` semantics are also intentionally small:
 `agent-worktree compat probe <tool>` is a read-only per-runtime compatibility probe command.
 
 It SHOULD report current adapter truth plus a bounded public probe result for exactly one runtime.
+In the current implementation, the only concrete execution-backed probe path is `codex-cli`; other runtimes are expected to remain descriptor-only until a later phase adds another concrete probe path.
 
 Machine-readable output SHOULD expose one `probe` record:
 
@@ -323,6 +324,7 @@ Current phase rules:
 Machine-readable output for a successful create SHOULD expose the stored attempt record, including additive provenance fields when present.
 In the current thin lineage/source slice, create output is expected to include `supportTier`, `sourceKind: "direct"`, and omit `parentAttemptId`.
 The CLI does not yet expose public flags or commands for fork, resume, or delegated-child creation.
+A durable manifest may already be written at attempt-create time, before any runtime execution starts.
 
 An early informative shape may look like:
 
@@ -378,10 +380,11 @@ List behavior MUST remain inventory-oriented: it does not validate parent lineag
 `agent-worktree attempt cleanup` SHOULD identify its target with an explicit `--attempt-id` flag.
 A positional attempt identifier is intentionally not part of the preferred contract.
 
-Cleanup is intended to remove disposable runtime material such as a worktree or transient session artifacts while preserving the durable runtime manifest.
+Cleanup is intended to remove disposable runtime material such as a worktree while preserving the durable runtime manifest.
 Cleanup MUST NOT treat manifest removal as success for a cleaned attempt.
 Cleanup MUST return a structured success payload for exactly one targeted attempt.
 Cleanup SHOULD preserve additive attempt provenance fields in the returned attempt payload and in the rewritten manifest.
+In the current implementation, a recorded `manifest.session` blocks non-`already_cleaned` cleanup paths rather than being silently cleared as disposable runtime material.
 
 Machine-readable cleanup output SHOULD be structured around explicit outcomes rather than free-form text.
 The success payload SHOULD distinguish at least:
