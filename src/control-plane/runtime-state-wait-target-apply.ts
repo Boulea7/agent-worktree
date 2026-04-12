@@ -25,6 +25,21 @@ export async function applyExecutionSessionWaitTarget(
     );
   }
 
+  if (typeof input.invokeWait !== "function") {
+    throw new ValidationError(
+      "Execution session wait target apply requires invokeWait to be a function."
+    );
+  }
+
+  if (
+    input.resolveSessionLifecycleCapability !== undefined &&
+    typeof input.resolveSessionLifecycleCapability !== "function"
+  ) {
+    throw new ValidationError(
+      "Execution session wait target apply requires resolveSessionLifecycleCapability to be a function when provided."
+    );
+  }
+
   const request = deriveExecutionSessionWaitRequest({
     target: input.target,
     ...(input.timeoutMs === undefined ? {} : { timeoutMs: input.timeoutMs })

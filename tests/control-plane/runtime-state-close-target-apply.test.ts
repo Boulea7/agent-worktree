@@ -164,6 +164,27 @@ describe("control-plane runtime-state close-target-apply helpers", () => {
     );
   });
 
+  it("should fail loudly when close callbacks are not functions", async () => {
+    await expect(
+      applyExecutionSessionCloseTarget({
+        target: createCloseTarget(),
+        invokeClose: "close" as never
+      })
+    ).rejects.toThrow(
+      "Execution session close target apply requires invokeClose to be a function."
+    );
+
+    await expect(
+      applyExecutionSessionCloseTarget({
+        target: createCloseTarget(),
+        invokeClose: async () => undefined,
+        resolveSessionLifecycleCapability: "yes" as never
+      })
+    ).rejects.toThrow(
+      "Execution session close target apply requires resolveSessionLifecycleCapability to be a function when provided."
+    );
+  });
+
   it("should surface invoker failures directly without returning a partial target-apply result", async () => {
     const expectedError = new Error("close failed");
 

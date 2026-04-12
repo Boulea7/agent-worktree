@@ -28,6 +28,15 @@ export function deriveExecutionSessionCloseReadiness(
     );
   }
 
+  if (
+    input.resolveSessionLifecycleCapability !== undefined &&
+    typeof input.resolveSessionLifecycleCapability !== "function"
+  ) {
+    throw new ValidationError(
+      "Execution session close readiness requires resolveSessionLifecycleCapability to be a function when provided."
+    );
+  }
+
   const disposition = deriveExecutionSessionLifecycleDisposition({
     context: input.context
   });
@@ -70,7 +79,15 @@ function resolveSessionLifecycleCapability(
   runtime: string
 ): boolean {
   if (input.resolveSessionLifecycleCapability !== undefined) {
-    return input.resolveSessionLifecycleCapability(runtime);
+    const supported = input.resolveSessionLifecycleCapability(runtime);
+
+    if (typeof supported !== "boolean") {
+      throw new ValidationError(
+        "Execution session close readiness requires resolveSessionLifecycleCapability to return a boolean."
+      );
+    }
+
+    return supported;
   }
 
   try {

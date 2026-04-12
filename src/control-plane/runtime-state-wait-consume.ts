@@ -15,8 +15,15 @@ const validBlockingReasons =
 export async function consumeExecutionSessionWait(
   input: ExecutionSessionWaitConsumeInput
 ): Promise<ExecutionSessionWaitConsume> {
+  if (typeof input !== "object" || input === null || Array.isArray(input)) {
+    throw new ValidationError(
+      "Execution session wait consume input must be an object."
+    );
+  }
+
   const { consumer, invokeWait } = input;
   validateConsumer(consumer);
+  validateInvokeWait(invokeWait);
   const request = normalizeExecutionSessionWaitRequest(consumer.request);
   validateReadiness(consumer.readiness);
 
@@ -35,6 +42,14 @@ export async function consumeExecutionSessionWait(
     readiness: consumer.readiness,
     invoked: true
   };
+}
+
+function validateInvokeWait(value: unknown): void {
+  if (typeof value !== "function") {
+    throw new ValidationError(
+      "Execution session wait consume requires invokeWait to be a function."
+    );
+  }
 }
 
 function validateConsumer(value: unknown): void {

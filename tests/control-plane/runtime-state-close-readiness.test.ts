@@ -87,6 +87,54 @@ describe("control-plane runtime-state close readiness helpers", () => {
     });
   });
 
+  it("should fail loudly when the close capability resolver does not return a boolean", () => {
+    const context = createContext({
+      attemptId: "att_invalid_resolver",
+      sessionId: "thr_invalid_resolver",
+      lifecycleState: "active",
+      sourceKind: "direct"
+    });
+
+    expect(() =>
+      deriveExecutionSessionCloseReadiness({
+        context,
+        resolveSessionLifecycleCapability: () => "yes" as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionCloseReadiness({
+        context,
+        resolveSessionLifecycleCapability: () => "yes" as never
+      })
+    ).toThrow(
+      "Execution session close readiness requires resolveSessionLifecycleCapability to return a boolean."
+    );
+  });
+
+  it("should fail loudly when the close capability resolver is not a function", () => {
+    const context = createContext({
+      attemptId: "att_invalid_resolver_shape",
+      sessionId: "thr_invalid_resolver_shape",
+      lifecycleState: "active",
+      sourceKind: "direct"
+    });
+
+    expect(() =>
+      deriveExecutionSessionCloseReadiness({
+        context,
+        resolveSessionLifecycleCapability: "yes" as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionCloseReadiness({
+        context,
+        resolveSessionLifecycleCapability: "yes" as never
+      })
+    ).toThrow(
+      "Execution session close readiness requires resolveSessionLifecycleCapability to be a function when provided."
+    );
+  });
+
   it("should block close when the context lifecycle is terminal", () => {
     const context = createContext({
       attemptId: "att_completed",

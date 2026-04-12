@@ -25,6 +25,21 @@ export async function applyExecutionSessionCloseTarget(
     );
   }
 
+  if (typeof input.invokeClose !== "function") {
+    throw new ValidationError(
+      "Execution session close target apply requires invokeClose to be a function."
+    );
+  }
+
+  if (
+    input.resolveSessionLifecycleCapability !== undefined &&
+    typeof input.resolveSessionLifecycleCapability !== "function"
+  ) {
+    throw new ValidationError(
+      "Execution session close target apply requires resolveSessionLifecycleCapability to be a function when provided."
+    );
+  }
+
   const request = deriveExecutionSessionCloseRequest({
     target: input.target
   });

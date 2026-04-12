@@ -217,6 +217,48 @@ describe("control-plane runtime-state close-consume helpers", () => {
     expect(invokeClose).not.toHaveBeenCalled();
   });
 
+  it("should fail loudly when the top-level close-consume input is malformed", async () => {
+    await expect(
+      consumeExecutionSessionClose(undefined as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeExecutionSessionClose(undefined as never)
+    ).rejects.toThrow(
+      "Execution session close consume input must be an object."
+    );
+  });
+
+  it("should fail loudly when invokeClose is not a function", async () => {
+    await expect(
+      consumeExecutionSessionClose({
+        consumer: createCloseConsumer({
+          readiness: {
+            blockingReasons: [],
+            canConsumeClose: true,
+            hasBlockingReasons: false,
+            sessionLifecycleSupported: true
+          }
+        }),
+        invokeClose: "close" as never
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeExecutionSessionClose({
+        consumer: createCloseConsumer({
+          readiness: {
+            blockingReasons: [],
+            canConsumeClose: true,
+            hasBlockingReasons: false,
+            sessionLifecycleSupported: true
+          }
+        }),
+        invokeClose: "close" as never
+      })
+    ).rejects.toThrow(
+      "Execution session close consume requires invokeClose to be a function."
+    );
+  });
+
   it("should fail loudly with a validation error when consumer.request uses non-string identifiers", async () => {
     const consumer = createCloseConsumer({
       request: createCloseRequest({

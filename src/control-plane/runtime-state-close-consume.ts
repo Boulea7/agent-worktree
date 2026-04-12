@@ -15,8 +15,15 @@ const validBlockingReasons =
 export async function consumeExecutionSessionClose(
   input: ExecutionSessionCloseConsumeInput
 ): Promise<ExecutionSessionCloseConsume> {
+  if (typeof input !== "object" || input === null || Array.isArray(input)) {
+    throw new ValidationError(
+      "Execution session close consume input must be an object."
+    );
+  }
+
   const { consumer, invokeClose } = input;
   validateConsumer(consumer);
+  validateInvokeClose(invokeClose);
   const request = normalizeExecutionSessionCloseRequest(consumer.request);
   validateReadiness(consumer.readiness);
 
@@ -35,6 +42,14 @@ export async function consumeExecutionSessionClose(
     readiness: consumer.readiness,
     invoked: true
   };
+}
+
+function validateInvokeClose(value: unknown): void {
+  if (typeof value !== "function") {
+    throw new ValidationError(
+      "Execution session close consume requires invokeClose to be a function."
+    );
+  }
 }
 
 function validateConsumer(value: unknown): void {

@@ -220,6 +220,48 @@ describe("control-plane runtime-state wait-consume helpers", () => {
     expect(invokeWait).not.toHaveBeenCalled();
   });
 
+  it("should fail loudly when the top-level wait-consume input is malformed", async () => {
+    await expect(
+      consumeExecutionSessionWait(undefined as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeExecutionSessionWait(undefined as never)
+    ).rejects.toThrow(
+      "Execution session wait consume input must be an object."
+    );
+  });
+
+  it("should fail loudly when invokeWait is not a function", async () => {
+    await expect(
+      consumeExecutionSessionWait({
+        consumer: createWaitConsumer({
+          readiness: {
+            blockingReasons: [],
+            canConsumeWait: true,
+            hasBlockingReasons: false,
+            sessionLifecycleSupported: true
+          }
+        }),
+        invokeWait: "wait" as never
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeExecutionSessionWait({
+        consumer: createWaitConsumer({
+          readiness: {
+            blockingReasons: [],
+            canConsumeWait: true,
+            hasBlockingReasons: false,
+            sessionLifecycleSupported: true
+          }
+        }),
+        invokeWait: "wait" as never
+      })
+    ).rejects.toThrow(
+      "Execution session wait consume requires invokeWait to be a function."
+    );
+  });
+
   it("should fail loudly with a validation error when consumer.request uses non-string identifiers", async () => {
     const consumer = createWaitConsumer({
       request: createWaitRequest({
