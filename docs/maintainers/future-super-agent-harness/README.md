@@ -56,6 +56,7 @@ For any future implementation slice that lands in Phase 6 or later, read this di
 - `README.md`
 - `reuse-map-from-local-upstreams-and-current-codebase.md`
 - `execution-and-control-plane.md`
+- `todo-and-task-tracking.md`
 - `sandbox-skills-and-extensibility.md`
 - `memory-state-and-persistence.md`
 - `vision-and-positioning.md`

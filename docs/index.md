@@ -64,12 +64,12 @@ For committed repository truth, start with `SPEC.md`, then `README.md`, then thi
 - [Development Phases](maintainers/development-phases.md)
 - [Automation Readiness](maintainers/automation-readiness.md)
 - [Future Super Agent Harness Planning (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/README.md)
-- [Future Harness Reuse Map](maintainers/future-super-agent-harness/reuse-map-from-local-upstreams-and-current-codebase.md)
-- [Future Harness Execution and Control Plane](maintainers/future-super-agent-harness/execution-and-control-plane.md)
-- [Future Harness Sandbox and Extensibility Notes](maintainers/future-super-agent-harness/sandbox-skills-and-extensibility.md)
-- [Future Harness Memory and State Notes](maintainers/future-super-agent-harness/memory-state-and-persistence.md)
-- [Future Harness Vision and Positioning](maintainers/future-super-agent-harness/vision-and-positioning.md)
-- [Future Harness Review Risks and Open Questions](maintainers/future-super-agent-harness/review-risks-and-open-questions.md)
+- [Future Harness Reuse Map (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/reuse-map-from-local-upstreams-and-current-codebase.md)
+- [Future Harness Execution and Control Plane (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/execution-and-control-plane.md)
+- [Future Harness Sandbox and Extensibility Notes (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/sandbox-skills-and-extensibility.md)
+- [Future Harness Memory and State Notes (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/memory-state-and-persistence.md)
+- [Future Harness Vision and Positioning (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/vision-and-positioning.md)
+- [Future Harness Review Risks and Open Questions (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/review-risks-and-open-questions.md)
 
 ## Decisions
 
