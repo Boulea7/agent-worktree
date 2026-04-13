@@ -151,6 +151,25 @@ describe("selection handoff-finalization-request-summary-shared helpers", () => 
     );
   });
 
+  it("should fail closed when reading top-level summary fields through accessor-shaped inputs", () => {
+    expect(() =>
+      validateAttemptHandoffFinalizationRequestSummaryForApply({
+        get requestBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      validateAttemptHandoffFinalizationRequestSummaryForApply({
+        get requestBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization request apply requires summary to be a readable object."
+    );
+  });
+
   it("should reject malformed request entries before apply-side consumers see them", () => {
     expect(() =>
       validateAttemptHandoffFinalizationRequestSummaryForApply(
@@ -192,6 +211,103 @@ describe("selection handoff-finalization-request-summary-shared helpers", () => 
       )
     ).toThrow(
       "Attempt handoff finalization request apply requires summary.requests entries to use the existing attempt source-kind vocabulary when provided."
+    );
+  });
+
+  it("should reject inherited request containers and inherited request entry indexes", () => {
+    const inheritedSummary = Object.create({
+      requestBasis: attemptHandoffFinalizationRequestBasis,
+      resultCount: 1,
+      invokedResultCount: 1,
+      blockedResultCount: 0,
+      blockingReasons: [],
+      canFinalizeHandoff: true,
+      requests: [createRequest()]
+    });
+
+    expect(() =>
+      validateAttemptHandoffFinalizationRequestSummaryForApply(
+        inheritedSummary as never
+      )
+    ).toThrow(
+      'Attempt handoff finalization request apply requires summary.requestBasis to be "handoff_finalization_target_summary".'
+    );
+
+    const inheritedRequests = [createRequest()];
+    Object.setPrototypeOf(
+      inheritedRequests,
+      Object.assign([], {
+        1: createRequest({
+          attemptId: "att_inherited",
+          runtime: "gemini-cli"
+        })
+      })
+    );
+    inheritedRequests.length = 2;
+
+    expect(() =>
+      validateAttemptHandoffFinalizationRequestSummaryForApply(
+        createSummary({
+          requests: inheritedRequests as never,
+          resultCount: 2,
+          invokedResultCount: 2
+        })
+      )
+    ).toThrow(
+      "Attempt handoff finalization request apply requires summary.requests entries to be objects."
+    );
+  });
+
+  it("should fail closed when request entries use accessor-shaped fields", () => {
+    const request = createRequest();
+    Object.defineProperty(request, "runtime", {
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    expect(() =>
+      validateAttemptHandoffFinalizationRequestSummaryForApply(
+        createSummary({
+          requests: [request]
+        })
+      )
+    ).toThrow(ValidationError);
+    expect(() =>
+      validateAttemptHandoffFinalizationRequestSummaryForApply(
+        createSummary({
+          requests: [request]
+        })
+      )
+    ).toThrow(
+      "Attempt handoff finalization request apply requires summary to be a readable object."
+    );
+  });
+
+  it("should reject inherited blockingReasons indexes", () => {
+    const blockingReasons = ["handoff_unsupported"];
+    Object.setPrototypeOf(
+      blockingReasons,
+      Object.assign([], {
+        1: "no_results"
+      })
+    );
+    blockingReasons.length = 2;
+
+    expect(() =>
+      validateAttemptHandoffFinalizationRequestSummaryForApply(
+        createSummary({
+          resultCount: 2,
+          invokedResultCount: 0,
+          blockedResultCount: 2,
+          canFinalizeHandoff: false,
+          requests: [],
+          blockingReasons: blockingReasons as never
+        })
+      )
+    ).toThrow(
+      "Attempt handoff finalization request apply requires summary.blockingReasons to use the existing handoff decision blocker vocabulary."
     );
   });
 
