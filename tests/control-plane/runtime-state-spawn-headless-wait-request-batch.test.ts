@@ -237,6 +237,73 @@ describe(
       expect(timeoutReads).toBe(1);
     });
 
+    it("should snapshot headlessWaitTargetBatch.results once before iterating the batch", () => {
+      let resultsReads = 0;
+
+      const supportedTarget = createHeadlessWaitTarget({
+        target: {
+          attemptId: "att_supported_wait_results_once",
+          runtime: "supported-cli",
+          sessionId: "thr_supported_wait_results_once"
+        }
+      });
+
+      expect(
+        deriveExecutionSessionSpawnHeadlessWaitRequestBatch({
+          headlessWaitTargetBatch: {
+            headlessWaitCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            get results() {
+              resultsReads += 1;
+
+              if (resultsReads > 1) {
+                throw new Error("results getter read twice");
+              }
+
+              return [supportedTarget];
+            }
+          } as never
+        })
+      ).toEqual({
+        headlessWaitTargetBatch: {
+          headlessWaitCandidateBatch: {
+            headlessContextBatch: {
+              headlessViewBatch: {
+                headlessRecordBatch: {
+                  results: []
+                },
+                view: buildEmptyView()
+              },
+              results: []
+            },
+            results: []
+          },
+          results: [supportedTarget]
+        },
+        results: [
+          {
+            headlessWaitTarget: supportedTarget,
+            request: {
+              attemptId: "att_supported_wait_results_once",
+              runtime: "supported-cli",
+              sessionId: "thr_supported_wait_results_once"
+            }
+          }
+        ]
+      });
+      expect(resultsReads).toBe(1);
+    });
+
     it("should fail loudly when headlessWaitTargetBatch.results entries are sparse or non-object", () => {
       const sparseResults = new Array(1);
 

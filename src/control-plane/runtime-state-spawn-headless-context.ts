@@ -9,6 +9,29 @@ import type {
   ExecutionSessionSpawnHeadlessContextInput
 } from "./types.js";
 
+function snapshotObject(
+  value: Record<string, unknown>,
+  overrides: Record<string, unknown>
+): Record<string, unknown> {
+  const snapshot = Object.create(Object.getPrototypeOf(value)) as Record<
+    string,
+    unknown
+  >;
+
+  Object.defineProperties(snapshot, Object.getOwnPropertyDescriptors(value));
+
+  for (const [key, override] of Object.entries(overrides)) {
+    Object.defineProperty(snapshot, key, {
+      value: override,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  }
+
+  return snapshot;
+}
+
 export function deriveExecutionSessionSpawnHeadlessContext(
   input: ExecutionSessionSpawnHeadlessContextInput
 ): ExecutionSessionSpawnHeadlessContext {
@@ -95,5 +118,10 @@ function validateHeadlessContextInput(
     );
   }
 
-  return headlessView;
+  return snapshotObject(headlessView as unknown as Record<string, unknown>, {
+    headlessRecord: snapshotObject(headlessRecordContainer, {
+      record: record as Record<string, unknown>
+    }),
+    view: view as Record<string, unknown>
+  }) as unknown as ExecutionSessionSpawnHeadlessContextInput["headlessView"];
 }

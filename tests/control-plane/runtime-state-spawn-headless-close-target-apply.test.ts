@@ -23,6 +23,42 @@ describe(
       );
     });
 
+    it("should reject inherited or getter-backed top-level headlessCloseTarget inputs", async () => {
+      const canonicalTarget = createHeadlessCloseTarget({
+        target: {
+          attemptId: "att_top_level_close_apply",
+          runtime: "supported-cli",
+          sessionId: "thr_top_level_close_apply"
+        }
+      });
+      const inheritedInput = Object.create({
+        headlessCloseTarget: canonicalTarget
+      });
+      inheritedInput.invokeClose = async () => undefined;
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTarget(inheritedInput as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless close target apply requires a headlessCloseTarget wrapper."
+      );
+
+      const accessorInput = {
+        invokeClose: async () => undefined
+      };
+      Object.defineProperty(accessorInput, "headlessCloseTarget", {
+        enumerable: true,
+        get() {
+          throw new Error("boom");
+        }
+      });
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTarget(accessorInput as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless close target apply requires a headlessCloseTarget wrapper."
+      );
+    });
+
     it("should return the original wrapper unchanged when no close target is available", async () => {
       const headlessCloseTarget = createHeadlessCloseTarget();
       let invoked = false;
@@ -332,6 +368,105 @@ describe(
         ]
       });
       expect(invokedSessionIds).toEqual(["thr_supported_close"]);
+    });
+
+    it("should snapshot headlessCloseTargetBatch.results once before applying the batch", async () => {
+      let resultsReads = 0;
+      const supportedTarget = createHeadlessCloseTarget({
+        target: {
+          attemptId: "att_supported_close_apply_results_once",
+          runtime: "supported-cli",
+          sessionId: "thr_supported_close_apply_results_once"
+        }
+      });
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch({
+          headlessCloseTargetBatch: {
+            headlessCloseCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            get results() {
+              resultsReads += 1;
+
+              if (resultsReads > 1) {
+                throw new Error("results getter read twice");
+              }
+
+              return [supportedTarget];
+            }
+          } as never,
+          invokeClose: async () => undefined,
+          resolveSessionLifecycleCapability: (runtime) => runtime === "supported-cli"
+        })
+      ).resolves.toEqual({
+        headlessCloseTargetBatch: {
+          headlessCloseCandidateBatch: {
+            headlessContextBatch: {
+              headlessViewBatch: {
+                headlessRecordBatch: {
+                  results: []
+                },
+                view: buildEmptyView()
+              },
+              results: []
+            },
+            results: []
+          },
+          results: [supportedTarget]
+        },
+        results: [
+          {
+            headlessCloseTarget: supportedTarget,
+            apply: {
+              request: {
+                attemptId: "att_supported_close_apply_results_once",
+                runtime: "supported-cli",
+                sessionId: "thr_supported_close_apply_results_once"
+              },
+              apply: {
+                consumer: {
+                  request: {
+                    attemptId: "att_supported_close_apply_results_once",
+                    runtime: "supported-cli",
+                    sessionId: "thr_supported_close_apply_results_once"
+                  },
+                  readiness: {
+                    blockingReasons: [],
+                    canConsumeClose: true,
+                    hasBlockingReasons: false,
+                    sessionLifecycleSupported: true
+                  }
+                },
+                consume: {
+                  request: {
+                    attemptId: "att_supported_close_apply_results_once",
+                    runtime: "supported-cli",
+                    sessionId: "thr_supported_close_apply_results_once"
+                  },
+                  readiness: {
+                    blockingReasons: [],
+                    canConsumeClose: true,
+                    hasBlockingReasons: false,
+                    sessionLifecycleSupported: true
+                  },
+                  invoked: true
+                }
+              }
+            }
+          }
+        ]
+      });
+      expect(resultsReads).toBe(1);
     });
 
     it("should fail fast when the first batch entry does not provide a headless wrapper", async () => {

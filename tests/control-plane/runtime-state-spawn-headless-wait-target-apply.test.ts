@@ -23,6 +23,42 @@ describe(
       );
     });
 
+    it("should reject inherited or getter-backed top-level headlessWaitTarget inputs", async () => {
+      const canonicalTarget = createHeadlessWaitTarget({
+        target: {
+          attemptId: "att_top_level_wait_apply",
+          runtime: "supported-cli",
+          sessionId: "thr_top_level_wait_apply"
+        }
+      });
+      const inheritedInput = Object.create({
+        headlessWaitTarget: canonicalTarget
+      });
+      inheritedInput.invokeWait = async () => undefined;
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTarget(inheritedInput as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless wait target apply requires a headlessWaitTarget wrapper."
+      );
+
+      const accessorInput = {
+        invokeWait: async () => undefined
+      };
+      Object.defineProperty(accessorInput, "headlessWaitTarget", {
+        enumerable: true,
+        get() {
+          throw new Error("boom");
+        }
+      });
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTarget(accessorInput as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless wait target apply requires a headlessWaitTarget wrapper."
+      );
+    });
+
     it("should return the original wrapper unchanged when no wait target is available", async () => {
       const headlessWaitTarget = createHeadlessWaitTarget();
       let invoked = false;
@@ -342,6 +378,105 @@ describe(
         ]
       });
       expect(invokedSessionIds).toEqual(["thr_supported_wait"]);
+    });
+
+    it("should snapshot headlessWaitTargetBatch.results once before applying the batch", async () => {
+      let resultsReads = 0;
+      const supportedTarget = createHeadlessWaitTarget({
+        target: {
+          attemptId: "att_supported_wait_apply_results_once",
+          runtime: "supported-cli",
+          sessionId: "thr_supported_wait_apply_results_once"
+        }
+      });
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch({
+          headlessWaitTargetBatch: {
+            headlessWaitCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            get results() {
+              resultsReads += 1;
+
+              if (resultsReads > 1) {
+                throw new Error("results getter read twice");
+              }
+
+              return [supportedTarget];
+            }
+          } as never,
+          invokeWait: async () => undefined,
+          resolveSessionLifecycleCapability: (runtime) => runtime === "supported-cli"
+        })
+      ).resolves.toEqual({
+        headlessWaitTargetBatch: {
+          headlessWaitCandidateBatch: {
+            headlessContextBatch: {
+              headlessViewBatch: {
+                headlessRecordBatch: {
+                  results: []
+                },
+                view: buildEmptyView()
+              },
+              results: []
+            },
+            results: []
+          },
+          results: [supportedTarget]
+        },
+        results: [
+          {
+            headlessWaitTarget: supportedTarget,
+            apply: {
+              request: {
+                attemptId: "att_supported_wait_apply_results_once",
+                runtime: "supported-cli",
+                sessionId: "thr_supported_wait_apply_results_once"
+              },
+              apply: {
+                consumer: {
+                  request: {
+                    attemptId: "att_supported_wait_apply_results_once",
+                    runtime: "supported-cli",
+                    sessionId: "thr_supported_wait_apply_results_once"
+                  },
+                  readiness: {
+                    blockingReasons: [],
+                    canConsumeWait: true,
+                    hasBlockingReasons: false,
+                    sessionLifecycleSupported: true
+                  }
+                },
+                consume: {
+                  request: {
+                    attemptId: "att_supported_wait_apply_results_once",
+                    runtime: "supported-cli",
+                    sessionId: "thr_supported_wait_apply_results_once"
+                  },
+                  readiness: {
+                    blockingReasons: [],
+                    canConsumeWait: true,
+                    hasBlockingReasons: false,
+                    sessionLifecycleSupported: true
+                  },
+                  invoked: true
+                }
+              }
+            }
+          }
+        ]
+      });
+      expect(resultsReads).toBe(1);
     });
 
     it("should fail fast when the first batch entry does not provide a headless wrapper", async () => {

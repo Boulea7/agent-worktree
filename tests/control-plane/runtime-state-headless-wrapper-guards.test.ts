@@ -10,7 +10,7 @@ import {
 } from "../../src/control-plane/runtime-state-headless-wrapper-guards.js";
 
 describe("control-plane runtime-state headless-wrapper-guards helpers", () => {
-  it("should return the same target wrapper reference when the wrapper is valid", () => {
+  it("should snapshot target wrapper values when the wrapper is valid", () => {
     const wrapper = {
       headlessWaitCandidate: {
         candidate: {},
@@ -21,16 +21,18 @@ describe("control-plane runtime-state headless-wrapper-guards helpers", () => {
       }
     };
 
-    expect(
-      normalizeHeadlessTargetWrapper(wrapper, {
-        context: "Execution session spawn headless wait request",
-        nestedKey: "headlessWaitCandidate",
-        wrapperKey: "headlessWaitTarget"
-      })
-    ).toBe(wrapper);
+    const result = normalizeHeadlessTargetWrapper(wrapper, {
+      context: "Execution session spawn headless wait request",
+      nestedKey: "headlessWaitCandidate",
+      wrapperKey: "headlessWaitTarget"
+    });
+
+    expect(result).toEqual(wrapper);
+    expect(result).not.toBe(wrapper);
+    expect(result.headlessWaitCandidate).not.toBe(wrapper.headlessWaitCandidate);
   });
 
-  it("should return the same headless context wrapper reference when the wrapper is valid", () => {
+  it("should snapshot headless context wrapper values when the wrapper is valid", () => {
     const wrapper = {
       headlessContext: {
         context: {},
@@ -38,12 +40,14 @@ describe("control-plane runtime-state headless-wrapper-guards helpers", () => {
       }
     };
 
-    expect(
-      normalizeHeadlessContextWrapper(wrapper, {
-        context: "Execution session spawn headless wait candidate",
-        wrapperKey: "headlessContext"
-      })
-    ).toBe(wrapper);
+    const result = normalizeHeadlessContextWrapper(wrapper, {
+      context: "Execution session spawn headless wait candidate",
+      wrapperKey: "headlessContext"
+    });
+
+    expect(result).toEqual(wrapper);
+    expect(result).not.toBe(wrapper);
+    expect(result.headlessContext).not.toBe(wrapper.headlessContext);
   });
 
   it("should reject malformed headless context wrappers", () => {
@@ -205,7 +209,7 @@ describe("control-plane runtime-state headless-wrapper-guards helpers", () => {
     );
   });
 
-  it("should return the same batch wrapper reference when the companion wrapper is valid", () => {
+  it("should snapshot batch wrapper values when the companion wrapper is valid", () => {
     const wrapper = {
       headlessContextBatch: {
         headlessViewBatch: {
@@ -219,13 +223,16 @@ describe("control-plane runtime-state headless-wrapper-guards helpers", () => {
       results: []
     };
 
-    expect(
-      normalizeHeadlessTargetBatchWrapper(wrapper, {
-        context: "Execution session spawn headless wait request batch",
-        wrapperKey: "headlessWaitCandidateBatch",
-        companionKey: "headlessContextBatch"
-      })
-    ).toBe(wrapper);
+    const result = normalizeHeadlessTargetBatchWrapper(wrapper, {
+      context: "Execution session spawn headless wait request batch",
+      wrapperKey: "headlessWaitCandidateBatch",
+      companionKey: "headlessContextBatch"
+    });
+
+    expect(result).toEqual(wrapper);
+    expect(result).not.toBe(wrapper);
+    expect(result.results).toBe(wrapper.results);
+    expect(result.headlessContextBatch).not.toBe(wrapper.headlessContextBatch);
   });
 
   it("should reject malformed target batch companions even when results is an array", () => {
@@ -245,7 +252,7 @@ describe("control-plane runtime-state headless-wrapper-guards helpers", () => {
     );
   });
 
-  it("should return the same headless view batch wrapper reference when nested objects are valid", () => {
+  it("should snapshot headless view batch wrapper values when nested objects are valid", () => {
     const wrapper = {
       headlessRecordBatch: {
         results: []
@@ -253,12 +260,14 @@ describe("control-plane runtime-state headless-wrapper-guards helpers", () => {
       view: {}
     };
 
-    expect(
-      normalizeHeadlessViewBatchWrapper(wrapper, {
-        context: "Execution session spawn headless context batch",
-        wrapperKey: "headlessViewBatch"
-      })
-    ).toBe(wrapper);
+    const result = normalizeHeadlessViewBatchWrapper(wrapper, {
+      context: "Execution session spawn headless context batch",
+      wrapperKey: "headlessViewBatch"
+    });
+
+    expect(result).toEqual(wrapper);
+    expect(result).not.toBe(wrapper);
+    expect(result.headlessRecordBatch).not.toBe(wrapper.headlessRecordBatch);
   });
 
   it("should reject malformed headless view batch wrappers", () => {
@@ -286,7 +295,7 @@ describe("control-plane runtime-state headless-wrapper-guards helpers", () => {
     );
   });
 
-  it("should return the same headless context batch wrapper reference when nested objects are valid", () => {
+  it("should snapshot headless context batch wrapper values when nested objects are valid", () => {
     const wrapper = {
       headlessViewBatch: {
         headlessRecordBatch: {
@@ -297,12 +306,126 @@ describe("control-plane runtime-state headless-wrapper-guards helpers", () => {
       results: []
     };
 
-    expect(
-      normalizeHeadlessContextBatchWrapper(wrapper, {
-        context: "Execution session spawn headless wait candidate batch",
-        wrapperKey: "headlessContextBatch"
-      })
-    ).toBe(wrapper);
+    const result = normalizeHeadlessContextBatchWrapper(wrapper, {
+      context: "Execution session spawn headless wait candidate batch",
+      wrapperKey: "headlessContextBatch"
+    });
+
+    expect(result).toEqual(wrapper);
+    expect(result).not.toBe(wrapper);
+    expect(result.headlessViewBatch).not.toBe(wrapper.headlessViewBatch);
+  });
+
+  it("should snapshot nested getter-backed values so callers can reuse the normalized wrappers", () => {
+    let nestedWrapperReads = 0;
+    let resultsReads = 0;
+    let companionReads = 0;
+
+    const targetWrapper = {};
+    Object.defineProperty(targetWrapper, "headlessWaitCandidate", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        nestedWrapperReads += 1;
+
+        if (nestedWrapperReads > 1) {
+          throw new Error("nested wrapper getter read twice");
+        }
+
+        return {
+          candidate: {},
+          headlessContext: {
+            context: {},
+            headlessView: {}
+          }
+        };
+      }
+    });
+
+    const normalizedTarget = normalizeHeadlessTargetWrapper(targetWrapper, {
+      context: "Execution session spawn headless wait request",
+      nestedKey: "headlessWaitCandidate",
+      wrapperKey: "headlessWaitTarget"
+    }) as Record<string, unknown>;
+
+    expect(normalizedTarget.headlessWaitCandidate).toEqual({
+      candidate: {},
+      headlessContext: {
+        context: {},
+        headlessView: {}
+      }
+    });
+    expect(normalizedTarget.headlessWaitCandidate).toEqual({
+      candidate: {},
+      headlessContext: {
+        context: {},
+        headlessView: {}
+      }
+    });
+    expect(nestedWrapperReads).toBe(1);
+
+    const batchWrapper = {};
+    Object.defineProperty(batchWrapper, "results", {
+      enumerable: true,
+      get() {
+        resultsReads += 1;
+
+        if (resultsReads > 1) {
+          throw new Error("results getter read twice");
+        }
+
+        return [];
+      }
+    });
+    Object.defineProperty(batchWrapper, "headlessContextBatch", {
+      enumerable: true,
+      get() {
+        companionReads += 1;
+
+        if (companionReads > 1) {
+          throw new Error("companion getter read twice");
+        }
+
+        return {
+          headlessViewBatch: {
+            headlessRecordBatch: {
+              results: []
+            },
+            view: {}
+          },
+          results: []
+        };
+      }
+    });
+
+    const normalizedBatch = normalizeHeadlessTargetBatchWrapper(batchWrapper, {
+      context: "Execution session spawn headless wait request batch",
+      wrapperKey: "headlessWaitTargetBatch",
+      companionKey: "headlessContextBatch"
+    }) as Record<string, unknown>;
+
+    expect(normalizedBatch.results).toEqual([]);
+    expect(normalizedBatch.results).toEqual([]);
+    expect(normalizedBatch.headlessContextBatch).toEqual({
+      headlessViewBatch: {
+        headlessRecordBatch: {
+          results: []
+        },
+        view: {}
+      },
+      results: []
+    });
+    expect(normalizedBatch.headlessContextBatch).toEqual({
+      headlessViewBatch: {
+        headlessRecordBatch: {
+          results: []
+        },
+        view: {}
+      },
+      results: []
+    });
+    expect(resultsReads).toBe(1);
+    expect(companionReads).toBe(1);
   });
 
   it("should reject malformed headless context batch wrappers", () => {

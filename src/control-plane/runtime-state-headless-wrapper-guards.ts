@@ -62,6 +62,35 @@ function readOwnArrayProperty(
   return property;
 }
 
+function snapshotObject(
+  value: Record<string, unknown>,
+  overrides: Record<string, unknown>
+): Record<string, unknown> {
+  const snapshot = Object.create(Object.getPrototypeOf(value)) as Record<
+    string,
+    unknown
+  >;
+
+  const descriptors = Object.getOwnPropertyDescriptors(value);
+
+  for (const key of Object.keys(overrides)) {
+    delete descriptors[key];
+  }
+
+  Object.defineProperties(snapshot, descriptors);
+
+  for (const [key, override] of Object.entries(overrides)) {
+    Object.defineProperty(snapshot, key, {
+      value: override,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  }
+
+  return snapshot;
+}
+
 export function normalizeHeadlessContextWrapper<T>(
   value: T,
   options: {
@@ -82,10 +111,19 @@ export function normalizeHeadlessContextWrapper<T>(
     `${options.context} requires a ${options.wrapperKey} wrapper.`
   );
   const entryMessage = `${options.context} requires ${options.wrapperKey} to include context and headlessView objects.`;
-  readOwnObjectProperty(headlessContext, "context", entryMessage);
-  readOwnObjectProperty(headlessContext, "headlessView", entryMessage);
+  const context = readOwnObjectProperty(headlessContext, "context", entryMessage);
+  const headlessView = readOwnObjectProperty(
+    headlessContext,
+    "headlessView",
+    entryMessage
+  );
 
-  return value;
+  return snapshotObject(wrapper, {
+    [options.wrapperKey]: snapshotObject(headlessContext, {
+      context,
+      headlessView
+    })
+  }) as T;
 }
 
 export function normalizeHeadlessTargetWrapper<T>(
@@ -107,8 +145,9 @@ export function normalizeHeadlessTargetWrapper<T>(
     );
   }
 
+  const wrapper = value as Record<string, unknown>;
   const nested = readOwnProperty(
-    value as Record<string, unknown>,
+    wrapper,
     options.nestedKey,
     `${options.context} requires a ${options.wrapperKey} wrapper.`
   );
@@ -123,18 +162,35 @@ export function normalizeHeadlessTargetWrapper<T>(
     );
   }
 
+  const nestedWrapper = nested as Record<string, unknown>;
   const nestedMessage = `${options.context} requires ${nestedPath} to include candidate and headlessContext objects.`;
-  readOwnObjectProperty(nested as Record<string, unknown>, "candidate", nestedMessage);
+  const candidate = readOwnObjectProperty(nestedWrapper, "candidate", nestedMessage);
   const headlessContext = readOwnObjectProperty(
-    nested as Record<string, unknown>,
+    nestedWrapper,
     "headlessContext",
     nestedMessage
   );
   const headlessContextMessage = `${options.context} requires ${nestedPath}.headlessContext to include context and headlessView objects.`;
-  readOwnObjectProperty(headlessContext, "context", headlessContextMessage);
-  readOwnObjectProperty(headlessContext, "headlessView", headlessContextMessage);
+  const context = readOwnObjectProperty(
+    headlessContext,
+    "context",
+    headlessContextMessage
+  );
+  const headlessView = readOwnObjectProperty(
+    headlessContext,
+    "headlessView",
+    headlessContextMessage
+  );
 
-  return value;
+  return snapshotObject(wrapper, {
+    [options.nestedKey]: snapshotObject(nestedWrapper, {
+      candidate,
+      headlessContext: snapshotObject(headlessContext, {
+        context,
+        headlessView
+      })
+    })
+  }) as T;
 }
 
 export function normalizeHeadlessTargetBatchWrapper<T>(
@@ -151,61 +207,61 @@ export function normalizeHeadlessTargetBatchWrapper<T>(
     );
   }
 
-  const results = readOwnProperty(
-    value as Record<string, unknown>,
+  const wrapper = value as Record<string, unknown>;
+  const results = readOwnArrayProperty(
+    wrapper,
     "results",
     `${options.context} requires ${options.wrapperKey}.results to be an array.`
   );
-
-  if (!Array.isArray(results)) {
-    throw new ValidationError(
-      `${options.context} requires ${options.wrapperKey}.results to be an array.`
-    );
-  }
+  const overrides: Record<string, unknown> = {
+    results
+  };
 
   if (options.companionKey !== undefined) {
-    validateBatchCompanion(value, options);
+    overrides[options.companionKey] = snapshotBatchCompanion(wrapper, options);
   }
 
-  return value;
+  return snapshotObject(wrapper, overrides) as T;
 }
 
-function validateBatchCompanion(
-  value: unknown,
+function snapshotBatchCompanion(
+  value: Record<string, unknown>,
   options: {
     context: string;
     companionKey?: string;
     wrapperKey: string;
   }
-): void {
-  const wrapper = value as Record<string, unknown>;
+): Record<string, unknown> {
   const companionKey = options.companionKey;
 
   if (companionKey === undefined) {
-    return;
+    throw new ValidationError(
+      `${options.context} requires ${options.wrapperKey} to include a valid companion wrapper.`
+    );
   }
 
   const companionMessage = `${options.context} requires ${options.wrapperKey} to include a valid ${companionKey} companion wrapper.`;
-  const companion = readOwnObjectProperty(wrapper, companionKey, companionMessage);
+  const companion = readOwnObjectProperty(value, companionKey, companionMessage);
 
   if (companionKey === "headlessContextBatch") {
-    normalizeHeadlessContextBatchWrapper(companion, {
+    return normalizeHeadlessContextBatchWrapper(companion, {
       context: options.context,
       wrapperKey: companionKey
     });
-    return;
   }
 
   if (
     companionKey === "headlessWaitCandidateBatch" ||
     companionKey === "headlessCloseCandidateBatch"
   ) {
-    normalizeHeadlessTargetBatchWrapper(companion, {
+    return normalizeHeadlessTargetBatchWrapper(companion, {
       context: options.context,
       wrapperKey: companionKey,
       companionKey: "headlessContextBatch"
     });
   }
+
+  return companion;
 }
 
 export function normalizeHeadlessViewBatchWrapper<T>(
@@ -228,14 +284,19 @@ export function normalizeHeadlessViewBatchWrapper<T>(
     "headlessRecordBatch",
     wrapperMessage
   );
-  readOwnObjectProperty(wrapper, "view", wrapperMessage);
-  readOwnArrayProperty(
+  const view = readOwnObjectProperty(wrapper, "view", wrapperMessage);
+  const results = readOwnArrayProperty(
     headlessRecordBatch,
     "results",
     `${options.context} requires ${options.wrapperKey}.headlessRecordBatch.results to be an array.`
   );
 
-  return value;
+  return snapshotObject(wrapper, {
+    headlessRecordBatch: snapshotObject(headlessRecordBatch, {
+      results
+    }),
+    view
+  }) as T;
 }
 
 export function normalizeHeadlessContextBatchWrapper<T>(
@@ -258,22 +319,17 @@ export function normalizeHeadlessContextBatchWrapper<T>(
     "headlessViewBatch",
     wrapperMessage
   );
-  readOwnArrayProperty(wrapper, "results", wrapperMessage);
-  const headlessRecordBatch = readOwnObjectProperty(
+  const results = readOwnArrayProperty(wrapper, "results", wrapperMessage);
+  const normalizedHeadlessViewBatch = normalizeHeadlessViewBatchWrapper(
     headlessViewBatch,
-    "headlessRecordBatch",
-    `${options.context} requires ${options.wrapperKey}.headlessViewBatch.headlessRecordBatch.results to be an array.`
-  );
-  readOwnObjectProperty(
-    headlessViewBatch,
-    "view",
-    `${options.context} requires ${options.wrapperKey}.headlessViewBatch.headlessRecordBatch.results to be an array.`
-  );
-  readOwnArrayProperty(
-    headlessRecordBatch,
-    "results",
-    `${options.context} requires ${options.wrapperKey}.headlessViewBatch.headlessRecordBatch.results to be an array.`
+    {
+      context: options.context,
+      wrapperKey: `${options.wrapperKey}.headlessViewBatch`
+    }
   );
 
-  return value;
+  return snapshotObject(wrapper, {
+    headlessViewBatch: normalizedHeadlessViewBatch,
+    results
+  }) as T;
 }

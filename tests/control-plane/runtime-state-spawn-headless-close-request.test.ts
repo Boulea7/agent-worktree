@@ -160,6 +160,45 @@ describe("control-plane runtime-state spawn-headless-close-request helpers", () 
     );
   });
 
+  it("should reject inherited or getter-backed top-level headlessCloseTarget inputs", () => {
+    const canonicalTarget = createHeadlessCloseTarget({
+      target: {
+        attemptId: "att_top_level_close_request",
+        runtime: "codex-cli",
+        sessionId: "thr_top_level_close_request"
+      }
+    });
+    const inheritedInput = Object.create({
+      headlessCloseTarget: canonicalTarget
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessCloseRequest(inheritedInput as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessCloseRequest(inheritedInput as never)
+    ).toThrow(
+      "Execution session spawn headless close request requires a headlessCloseTarget wrapper."
+    );
+
+    const accessorInput = {};
+    Object.defineProperty(accessorInput, "headlessCloseTarget", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessCloseRequest(accessorInput as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessCloseRequest(accessorInput as never)
+    ).toThrow(
+      "Execution session spawn headless close request requires a headlessCloseTarget wrapper."
+    );
+  });
+
   it("should reject wrapper-level targets that come only from the prototype chain", () => {
     const canonicalTarget = createHeadlessCloseTarget({
       target: {

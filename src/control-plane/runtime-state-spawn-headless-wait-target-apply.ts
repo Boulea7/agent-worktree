@@ -1,5 +1,6 @@
 import { ValidationError } from "../core/errors.js";
 import {
+  normalizeBatchWrapper,
   readOptionalBatchWrapperProperty,
   readRequiredBatchWrapperProperty
 } from "./runtime-state-batch-wrapper-guards.js";
@@ -15,13 +16,20 @@ import type {
 export async function applyExecutionSessionSpawnHeadlessWaitTarget(
   input: ExecutionSessionSpawnHeadlessWaitTargetApplyInput
 ): Promise<ExecutionSessionSpawnHeadlessWaitTargetApply> {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) {
-    throw new ValidationError(
+  const normalizedInput =
+    normalizeBatchWrapper<ExecutionSessionSpawnHeadlessWaitTargetApplyInput>(
+      input,
       "Execution session spawn headless wait target apply input must be an object."
     );
-  }
-
-  const headlessWaitTarget = normalizeHeadlessWaitTarget(input.headlessWaitTarget);
+  const headlessWaitTarget = normalizeHeadlessWaitTarget(
+    readRequiredBatchWrapperProperty<
+      ExecutionSessionSpawnHeadlessWaitTargetApplyInput["headlessWaitTarget"]
+    >(
+      normalizedInput,
+      "headlessWaitTarget",
+      "Execution session spawn headless wait target apply requires a headlessWaitTarget wrapper."
+    )
+  );
   const target =
     readOptionalBatchWrapperProperty<
       NonNullable<ExecutionSessionSpawnHeadlessWaitTarget["target"]>
@@ -46,12 +54,12 @@ export async function applyExecutionSessionSpawnHeadlessWaitTarget(
   const invokeWait = readRequiredBatchWrapperProperty<
     ExecutionSessionSpawnHeadlessWaitTargetApplyInput["invokeWait"]
   >(
-    input,
+    normalizedInput,
     "invokeWait",
     "Execution session wait target apply requires invokeWait to be a function."
   );
   const timeoutMs = readOptionalBatchWrapperProperty<number>(
-    input,
+    normalizedInput,
     "timeoutMs",
     "Execution session wait request timeoutMs must be a finite integer greater than 0."
   );
@@ -59,7 +67,7 @@ export async function applyExecutionSessionSpawnHeadlessWaitTarget(
     readOptionalBatchWrapperProperty<
       ExecutionSessionSpawnHeadlessWaitTargetApplyInput["resolveSessionLifecycleCapability"]
     >(
-      input,
+      normalizedInput,
       "resolveSessionLifecycleCapability",
       "Execution session wait target apply requires resolveSessionLifecycleCapability to be a function when provided."
     );

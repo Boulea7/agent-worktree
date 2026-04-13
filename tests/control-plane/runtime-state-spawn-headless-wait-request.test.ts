@@ -149,6 +149,44 @@ describe("control-plane runtime-state spawn-headless-wait-request helpers", () =
     );
   });
 
+  it("should reject inherited or getter-backed top-level headlessWaitTarget inputs", () => {
+    const canonicalTarget = createHeadlessWaitTarget({
+      attemptId: "att_top_level_wait_request",
+      parentAttemptId: "att_parent_top_level_wait_request",
+      sessionId: "thr_top_level_wait_request",
+      sourceKind: "delegated"
+    });
+    const inheritedInput = Object.create({
+      headlessWaitTarget: canonicalTarget
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessWaitRequest(inheritedInput as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessWaitRequest(inheritedInput as never)
+    ).toThrow(
+      "Execution session spawn headless wait request requires a headlessWaitTarget wrapper."
+    );
+
+    const accessorInput = {};
+    Object.defineProperty(accessorInput, "headlessWaitTarget", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessWaitRequest(accessorInput as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessWaitRequest(accessorInput as never)
+    ).toThrow(
+      "Execution session spawn headless wait request requires a headlessWaitTarget wrapper."
+    );
+  });
+
   it("should reject wrapper-level targets that come only from the prototype chain", () => {
     const canonicalTarget = createHeadlessWaitTarget({
       attemptId: "att_proto_wait_request",

@@ -1,5 +1,9 @@
 import { ValidationError } from "../core/errors.js";
-import { readOptionalBatchWrapperProperty } from "./runtime-state-batch-wrapper-guards.js";
+import {
+  normalizeBatchWrapper,
+  readOptionalBatchWrapperProperty,
+  readRequiredBatchWrapperProperty
+} from "./runtime-state-batch-wrapper-guards.js";
 import { normalizeHeadlessTargetWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import { deriveExecutionSessionWaitRequest } from "./runtime-state-wait-request.js";
 import type {
@@ -11,13 +15,20 @@ import type {
 export function deriveExecutionSessionSpawnHeadlessWaitRequest(
   input: ExecutionSessionSpawnHeadlessWaitRequestInput
 ): ExecutionSessionSpawnHeadlessWaitRequest {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) {
-    throw new ValidationError(
+  const normalizedInput =
+    normalizeBatchWrapper<ExecutionSessionSpawnHeadlessWaitRequestInput>(
+      input,
       "Execution session spawn headless wait request input must be an object."
     );
-  }
-
-  const headlessWaitTarget = normalizeHeadlessWaitTarget(input.headlessWaitTarget);
+  const headlessWaitTarget = normalizeHeadlessWaitTarget(
+    readRequiredBatchWrapperProperty<
+      ExecutionSessionSpawnHeadlessWaitRequestInput["headlessWaitTarget"]
+    >(
+      normalizedInput,
+      "headlessWaitTarget",
+      "Execution session spawn headless wait request requires a headlessWaitTarget wrapper."
+    )
+  );
   const target =
     readOptionalBatchWrapperProperty<
       NonNullable<ExecutionSessionSpawnHeadlessWaitTarget["target"]>
@@ -40,7 +51,7 @@ export function deriveExecutionSessionSpawnHeadlessWaitRequest(
   }
 
   const timeoutMs = readOptionalBatchWrapperProperty<number>(
-    input,
+    normalizedInput,
     "timeoutMs",
     "Execution session wait request timeoutMs must be a finite integer greater than 0."
   );

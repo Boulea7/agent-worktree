@@ -144,6 +144,57 @@ describe("control-plane runtime-state spawn-headless-context helpers", () => {
     expect(headlessViewReads).toBe(1);
   });
 
+  it("should snapshot nested headlessRecord values so later reads do not touch the original wrapper again", () => {
+    let headlessRecordReads = 0;
+
+    const rootRecord = createRecord({
+      attemptId: "att_parent_snapshot_nested_context",
+      sessionId: "thr_parent_snapshot_nested_context",
+      sourceKind: "direct"
+    });
+    const childRecord = createHeadlessRecord({
+      attemptId: "att_child_snapshot_nested_context",
+      parentAttemptId: "att_parent_snapshot_nested_context",
+      sessionId: "thr_child_snapshot_nested_context",
+      sourceKind: "delegated"
+    });
+
+    expect(
+      deriveExecutionSessionSpawnHeadlessContext({
+        headlessView: {
+          descendantCoverage: "complete",
+          get headlessRecord() {
+            headlessRecordReads += 1;
+
+            if (headlessRecordReads > 1) {
+              throw new Error("headlessRecord getter read twice");
+            }
+
+            return childRecord;
+          },
+          view: buildExecutionSessionView([rootRecord, childRecord.record])
+        }
+      } as never)
+    ).toEqual({
+      headlessView: {
+        descendantCoverage: "complete",
+        headlessRecord: childRecord,
+        view: buildExecutionSessionView([rootRecord, childRecord.record])
+      },
+      context: {
+        record: childRecord.record,
+        selectedBy: "attemptId",
+        parentRecord: rootRecord,
+        childRecords: [],
+        hasKnownSession: true,
+        hasParent: true,
+        hasResolvedParent: true,
+        hasChildren: false
+      }
+    });
+    expect(headlessRecordReads).toBe(1);
+  });
+
   it("should derive context from the selected attemptId within the supplied headless view", () => {
     const rootRecord = createRecord({
       attemptId: "att_parent_context",
@@ -174,9 +225,17 @@ describe("control-plane runtime-state spawn-headless-context helpers", () => {
 
     const result = deriveExecutionSessionSpawnHeadlessContext({
       headlessView
-    }) as unknown as Record<string, unknown>;
+    });
 
-    expect(result.headlessView).toBe(headlessView);
+    expect(result.headlessView).toEqual(headlessView);
+    expect(result.headlessView).not.toBe(headlessView);
+    expect(result.headlessView.headlessRecord).toEqual(
+      headlessView.headlessRecord
+    );
+    expect(result.headlessView.headlessRecord).not.toBe(
+      headlessView.headlessRecord
+    );
+    expect(result.headlessView.view).toBe(headlessView.view);
     expect(result.context).toEqual({
       record: childRecord.record,
       selectedBy: "attemptId",
@@ -199,6 +258,33 @@ describe("control-plane runtime-state spawn-headless-context helpers", () => {
     expect(result).not.toHaveProperty("spawnHeadlessContextBatch");
     expect(result).not.toHaveProperty("spawnHeadlessWaitCandidate");
     expect(result).not.toHaveProperty("spawnHeadlessWaitCandidateBatch");
+  });
+
+  it("should default descendantCoverage to incomplete when the supplied headless view omits it", () => {
+    const parentRecord = createRecord({
+      attemptId: "att_parent_default_descendant_coverage",
+      sessionId: "thr_parent_default_descendant_coverage",
+      sourceKind: "direct"
+    });
+    const childRecord = createHeadlessRecord({
+      attemptId: "att_child_default_descendant_coverage",
+      parentAttemptId: "att_parent_default_descendant_coverage",
+      sessionId: "thr_child_default_descendant_coverage",
+      sourceKind: "delegated"
+    });
+
+    expect(
+      deriveExecutionSessionSpawnHeadlessContext({
+        headlessView: {
+          headlessRecord: childRecord,
+          view: buildExecutionSessionView([parentRecord, childRecord.record])
+        }
+      })
+    ).toMatchObject({
+      headlessView: {
+        descendantCoverage: "incomplete"
+      }
+    });
   });
 
   it("should fail when the supplied headless view cannot select the headless record", () => {
