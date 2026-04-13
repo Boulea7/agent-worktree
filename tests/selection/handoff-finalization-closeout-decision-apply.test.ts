@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { ValidationError } from "../../src/core/errors.js";
+import * as selection from "../../src/selection/internal.js";
 import { applyAttemptHandoffFinalizationCloseoutDecisionSummary } from "../../src/selection/handoff-finalization-closeout-decision-apply.js";
+import {
+  deriveAttemptVerificationArtifactSummary,
+  executeAttemptVerification
+} from "../../src/verification/internal.js";
 
 const applyCloseoutDecisionSummary = applyAttemptHandoffFinalizationCloseoutDecisionSummary as (input: {
   summary:
@@ -210,6 +215,128 @@ describe("selection handoff-finalization-closeout-decision-apply helpers", () =>
     expect(invokeHandoffFinalization).not.toHaveBeenCalled();
   });
 
+  it("should derive a promotable closeout decision summary through the canonical verification-to-closeout chain", async () => {
+    const verificationResult = await executeAttemptVerification({
+      checks: [
+        {
+          name: "lint",
+          executable: "npm",
+          args: ["run", "lint"],
+          required: true
+        }
+      ],
+      runner: vi.fn(async () => ({
+        exitCode: 0,
+        stdout: "ok",
+        stderr: ""
+      }))
+    });
+    const manifest = createManifest({
+      attemptId: "att_ready",
+      status: "running",
+      sourceKind: "delegated",
+      verification: verificationResult.verification
+    });
+    const candidate = selection.deriveAttemptPromotionCandidate(
+      manifest,
+      deriveAttemptVerificationArtifactSummary(verificationResult)
+    );
+    const promotionTarget = selection.deriveAttemptPromotionTarget(
+      selection.deriveAttemptPromotionDecisionSummary(
+        selection.deriveAttemptPromotionExplanationSummary(
+          selection.deriveAttemptPromotionReport(
+            selection.deriveAttemptPromotionAuditSummary(
+              selection.deriveAttemptPromotionResult([candidate])
+            )
+          )
+        )
+      )
+    );
+    const handoffBatch = await selection.applyAttemptPromotionTargetBatch({
+      targets: [promotionTarget!],
+      invokeHandoff: async () => undefined,
+      resolveHandoffCapability: () => true
+    });
+    const finalizationRequestSummary =
+      selection.deriveAttemptHandoffFinalizationRequestSummary(
+        selection.deriveAttemptHandoffFinalizationTargetSummary(
+          selection.deriveAttemptHandoffExplanationSummary(
+            selection.deriveAttemptHandoffReportReady(handoffBatch)
+          )
+        )
+      );
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      applyCloseoutDecisionSummary({
+        summary: finalizationRequestSummary,
+        invokeHandoffFinalization,
+        resolveHandoffFinalizationCapability: () => true
+      })
+    ).resolves.toEqual({
+      decisionBasis: "handoff_finalization_closure_summary",
+      resultCount: 1,
+      invokedResultCount: 1,
+      blockedResultCount: 0,
+      groupCount: 1,
+      reportingDisposition: "all_invoked",
+      blockingReasons: [],
+      canAdvanceFromCloseout: true,
+      hasBlockingReasons: false
+    });
+    expect(invokeHandoffFinalization).toHaveBeenCalledTimes(1);
+    expect(invokeHandoffFinalization).toHaveBeenCalledWith({
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli",
+      status: "running",
+      sourceKind: "delegated"
+    });
+  });
+
+  it("should keep sparse verification evidence from becoming promotable or closeout-ready", async () => {
+    const verificationResult = await executeAttemptVerification({
+      checks: [],
+      runner: vi.fn(async () => ({
+        exitCode: 0,
+        stdout: "",
+        stderr: ""
+      }))
+    });
+    const manifest = createManifest({
+      attemptId: "att_sparse",
+      verification: verificationResult.verification
+    });
+    const candidate = selection.deriveAttemptPromotionCandidate(
+      manifest,
+      deriveAttemptVerificationArtifactSummary(verificationResult)
+    );
+    const promotionDecision = selection.deriveAttemptPromotionDecisionSummary(
+      selection.deriveAttemptPromotionExplanationSummary(
+        selection.deriveAttemptPromotionReport(
+          selection.deriveAttemptPromotionAuditSummary(
+            selection.deriveAttemptPromotionResult([candidate])
+          )
+        )
+      )
+    );
+    const promotionTarget = selection.deriveAttemptPromotionTarget(promotionDecision);
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    expect(candidate.summary.hasComparablePayload).toBe(false);
+    expect(candidate.summary.isSelectionReady).toBe(false);
+    expect(promotionDecision.blockingReasons).toEqual(["verification_incomplete"]);
+    expect(promotionDecision.canPromote).toBe(false);
+    expect(promotionTarget).toBeUndefined();
+    await expect(
+      applyCloseoutDecisionSummary({
+        summary: undefined,
+        invokeHandoffFinalization
+      })
+    ).resolves.toBeUndefined();
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
   it("should surface canonical request-summary errors when the nested summary is null", async () => {
     const invokeHandoffFinalization = vi.fn(async () => undefined);
 
@@ -408,4 +535,39 @@ function createRequest(
     sourceKind: "direct" as string | undefined,
     ...overrides
   };
+}
+
+function createManifest(
+  overrides: Partial<{
+    attemptId: string;
+    runtime: "codex-cli" | "gemini-cli" | "opencode" | "claude-code" | "openclaw";
+    sourceKind: "direct" | "resume" | "fork" | "delegated";
+    status: "created" | "running" | "paused" | "failed" | "verified" | "merged" | "cleaned";
+    taskId: string;
+    verification: Awaited<ReturnType<typeof executeAttemptVerification>>["verification"];
+  }>
+) {
+  return {
+    adapter: "subprocess",
+    attemptId: overrides.attemptId ?? "att_ready",
+    runtime: overrides.runtime ?? "codex-cli",
+    schemaVersion: "0.x",
+    ...(overrides.sourceKind === undefined
+      ? {}
+      : { sourceKind: overrides.sourceKind }),
+    status: overrides.status ?? "created",
+    taskId: overrides.taskId ?? "task_shared",
+    verification:
+      overrides.verification ?? {
+        state: "pending",
+        checks: []
+      },
+    createdAt: "2026-04-14T00:00:00.000Z",
+    updatedAt: "2026-04-14T00:00:00.000Z",
+    worktree: {
+      path: "/tmp/agent-worktree/att_ready",
+      branch: "attempt/att_ready",
+      baseBranch: "main"
+    }
+  } as const;
 }

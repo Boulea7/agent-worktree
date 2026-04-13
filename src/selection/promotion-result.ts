@@ -197,6 +197,12 @@ function normalizePromotionCandidate(
     );
   }
 
+  if (!isRecord(summary)) {
+    throw new ValidationError(
+      "Attempt promotion result requires candidate.summary to be an object."
+    );
+  }
+
   if (
     readSelectionValue(
       artifactSummary,
@@ -209,9 +215,13 @@ function normalizePromotionCandidate(
     );
   }
 
-  const normalizedArtifactSummary =
-    artifactSummary as unknown as AttemptVerificationArtifactSummary;
-  const normalizedSummary = summary as AttemptVerificationSummary;
+  const normalizedArtifactSummary = normalizeArtifactSummary(
+    artifactSummary
+  );
+  const normalizedSummary = normalizeVerificationSummary(
+    summary,
+    "Attempt promotion result requires candidate.summary to be an object."
+  );
 
   validatePromotionArtifactSummaryCheckNameLists({
     artifactSummary: normalizedArtifactSummary,
@@ -307,6 +317,113 @@ function validateSummaryConsistency(
       "Attempt promotion result requires candidate.summary to match candidate.artifactSummary.summary."
     );
   }
+}
+
+function normalizeArtifactSummary(
+  artifactSummary: Record<string, unknown>
+): AttemptVerificationArtifactSummary {
+  const summaryBasis = readSelectionValue(
+    artifactSummary,
+    "summaryBasis",
+    "Attempt promotion result requires candidate.artifactSummary to be an object."
+  );
+  const summary = normalizeVerificationSummary(
+    readSelectionValue(
+      artifactSummary,
+      "summary",
+      "Attempt promotion result requires candidate.artifactSummary.summary to be an object."
+    ),
+    "Attempt promotion result requires candidate.artifactSummary.summary to be an object."
+  );
+  const checks = readSelectionValue(
+    artifactSummary,
+    "checks",
+    "Attempt promotion result requires candidate.artifactSummary.checks to be an array."
+  );
+  const blockingRequiredCheckNames = readSelectionValue(
+    artifactSummary,
+    "blockingRequiredCheckNames",
+    "Attempt promotion result requires candidate.artifactSummary.blockingRequiredCheckNames to match candidate.artifactSummary.checks."
+  );
+  const failedOrErrorCheckNames = readSelectionValue(
+    artifactSummary,
+    "failedOrErrorCheckNames",
+    "Attempt promotion result requires candidate.artifactSummary.failedOrErrorCheckNames to match candidate.artifactSummary.checks."
+  );
+  const pendingCheckNames = readSelectionValue(
+    artifactSummary,
+    "pendingCheckNames",
+    "Attempt promotion result requires candidate.artifactSummary.pendingCheckNames to match candidate.artifactSummary.checks."
+  );
+  const skippedCheckNames = readSelectionValue(
+    artifactSummary,
+    "skippedCheckNames",
+    "Attempt promotion result requires candidate.artifactSummary.skippedCheckNames to match candidate.artifactSummary.checks."
+  );
+  const passedCheckNames = readSelectionValue(
+    artifactSummary,
+    "passedCheckNames",
+    "Attempt promotion result requires candidate.artifactSummary.passedCheckNames to match candidate.artifactSummary.checks."
+  );
+  const recommendedForPromotion = readSelectionValue(
+    artifactSummary,
+    "recommendedForPromotion",
+    "Attempt promotion result requires candidate.recommendedForPromotion to match candidate.artifactSummary.recommendedForPromotion."
+  );
+
+  return {
+    summaryBasis: summaryBasis as AttemptVerificationArtifactSummary["summaryBasis"],
+    summary,
+    checks: checks as AttemptVerificationArtifactSummary["checks"],
+    blockingRequiredCheckNames:
+      blockingRequiredCheckNames as AttemptVerificationArtifactSummary["blockingRequiredCheckNames"],
+    failedOrErrorCheckNames:
+      failedOrErrorCheckNames as AttemptVerificationArtifactSummary["failedOrErrorCheckNames"],
+    pendingCheckNames:
+      pendingCheckNames as AttemptVerificationArtifactSummary["pendingCheckNames"],
+    skippedCheckNames:
+      skippedCheckNames as AttemptVerificationArtifactSummary["skippedCheckNames"],
+    passedCheckNames:
+      passedCheckNames as AttemptVerificationArtifactSummary["passedCheckNames"],
+    recommendedForPromotion:
+      recommendedForPromotion as AttemptVerificationArtifactSummary["recommendedForPromotion"]
+  };
+}
+
+function normalizeVerificationSummary(
+  summary: unknown,
+  message: string
+): AttemptVerificationSummary {
+  if (!isRecord(summary)) {
+    throw new ValidationError(message);
+  }
+
+  const counts = readSelectionValue(summary, "counts", message);
+
+  if (!isRecord(counts)) {
+    throw new ValidationError(message);
+  }
+
+  return {
+    sourceState: readSelectionValue(summary, "sourceState", message) as string,
+    overallOutcome: readSelectionValue(summary, "overallOutcome", message) as AttemptVerificationSummary["overallOutcome"],
+    requiredOutcome: readSelectionValue(summary, "requiredOutcome", message) as AttemptVerificationSummary["requiredOutcome"],
+    hasInvalidChecks: readSelectionValue(summary, "hasInvalidChecks", message) as boolean,
+    hasComparablePayload: readSelectionValue(summary, "hasComparablePayload", message) as boolean,
+    isSelectionReady: readSelectionValue(summary, "isSelectionReady", message) as boolean,
+    counts: {
+      total: readSelectionValue(counts, "total", message) as number,
+      valid: readSelectionValue(counts, "valid", message) as number,
+      invalid: readSelectionValue(counts, "invalid", message) as number,
+      required: readSelectionValue(counts, "required", message) as number,
+      optional: readSelectionValue(counts, "optional", message) as number,
+      passed: readSelectionValue(counts, "passed", message) as number,
+      failed: readSelectionValue(counts, "failed", message) as number,
+      pending: readSelectionValue(counts, "pending", message) as number,
+      skipped: readSelectionValue(counts, "skipped", message) as number,
+      error: readSelectionValue(counts, "error", message) as number
+    }
+  };
 }
 
 function normalizeRequiredString(value: unknown, fieldName: string): string {

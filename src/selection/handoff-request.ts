@@ -9,7 +9,10 @@ import type {
   AttemptHandoffRequest,
   AttemptHandoffTarget
 } from "./types.js";
-import { rethrowSelectionAccessError } from "./entry-validation.js";
+import {
+  accessSelectionValue,
+  rethrowSelectionAccessError
+} from "./entry-validation.js";
 
 const ATTEMPT_HANDOFF_TARGET_BASIS = "promotion_target" as const;
 const validAttemptStatuses = new Set<AttemptStatus>(attemptStatuses);
@@ -30,18 +33,38 @@ export function deriveAttemptHandoffRequest(
 
   try {
     validateTargetBasis(target);
-    const taskId = normalizeRequiredString(target.taskId, "target.taskId");
-    const attemptId = normalizeRequiredString(target.attemptId, "target.attemptId");
-    const runtime = normalizeRequiredString(target.runtime, "target.runtime");
-    validateAttemptStatus(target.status);
-    validateAttemptSourceKind(target.sourceKind);
+    const taskId = normalizeRequiredString(
+      accessSelectionValue(
+        target,
+        "taskId"
+      ),
+      "target.taskId"
+    );
+    const attemptId = normalizeRequiredString(
+      accessSelectionValue(
+        target,
+        "attemptId"
+      ),
+      "target.attemptId"
+    );
+    const runtime = normalizeRequiredString(
+      accessSelectionValue(
+        target,
+        "runtime"
+      ),
+      "target.runtime"
+    );
+    const status = accessSelectionValue(target, "status");
+    const sourceKind = accessSelectionValue(target, "sourceKind");
+    validateAttemptStatus(status);
+    validateAttemptSourceKind(sourceKind);
 
     return {
       taskId,
       attemptId,
       runtime,
-      status: target.status,
-      sourceKind: target.sourceKind
+      status: status as AttemptStatus,
+      sourceKind: sourceKind as AttemptSourceKind | undefined
     };
   } catch (error) {
     rethrowSelectionAccessError(
@@ -56,7 +79,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function validateTargetBasis(target: AttemptHandoffTarget): void {
-  if (target.handoffBasis !== ATTEMPT_HANDOFF_TARGET_BASIS) {
+  if (
+    accessSelectionValue(target, "handoffBasis") !== ATTEMPT_HANDOFF_TARGET_BASIS
+  ) {
     throw new ValidationError(
       'Attempt handoff request requires target.handoffBasis to be "promotion_target".'
     );

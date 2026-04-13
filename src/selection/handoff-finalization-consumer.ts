@@ -13,6 +13,7 @@ import type {
 } from "./types.js";
 import { normalizeHandoffFinalizationCapability } from "./handoff-finalization-capability-shared.js";
 import {
+  accessSelectionValue,
   rethrowSelectionAccessError,
   validateSelectionObjectInput,
   validateSelectionOptionalFunction
@@ -45,11 +46,22 @@ export function deriveAttemptHandoffFinalizationConsumer(input: {
       "Attempt handoff finalization consumer requires request to be an object when provided."
     );
 
-    const taskId = normalizeRequiredString(request.taskId, "request.taskId");
-    const attemptId = normalizeRequiredString(request.attemptId, "request.attemptId");
-    const runtime = normalizeRequiredString(request.runtime, "request.runtime");
-    validateAttemptStatus(request.status);
-    validateAttemptSourceKind(request.sourceKind);
+    const taskId = normalizeRequiredString(
+      accessSelectionValue(request, "taskId"),
+      "request.taskId"
+    );
+    const attemptId = normalizeRequiredString(
+      accessSelectionValue(request, "attemptId"),
+      "request.attemptId"
+    );
+    const runtime = normalizeRequiredString(
+      accessSelectionValue(request, "runtime"),
+      "request.runtime"
+    );
+    const status = accessSelectionValue(request, "status");
+    const sourceKind = accessSelectionValue(request, "sourceKind");
+    validateAttemptStatus(status);
+    validateAttemptSourceKind(sourceKind);
 
     const handoffFinalizationSupported = normalizeHandoffFinalizationCapability(
       input.resolveHandoffFinalizationCapability === undefined
@@ -65,8 +77,8 @@ export function deriveAttemptHandoffFinalizationConsumer(input: {
         taskId,
         attemptId,
         runtime,
-        status: request.status,
-        sourceKind: request.sourceKind
+        status: status as AttemptStatus,
+        sourceKind: sourceKind as AttemptSourceKind | undefined
       },
       readiness: {
         blockingReasons,

@@ -217,6 +217,29 @@ describe("selection promotion-explanation helpers", () => {
     expect(explanation.candidates[1]?.isSelected).toBe(false);
   });
 
+  it("should fail closed when report.selectedIdentity is inherited instead of owned", () => {
+    const report = createPromotionReport([
+      createPromotionCandidate({
+        attemptId: "att_ready"
+      })
+    ]) as unknown as Record<string, unknown>;
+
+    delete report.selectedIdentity;
+    Object.setPrototypeOf(report, {
+      selectedIdentity: {
+        taskId: "task_shared",
+        attemptId: "att_ready",
+        runtime: "codex-cli"
+      }
+    });
+
+    expect(() =>
+      deriveAttemptPromotionExplanationSummaryDirect(
+        report as unknown as AttemptPromotionReport
+      )
+    ).toThrow(ValidationError);
+  });
+
   it("should keep selection canonical when runtimes differ but attemptId is reused", () => {
     const report = createPromotionReport([
       createPromotionCandidate({

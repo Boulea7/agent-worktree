@@ -113,6 +113,109 @@ describe("selection promotion-target helpers", () => {
     });
   });
 
+  it("should fail closed when summary.selected is inherited instead of owned", () => {
+    const summary = createPromotionDecisionSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]) as unknown as Record<string, unknown>;
+
+    delete summary.selected;
+    Object.setPrototypeOf(summary, {
+      selected: {
+        attemptId: "att_ready",
+        runtime: "codex-cli",
+        status: "created",
+        sourceKind: undefined,
+        hasComparablePayload: true,
+        isSelected: true,
+        recommendedForPromotion: true,
+        explanationCode: "selected",
+        blockingRequiredCheckNames: [],
+        failedOrErrorCheckNames: [],
+        pendingCheckNames: [],
+        skippedCheckNames: []
+      }
+    });
+
+    expect(() =>
+      deriveAttemptPromotionTargetDirect(
+        summary as unknown as AttemptPromotionDecisionSummary
+      )
+    ).toThrow(ValidationError);
+  });
+
+  it("should fail closed when summary.selectedIdentity inner fields are inherited instead of owned", () => {
+    const summary = createPromotionDecisionSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]) as unknown as Record<string, unknown>;
+
+    summary.selectedIdentity = Object.create({
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli"
+    });
+
+    expect(() =>
+      deriveAttemptPromotionTargetDirect(
+        summary as unknown as AttemptPromotionDecisionSummary
+      )
+    ).toThrow(ValidationError);
+  });
+
+  it("should fail closed when summary.selected inner fields throw through accessor-shaped input", () => {
+    const summary = createPromotionDecisionSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]) as unknown as Record<string, unknown>;
+
+    summary.selected = {
+      ...summary.selected!,
+      get attemptId() {
+        throw new Error("getter boom");
+      }
+    };
+
+    expect(() =>
+      deriveAttemptPromotionTargetDirect(
+        summary as unknown as AttemptPromotionDecisionSummary
+      )
+    ).toThrow(ValidationError);
+  });
+
   it("should return undefined when the selected decision candidate is blocked by failed checks", () => {
     const summary = createPromotionDecisionSummary([
       createPromotionCandidate({

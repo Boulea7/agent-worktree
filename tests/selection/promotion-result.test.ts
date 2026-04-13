@@ -245,6 +245,99 @@ describe("selection promotion-result helpers", () => {
     );
   });
 
+  it("should fail loudly when candidate.summary is inherited instead of owned", () => {
+    const baseCandidate = createPromotionCandidate({
+      attemptId: "att_inherited_summary"
+    });
+    const candidate = {
+      ...baseCandidate
+    } as Record<string, unknown>;
+
+    delete candidate.summary;
+    Object.setPrototypeOf(candidate, {
+      summary: baseCandidate.summary
+    });
+
+    expect(() =>
+      deriveAttemptPromotionResult([candidate as unknown as AttemptPromotionCandidate])
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionResult([candidate as unknown as AttemptPromotionCandidate])
+    ).toThrow(
+      "Attempt promotion result requires candidate.summary to be an object."
+    );
+  });
+
+  it("should fail closed when candidate.summary throws through an accessor-shaped input", () => {
+    const candidate = createPromotionCandidate({
+      attemptId: "att_summary_getter"
+    }) as unknown as Record<string, unknown>;
+
+    Object.defineProperty(candidate, "summary", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveAttemptPromotionResult([candidate as unknown as AttemptPromotionCandidate])
+    ).toThrow(ValidationError);
+  });
+
+  it("should fail loudly when candidate.summary.counts is inherited instead of owned", () => {
+    const baseCandidate = createPromotionCandidate({
+      attemptId: "att_inherited_counts"
+    });
+    const summary = {
+      ...baseCandidate.summary
+    } as Record<string, unknown>;
+
+    delete summary.counts;
+    Object.setPrototypeOf(summary, {
+      counts: baseCandidate.summary.counts
+    });
+
+    const candidate = {
+      ...baseCandidate,
+      summary
+    } as unknown as AttemptPromotionCandidate;
+
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      ValidationError
+    );
+  });
+
+  it("should fail closed when candidate.summary.counts fields throw through accessor-shaped input", () => {
+    const baseCandidate = createPromotionCandidate({
+      attemptId: "att_counts_getter"
+    });
+    const counts = {
+      ...baseCandidate.summary.counts
+    } as Record<string, unknown>;
+
+    Object.defineProperty(counts, "total", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    const candidate = {
+      ...baseCandidate,
+      summary: {
+        ...baseCandidate.summary,
+        counts
+      }
+    } as unknown as AttemptPromotionCandidate;
+
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      ValidationError
+    );
+  });
+
   it("should snapshot candidate.taskId once before downstream validation reuses it", () => {
     const baseCandidate = createPromotionCandidate({
       attemptId: "att_snapshot"

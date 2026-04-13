@@ -25,8 +25,8 @@ export function deriveAttemptHandoffFinalizationGroupedReportingDispositionSumma
     return undefined;
   }
 
-  validateSummary(summary);
-  const groups = validateGroups(summary.groups);
+  const normalizedSummary = normalizeSummary(summary);
+  const groups = validateGroups(normalizedSummary.groups);
 
   const resultCount = groups.reduce((sum, group) => sum + group.resultCount, 0);
   const invokedResultCount = groups.reduce(
@@ -38,19 +38,19 @@ export function deriveAttemptHandoffFinalizationGroupedReportingDispositionSumma
     0
   );
 
-  if (summary.resultCount !== resultCount) {
+  if (normalizedSummary.resultCount !== resultCount) {
     throw new ValidationError(
       "Attempt handoff finalization grouped reporting disposition summary requires summary.resultCount to match the canonical total derived from summary.groups."
     );
   }
 
-  if (summary.invokedResultCount !== invokedResultCount) {
+  if (normalizedSummary.invokedResultCount !== invokedResultCount) {
     throw new ValidationError(
       "Attempt handoff finalization grouped reporting disposition summary requires summary.invokedResultCount to match the canonical invoked total derived from summary.groups."
     );
   }
 
-  if (summary.blockedResultCount !== blockedResultCount) {
+  if (normalizedSummary.blockedResultCount !== blockedResultCount) {
     throw new ValidationError(
       "Attempt handoff finalization grouped reporting disposition summary requires summary.blockedResultCount to match the canonical blocked total derived from summary.groups."
     );
@@ -71,9 +71,14 @@ export function deriveAttemptHandoffFinalizationGroupedReportingDispositionSumma
   };
 }
 
-function validateSummary(
+function normalizeSummary(
   summary: AttemptHandoffFinalizationGroupedReportingSummary
-): void {
+): {
+  resultCount: number;
+  invokedResultCount: number;
+  blockedResultCount: number;
+  groups: readonly AttemptHandoffFinalizationGroupedReportingGroup[];
+} {
   if (!isRecord(summary)) {
     throw new ValidationError(
       "Attempt handoff finalization grouped reporting disposition summary requires summary to be an object."
@@ -92,53 +97,58 @@ function validateSummary(
     );
   }
 
+  const resultCount = readSelectionValue(
+    summary,
+    "resultCount",
+    "Attempt handoff finalization grouped reporting disposition summary requires summary.resultCount to be a non-negative integer."
+  ) as number;
+  validateNonNegativeInteger(resultCount, "summary.resultCount");
+  const invokedResultCount = readSelectionValue(
+    summary,
+    "invokedResultCount",
+    "Attempt handoff finalization grouped reporting disposition summary requires summary.invokedResultCount to be a non-negative integer."
+  ) as number;
   validateNonNegativeInteger(
-    readSelectionValue(
-      summary,
-      "resultCount",
-      "Attempt handoff finalization grouped reporting disposition summary requires summary.resultCount to be a non-negative integer."
-    ),
-    "summary.resultCount"
-  );
-  validateNonNegativeInteger(
-    readSelectionValue(
-      summary,
-      "invokedResultCount",
-      "Attempt handoff finalization grouped reporting disposition summary requires summary.invokedResultCount to be a non-negative integer."
-    ),
+    invokedResultCount,
     "summary.invokedResultCount"
   );
+  const blockedResultCount = readSelectionValue(
+    summary,
+    "blockedResultCount",
+    "Attempt handoff finalization grouped reporting disposition summary requires summary.blockedResultCount to be a non-negative integer."
+  ) as number;
   validateNonNegativeInteger(
-    readSelectionValue(
-      summary,
-      "blockedResultCount",
-      "Attempt handoff finalization grouped reporting disposition summary requires summary.blockedResultCount to be a non-negative integer."
-    ),
+    blockedResultCount,
     "summary.blockedResultCount"
   );
 
   if (
-    summary.invokedResultCount + summary.blockedResultCount !==
-    summary.resultCount
+    invokedResultCount + blockedResultCount !==
+    resultCount
   ) {
     throw new ValidationError(
       "Attempt handoff finalization grouped reporting disposition summary requires summary count split to add up to summary.resultCount."
     );
   }
 
-  if (
-    !Array.isArray(
-      readSelectionValue(
-        summary,
-        "groups",
-        "Attempt handoff finalization grouped reporting disposition summary requires summary.groups to be an array."
-      )
-    )
-  ) {
+  const groups = readSelectionValue(
+    summary,
+    "groups",
+    "Attempt handoff finalization grouped reporting disposition summary requires summary.groups to be an array."
+  );
+
+  if (!Array.isArray(groups)) {
     throw new ValidationError(
       "Attempt handoff finalization grouped reporting disposition summary requires summary.groups to be an array."
     );
   }
+
+  return {
+    resultCount,
+    invokedResultCount,
+    blockedResultCount,
+    groups
+  };
 }
 
 function validateGroups(

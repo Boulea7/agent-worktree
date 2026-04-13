@@ -46,14 +46,17 @@ describe("selection handoff-finalization-apply-batch helpers", () => {
   });
 
   it("should fail closed when reading requests throws through an accessor-shaped input", async () => {
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
     await expect(
       applyAttemptHandoffFinalizationBatch({
         get requests() {
           throw new Error("getter boom");
         },
-        invokeHandoffFinalization: async () => undefined
+        invokeHandoffFinalization
       } as never)
     ).rejects.toThrow(ValidationError);
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
   });
 
   it("should return an empty batch result for an empty finalization request list", async () => {

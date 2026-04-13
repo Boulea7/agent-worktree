@@ -118,14 +118,17 @@ describe("selection handoff-target-apply-batch helpers", () => {
   });
 
   it("should fail closed when reading targets throws through an accessor-shaped input", async () => {
+    const invokeHandoff = vi.fn(async () => undefined);
+
     await expect(
       applyAttemptHandoffTargetBatch({
         get targets() {
           throw new Error("getter boom");
         },
-        invokeHandoff: async () => undefined
+        invokeHandoff
       } as never)
     ).rejects.toThrow(ValidationError);
+    expect(invokeHandoff).not.toHaveBeenCalled();
   });
 
   it("should return an empty batch result for an empty target list", async () => {

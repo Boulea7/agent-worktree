@@ -13,7 +13,10 @@ import type {
   AttemptPromotionTarget,
   AttemptSelectedIdentity
 } from "./types.js";
-import { rethrowSelectionAccessError } from "./entry-validation.js";
+import {
+  accessSelectionValue,
+  rethrowSelectionAccessError
+} from "./entry-validation.js";
 
 const ATTEMPT_PROMOTION_TARGET_BASIS = "promotion_decision_summary" as const;
 const ATTEMPT_PROMOTION_DECISION_BASIS =
@@ -45,14 +48,15 @@ export function deriveAttemptPromotionTarget(
   }
 
   try {
-    validateDecisionBasis(summary);
-    validatePromotionDecisionSummary(summary);
+    const normalizedSummary = normalizePromotionDecisionInput(summary);
+    validateDecisionBasis(normalizedSummary);
+    validatePromotionDecisionSummary(normalizedSummary);
 
-    if (!summary.canPromote) {
+    if (!normalizedSummary.canPromote) {
       return undefined;
     }
 
-    const selected = summary.selected;
+    const selected = normalizedSummary.selected;
 
     if (selected === undefined) {
       throw new ValidationError(
@@ -62,7 +66,7 @@ export function deriveAttemptPromotionTarget(
 
     return {
       targetBasis: ATTEMPT_PROMOTION_TARGET_BASIS,
-      taskId: normalizeTaskId(summary.taskId),
+      taskId: normalizeTaskId(normalizedSummary.taskId),
       attemptId: normalizeRequiredString(
         selected.attemptId,
         "summary.selected.attemptId"
@@ -88,6 +92,90 @@ function validateDecisionBasis(summary: AttemptPromotionDecisionSummary): void {
       'Attempt promotion target requires summary.decisionBasis to be "promotion_explanation_summary".'
     );
   }
+}
+
+function normalizePromotionDecisionInput(
+  summary: Record<string, unknown>
+): AttemptPromotionDecisionSummary {
+  return {
+    decisionBasis: accessSelectionValue(summary, "decisionBasis") as AttemptPromotionDecisionSummary["decisionBasis"],
+    taskId: accessSelectionValue(summary, "taskId") as AttemptPromotionDecisionSummary["taskId"],
+    selectedAttemptId: accessSelectionValue(summary, "selectedAttemptId") as AttemptPromotionDecisionSummary["selectedAttemptId"],
+    candidateCount: accessSelectionValue(summary, "candidateCount") as AttemptPromotionDecisionSummary["candidateCount"],
+    comparableCandidateCount: accessSelectionValue(summary, "comparableCandidateCount") as AttemptPromotionDecisionSummary["comparableCandidateCount"],
+    promotionReadyCandidateCount: accessSelectionValue(summary, "promotionReadyCandidateCount") as AttemptPromotionDecisionSummary["promotionReadyCandidateCount"],
+    recommendedForPromotion: accessSelectionValue(summary, "recommendedForPromotion") as AttemptPromotionDecisionSummary["recommendedForPromotion"],
+    selected: normalizeSelectedCandidateInput(
+      accessSelectionValue(summary, "selected")
+    ),
+    blockingReasons: accessSelectionValue(summary, "blockingReasons") as AttemptPromotionDecisionSummary["blockingReasons"],
+    canPromote: accessSelectionValue(summary, "canPromote") as AttemptPromotionDecisionSummary["canPromote"],
+    hasBlockingReasons: accessSelectionValue(summary, "hasBlockingReasons") as AttemptPromotionDecisionSummary["hasBlockingReasons"],
+    selectedIdentity: normalizeSelectedIdentityInput(
+      accessSelectionValue(summary, "selectedIdentity")
+    )
+  };
+}
+
+function normalizeSelectedCandidateInput(
+  candidate: unknown
+): AttemptPromotionDecisionSummary["selected"] {
+  if (candidate === undefined) {
+    return undefined;
+  }
+
+  if (!isRecord(candidate)) {
+    throw new ValidationError(
+      "Attempt promotion target requires summary.selected to be an object when provided."
+    );
+  }
+
+  return {
+    attemptId: accessSelectionValue(candidate, "attemptId") as string,
+    runtime: accessSelectionValue(candidate, "runtime") as string,
+    status: accessSelectionValue(candidate, "status") as AttemptStatus,
+    sourceKind: accessSelectionValue(candidate, "sourceKind") as AttemptSourceKind | undefined,
+    hasComparablePayload: accessSelectionValue(candidate, "hasComparablePayload") as boolean,
+    isSelected: accessSelectionValue(candidate, "isSelected") as boolean,
+    recommendedForPromotion: accessSelectionValue(candidate, "recommendedForPromotion") as boolean,
+    explanationCode: accessSelectionValue(candidate, "explanationCode") as AttemptPromotionExplanationCode,
+    blockingRequiredCheckNames: normalizeStringArrayField(
+      accessSelectionValue(candidate, "blockingRequiredCheckNames"),
+      "Attempt promotion target requires summary.selected.blockingRequiredCheckNames to be an array of non-empty strings."
+    ),
+    failedOrErrorCheckNames: normalizeStringArrayField(
+      accessSelectionValue(candidate, "failedOrErrorCheckNames"),
+      "Attempt promotion target requires summary.selected.failedOrErrorCheckNames to be an array of non-empty strings."
+    ),
+    pendingCheckNames: normalizeStringArrayField(
+      accessSelectionValue(candidate, "pendingCheckNames"),
+      "Attempt promotion target requires summary.selected.pendingCheckNames to be an array of non-empty strings."
+    ),
+    skippedCheckNames: normalizeStringArrayField(
+      accessSelectionValue(candidate, "skippedCheckNames"),
+      "Attempt promotion target requires summary.selected.skippedCheckNames to be an array of non-empty strings."
+    )
+  };
+}
+
+function normalizeSelectedIdentityInput(
+  selectedIdentity: unknown
+): AttemptPromotionDecisionSummary["selectedIdentity"] {
+  if (selectedIdentity === undefined) {
+    return undefined;
+  }
+
+  if (!isRecord(selectedIdentity)) {
+    throw new ValidationError(
+      "Attempt promotion target requires summary.selectedIdentity to be an object when provided."
+    );
+  }
+
+  return {
+    taskId: accessSelectionValue(selectedIdentity, "taskId") as string,
+    attemptId: accessSelectionValue(selectedIdentity, "attemptId") as string,
+    runtime: accessSelectionValue(selectedIdentity, "runtime") as string
+  };
 }
 
 function normalizeTaskId(value: unknown): string {
@@ -483,6 +571,33 @@ function validateCheckNameList(
       `Attempt promotion target requires ${fieldName} to use non-empty string entries.`
     );
   }
+}
+
+function normalizeStringArrayField(
+  value: unknown,
+  message: string
+): string[] {
+  if (!Array.isArray(value)) {
+    throw new ValidationError(message);
+  }
+
+  const normalized: string[] = [];
+
+  for (let index = 0; index < value.length; index += 1) {
+    if (!Object.prototype.hasOwnProperty.call(value, index)) {
+      throw new ValidationError(message);
+    }
+
+    const entry = accessSelectionValue(value, String(index));
+
+    if (typeof entry !== "string") {
+      throw new ValidationError(message);
+    }
+
+    normalized.push(entry);
+  }
+
+  return normalized;
 }
 
 function validateNonNegativeInteger(value: unknown, fieldName: string): void {

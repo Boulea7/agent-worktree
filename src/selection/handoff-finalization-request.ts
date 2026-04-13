@@ -14,7 +14,10 @@ import {
   attemptHandoffFinalizationRequestBasis,
   deriveCanonicalAttemptHandoffDecisionBlockingReasons
 } from "./handoff-finalization-request-summary-shared.js";
-import { rethrowSelectionAccessError } from "./entry-validation.js";
+import {
+  accessSelectionValue,
+  rethrowSelectionAccessError
+} from "./entry-validation.js";
 import {
   validateDownstreamSingleTaskBoundary,
   validateDownstreamUniqueIdentity
@@ -44,20 +47,20 @@ export function deriveAttemptHandoffFinalizationRequestSummary(
 
   try {
     validateSummaryBasis(summary);
-    validateSummaryConsistency(summary);
+    const normalizedSummary = validateSummaryConsistency(summary);
 
-    if (!summary.canFinalizeHandoff) {
+    if (!normalizedSummary.canFinalizeHandoff) {
       return undefined;
     }
 
     return {
       requestBasis: attemptHandoffFinalizationRequestBasis,
-      resultCount: summary.resultCount,
-      invokedResultCount: summary.invokedResultCount,
-      blockedResultCount: summary.blockedResultCount,
-      blockingReasons: [...summary.blockingReasons],
-      canFinalizeHandoff: summary.canFinalizeHandoff,
-      requests: summary.targets.map((target) => {
+      resultCount: normalizedSummary.resultCount,
+      invokedResultCount: normalizedSummary.invokedResultCount,
+      blockedResultCount: normalizedSummary.blockedResultCount,
+      blockingReasons: [...normalizedSummary.blockingReasons],
+      canFinalizeHandoff: normalizedSummary.canFinalizeHandoff,
+      requests: normalizedSummary.targets.map((target) => {
         validateTaskId(target.taskId);
         validateNonEmptyString(target.attemptId, "target.attemptId");
         validateNonEmptyString(target.runtime, "target.runtime");
@@ -85,7 +88,10 @@ export function deriveAttemptHandoffFinalizationRequestSummary(
 }
 
 function validateSummaryBasis(summary: AttemptHandoffFinalizationTargetSummary): void {
-  if (summary.finalizationBasis !== ATTEMPT_HANDOFF_FINALIZATION_BASIS) {
+  if (
+    accessSelectionValue(summary, "finalizationBasis") !==
+    ATTEMPT_HANDOFF_FINALIZATION_BASIS
+  ) {
     throw new ValidationError(
       'Attempt handoff finalization request summary requires summary.finalizationBasis to be "handoff_decision_summary".'
     );
@@ -94,50 +100,60 @@ function validateSummaryBasis(summary: AttemptHandoffFinalizationTargetSummary):
 
 function validateSummaryConsistency(
   summary: AttemptHandoffFinalizationTargetSummary
-): void {
-  validateNonNegativeInteger(summary.resultCount, "summary.resultCount");
-  validateNonNegativeInteger(
-    summary.invokedResultCount,
-    "summary.invokedResultCount"
+): {
+  resultCount: number;
+  invokedResultCount: number;
+  blockedResultCount: number;
+  canFinalizeHandoff: boolean;
+  blockingReasons: AttemptHandoffDecisionBlockingReason[];
+  targets: Array<{
+    taskId: string;
+    attemptId: string;
+    runtime: string;
+    status: AttemptStatus;
+    sourceKind: AttemptSourceKind | undefined;
+  }>;
+} {
+  const resultCount = readNonNegativeInteger(summary, "resultCount");
+  const invokedResultCount = readNonNegativeInteger(summary, "invokedResultCount");
+  const blockedResultCount = readNonNegativeInteger(summary, "blockedResultCount");
+  const canFinalizeHandoff = readBoolean(summary, "canFinalizeHandoff");
+  const blockingReasons = normalizeBlockingReasons(
+    accessSelectionValue(summary, "blockingReasons")
   );
-  validateNonNegativeInteger(
-    summary.blockedResultCount,
-    "summary.blockedResultCount"
-  );
-  validateBoolean(summary.canFinalizeHandoff, "summary.canFinalizeHandoff");
-  validateBlockingReasons(summary.blockingReasons);
+  const targetsValue = accessSelectionValue(summary, "targets");
 
-  if (!Array.isArray(summary.targets)) {
+  if (!Array.isArray(targetsValue)) {
     throw new ValidationError(
       "Attempt handoff finalization request summary requires summary.targets to be an array."
     );
   }
 
-  validateTargets(summary.targets);
+  const targets = normalizeTargets(targetsValue);
   validateDownstreamSingleTaskBoundary(
-    summary.targets,
+    targets,
     "Attempt handoff finalization request summary requires summary.targets from a single taskId."
   );
   validateDownstreamUniqueIdentity(
-    summary.targets,
+    targets,
     "Attempt handoff finalization request summary requires summary.targets to use unique (taskId, attemptId, runtime) identities."
   );
 
-  if (summary.canFinalizeHandoff && summary.targets.length === 0) {
+  if (canFinalizeHandoff && targets.length === 0) {
     throw new ValidationError(
       "Attempt handoff finalization request summary requires summary.targets to be non-empty when summary.canFinalizeHandoff is true."
     );
   }
 
-  if (summary.invokedResultCount !== summary.targets.length) {
+  if (invokedResultCount !== targets.length) {
     throw new ValidationError(
       "Attempt handoff finalization request summary requires summary.invokedResultCount to match summary.targets.length."
     );
   }
 
   if (
-    summary.blockedResultCount + summary.invokedResultCount !==
-    summary.resultCount
+    blockedResultCount + invokedResultCount !==
+    resultCount
   ) {
     throw new ValidationError(
       "Attempt handoff finalization request summary requires summary.resultCount to equal summary.invokedResultCount plus summary.blockedResultCount."
@@ -146,13 +162,13 @@ function validateSummaryConsistency(
 
   const canonicalBlockingReasons =
     deriveCanonicalAttemptHandoffDecisionBlockingReasons(
-      summary.resultCount,
-      summary.invokedResultCount
+      resultCount,
+      invokedResultCount
     );
 
   if (
     !blockingReasonArraysEqual(
-      summary.blockingReasons,
+      blockingReasons,
       canonicalBlockingReasons
     )
   ) {
@@ -161,17 +177,26 @@ function validateSummaryConsistency(
     );
   }
 
-  if (summary.canFinalizeHandoff !== (summary.blockingReasons.length === 0)) {
+  if (canFinalizeHandoff !== (blockingReasons.length === 0)) {
     throw new ValidationError(
       "Attempt handoff finalization request summary requires summary.canFinalizeHandoff to match whether summary.blockingReasons is empty."
     );
   }
 
-  if (!summary.canFinalizeHandoff && summary.targets.length > 0) {
+  if (!canFinalizeHandoff && targets.length > 0) {
     throw new ValidationError(
       "Attempt handoff finalization request summary requires summary.targets to be empty when summary.canFinalizeHandoff is false."
     );
   }
+
+  return {
+    resultCount,
+    invokedResultCount,
+    blockedResultCount,
+    canFinalizeHandoff,
+    blockingReasons,
+    targets
+  };
 }
 
 function validateTaskId(value: unknown): void {
@@ -198,13 +223,34 @@ function validateBoolean(value: unknown, fieldName: string): void {
   }
 }
 
-function validateBlockingReasons(value: unknown): void {
+function readNonNegativeInteger(
+  container: object,
+  key: string
+): number {
+  const value = accessSelectionValue(container, key);
+  validateNonNegativeInteger(value, `summary.${key}`);
+  return value as number;
+}
+
+function readBoolean(
+  container: object,
+  key: string
+): boolean {
+  const value = accessSelectionValue(container, key);
+  validateBoolean(value, `summary.${key}`);
+  return value as boolean;
+}
+
+function normalizeBlockingReasons(
+  value: unknown
+): AttemptHandoffDecisionBlockingReason[] {
   if (!Array.isArray(value)) {
     throw new ValidationError(
       "Attempt handoff finalization request summary requires summary.blockingReasons to be an array."
     );
   }
 
+  const blockingReasons: AttemptHandoffDecisionBlockingReason[] = [];
   for (let index = 0; index < value.length; index += 1) {
     if (
       !hasOwnIndex(value, index) ||
@@ -217,19 +263,62 @@ function validateBlockingReasons(value: unknown): void {
         "Attempt handoff finalization request summary requires summary.blockingReasons to use the existing handoff decision blocker vocabulary."
       );
     }
+
+    blockingReasons.push(
+      value[index] as AttemptHandoffDecisionBlockingReason
+    );
   }
+
+  return blockingReasons;
 }
 
-function validateTargets(
-  value: readonly unknown[]
-): asserts value is AttemptHandoffFinalizationTargetSummary["targets"] {
+function normalizeTargets(value: readonly unknown[]): Array<{
+  taskId: string;
+  attemptId: string;
+  runtime: string;
+  status: AttemptStatus;
+  sourceKind: AttemptSourceKind | undefined;
+}> {
+  const targets: Array<{
+    taskId: string;
+    attemptId: string;
+    runtime: string;
+    status: AttemptStatus;
+    sourceKind: AttemptSourceKind | undefined;
+  }> = [];
+
   for (let index = 0; index < value.length; index += 1) {
     if (!hasOwnIndex(value, index) || !isRecord(value[index])) {
       throw new ValidationError(
         "Attempt handoff finalization request summary requires summary.targets entries to be objects."
       );
     }
+
+    const target = value[index] as Record<string, unknown>;
+    const taskId = normalizeTaskId(accessSelectionValue(target, "taskId"));
+    const attemptId = normalizeNonEmptyString(
+      accessSelectionValue(target, "attemptId"),
+      "target.attemptId"
+    );
+    const runtime = normalizeNonEmptyString(
+      accessSelectionValue(target, "runtime"),
+      "target.runtime"
+    );
+    const status = accessSelectionValue(target, "status");
+    const sourceKind = accessSelectionValue(target, "sourceKind");
+    validateAttemptStatus(status);
+    validateAttemptSourceKind(sourceKind);
+
+    targets.push({
+      taskId,
+      attemptId,
+      runtime,
+      status: status as AttemptStatus,
+      sourceKind: sourceKind as AttemptSourceKind | undefined
+    });
   }
+
+  return targets;
 }
 
 function blockingReasonArraysEqual(

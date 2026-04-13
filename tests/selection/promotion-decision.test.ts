@@ -271,6 +271,29 @@ describe("selection promotion-decision helpers", () => {
     expect(decision.candidateCount).toBe(2);
   });
 
+  it("should fail closed when summary.selectedIdentity is inherited instead of owned", () => {
+    const summary = createPromotionExplanationSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready"
+      })
+    ]) as unknown as Record<string, unknown>;
+
+    delete summary.selectedIdentity;
+    Object.setPrototypeOf(summary, {
+      selectedIdentity: {
+        taskId: "task_shared",
+        attemptId: "att_ready",
+        runtime: "codex-cli"
+      }
+    });
+
+    expect(() =>
+      deriveAttemptPromotionDecisionSummaryDirect(
+        summary as unknown as AttemptPromotionExplanationSummary
+      )
+    ).toThrow(ValidationError);
+  });
+
   it("should preserve canonical selected identity through explanation, decision, and target derivation when the incoming report identity carries surrounding whitespace", () => {
     const report = deriveAttemptPromotionReport(
       deriveAttemptPromotionAuditSummary(

@@ -287,6 +287,39 @@ describe("selection handoff-finalization-request helpers", () => {
     );
   });
 
+  it("should fail loudly when a target identity field is inherited instead of owned", () => {
+    const inheritedTarget = Object.create({
+      taskId: "task_inherited",
+      attemptId: "att_inherited",
+      runtime: "codex-cli",
+      status: "created",
+      sourceKind: undefined
+    }) as ReturnType<typeof createFinalizationTargetSummary>["targets"][number];
+
+    const act = () =>
+      deriveAttemptHandoffFinalizationRequestSummary({
+        ...createFinalizationTargetSummary([
+          {
+            taskId: "task_shared",
+            attemptId: "att_ready",
+            runtime: "codex-cli",
+            status: "created",
+            sourceKind: undefined
+          }
+        ]),
+        targets: [inheritedTarget],
+        resultCount: 1,
+        invokedResultCount: 1,
+        blockedResultCount: 0,
+        blockingReasons: []
+      });
+
+    expect(act).toThrow(ValidationError);
+    expect(act).toThrow(
+      "Attempt handoff finalization request summary requires target.taskId to be a non-empty string."
+    );
+  });
+
   it("should fail loudly when summary.targets mixes taskIds after normalization", () => {
     expect(() =>
       deriveAttemptHandoffFinalizationRequestSummary(

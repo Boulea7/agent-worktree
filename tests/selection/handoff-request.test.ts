@@ -129,6 +129,27 @@ describe("selection handoff-request helpers", () => {
     );
   });
 
+  it("should fail loudly when target identity fields are inherited instead of owned", () => {
+    const target = Object.create({
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli",
+      status: "created",
+      sourceKind: undefined
+    }) as AttemptHandoffTarget;
+
+    Object.defineProperty(target, "handoffBasis", {
+      configurable: true,
+      enumerable: true,
+      value: "promotion_target"
+    });
+
+    expect(() => deriveAttemptHandoffRequest(target)).toThrow(ValidationError);
+    expect(() => deriveAttemptHandoffRequest(target)).toThrow(
+      "Attempt handoff request requires target.taskId to be a non-empty string."
+    );
+  });
+
   it("should fail loudly when target.taskId is not a non-empty string", () => {
     const target = {
       ...createHandoffTarget(),

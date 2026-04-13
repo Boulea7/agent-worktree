@@ -146,6 +146,38 @@ describe(
       );
     });
 
+    it("should snapshot top-level grouped reporting groups once before downstream reuse", () => {
+      let reads = 0;
+      const summary = createGroupedReportingSummary([createBlockedReportingGroup()]);
+
+      Object.defineProperty(summary, "groups", {
+        configurable: true,
+        enumerable: true,
+        get() {
+          reads += 1;
+
+          if (reads > 1) {
+            throw new Error("second read boom");
+          }
+
+          return [createBlockedReportingGroup()];
+        }
+      });
+
+      expect(
+        deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary(summary)
+      ).toEqual({
+        groupedReportingDispositionBasis:
+          "handoff_finalization_grouped_reporting_summary",
+        resultCount: 2,
+        invokedResultCount: 0,
+        blockedResultCount: 2,
+        groupCount: 1,
+        reportingDisposition: "all_blocked"
+      });
+      expect(reads).toBe(1);
+    });
+
     it("should fail loudly when top-level grouped reporting counts are not non-negative integers", () => {
       const act = () =>
         deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary({
