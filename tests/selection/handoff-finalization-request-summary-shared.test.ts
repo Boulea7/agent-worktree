@@ -91,6 +91,26 @@ describe("selection handoff-finalization-request-summary-shared helpers", () => 
     expect(() =>
       validateAttemptHandoffFinalizationRequestSummaryForApply(
         createSummary({
+          requests: []
+        })
+      )
+    ).toThrow(
+      "Attempt handoff finalization request apply requires summary.requests to be non-empty when summary.canFinalizeHandoff is true."
+    );
+
+    expect(() =>
+      validateAttemptHandoffFinalizationRequestSummaryForApply(
+        createSummary({
+          invokedResultCount: 0
+        })
+      )
+    ).toThrow(
+      "Attempt handoff finalization request apply requires summary.invokedResultCount to match summary.requests.length."
+    );
+
+    expect(() =>
+      validateAttemptHandoffFinalizationRequestSummaryForApply(
+        createSummary({
           canFinalizeHandoff: false
         })
       )
@@ -106,6 +126,17 @@ describe("selection handoff-finalization-request-summary-shared helpers", () => 
           blockedResultCount: 1,
           canFinalizeHandoff: false,
           requests: []
+        })
+      )
+    ).toThrow(
+      "Attempt handoff finalization request apply requires summary.blockingReasons to match the canonical blocker derivation from summary result counts."
+    );
+
+    expect(() =>
+      validateAttemptHandoffFinalizationRequestSummaryForApply(
+        createSummary({
+          blockingReasons: ["handoff_unsupported"],
+          canFinalizeHandoff: true
         })
       )
     ).toThrow(

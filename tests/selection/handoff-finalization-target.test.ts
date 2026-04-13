@@ -157,6 +157,25 @@ describe("selection handoff-finalization-target helpers", () => {
     ).toThrow(ValidationError);
   });
 
+  it("should fail loudly when explanation results reuse duplicate identities after canonicalization", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationTargetSummary(
+        createExplanationSummary([
+          createInvokedExplanationEntry({
+            taskId: "task_shared",
+            attemptId: "att_same",
+            runtime: " codex-cli "
+          }),
+          createInvokedExplanationEntry({
+            taskId: " task_shared ",
+            attemptId: " att_same ",
+            runtime: "codex-cli"
+          })
+        ])
+      )
+    ).toThrow(ValidationError);
+  });
+
   it("should keep the finalization target shape minimal without leaking apply or readiness metadata", () => {
     const summary = deriveAttemptHandoffFinalizationTargetSummary(
       createExplanationSummary([createInvokedExplanationEntry()])
@@ -262,6 +281,17 @@ describe("selection handoff-finalization-target helpers", () => {
     ).toThrow(
       "Attempt handoff finalization target summary requires summary subgroup projections to match the canonical explanation summary."
     );
+  });
+
+  it("should fail loudly when a finalize-ready decision would keep no invoked results", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationTargetSummary({
+        explanationBasis: "handoff_report_ready",
+        results: [createBlockedExplanationEntry()],
+        invokedResults: [],
+        blockedResults: []
+      } as never)
+    ).toThrow(ValidationError);
   });
 
   it("should fail loudly when results entries drift even if canonical subgroups still match", () => {
