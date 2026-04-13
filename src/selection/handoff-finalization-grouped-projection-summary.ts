@@ -25,9 +25,12 @@ export function deriveAttemptHandoffFinalizationGroupedProjectionSummary(
     return undefined;
   }
 
-  validateSummary(summary);
+  const normalizedSummary = normalizeSummary(summary);
 
-  const results = validateReportReadyEntryArray(summary.results, "summary.results");
+  const results = validateReportReadyEntryArray(
+    normalizedSummary.results,
+    "summary.results"
+  );
   validateDownstreamSingleTaskBoundary(
     results,
     "Attempt handoff finalization grouped projection summary requires summary.results from a single taskId."
@@ -36,7 +39,7 @@ export function deriveAttemptHandoffFinalizationGroupedProjectionSummary(
     results,
     "Attempt handoff finalization grouped projection summary requires summary.results to use unique (taskId, attemptId, runtime) identities."
   );
-  validateCanonicalSubgroups(summary, results);
+  validateCanonicalSubgroups(normalizedSummary, results);
 
   const groups = deriveGroups(results);
 
@@ -49,7 +52,13 @@ export function deriveAttemptHandoffFinalizationGroupedProjectionSummary(
   };
 }
 
-function validateSummary(summary: AttemptHandoffFinalizationReportReady): void {
+function normalizeSummary(
+  summary: AttemptHandoffFinalizationReportReady
+): {
+  results: readonly AttemptHandoffFinalizationReportReadyEntry[];
+  invokedResults: unknown;
+  blockedResults: unknown;
+} {
   if (!isRecord(summary)) {
     throw new ValidationError(
       "Attempt handoff finalization grouped projection summary requires summary to be an object."
@@ -68,23 +77,38 @@ function validateSummary(summary: AttemptHandoffFinalizationReportReady): void {
     );
   }
 
-  if (
-    !Array.isArray(
-      readSelectionValue(
-        summary,
-        "results",
-        "Attempt handoff finalization grouped projection summary requires summary.results to be an array."
-      )
-    )
-  ) {
+  const results = readSelectionValue(
+    summary,
+    "results",
+    "Attempt handoff finalization grouped projection summary requires summary.results to be an array."
+  );
+
+  if (!Array.isArray(results)) {
     throw new ValidationError(
       "Attempt handoff finalization grouped projection summary requires summary.results to be an array."
     );
   }
+
+  return {
+    results: results as readonly AttemptHandoffFinalizationReportReadyEntry[],
+    invokedResults: readSelectionValue(
+      summary,
+      "invokedResults",
+      "Attempt handoff finalization grouped projection summary requires summary.invokedResults to match the stable filtered invoked subgroup."
+    ),
+    blockedResults: readSelectionValue(
+      summary,
+      "blockedResults",
+      "Attempt handoff finalization grouped projection summary requires summary.blockedResults to match the stable filtered blocked subgroup."
+    )
+  };
 }
 
 function validateCanonicalSubgroups(
-  summary: AttemptHandoffFinalizationReportReady,
+  summary: {
+    invokedResults: unknown;
+    blockedResults: unknown;
+  },
   results: readonly AttemptHandoffFinalizationReportReadyEntry[]
 ): void {
   const invokedResults = results.filter((entry) => entry.invoked);
@@ -92,11 +116,7 @@ function validateCanonicalSubgroups(
 
   if (
     !reportReadyEntryArraysEqual(
-      readSelectionValue(
-        summary,
-        "invokedResults",
-        "Attempt handoff finalization grouped projection summary requires summary.invokedResults to match the stable filtered invoked subgroup."
-      ),
+      summary.invokedResults,
       invokedResults
     )
   ) {
@@ -107,11 +127,7 @@ function validateCanonicalSubgroups(
 
   if (
     !reportReadyEntryArraysEqual(
-      readSelectionValue(
-        summary,
-        "blockedResults",
-        "Attempt handoff finalization grouped projection summary requires summary.blockedResults to match the stable filtered blocked subgroup."
-      ),
+      summary.blockedResults,
       blockedResults
     )
   ) {

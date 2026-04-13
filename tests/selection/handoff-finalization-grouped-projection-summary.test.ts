@@ -193,6 +193,43 @@ describe("selection handoff-finalization-grouped-projection-summary helpers", ()
     );
   });
 
+  it("should snapshot summary.results once before downstream grouped projection derivation reuses them", () => {
+    const canonicalResults = [createBlockedReportReadyEntry()];
+    let resultsReads = 0;
+
+    expect(
+      deriveAttemptHandoffFinalizationGroupedProjectionSummary({
+        reportBasis: "handoff_finalization_explanation_summary",
+        get results() {
+          resultsReads += 1;
+
+          if (resultsReads > 1) {
+            throw new Error("getter boom");
+          }
+
+          return canonicalResults;
+        },
+        invokedResults: [],
+        blockedResults: canonicalResults
+      } as never)
+    ).toEqual({
+      groupedProjectionBasis: "handoff_finalization_report_ready",
+      resultCount: 1,
+      invokedResultCount: 0,
+      blockedResultCount: 1,
+      groups: [
+        {
+          groupKey: "handoff_finalization_blocked_unsupported",
+          resultCount: 1,
+          invokedResultCount: 0,
+          blockedResultCount: 1,
+          results: [createBlockedReportReadyEntry()]
+        }
+      ]
+    });
+    expect(resultsReads).toBe(1);
+  });
+
   it("should fail loudly when report-ready results contain sparse slots", () => {
     const sparseResults = new Array<AttemptHandoffFinalizationReportReadyEntry>(1);
     const act = () =>

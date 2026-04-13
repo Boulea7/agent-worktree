@@ -161,6 +161,44 @@ describe("selection handoff-finalization-grouped-reporting-summary helpers", () 
     );
   });
 
+  it("should snapshot summary.groups once before downstream grouped reporting derivation reuses them", () => {
+    const canonicalGroups = [createBlockedProjectionGroup()];
+    let groupsReads = 0;
+
+    expect(
+      deriveAttemptHandoffFinalizationGroupedReportingSummary({
+        groupedProjectionBasis: "handoff_finalization_report_ready",
+        resultCount: 1,
+        invokedResultCount: 0,
+        blockedResultCount: 1,
+        get groups() {
+          groupsReads += 1;
+
+          if (groupsReads > 1) {
+            throw new Error("getter boom");
+          }
+
+          return canonicalGroups;
+        }
+      } as never)
+    ).toEqual({
+      groupedReportingBasis:
+        "handoff_finalization_grouped_projection_summary",
+      resultCount: 1,
+      invokedResultCount: 0,
+      blockedResultCount: 1,
+      groups: [
+        {
+          groupKey: "handoff_finalization_blocked_unsupported",
+          resultCount: 1,
+          invokedResultCount: 0,
+          blockedResultCount: 1
+        }
+      ]
+    });
+    expect(groupsReads).toBe(1);
+  });
+
   it("should fail loudly when grouped projection groups rely on inherited array indexes", () => {
     Array.prototype[0] = createBlockedProjectionGroup();
 
