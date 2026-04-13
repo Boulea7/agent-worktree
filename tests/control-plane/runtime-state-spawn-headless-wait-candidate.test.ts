@@ -40,7 +40,14 @@ describe(
         headlessContext
       }) as unknown as Record<string, unknown>;
 
-      expect(result.headlessContext).toBe(headlessContext);
+      expect(result.headlessContext).toEqual(headlessContext);
+      expect(result.headlessContext).not.toBe(headlessContext);
+      expect((result.headlessContext as { context: unknown }).context).toBe(
+        headlessContext.context
+      );
+      expect(
+        (result.headlessContext as { headlessView: unknown }).headlessView
+      ).toBe(headlessContext.headlessView);
       expect(result.candidate).toEqual({
         context: headlessContext.context,
         readiness: deriveExecutionSessionWaitReadiness({
@@ -220,6 +227,58 @@ describe(
       ).toThrow(
         "Execution session spawn headless wait candidate requires headlessContext to include context and headlessView objects."
       );
+    });
+
+    it("should snapshot nested headlessContext values so readiness only reads them once", () => {
+      let headlessContextReads = 0;
+
+      const canonicalHeadlessContext = deriveExecutionSessionSpawnHeadlessContext({
+        headlessView: {
+          descendantCoverage: "complete",
+          headlessRecord: createHeadlessRecord({
+            attemptId: "att_child_wait_candidate_snapshot",
+            parentAttemptId: "att_parent_wait_candidate_snapshot",
+            sessionId: "thr_child_wait_candidate_snapshot",
+            sourceKind: "delegated"
+          }),
+          view: buildExecutionSessionView([
+            createRecord({
+              attemptId: "att_parent_wait_candidate_snapshot",
+              sessionId: "thr_parent_wait_candidate_snapshot",
+              sourceKind: "direct"
+            }),
+            createRecord({
+              attemptId: "att_child_wait_candidate_snapshot",
+              parentAttemptId: "att_parent_wait_candidate_snapshot",
+              sessionId: "thr_child_wait_candidate_snapshot",
+              sourceKind: "delegated"
+            })
+          ])
+        }
+      });
+
+      const result = deriveExecutionSessionSpawnHeadlessWaitCandidate({
+        get headlessContext() {
+          headlessContextReads += 1;
+
+          if (headlessContextReads > 1) {
+            throw new Error("headlessContext getter read twice");
+          }
+
+          return canonicalHeadlessContext;
+        }
+      } as never);
+
+      expect(result).toEqual({
+        headlessContext: canonicalHeadlessContext,
+        candidate: {
+          context: canonicalHeadlessContext.context,
+          readiness: deriveExecutionSessionWaitReadiness({
+            context: canonicalHeadlessContext.context
+          })
+        }
+      });
+      expect(headlessContextReads).toBe(1);
     });
   }
 );

@@ -38,7 +38,8 @@ describe(
         headlessCloseCandidateBatch
       }) as unknown as Record<string, unknown>;
 
-      expect(result.headlessCloseCandidateBatch).toBe(headlessCloseCandidateBatch);
+      expect(result.headlessCloseCandidateBatch).toEqual(headlessCloseCandidateBatch);
+      expect(result.headlessCloseCandidateBatch).not.toBe(headlessCloseCandidateBatch);
       expect(result.results).toEqual([]);
       expect(result).not.toHaveProperty("summary");
       expect(result).not.toHaveProperty("count");
@@ -72,12 +73,13 @@ describe(
         results: Array<Record<string, unknown>>;
       };
 
-      expect(result.headlessCloseCandidateBatch).toBe(headlessCloseCandidateBatch);
+      expect(result.headlessCloseCandidateBatch).toEqual(headlessCloseCandidateBatch);
+      expect(result.headlessCloseCandidateBatch).not.toBe(headlessCloseCandidateBatch);
       expect(result.results).toHaveLength(2);
-      expect(result.results[0]?.headlessCloseCandidate).toBe(
+      expect(result.results[0]?.headlessCloseCandidate).toEqual(
         headlessCloseCandidateBatch.results[0]
       );
-      expect(result.results[1]?.headlessCloseCandidate).toBe(
+      expect(result.results[1]?.headlessCloseCandidate).toEqual(
         headlessCloseCandidateBatch.results[1]
       );
       expect(result.results[0]?.target).toEqual({

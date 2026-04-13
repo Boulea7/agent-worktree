@@ -23,7 +23,8 @@ describe("control-plane runtime-state spawn-headless-view-batch helpers", () => 
       };
     };
 
-    expect(result.headlessRecordBatch).toBe(headlessRecordBatch);
+    expect(result.headlessRecordBatch).toEqual(headlessRecordBatch);
+    expect(result.headlessRecordBatch).not.toBe(headlessRecordBatch);
     expect(view.index.byAttemptId.size).toBe(0);
     expect(view.index.bySessionId.size).toBe(0);
     expect(view.childAttemptIdsByParent.size).toBe(0);
@@ -45,7 +46,8 @@ describe("control-plane runtime-state spawn-headless-view-batch helpers", () => 
       };
     };
 
-    expect(result.headlessRecordBatch).toBe(headlessRecordBatch);
+    expect(result.headlessRecordBatch).toEqual(headlessRecordBatch);
+    expect(result.headlessRecordBatch).not.toBe(headlessRecordBatch);
     expect(view.index.byAttemptId.get("att_root_view")).toBe(
       headlessRecordBatch.results[0]?.record
     );

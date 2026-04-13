@@ -101,6 +101,29 @@ describe("control-plane runtime-state close-target helpers", () => {
     });
   });
 
+  it("should trim raw wrapper string fields before returning a close target", () => {
+    expect(
+      deriveExecutionSessionCloseTarget({
+        candidate: {
+          context: {
+            record: {
+              attemptId: "  att_trim_close  ",
+              runtime: "  codex-cli  ",
+              sessionId: "  thr_trim_close  "
+            }
+          },
+          readiness: {
+            canClose: true
+          }
+        } as never
+      })
+    ).toEqual({
+      attemptId: "att_trim_close",
+      runtime: "codex-cli",
+      sessionId: "thr_trim_close"
+    });
+  });
+
   it("should return undefined when the candidate has an unknown session", () => {
     const candidate = deriveExecutionSessionCloseCandidate({
       view: buildExecutionSessionView([

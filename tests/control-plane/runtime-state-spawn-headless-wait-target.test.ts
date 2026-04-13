@@ -28,7 +28,11 @@ describe(
         headlessWaitCandidate
       }) as unknown as Record<string, unknown>;
 
-      expect(result.headlessWaitCandidate).toBe(headlessWaitCandidate);
+      expect(result.headlessWaitCandidate).toEqual(headlessWaitCandidate);
+      expect(result.headlessWaitCandidate).not.toBe(headlessWaitCandidate);
+      expect(
+        (result.headlessWaitCandidate as { candidate: unknown }).candidate
+      ).toBe(headlessWaitCandidate.candidate);
       expect(result.target).toEqual(
         deriveExecutionSessionWaitTarget({
           candidate: headlessWaitCandidate.candidate
@@ -61,7 +65,8 @@ describe(
         headlessWaitCandidate
       }) as unknown as Record<string, unknown>;
 
-      expect(result.headlessWaitCandidate).toBe(headlessWaitCandidate);
+      expect(result.headlessWaitCandidate).toEqual(headlessWaitCandidate);
+      expect(result.headlessWaitCandidate).not.toBe(headlessWaitCandidate);
       expect(result).not.toHaveProperty("target");
       expect(result).not.toHaveProperty("waitTarget");
       expect(result).not.toHaveProperty("closeTarget");
@@ -78,7 +83,8 @@ describe(
         headlessWaitCandidate
       }) as unknown as Record<string, unknown>;
 
-      expect(result.headlessWaitCandidate).toBe(headlessWaitCandidate);
+      expect(result.headlessWaitCandidate).toEqual(headlessWaitCandidate);
+      expect(result.headlessWaitCandidate).not.toBe(headlessWaitCandidate);
       expect(result).not.toHaveProperty("target");
       expect(result).not.toHaveProperty("waitTarget");
       expect(result).not.toHaveProperty("closeTarget");
@@ -93,6 +99,37 @@ describe(
       ).toThrow(
         "Execution session spawn headless wait target requires a headlessWaitCandidate wrapper."
       );
+    });
+
+    it("should snapshot nested headlessWaitCandidate values so target derivation only reads them once", () => {
+      let candidateReads = 0;
+
+      const canonicalCandidate = createHeadlessWaitCandidate({
+        attemptId: "att_child_wait_target_snapshot",
+        parentAttemptId: "att_parent_wait_target_snapshot",
+        sessionId: "thr_child_wait_target_snapshot",
+        sourceKind: "delegated"
+      });
+
+      const result = deriveExecutionSessionSpawnHeadlessWaitTarget({
+        get headlessWaitCandidate() {
+          candidateReads += 1;
+
+          if (candidateReads > 1) {
+            throw new Error("headlessWaitCandidate getter read twice");
+          }
+
+          return canonicalCandidate;
+        }
+      } as never);
+
+      expect(result).toEqual({
+        headlessWaitCandidate: canonicalCandidate,
+        target: deriveExecutionSessionWaitTarget({
+          candidate: canonicalCandidate.candidate
+        })
+      });
+      expect(candidateReads).toBe(1);
     });
   }
 );

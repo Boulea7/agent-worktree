@@ -38,7 +38,8 @@ describe(
         headlessViewBatch
       }) as unknown as Record<string, unknown>;
 
-      expect(result.headlessViewBatch).toBe(headlessViewBatch);
+      expect(result.headlessViewBatch).toEqual(headlessViewBatch);
+      expect(result.headlessViewBatch).not.toBe(headlessViewBatch);
       expect(result.results).toEqual([]);
       expect(result).not.toHaveProperty("summary");
       expect(result).not.toHaveProperty("count");
@@ -92,10 +93,11 @@ describe(
       const typedResult =
         result as ExecutionSessionSpawnHeadlessContextBatch & Record<string, unknown>;
 
-      expect(typedResult.headlessViewBatch).toBe(headlessViewBatch);
+      expect(typedResult.headlessViewBatch).toEqual(headlessViewBatch);
+      expect(typedResult.headlessViewBatch).not.toBe(headlessViewBatch);
       expect(typedResult.results).toHaveLength(2);
-      expect(typedResult.results[0]?.headlessView.headlessRecord).toBe(childRecordA);
-      expect(typedResult.results[1]?.headlessView.headlessRecord).toBe(childRecordB);
+      expect(typedResult.results[0]?.headlessView.headlessRecord).toEqual(childRecordA);
+      expect(typedResult.results[1]?.headlessView.headlessRecord).toEqual(childRecordB);
       expect(typedResult.results[0]?.headlessView.view).toBe(headlessViewBatch.view);
       expect(typedResult.results[1]?.headlessView.view).toBe(headlessViewBatch.view);
       expect(typedResult.results[0]?.context).toEqual({

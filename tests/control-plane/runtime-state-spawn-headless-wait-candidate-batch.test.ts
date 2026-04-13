@@ -63,7 +63,8 @@ describe(
         headlessContextBatch
       }) as unknown as Record<string, unknown>;
 
-      expect(result.headlessContextBatch).toBe(headlessContextBatch);
+      expect(result.headlessContextBatch).toEqual(headlessContextBatch);
+      expect(result.headlessContextBatch).not.toBe(headlessContextBatch);
       expect(result.results).toEqual([]);
       expect(result).not.toHaveProperty("summary");
       expect(result).not.toHaveProperty("count");
@@ -119,12 +120,13 @@ describe(
       const typedResult = result as ExecutionSessionSpawnHeadlessWaitCandidateBatch &
         Record<string, unknown>;
 
-      expect(typedResult.headlessContextBatch).toBe(headlessContextBatch);
+      expect(typedResult.headlessContextBatch).toEqual(headlessContextBatch);
+      expect(typedResult.headlessContextBatch).not.toBe(headlessContextBatch);
       expect(typedResult.results).toHaveLength(2);
-      expect(typedResult.results[0]?.headlessContext).toBe(
+      expect(typedResult.results[0]?.headlessContext).toEqual(
         headlessContextBatch.results[0]
       );
-      expect(typedResult.results[1]?.headlessContext).toBe(
+      expect(typedResult.results[1]?.headlessContext).toEqual(
         headlessContextBatch.results[1]
       );
       expect(typedResult.results[0]?.candidate.context).toBe(

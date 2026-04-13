@@ -98,6 +98,29 @@ describe("control-plane runtime-state wait-target helpers", () => {
     });
   });
 
+  it("should trim raw wrapper string fields before returning a wait target", () => {
+    expect(
+      deriveExecutionSessionWaitTarget({
+        candidate: {
+          context: {
+            record: {
+              attemptId: "  att_trim_wait  ",
+              runtime: "  codex-cli  ",
+              sessionId: "  thr_trim_wait  "
+            }
+          },
+          readiness: {
+            canWait: true
+          }
+        } as never
+      })
+    ).toEqual({
+      attemptId: "att_trim_wait",
+      runtime: "codex-cli",
+      sessionId: "thr_trim_wait"
+    });
+  });
+
   it("should return undefined when the candidate has an unknown session", () => {
     const candidate = deriveExecutionSessionWaitCandidate({
       view: buildExecutionSessionView([

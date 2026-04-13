@@ -27,7 +27,14 @@ describe(
         headlessContext
       }) as unknown as Record<string, unknown>;
 
-      expect(result.headlessContext).toBe(headlessContext);
+      expect(result.headlessContext).toEqual(headlessContext);
+      expect(result.headlessContext).not.toBe(headlessContext);
+      expect((result.headlessContext as { context: unknown }).context).toBe(
+        headlessContext.context
+      );
+      expect(
+        (result.headlessContext as { headlessView: unknown }).headlessView
+      ).toBe(headlessContext.headlessView);
       expect(result.candidate).toEqual({
         context: headlessContext.context,
         readiness: {
@@ -66,7 +73,11 @@ describe(
         resolveSessionLifecycleCapability: () => true
       });
 
-      expect(result.headlessContext).toBe(headlessContext);
+      expect(result.headlessContext).toEqual(headlessContext);
+      expect(result.headlessContext).not.toBe(headlessContext);
+      expect((result.headlessContext as { context: unknown }).context).toBe(
+        headlessContext.context
+      );
       expect(result.candidate.context).toBe(headlessContext.context);
       expect(result.candidate.readiness).toEqual({
         blockingReasons: [],
@@ -194,6 +205,46 @@ describe(
       ).toThrow(
         "Execution session spawn headless close candidate requires headlessContext to include context and headlessView objects."
       );
+    });
+
+    it("should snapshot nested headlessContext values so close readiness only reads them once", () => {
+      let headlessContextReads = 0;
+
+      const canonicalHeadlessContext = createHeadlessContext({
+        attemptId: "att_child_close_candidate_snapshot",
+        parentAttemptId: "att_parent_close_candidate_snapshot",
+        sessionId: "thr_child_close_candidate_snapshot",
+        sourceKind: "delegated"
+      });
+
+      const result = deriveExecutionSessionSpawnHeadlessCloseCandidate({
+        get headlessContext() {
+          headlessContextReads += 1;
+
+          if (headlessContextReads > 1) {
+            throw new Error("headlessContext getter read twice");
+          }
+
+          return canonicalHeadlessContext;
+        },
+        resolveSessionLifecycleCapability: () => true
+      } as never);
+
+      expect(result).toEqual({
+        headlessContext: canonicalHeadlessContext,
+        candidate: {
+          context: canonicalHeadlessContext.context,
+          readiness: {
+            blockingReasons: [],
+            sessionLifecycleSupported: true,
+            alreadyFinal: false,
+            wouldAffectDescendants: false,
+            canClose: true,
+            hasBlockingReasons: false
+          }
+        }
+      });
+      expect(headlessContextReads).toBe(1);
     });
   }
 );

@@ -47,7 +47,8 @@ describe(
         headlessContextBatch
       }) as unknown as Record<string, unknown>;
 
-      expect(result.headlessContextBatch).toBe(headlessContextBatch);
+      expect(result.headlessContextBatch).toEqual(headlessContextBatch);
+      expect(result.headlessContextBatch).not.toBe(headlessContextBatch);
       expect(result.results).toEqual([]);
       expect(result).not.toHaveProperty("summary");
       expect(result).not.toHaveProperty("count");
@@ -88,12 +89,13 @@ describe(
           }>;
         };
 
-      expect(result.headlessContextBatch).toBe(headlessContextBatch);
+      expect(result.headlessContextBatch).toEqual(headlessContextBatch);
+      expect(result.headlessContextBatch).not.toBe(headlessContextBatch);
       expect(result.results).toHaveLength(2);
-      expect(result.results[0]?.headlessContext).toBe(
+      expect(result.results[0]?.headlessContext).toEqual(
         headlessContextBatch.results[0]
       );
-      expect(result.results[1]?.headlessContext).toBe(
+      expect(result.results[1]?.headlessContext).toEqual(
         headlessContextBatch.results[1]
       );
       expect(result.results[0]?.candidate.context).toBe(
