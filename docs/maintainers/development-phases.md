@@ -207,8 +207,8 @@ Current thin-slice status:
 Read-first rule for future implementation windows:
 
 - before starting any Phase 6 or later development slice, maintainers should read `docs/maintainers/future-super-agent-harness/README.md` plus its current reuse, sandbox/extensibility, memory/state, and vision docs
-- those files are the current local synthesis point for prior Claude Code and DeerFlow research and should be treated as the starting reference set for future-branch design work
-- future slices involving sandboxing, delegated agents/subagents, memory, or other reusable orchestration substrate should prefer vetted upstream code reuse or code-guided adaptation from Claude Code research references or DeerFlow before inventing a clean-room subsystem
+- those files are the current public synthesis point for local-only upstream substrate research and should be treated as the starting reference set for future-branch design work
+- future slices involving sandboxing, delegated agents/subagents, memory, or other reusable orchestration substrate should default to vetted upstream code reuse or code-guided adaptation from local-only upstream references before inventing a clean-room subsystem
 - any local upstream checkout used for that reuse work should stay in ignored local-only paths such as `.local/vendor/` or `.local/upstreams/`; upstream AI-facing guidance files must remain local-only and must not be committed as repo docs
 
 Exit criteria:

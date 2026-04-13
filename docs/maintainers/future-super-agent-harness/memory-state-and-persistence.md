@@ -4,8 +4,8 @@ Maintainer planning only. This document does not modify the current public contr
 
 ## Summary
 
-The future branch should explicitly separate audit truth, runtime state, workspace state, summary state, and long-term memory. DeerFlow is useful here because it demonstrates why collapsing them together causes confusion.
-Claude Code source-backed materials reinforce the same point from a different angle: session memory, durable memory, team memory, and dream-like background consolidation should not be collapsed into one generic `memory` bucket.
+The future branch should explicitly separate audit truth, runtime state, workspace state, summary state, and long-term memory. Existing local-only upstream references are useful here because they demonstrate why collapsing them together causes confusion.
+Local-only source-backed reference materials reinforce the same point from a different angle: session memory, durable memory, team memory, and dream-like background consolidation should not be collapsed into one generic `memory` bucket.
 
 ## Proposed Layers
 
@@ -71,7 +71,7 @@ It should never become the durable truth of repository state.
 - future branch may add optional long-term memory later, but not as a first foundation slice
 - summary and memory are helpers; manifest and verification remain the authoritative layer
 
-## DeerFlow Influence Used Carefully
+## Upstream Influence Used Carefully
 
 Useful lesson:
 

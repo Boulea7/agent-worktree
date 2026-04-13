@@ -4,7 +4,7 @@ Maintainer planning only. This document does not modify the current public contr
 
 ## Summary
 
-The future branch should not become a DeerFlow clone, and it should not abandon the current repository's substrate. The target is a stronger coding-agent harness built on top of `agent-worktree`:
+The future branch should not become a clone of any thread-native orchestration shell, and it should not abandon the current repository's substrate. The target is a stronger coding-agent harness built on top of `agent-worktree`:
 
 - keep `attempt + worktree + verification` as the substrate
 - add a richer runtime and control plane above that substrate
@@ -22,9 +22,9 @@ The current mainline remains focused on:
 
 The future branch starts after that current public story, not instead of it.
 
-## Relationship To DeerFlow
+## Relationship To Local-Only Delegation References
 
-DeerFlow is useful as a source of structural lessons:
+One local-only delegation-oriented upstream reference is useful as a source of structural lessons:
 
 - harness vs app split
 - execution backend vs authorization policy vs human approval
@@ -32,16 +32,16 @@ DeerFlow is useful as a source of structural lessons:
 - definition vs activation split for extensions
 - deferred capability loading
 
-The future branch should not inherit DeerFlow's:
+The future branch should not inherit that upstream's:
 
 - thread-native substrate
 - shared-workspace subagent model
 - polling `task()` lifecycle as the main delegation contract
 - product-shell-first architecture
 
-## Relationship To Anthropic / Claude Code Agent Teams
+## Relationship To Local-Only Peer-Collaboration References
 
-Anthropic-style `agent teams` are not the same thing as DeerFlow's `lead agent + subagents`.
+A peer-collaboration team model is not the same thing as a hierarchical `lead agent + subagents` delegation model.
 
 This future branch should treat them as separate topologies:
 
@@ -58,7 +58,7 @@ If this future branch is pursued, it would aim to be:
 
 - narrower and more auditable than a generic assistant platform
 - more collaboration-capable than the current `agent-worktree` mainline
-- more substrate-first than DeerFlow
+- more substrate-first than thread-native orchestration shells
 - more verification-driven than chat-centric agent shells
 
 ## Defaults Chosen For This Planning Set

@@ -21,16 +21,18 @@ This repository now has a usable Git `HEAD` baseline, so maintainer workflows sh
 Before starting any Phase 6 or later implementation slice, read the future-branch maintainer set first:
 
 - `docs/maintainers/future-super-agent-harness/README.md`
-- `docs/maintainers/future-super-agent-harness/reuse-map-from-deerflow-and-current-codebase.md`
+- `docs/maintainers/future-super-agent-harness/reuse-map-from-local-upstreams-and-current-codebase.md`
 - `docs/maintainers/future-super-agent-harness/sandbox-skills-and-extensibility.md`
 - `docs/maintainers/future-super-agent-harness/memory-state-and-persistence.md`
 - `docs/maintainers/future-super-agent-harness/vision-and-positioning.md`
 
-Those documents are the current local synthesis point for prior Claude Code and DeerFlow research. Future-branch work on sandboxing, subagents/delegation, memory, task coordination, or extension/runtime boundaries should start from those references rather than re-deriving the architecture from scratch.
+Those documents are the current public synthesis point for local-only upstream substrate research. Future-branch work on sandboxing, subagents/delegation, memory, task coordination, or extension/runtime boundaries should start from those references rather than re-deriving the architecture from scratch.
 
-When a future slice needs reusable substrate such as sandboxing, subagent orchestration, memory/state layering, or extension/runtime plumbing, prefer direct code reuse or code-guided porting from vetted upstreams such as Claude Code research references or DeerFlow before inventing a fresh implementation. Reuse should still be adapted to `attempt + worktree + verification` as the local substrate rather than copied in product-shell form.
+When a future slice needs reusable substrate such as sandboxing, subagent orchestration, memory/state layering, or extension/runtime plumbing, default to direct code reuse or code-guided porting from vetted local-only upstream references before inventing a fresh implementation. Reuse should still be adapted to `attempt + worktree + verification` as the local substrate rather than copied in product-shell form. If maintainers choose a clean-room implementation instead, record that exception in a local-only maintainer note first.
 
 Keep any local upstream checkout or copied reference tree under ignored local-only paths such as `.local/vendor/` or `.local/upstreams/`. Upstream AI-facing guidance files such as `AGENTS.md`, `CLAUDE.md`, or similar prompt/control files from those checkouts must remain local-only and MUST NOT be committed into this repository as reusable public docs.
+
+For future-phase work, keep all upstream reference clones under one dedicated ignored root such as `.local/upstreams/`, and do not scatter cloned reference repositories elsewhere in the project root. Public docs, PR text, commit messages, and other public-facing repository records should describe these as generic local-only upstream references rather than naming specific upstream projects or claiming direct reference use; detailed upstream attribution belongs only in ignored local AI/maintainer notes.
 
 Agents working in this repository should prioritize:
 

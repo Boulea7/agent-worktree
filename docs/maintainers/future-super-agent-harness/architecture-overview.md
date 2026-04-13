@@ -20,7 +20,7 @@ Responsibilities:
 - verification results
 - durable audit records
 
-This layer stays closer to the current repository than to DeerFlow.
+This layer stays closer to the current repository than to a thread-native orchestration shell.
 
 ### 2. Runtime Layer
 
@@ -110,4 +110,4 @@ These should consume the control plane. They must not redefine the substrate.
 - no current public `spawn / wait / close`
 - no current public team protocol
 - no current public memory contract expansion
-- no assumption that the future branch must ship a full DeerFlow-style product shell
+- no assumption that the future branch must ship a full thread-native product shell

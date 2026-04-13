@@ -123,7 +123,7 @@ Mitigation:
 
 ## Review Checklist
 
-- No DeerFlow mechanism is described as the current mainline roadmap.
+- No external upstream mechanism is described as the current mainline roadmap.
 - No current public contract is widened implicitly.
 - `hierarchical delegation` and `peer collaboration` remain distinct.
 - The future branch still preserves git-native, worktree-native, and verification-first foundations.
