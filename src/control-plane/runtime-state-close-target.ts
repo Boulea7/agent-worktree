@@ -1,6 +1,7 @@
 import { ValidationError } from "../core/errors.js";
 import {
   normalizeBatchWrapper,
+  readOptionalBatchWrapperProperty,
   readRequiredBatchWrapperProperty
 } from "./runtime-state-batch-wrapper-guards.js";
 import type {
@@ -69,15 +70,27 @@ export function deriveExecutionSessionCloseTarget(
   }
 
   const attemptId = normalizeRequiredString(
-    record.attemptId,
+    readRequiredBatchWrapperProperty(
+      record,
+      "attemptId",
+      "Execution session close target requires candidate.context.record.attemptId to be a non-empty string."
+    ),
     "Execution session close target requires candidate.context.record.attemptId to be a non-empty string."
   );
   const runtime = normalizeRequiredString(
-    record.runtime,
+    readRequiredBatchWrapperProperty(
+      record,
+      "runtime",
+      "Execution session close target requires candidate.context.record.runtime to be a non-empty string."
+    ),
     "Execution session close target requires candidate.context.record.runtime to be a non-empty string."
   );
   const sessionId = normalizeOptionalString(
-    record.sessionId,
+    readOptionalBatchWrapperProperty(
+      record,
+      "sessionId",
+      "Execution session close target requires candidate.context.record.sessionId to be a non-empty string when present."
+    ),
     "Execution session close target requires candidate.context.record.sessionId to be a non-empty string when present."
   );
 

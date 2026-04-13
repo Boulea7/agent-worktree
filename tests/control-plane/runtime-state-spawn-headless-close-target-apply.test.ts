@@ -76,6 +76,27 @@ describe(
       expect(invoked).toBe(false);
     });
 
+    it("should still validate invokeClose and resolveSessionLifecycleCapability when the headless close target is blocked", async () => {
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTarget({
+          headlessCloseTarget: createHeadlessCloseTarget(),
+          invokeClose: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session close target apply requires invokeClose to be a function."
+      );
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTarget({
+          headlessCloseTarget: createHeadlessCloseTarget(),
+          invokeClose: async () => undefined,
+          resolveSessionLifecycleCapability: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session close target apply requires resolveSessionLifecycleCapability to be a function when provided."
+      );
+    });
+
     it("should fail loudly when the supplied headless close target wrapper is invalid", async () => {
       await expect(
         applyExecutionSessionSpawnHeadlessCloseTarget({
@@ -572,6 +593,80 @@ describe(
         })
       ).rejects.toThrow(
         "Execution session spawn headless close target apply batch requires headlessCloseTargetBatch.results to be an array."
+      );
+    });
+
+    it("should fail closed on invalid close callbacks or resolvers even when every batch entry is blocked", async () => {
+      const blockedBatch = {
+        headlessCloseCandidateBatch: {
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildEmptyView()
+            },
+            results: []
+          },
+          results: []
+        },
+        results: [createHeadlessCloseTarget(), createHeadlessCloseTarget()]
+      };
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch({
+          headlessCloseTargetBatch: blockedBatch,
+          invokeClose: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session close target apply requires invokeClose to be a function."
+      );
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch({
+          headlessCloseTargetBatch: blockedBatch,
+          invokeClose: async () => undefined,
+          resolveSessionLifecycleCapability: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session close target apply requires resolveSessionLifecycleCapability to be a function when provided."
+      );
+    });
+
+    it("should fail closed on invalid close callbacks or resolvers even when the batch is empty", async () => {
+      const emptyBatch = {
+        headlessCloseCandidateBatch: {
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildEmptyView()
+            },
+            results: []
+          },
+          results: []
+        },
+        results: []
+      };
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch({
+          headlessCloseTargetBatch: emptyBatch,
+          invokeClose: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session close target apply requires invokeClose to be a function."
+      );
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch({
+          headlessCloseTargetBatch: emptyBatch,
+          invokeClose: async () => undefined,
+          resolveSessionLifecycleCapability: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session close target apply requires resolveSessionLifecycleCapability to be a function when provided."
       );
     });
 

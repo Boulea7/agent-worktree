@@ -38,6 +38,34 @@ export async function applyExecutionSessionSpawnHeadlessCloseTarget(
       "target",
       "Execution session spawn headless close target apply requires headlessCloseTarget.target to be an object when provided."
     );
+  const invokeClose = readRequiredBatchWrapperProperty<
+    ExecutionSessionSpawnHeadlessCloseTargetApplyInput["invokeClose"]
+  >(
+    normalizedInput,
+    "invokeClose",
+    "Execution session close target apply requires invokeClose to be a function."
+  );
+  if (typeof invokeClose !== "function") {
+    throw new ValidationError(
+      "Execution session close target apply requires invokeClose to be a function."
+    );
+  }
+  const resolveSessionLifecycleCapability =
+    readOptionalBatchWrapperProperty<
+      ExecutionSessionSpawnHeadlessCloseTargetApplyInput["resolveSessionLifecycleCapability"]
+    >(
+      normalizedInput,
+      "resolveSessionLifecycleCapability",
+      "Execution session close target apply requires resolveSessionLifecycleCapability to be a function when provided."
+    );
+  if (
+    resolveSessionLifecycleCapability !== undefined &&
+    typeof resolveSessionLifecycleCapability !== "function"
+  ) {
+    throw new ValidationError(
+      "Execution session close target apply requires resolveSessionLifecycleCapability to be a function when provided."
+    );
+  }
 
   if (target === undefined) {
     return {
@@ -50,22 +78,6 @@ export async function applyExecutionSessionSpawnHeadlessCloseTarget(
       "Execution session spawn headless close target apply requires headlessCloseTarget.target to be an object when provided."
     );
   }
-
-  const invokeClose = readRequiredBatchWrapperProperty<
-    ExecutionSessionSpawnHeadlessCloseTargetApplyInput["invokeClose"]
-  >(
-    normalizedInput,
-    "invokeClose",
-    "Execution session close target apply requires invokeClose to be a function."
-  );
-  const resolveSessionLifecycleCapability =
-    readOptionalBatchWrapperProperty<
-      ExecutionSessionSpawnHeadlessCloseTargetApplyInput["resolveSessionLifecycleCapability"]
-    >(
-      normalizedInput,
-      "resolveSessionLifecycleCapability",
-      "Execution session close target apply requires resolveSessionLifecycleCapability to be a function when provided."
-    );
 
   const applyInput: ExecutionSessionCloseTargetApplyInput = {
     target,

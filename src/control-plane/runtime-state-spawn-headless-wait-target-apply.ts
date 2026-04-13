@@ -38,6 +38,34 @@ export async function applyExecutionSessionSpawnHeadlessWaitTarget(
       "target",
       "Execution session spawn headless wait target apply requires headlessWaitTarget.target to be an object when provided."
     );
+  const invokeWait = readRequiredBatchWrapperProperty<
+    ExecutionSessionSpawnHeadlessWaitTargetApplyInput["invokeWait"]
+  >(
+    normalizedInput,
+    "invokeWait",
+    "Execution session wait target apply requires invokeWait to be a function."
+  );
+  if (typeof invokeWait !== "function") {
+    throw new ValidationError(
+      "Execution session wait target apply requires invokeWait to be a function."
+    );
+  }
+  const resolveSessionLifecycleCapability =
+    readOptionalBatchWrapperProperty<
+      ExecutionSessionSpawnHeadlessWaitTargetApplyInput["resolveSessionLifecycleCapability"]
+    >(
+      normalizedInput,
+      "resolveSessionLifecycleCapability",
+      "Execution session wait target apply requires resolveSessionLifecycleCapability to be a function when provided."
+    );
+  if (
+    resolveSessionLifecycleCapability !== undefined &&
+    typeof resolveSessionLifecycleCapability !== "function"
+  ) {
+    throw new ValidationError(
+      "Execution session wait target apply requires resolveSessionLifecycleCapability to be a function when provided."
+    );
+  }
 
   if (target === undefined) {
     return {
@@ -50,27 +78,11 @@ export async function applyExecutionSessionSpawnHeadlessWaitTarget(
       "Execution session spawn headless wait target apply requires headlessWaitTarget.target to be an object when provided."
     );
   }
-
-  const invokeWait = readRequiredBatchWrapperProperty<
-    ExecutionSessionSpawnHeadlessWaitTargetApplyInput["invokeWait"]
-  >(
-    normalizedInput,
-    "invokeWait",
-    "Execution session wait target apply requires invokeWait to be a function."
-  );
   const timeoutMs = readOptionalBatchWrapperProperty<number>(
     normalizedInput,
     "timeoutMs",
     "Execution session wait request timeoutMs must be a finite integer greater than 0."
   );
-  const resolveSessionLifecycleCapability =
-    readOptionalBatchWrapperProperty<
-      ExecutionSessionSpawnHeadlessWaitTargetApplyInput["resolveSessionLifecycleCapability"]
-    >(
-      normalizedInput,
-      "resolveSessionLifecycleCapability",
-      "Execution session wait target apply requires resolveSessionLifecycleCapability to be a function when provided."
-    );
 
   const applyInput: ExecutionSessionWaitTargetApplyInput = {
     target,

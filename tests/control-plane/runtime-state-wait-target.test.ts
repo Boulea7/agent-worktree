@@ -305,6 +305,57 @@ describe("control-plane runtime-state wait-target helpers", () => {
       } as never)
     ).toThrow(ValidationError);
   });
+
+  it("should fail closed on prototype-backed or accessor-backed candidate.context.record identifiers", () => {
+    expect(() =>
+      deriveExecutionSessionWaitTarget({
+        candidate: {
+          context: {
+            record: Object.assign(
+              Object.create({
+                attemptId: "att_proto_wait_target"
+              }),
+              {
+                runtime: "codex-cli",
+                sessionId: "thr_proto_wait_target"
+              }
+            )
+          },
+          readiness: {
+            canWait: true
+          }
+        } as never
+      })
+    ).toThrow(
+      "Execution session wait target requires candidate.context.record.attemptId to be a non-empty string."
+    );
+
+    const recordWithAccessor = {
+      attemptId: "att_accessor_wait_target",
+      sessionId: "thr_accessor_wait_target"
+    };
+    Object.defineProperty(recordWithAccessor, "runtime", {
+      enumerable: true,
+      get() {
+        throw new Error("runtime getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionWaitTarget({
+        candidate: {
+          context: {
+            record: recordWithAccessor as never
+          },
+          readiness: {
+            canWait: true
+          }
+        } as never
+      })
+    ).toThrow(
+      "Execution session wait target requires candidate.context.record.runtime to be a non-empty string."
+    );
+  });
 });
 
 function createRecord(

@@ -110,6 +110,45 @@ describe("control-plane runtime-state close-request helpers", () => {
     ).toThrow("Execution session close request target must be an object.");
   });
 
+  it("should fail closed on prototype-backed or accessor-backed target identifiers", () => {
+    const prototypeBackedTarget = Object.assign(
+      Object.create({
+        runtime: "codex-cli"
+      }),
+      {
+        attemptId: "att_proto_close_request",
+        sessionId: "thr_proto_close_request"
+      }
+    );
+
+    expect(() =>
+      deriveExecutionSessionCloseRequest({
+        target: prototypeBackedTarget as never
+      })
+    ).toThrow(
+      "Execution session close request runtime must be a non-empty string."
+    );
+
+    const accessorBackedTarget = {
+      attemptId: "att_accessor_close_request",
+      runtime: "codex-cli"
+    };
+    Object.defineProperty(accessorBackedTarget, "sessionId", {
+      enumerable: true,
+      get() {
+        throw new Error("sessionId getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionCloseRequest({
+        target: accessorBackedTarget as never
+      })
+    ).toThrow(
+      "Execution session close request sessionId must be a non-empty string."
+    );
+  });
+
   it("should reject non-object close request inputs before reading target", () => {
     expect(() =>
       deriveExecutionSessionCloseRequest(undefined as never)

@@ -5,13 +5,34 @@ import * as controlPlane from "../../src/control-plane/index.js";
 describe("control-plane index exports", () => {
   it("should keep the current public type surface explicit", () => {
     expectTypeOf<
+      import("../../src/control-plane/index.js").SessionLifecycleEventKind
+    >().not.toBeAny();
+    expectTypeOf<
+      import("../../src/control-plane/index.js").SessionLifecycleState
+    >().not.toBeAny();
+    expectTypeOf<
+      import("../../src/control-plane/index.js").SessionLifecycleStateInput
+    >().not.toBeAny();
+    expectTypeOf<
+      import("../../src/control-plane/index.js").SessionNodeKind
+    >().not.toBeAny();
+    expectTypeOf<
       import("../../src/control-plane/index.js").SessionNodeRef
+    >().not.toBeAny();
+    expectTypeOf<
+      import("../../src/control-plane/index.js").SessionNodeRefInput
     >().not.toBeAny();
     expectTypeOf<
       import("../../src/control-plane/index.js").SessionSnapshot
     >().not.toBeAny();
     expectTypeOf<
+      import("../../src/control-plane/index.js").SessionSnapshotInput
+    >().not.toBeAny();
+    expectTypeOf<
       import("../../src/control-plane/index.js").SessionGuardrails
+    >().not.toBeAny();
+    expectTypeOf<
+      import("../../src/control-plane/index.js").SessionSourceKind
     >().not.toBeAny();
     expectTypeOf<
       import("../../src/control-plane/index.js").SessionTreeIndex

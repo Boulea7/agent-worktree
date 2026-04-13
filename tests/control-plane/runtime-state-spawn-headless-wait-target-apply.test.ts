@@ -76,6 +76,27 @@ describe(
       expect(invoked).toBe(false);
     });
 
+    it("should still validate invokeWait and resolveSessionLifecycleCapability when the headless wait target is blocked", async () => {
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTarget({
+          headlessWaitTarget: createHeadlessWaitTarget(),
+          invokeWait: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session wait target apply requires invokeWait to be a function."
+      );
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTarget({
+          headlessWaitTarget: createHeadlessWaitTarget(),
+          invokeWait: async () => undefined,
+          resolveSessionLifecycleCapability: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session wait target apply requires resolveSessionLifecycleCapability to be a function when provided."
+      );
+    });
+
     it("should fail loudly when the supplied headless wait target wrapper is invalid", async () => {
       await expect(
         applyExecutionSessionSpawnHeadlessWaitTarget({
@@ -582,6 +603,80 @@ describe(
         })
       ).rejects.toThrow(
         "Execution session spawn headless wait target apply batch requires headlessWaitTargetBatch.results to be an array."
+      );
+    });
+
+    it("should fail closed on invalid wait callbacks or resolvers even when every batch entry is blocked", async () => {
+      const blockedBatch = {
+        headlessWaitCandidateBatch: {
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildEmptyView()
+            },
+            results: []
+          },
+          results: []
+        },
+        results: [createHeadlessWaitTarget(), createHeadlessWaitTarget()]
+      };
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch({
+          headlessWaitTargetBatch: blockedBatch,
+          invokeWait: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session wait target apply requires invokeWait to be a function."
+      );
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch({
+          headlessWaitTargetBatch: blockedBatch,
+          invokeWait: async () => undefined,
+          resolveSessionLifecycleCapability: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session wait target apply requires resolveSessionLifecycleCapability to be a function when provided."
+      );
+    });
+
+    it("should fail closed on invalid wait callbacks or resolvers even when the batch is empty", async () => {
+      const emptyBatch = {
+        headlessWaitCandidateBatch: {
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildEmptyView()
+            },
+            results: []
+          },
+          results: []
+        },
+        results: []
+      };
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch({
+          headlessWaitTargetBatch: emptyBatch,
+          invokeWait: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session wait target apply requires invokeWait to be a function."
+      );
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch({
+          headlessWaitTargetBatch: emptyBatch,
+          invokeWait: async () => undefined,
+          resolveSessionLifecycleCapability: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session wait target apply requires resolveSessionLifecycleCapability to be a function when provided."
       );
     });
 

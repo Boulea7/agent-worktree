@@ -316,6 +316,57 @@ describe("control-plane runtime-state close-target helpers", () => {
       } as never)
     ).toThrow(ValidationError);
   });
+
+  it("should fail closed on prototype-backed or accessor-backed candidate.context.record identifiers", () => {
+    expect(() =>
+      deriveExecutionSessionCloseTarget({
+        candidate: {
+          context: {
+            record: Object.assign(
+              Object.create({
+                sessionId: "thr_proto_close_target"
+              }),
+              {
+                attemptId: "att_proto_close_target",
+                runtime: "codex-cli"
+              }
+            )
+          },
+          readiness: {
+            canClose: true
+          }
+        } as never
+      })
+    ).toThrow(
+      "Execution session close target requires candidate.context.record.sessionId to be a non-empty string when present."
+    );
+
+    const recordWithAccessor = {
+      attemptId: "att_accessor_close_target",
+      sessionId: "thr_accessor_close_target"
+    };
+    Object.defineProperty(recordWithAccessor, "runtime", {
+      enumerable: true,
+      get() {
+        throw new Error("runtime getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionCloseTarget({
+        candidate: {
+          context: {
+            record: recordWithAccessor as never
+          },
+          readiness: {
+            canClose: true
+          }
+        } as never
+      })
+    ).toThrow(
+      "Execution session close target requires candidate.context.record.runtime to be a non-empty string."
+    );
+  });
 });
 
 function createRecord(

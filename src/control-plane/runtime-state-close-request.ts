@@ -27,9 +27,21 @@ export function deriveExecutionSessionCloseRequest(
   }
 
   return normalizeExecutionSessionCloseRequest({
-    attemptId: target.attemptId,
-    runtime: target.runtime,
-    sessionId: target.sessionId
+    attemptId: readRequiredBatchWrapperProperty(
+      target,
+      "attemptId",
+      "Execution session close request attemptId must be a non-empty string."
+    ),
+    runtime: readRequiredBatchWrapperProperty(
+      target,
+      "runtime",
+      "Execution session close request runtime must be a non-empty string."
+    ),
+    sessionId: readRequiredBatchWrapperProperty(
+      target,
+      "sessionId",
+      "Execution session close request sessionId must be a non-empty string."
+    )
   } as ExecutionSessionCloseRequest);
 }
 
