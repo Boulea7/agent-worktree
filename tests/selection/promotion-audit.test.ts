@@ -266,6 +266,47 @@ describe("selection promotion-audit helpers", () => {
     );
   });
 
+  it("should snapshot result.candidates once before downstream audit derivation reuses them", () => {
+    const canonicalResult = deriveAttemptPromotionResult([
+      createPromotionCandidate({
+        attemptId: "att_snapshot",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]);
+    const result = {
+      ...canonicalResult
+    } as AttemptPromotionResult;
+    let candidateReads = 0;
+
+    Object.defineProperty(result, "candidates", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        candidateReads += 1;
+
+        if (candidateReads > 1) {
+          throw new Error("getter boom");
+        }
+
+        return canonicalResult.candidates;
+      }
+    });
+
+    expect(deriveAttemptPromotionAuditSummary(result)).toEqual(
+      deriveAttemptPromotionAuditSummary(canonicalResult)
+    );
+    expect(candidateReads).toBe(1);
+  });
+
   it("should preserve canonical selected identity when runtimes differ but attemptId is reused", () => {
     const result = deriveAttemptPromotionResult([
       createPromotionCandidate({

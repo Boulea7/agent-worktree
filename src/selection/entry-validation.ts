@@ -48,6 +48,16 @@ export function normalizeSelectionArrayProperty(
   return value;
 }
 
+export function normalizeSelectionObjectProperty(
+  container: object,
+  key: string,
+  message: string
+): Record<string, unknown> {
+  const value = readSelectionValue(container, key, message);
+  validateSelectionObjectInput(value, message);
+  return value;
+}
+
 export function normalizeSelectionRequiredFunctionProperty(
   container: object,
   key: string,

@@ -222,6 +222,47 @@ describe("selection promotion-report helpers", () => {
     ).toThrow(ValidationError);
   });
 
+  it("should snapshot summary.candidates once before downstream report derivation reuses them", () => {
+    const canonicalSummary = createPromotionAuditSummary([
+      createPromotionCandidate({
+        attemptId: "att_snapshot",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]);
+    const summary = {
+      ...canonicalSummary
+    } as AttemptPromotionAuditSummary;
+    let candidateReads = 0;
+
+    Object.defineProperty(summary, "candidates", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        candidateReads += 1;
+
+        if (candidateReads > 1) {
+          throw new Error("getter boom");
+        }
+
+        return canonicalSummary.candidates;
+      }
+    });
+
+    expect(deriveAttemptPromotionReport(summary)).toEqual(
+      deriveAttemptPromotionReport(canonicalSummary)
+    );
+    expect(candidateReads).toBe(1);
+  });
+
   it("should fail loudly when summary.candidates is malformed or sparse", () => {
     expect(() =>
       deriveAttemptPromotionReport({

@@ -222,6 +222,72 @@ describe("selection promotion-result helpers", () => {
     );
   });
 
+  it("should fail loudly when candidate.taskId is inherited instead of owned", () => {
+    const baseCandidate = createPromotionCandidate({
+      attemptId: "att_inherited_task"
+    });
+    const candidate = {
+      ...baseCandidate
+    } as Record<string, unknown>;
+
+    delete candidate.taskId;
+    Object.setPrototypeOf(candidate, {
+      taskId: baseCandidate.taskId
+    });
+
+    expect(() =>
+      deriveAttemptPromotionResult([candidate as unknown as AttemptPromotionCandidate])
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionResult([candidate as unknown as AttemptPromotionCandidate])
+    ).toThrow(
+      "Attempt promotion result requires candidate.taskId to be a non-empty string."
+    );
+  });
+
+  it("should snapshot candidate.taskId once before downstream validation reuses it", () => {
+    const baseCandidate = createPromotionCandidate({
+      attemptId: "att_snapshot"
+    });
+    const candidate = {
+      ...baseCandidate
+    } as AttemptPromotionCandidate;
+    let taskIdReads = 0;
+
+    Object.defineProperty(candidate, "taskId", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        taskIdReads += 1;
+
+        if (taskIdReads > 1) {
+          throw new Error("getter boom");
+        }
+
+        return baseCandidate.taskId;
+      }
+    });
+
+    expect(deriveAttemptPromotionResult([candidate])).toEqual({
+      promotionResultBasis: "promotion_candidate",
+      taskId: "task_shared",
+      candidates: [
+        expect.objectContaining({
+          attemptId: "att_snapshot",
+          taskId: "task_shared"
+        })
+      ],
+      selected: expect.objectContaining({
+        attemptId: "att_snapshot",
+        taskId: "task_shared"
+      }),
+      comparableCandidateCount: 1,
+      promotionReadyCandidateCount: 1,
+      recommendedForPromotion: true
+    });
+    expect(taskIdReads).toBe(1);
+  });
+
   it("should fail loudly when candidate.promotionBasis is invalid", () => {
     const candidate = {
       ...createPromotionCandidate({

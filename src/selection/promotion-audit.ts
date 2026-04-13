@@ -9,6 +9,8 @@ import type {
 } from "../verification/types.js";
 import { attemptVerificationCheckStatuses } from "../verification/types.js";
 import {
+  normalizeSelectionArrayProperty,
+  readSelectionValue,
   rethrowSelectionAccessError
 } from "./entry-validation.js";
 import {
@@ -41,29 +43,41 @@ export function deriveAttemptPromotionAuditSummary(
   }
 
   try {
-    validatePromotionResultBasis(result);
-    validateSelectedCandidate(result.selected);
-    validateCanonicalCandidateIdentity(result.taskId, result.candidates);
+    const normalizedResult = normalizePromotionResultSnapshot(result);
 
-    const canonicalResult = deriveAttemptPromotionResult(result.candidates);
+    validatePromotionResultBasis(normalizedResult);
+    validateSelectedCandidate(normalizedResult.selected);
+    validateCanonicalCandidateIdentity(
+      normalizedResult.taskId,
+      normalizedResult.candidates
+    );
 
-    validatePromotionResultConsistency(result, canonicalResult);
-    result.candidates.forEach((candidate) =>
+    const canonicalResult = deriveAttemptPromotionResult(
+      normalizedResult.candidates
+    );
+
+    validatePromotionResultConsistency(normalizedResult, canonicalResult);
+    normalizedResult.candidates.forEach((candidate) =>
       validatePromotionAuditCandidate(candidate)
     );
 
     return {
       auditBasis: ATTEMPT_PROMOTION_AUDIT_BASIS,
-      taskId: result.taskId,
-      selectedAttemptId: result.selected?.attemptId,
-      selectedIdentity: deriveSelectedIdentity(result.selected),
-      candidateCount: result.candidates.length,
-      comparableCandidateCount: countComparableCandidates(result.candidates),
-      promotionReadyCandidateCount: countPromotionReadyCandidates(
-        result.candidates
+      taskId: normalizedResult.taskId,
+      selectedAttemptId: normalizedResult.selected?.attemptId,
+      selectedIdentity: deriveSelectedIdentity(normalizedResult.selected),
+      candidateCount: normalizedResult.candidates.length,
+      comparableCandidateCount: countComparableCandidates(
+        normalizedResult.candidates
       ),
-      recommendedForPromotion: result.selected?.recommendedForPromotion ?? false,
-      candidates: result.candidates.map(deriveAttemptPromotionAuditCandidate)
+      promotionReadyCandidateCount: countPromotionReadyCandidates(
+        normalizedResult.candidates
+      ),
+      recommendedForPromotion:
+        normalizedResult.selected?.recommendedForPromotion ?? false,
+      candidates: normalizedResult.candidates.map(
+        deriveAttemptPromotionAuditCandidate
+      )
     };
   } catch (error) {
     rethrowSelectionAccessError(
@@ -71,6 +85,51 @@ export function deriveAttemptPromotionAuditSummary(
       "Attempt promotion audit summary requires result to be a readable object."
     );
   }
+}
+
+function normalizePromotionResultSnapshot(
+  result: Record<string, unknown>
+): AttemptPromotionResult {
+  const candidates = normalizeSelectionArrayProperty(
+    result,
+    "candidates",
+    "Attempt promotion audit summary requires result to be a readable object."
+  ) as AttemptPromotionResult["candidates"];
+  const selected = readSelectionValue(
+    result,
+    "selected",
+    "Attempt promotion audit summary requires result to be a readable object."
+  ) as AttemptPromotionResult["selected"];
+
+  return {
+    promotionResultBasis: readSelectionValue(
+      result,
+      "promotionResultBasis",
+      "Attempt promotion audit summary requires result to be a readable object."
+    ) as AttemptPromotionResult["promotionResultBasis"],
+    taskId: readSelectionValue(
+      result,
+      "taskId",
+      "Attempt promotion audit summary requires result to be a readable object."
+    ) as AttemptPromotionResult["taskId"],
+    selected,
+    candidates,
+    comparableCandidateCount: readSelectionValue(
+      result,
+      "comparableCandidateCount",
+      "Attempt promotion audit summary requires result to be a readable object."
+    ) as AttemptPromotionResult["comparableCandidateCount"],
+    promotionReadyCandidateCount: readSelectionValue(
+      result,
+      "promotionReadyCandidateCount",
+      "Attempt promotion audit summary requires result to be a readable object."
+    ) as AttemptPromotionResult["promotionReadyCandidateCount"],
+    recommendedForPromotion: readSelectionValue(
+      result,
+      "recommendedForPromotion",
+      "Attempt promotion audit summary requires result to be a readable object."
+    ) as AttemptPromotionResult["recommendedForPromotion"]
+  };
 }
 
 function deriveSelectedIdentity(
