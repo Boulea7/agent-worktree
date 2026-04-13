@@ -1,8 +1,23 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
 import * as controlPlane from "../../src/control-plane/index.js";
 
 describe("control-plane index exports", () => {
+  it("should keep the current public type surface explicit", () => {
+    expectTypeOf<
+      import("../../src/control-plane/index.js").SessionNodeRef
+    >().not.toBeAny();
+    expectTypeOf<
+      import("../../src/control-plane/index.js").SessionSnapshot
+    >().not.toBeAny();
+    expectTypeOf<
+      import("../../src/control-plane/index.js").SessionGuardrails
+    >().not.toBeAny();
+    expectTypeOf<
+      import("../../src/control-plane/index.js").SessionTreeIndex
+    >().not.toBeAny();
+  });
+
   it("should keep the default barrel focused on read-only foundational helpers", () => {
     expect(Object.keys(controlPlane).sort()).toEqual([
       "buildSessionTreeIndex",
@@ -218,6 +233,18 @@ type ControlPlaneIndexShouldNotExportWaitApply = import("../../src/control-plane
 
 // @ts-expect-error control-plane index must not export wait apply batch results
 type ControlPlaneIndexShouldNotExportWaitApplyBatch = import("../../src/control-plane/index.js").ExecutionSessionWaitApplyBatch;
+
+// @ts-expect-error control-plane index must not export headless wait request input types
+type ControlPlaneIndexShouldNotExportSpawnHeadlessWaitRequestInput = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessWaitRequestInput;
+
+// @ts-expect-error control-plane index must not export headless close candidate batch types
+type ControlPlaneIndexShouldNotExportSpawnHeadlessCloseCandidateBatch = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessCloseCandidateBatch;
+
+// @ts-expect-error control-plane index must not export headless close target batch types
+type ControlPlaneIndexShouldNotExportSpawnHeadlessCloseTargetBatch = import("../../src/control-plane/index.js").ExecutionSessionSpawnHeadlessCloseTargetBatch;
+
+// @ts-expect-error control-plane index must not export close consumer blocker vocabulary
+type ControlPlaneIndexShouldNotExportCloseConsumerBlockingReason = import("../../src/control-plane/index.js").ExecutionSessionCloseConsumerBlockingReason;
 
 // @ts-expect-error control-plane index must not export wait consumers
 type ControlPlaneIndexShouldNotExportWaitConsumer = import("../../src/control-plane/index.js").ExecutionSessionWaitConsumer;
