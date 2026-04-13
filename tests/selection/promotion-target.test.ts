@@ -329,6 +329,39 @@ describe("selection promotion-target helpers", () => {
     ).toThrow("Attempt promotion target requires summary to be a readable object.");
   });
 
+  it("should reject prototype-backed blockingReasons arrays", () => {
+    const blockingReasons = ["required_checks_failed"];
+    Object.setPrototypeOf(
+      blockingReasons,
+      Object.assign([], {
+        1: "verification_incomplete"
+      })
+    );
+    blockingReasons.length = 2;
+    const summary = createPromotionDecisionSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "failed",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "failed"
+            }
+          ]
+        })
+      })
+    ]);
+    summary.blockingReasons = blockingReasons as never;
+    summary.canPromote = false;
+    summary.hasBlockingReasons = true;
+
+    expect(() =>
+      deriveAttemptPromotionTarget(summary)
+    ).toThrow(ValidationError);
+  });
+
   it("should fail loudly when candidateCount is inconsistent with selectedAttemptId or selected", () => {
     const emptySummary = {
       ...createPromotionDecisionSummary([]),

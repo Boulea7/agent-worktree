@@ -393,6 +393,14 @@ describe("selection promotion-decision helpers", () => {
     ).toThrow(ValidationError);
   });
 
+  it("should reject inherited promotion explanation wrappers", () => {
+    const inheritedSummary = Object.create(createPromotionExplanationSummary([]));
+
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary(inheritedSummary as never)
+    ).toThrow(ValidationError);
+  });
+
   it("should fail loudly when summary.candidates is malformed, sparse, or uses duplicate attempt identities", () => {
     expect(() =>
       deriveAttemptPromotionDecisionSummary({

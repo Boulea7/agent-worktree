@@ -14,6 +14,7 @@ import type {
   AttemptSelectedIdentity
 } from "./types.js";
 import {
+  accessSelectionValue,
   rethrowSelectionAccessError
 } from "./entry-validation.js";
 import {
@@ -43,29 +44,34 @@ export function deriveAttemptPromotionDecisionSummary(
   }
 
   try {
-    validateExplanationBasis(summary);
-    validateTaskId(summary.taskId);
-    const normalizedTaskId = normalizeOptionalTaskId(summary.taskId);
-    validatePromotionExplanationSummary(summary, normalizedTaskId);
+    const normalizedSummary = normalizePromotionExplanationInput(summary);
+
+    validateExplanationBasis(normalizedSummary);
+    validateTaskId(normalizedSummary.taskId);
+    const normalizedTaskId = normalizeOptionalTaskId(normalizedSummary.taskId);
+    validatePromotionExplanationSummary(normalizedSummary, normalizedTaskId);
 
     const selected =
-      summary.candidates[0] === undefined
+      normalizedSummary.candidates[0] === undefined
         ? undefined
-        : cloneExplanationCandidate(summary.candidates[0]);
-    const blockingReasons = deriveBlockingReasons(selected, summary.candidateCount);
+        : cloneExplanationCandidate(normalizedSummary.candidates[0]);
+    const blockingReasons = deriveBlockingReasons(
+      selected,
+      normalizedSummary.candidateCount
+    );
 
     return {
       decisionBasis: ATTEMPT_PROMOTION_DECISION_BASIS,
       taskId: normalizedTaskId,
-      selectedAttemptId: summary.selectedAttemptId,
+      selectedAttemptId: normalizedSummary.selectedAttemptId,
       selectedIdentity: deriveSelectedIdentity(normalizedTaskId, selected),
-      candidateCount: summary.candidates.length,
-      comparableCandidateCount: countComparableCandidates(summary.candidates),
+      candidateCount: normalizedSummary.candidates.length,
+      comparableCandidateCount: countComparableCandidates(normalizedSummary.candidates),
       promotionReadyCandidateCount: countPromotionReadyCandidates(
-        summary.candidates
+        normalizedSummary.candidates
       ),
       recommendedForPromotion:
-        summary.candidates[0]?.recommendedForPromotion ?? false,
+        normalizedSummary.candidates[0]?.recommendedForPromotion ?? false,
       selected,
       blockingReasons,
       canPromote: blockingReasons.length === 0,
@@ -77,6 +83,23 @@ export function deriveAttemptPromotionDecisionSummary(
       "Attempt promotion decision summary requires summary to be a readable object."
     );
   }
+}
+
+function normalizePromotionExplanationInput(
+  summary: Record<string, unknown>
+): AttemptPromotionExplanationSummary {
+  return {
+    explanationBasis: accessSelectionValue(summary, "explanationBasis") as AttemptPromotionExplanationSummary["explanationBasis"],
+    taskId: accessSelectionValue(summary, "taskId") as AttemptPromotionExplanationSummary["taskId"],
+    selectedAttemptId: accessSelectionValue(summary, "selectedAttemptId") as AttemptPromotionExplanationSummary["selectedAttemptId"],
+    selectedIdentity: accessSelectionValue(summary, "selectedIdentity") as AttemptPromotionExplanationSummary["selectedIdentity"],
+    candidateCount: accessSelectionValue(summary, "candidateCount") as AttemptPromotionExplanationSummary["candidateCount"],
+    comparableCandidateCount: accessSelectionValue(summary, "comparableCandidateCount") as AttemptPromotionExplanationSummary["comparableCandidateCount"],
+    promotionReadyCandidateCount: accessSelectionValue(summary, "promotionReadyCandidateCount") as AttemptPromotionExplanationSummary["promotionReadyCandidateCount"],
+    recommendedForPromotion: accessSelectionValue(summary, "recommendedForPromotion") as AttemptPromotionExplanationSummary["recommendedForPromotion"],
+    selected: accessSelectionValue(summary, "selected") as AttemptPromotionExplanationSummary["selected"],
+    candidates: accessSelectionValue(summary, "candidates") as AttemptPromotionExplanationSummary["candidates"]
+  };
 }
 
 function validateExplanationBasis(

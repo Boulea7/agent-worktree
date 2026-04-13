@@ -675,6 +675,14 @@ describe("selection promotion-explanation helpers", () => {
     ).toThrow(ValidationError);
   });
 
+  it("should reject inherited promotion report wrappers", () => {
+    const inheritedReport = Object.create(createPromotionReport([]));
+
+    expect(() =>
+      deriveAttemptPromotionExplanationSummary(inheritedReport as never)
+    ).toThrow(ValidationError);
+  });
+
   it("should fail loudly when report.candidates is malformed or sparse", () => {
     expect(() =>
       deriveAttemptPromotionExplanationSummary({

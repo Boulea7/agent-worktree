@@ -90,19 +90,19 @@ function deriveCanonicalExplanationSummary(
   );
   validateSelectionArray(
     invokedResults,
-    "Attempt handoff decision summary requires summary.invokedResults to be an array."
+    "Attempt handoff finalization target summary requires summary.invokedResults to be an array."
   );
   validateSelectionObjectArrayEntries(
     invokedResults,
-    "Attempt handoff decision summary requires summary.invokedResults entries to be objects."
+    "Attempt handoff finalization target summary requires summary.invokedResults entries to be objects."
   );
   validateSelectionArray(
     blockedResults,
-    "Attempt handoff decision summary requires summary.blockedResults to be an array."
+    "Attempt handoff finalization target summary requires summary.blockedResults to be an array."
   );
   validateSelectionObjectArrayEntries(
     blockedResults,
-    "Attempt handoff decision summary requires summary.blockedResults entries to be objects."
+    "Attempt handoff finalization target summary requires summary.blockedResults entries to be objects."
   );
 
   const explanationResults = results as AttemptHandoffExplanationSummary["results"];
@@ -134,8 +134,14 @@ function deriveCanonicalExplanationSummary(
   }
 
   if (
-    canonicalSummary.invokedResults.length !== explanationInvokedResults.length ||
-    canonicalSummary.blockedResults.length !== explanationBlockedResults.length
+    !explanationEntryArraysEqual(
+      explanationInvokedResults,
+      canonicalSummary.invokedResults
+    ) ||
+    !explanationEntryArraysEqual(
+      explanationBlockedResults,
+      canonicalSummary.blockedResults
+    )
   ) {
     throw new ValidationError(
       "Attempt handoff finalization target summary requires summary subgroup projections to match the canonical explanation summary."
@@ -143,4 +149,126 @@ function deriveCanonicalExplanationSummary(
   }
 
   return canonicalSummary;
+}
+
+function explanationEntryArraysEqual(
+  left: AttemptHandoffExplanationSummary["results"] | unknown,
+  right: AttemptHandoffExplanationSummary["results"]
+): boolean {
+  return (
+    Array.isArray(left) &&
+    left.length === right.length &&
+    left.every(
+      (entry, index) =>
+        hasOwnIndex(left, index) &&
+        hasOwnIndex(right, index) &&
+        explanationEntryEqual(
+          entry as AttemptHandoffExplanationSummary["results"][number],
+          right[index] as AttemptHandoffExplanationSummary["results"][number]
+        )
+    )
+  );
+}
+
+function explanationEntryEqual(
+  left: AttemptHandoffExplanationSummary["results"][number],
+  right: AttemptHandoffExplanationSummary["results"][number]
+): boolean {
+  return (
+    left.explanationCode === right.explanationCode &&
+    left.invoked === right.invoked &&
+    stringArraysEqual(left.blockingReasons, right.blockingReasons) &&
+    left.handoffTarget.handoffBasis === right.handoffTarget.handoffBasis &&
+    normalizeComparableString(left.handoffTarget.taskId) ===
+      normalizeComparableString(right.handoffTarget.taskId) &&
+    normalizeComparableString(left.handoffTarget.attemptId) ===
+      normalizeComparableString(right.handoffTarget.attemptId) &&
+    normalizeComparableString(left.handoffTarget.runtime) ===
+      normalizeComparableString(right.handoffTarget.runtime) &&
+    left.handoffTarget.status === right.handoffTarget.status &&
+    left.handoffTarget.sourceKind === right.handoffTarget.sourceKind &&
+    normalizeComparableString(left.targetApply.request.taskId) ===
+      normalizeComparableString(right.targetApply.request.taskId) &&
+    normalizeComparableString(left.targetApply.request.attemptId) ===
+      normalizeComparableString(right.targetApply.request.attemptId) &&
+    normalizeComparableString(left.targetApply.request.runtime) ===
+      normalizeComparableString(right.targetApply.request.runtime) &&
+    left.targetApply.request.status === right.targetApply.request.status &&
+    left.targetApply.request.sourceKind === right.targetApply.request.sourceKind &&
+    normalizeComparableString(left.targetApply.apply.consumer.request.taskId) ===
+      normalizeComparableString(right.targetApply.apply.consumer.request.taskId) &&
+    normalizeComparableString(
+      left.targetApply.apply.consumer.request.attemptId
+    ) ===
+      normalizeComparableString(
+        right.targetApply.apply.consumer.request.attemptId
+      ) &&
+    normalizeComparableString(left.targetApply.apply.consumer.request.runtime) ===
+      normalizeComparableString(
+        right.targetApply.apply.consumer.request.runtime
+      ) &&
+    left.targetApply.apply.consumer.request.status ===
+      right.targetApply.apply.consumer.request.status &&
+    left.targetApply.apply.consumer.request.sourceKind ===
+      right.targetApply.apply.consumer.request.sourceKind &&
+    stringArraysEqual(
+      left.targetApply.apply.consumer.readiness.blockingReasons,
+      right.targetApply.apply.consumer.readiness.blockingReasons
+    ) &&
+    left.targetApply.apply.consumer.readiness.canConsumeHandoff ===
+      right.targetApply.apply.consumer.readiness.canConsumeHandoff &&
+    left.targetApply.apply.consumer.readiness.hasBlockingReasons ===
+      right.targetApply.apply.consumer.readiness.hasBlockingReasons &&
+    left.targetApply.apply.consumer.readiness.handoffSupported ===
+      right.targetApply.apply.consumer.readiness.handoffSupported &&
+    normalizeComparableString(left.targetApply.apply.consume.request.taskId) ===
+      normalizeComparableString(right.targetApply.apply.consume.request.taskId) &&
+    normalizeComparableString(left.targetApply.apply.consume.request.attemptId) ===
+      normalizeComparableString(
+        right.targetApply.apply.consume.request.attemptId
+      ) &&
+    normalizeComparableString(left.targetApply.apply.consume.request.runtime) ===
+      normalizeComparableString(
+        right.targetApply.apply.consume.request.runtime
+      ) &&
+    left.targetApply.apply.consume.request.status ===
+      right.targetApply.apply.consume.request.status &&
+    left.targetApply.apply.consume.request.sourceKind ===
+      right.targetApply.apply.consume.request.sourceKind &&
+    stringArraysEqual(
+      left.targetApply.apply.consume.readiness.blockingReasons,
+      right.targetApply.apply.consume.readiness.blockingReasons
+    ) &&
+    left.targetApply.apply.consume.readiness.canConsumeHandoff ===
+      right.targetApply.apply.consume.readiness.canConsumeHandoff &&
+    left.targetApply.apply.consume.readiness.hasBlockingReasons ===
+      right.targetApply.apply.consume.readiness.hasBlockingReasons &&
+    left.targetApply.apply.consume.readiness.handoffSupported ===
+      right.targetApply.apply.consume.readiness.handoffSupported &&
+    left.targetApply.apply.consume.invoked ===
+      right.targetApply.apply.consume.invoked
+  );
+}
+
+function stringArraysEqual(
+  left: readonly string[],
+  right: readonly string[]
+): boolean {
+  return (
+    left.length === right.length &&
+    left.every(
+      (value, index) =>
+        hasOwnIndex(left, index) &&
+        hasOwnIndex(right, index) &&
+        value === right[index]
+    )
+  );
+}
+
+function hasOwnIndex(values: readonly unknown[], index: number): boolean {
+  return Object.prototype.hasOwnProperty.call(values, index);
+}
+
+function normalizeComparableString(value: string): string {
+  return value.trim();
 }

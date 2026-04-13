@@ -229,7 +229,38 @@ describe("selection handoff-finalization-target helpers", () => {
         results: [createInvokedExplanationEntry()]
       } as never)
     ).toThrow(
-      "Attempt handoff decision summary requires summary.invokedResults to be an array."
+      "Attempt handoff finalization target summary requires summary.invokedResults to be an array."
+    );
+  });
+
+  it("should fail loudly when subgroup entries drift from the canonical explanation summary", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationTargetSummary({
+        explanationBasis: "handoff_report_ready",
+        results: [createInvokedExplanationEntry()],
+        invokedResults: [
+          {
+            ...createInvokedExplanationEntry(),
+            explanationCode: "handoff_blocked_unsupported"
+          }
+        ],
+        blockedResults: []
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationTargetSummary({
+        explanationBasis: "handoff_report_ready",
+        results: [createInvokedExplanationEntry()],
+        invokedResults: [
+          {
+            ...createInvokedExplanationEntry(),
+            explanationCode: "handoff_blocked_unsupported"
+          }
+        ],
+        blockedResults: []
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization target summary requires summary subgroup projections to match the canonical explanation summary."
     );
   });
 

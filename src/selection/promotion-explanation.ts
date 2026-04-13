@@ -20,6 +20,7 @@ import type {
   AttemptSelectedIdentity
 } from "./types.js";
 import {
+  accessSelectionValue,
   rethrowSelectionAccessError
 } from "./entry-validation.js";
 import {
@@ -47,16 +48,18 @@ export function deriveAttemptPromotionExplanationSummary(
   }
 
   try {
-    validateReportBasis(report);
-    validateTaskId(report.taskId);
-    const normalizedTaskId = normalizeOptionalTaskId(report.taskId);
-    validatePromotionReport(report, normalizedTaskId);
+    const normalizedReport = normalizePromotionReportInput(report);
 
-    const candidates = report.candidates.map((candidate) =>
+    validateReportBasis(normalizedReport);
+    validateTaskId(normalizedReport.taskId);
+    const normalizedTaskId = normalizeOptionalTaskId(normalizedReport.taskId);
+    validatePromotionReport(normalizedReport, normalizedTaskId);
+
+    const candidates = normalizedReport.candidates.map((candidate) =>
       deriveExplanationCandidate(
         candidate,
         normalizedTaskId,
-        report.selectedIdentity
+        normalizedReport.selectedIdentity
       )
     );
     const selected =
@@ -67,15 +70,15 @@ export function deriveAttemptPromotionExplanationSummary(
     return {
       explanationBasis: ATTEMPT_PROMOTION_EXPLANATION_BASIS,
       taskId: normalizedTaskId,
-      selectedAttemptId: report.selectedAttemptId,
+      selectedAttemptId: normalizedReport.selectedAttemptId,
       selectedIdentity: deriveSelectedIdentity(normalizedTaskId, candidates[0]),
-      candidateCount: report.candidates.length,
-      comparableCandidateCount: countComparableCandidates(report.candidates),
+      candidateCount: normalizedReport.candidates.length,
+      comparableCandidateCount: countComparableCandidates(normalizedReport.candidates),
       promotionReadyCandidateCount: countPromotionReadyCandidates(
-        report.candidates
+        normalizedReport.candidates
       ),
       recommendedForPromotion:
-        report.candidates[0]?.recommendedForPromotion ?? false,
+        normalizedReport.candidates[0]?.recommendedForPromotion ?? false,
       selected,
       candidates
     };
@@ -85,6 +88,26 @@ export function deriveAttemptPromotionExplanationSummary(
       "Attempt promotion explanation summary requires report to be a readable object."
     );
   }
+}
+
+function normalizePromotionReportInput(
+  report: Record<string, unknown>
+): AttemptPromotionReport {
+  return {
+    reportBasis: accessSelectionValue(report, "reportBasis") as AttemptPromotionReport["reportBasis"],
+    taskId: accessSelectionValue(report, "taskId") as AttemptPromotionReport["taskId"],
+    selectedAttemptId: accessSelectionValue(report, "selectedAttemptId") as AttemptPromotionReport["selectedAttemptId"],
+    selectedIdentity: accessSelectionValue(report, "selectedIdentity") as AttemptPromotionReport["selectedIdentity"],
+    candidateCount: accessSelectionValue(report, "candidateCount") as AttemptPromotionReport["candidateCount"],
+    comparableCandidateCount: accessSelectionValue(report, "comparableCandidateCount") as AttemptPromotionReport["comparableCandidateCount"],
+    promotionReadyCandidateCount: accessSelectionValue(report, "promotionReadyCandidateCount") as AttemptPromotionReport["promotionReadyCandidateCount"],
+    recommendedForPromotion: accessSelectionValue(report, "recommendedForPromotion") as AttemptPromotionReport["recommendedForPromotion"],
+    selected: accessSelectionValue(report, "selected") as AttemptPromotionReport["selected"],
+    candidates: accessSelectionValue(report, "candidates") as AttemptPromotionReport["candidates"],
+    promotionReadyCandidates: accessSelectionValue(report, "promotionReadyCandidates") as AttemptPromotionReport["promotionReadyCandidates"],
+    nonPromotionReadyCandidates: accessSelectionValue(report, "nonPromotionReadyCandidates") as AttemptPromotionReport["nonPromotionReadyCandidates"],
+    pendingCandidates: accessSelectionValue(report, "pendingCandidates") as AttemptPromotionReport["pendingCandidates"]
+  };
 }
 
 function validateReportBasis(report: AttemptPromotionReport): void {
