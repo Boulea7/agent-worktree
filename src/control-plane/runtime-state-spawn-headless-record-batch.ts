@@ -1,6 +1,7 @@
 import {
   normalizeBatchWrapper,
-  normalizeBatchWrapperObjectItems
+  normalizeBatchWrapperObjectItems,
+  readRequiredBatchWrapperProperty
 } from "./runtime-state-batch-wrapper-guards.js";
 import { deriveExecutionSessionSpawnHeadlessRecord } from "./runtime-state-spawn-headless-record.js";
 import type {
@@ -17,10 +18,17 @@ export function deriveExecutionSessionSpawnHeadlessRecordBatch(
       input,
       "Execution session spawn headless record batch input must be an object."
     );
+  const itemsInput = readRequiredBatchWrapperProperty<
+    ExecutionSessionSpawnHeadlessRecordBatchInput["items"]
+  >(
+    normalizedInput,
+    "items",
+    "Execution session spawn headless record batch requires items to be an array."
+  );
   const items = normalizeBatchWrapperObjectItems<
     ExecutionSessionSpawnHeadlessRecordBatchInput["items"][number]
   >(
-    normalizedInput.items,
+    itemsInput,
     "Execution session spawn headless record batch requires items to be an array.",
     "Execution session spawn headless record batch requires items entries to be objects."
   );

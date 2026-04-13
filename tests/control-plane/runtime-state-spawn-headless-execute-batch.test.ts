@@ -51,6 +51,20 @@ describe("control-plane runtime-state spawn-headless-execute-batch helpers", () 
     );
   });
 
+  it("should reject inherited items wrappers", async () => {
+    const inheritedInput = Object.create({
+      items: [],
+      invokeSpawn: async () => undefined,
+      executeHeadless: async () => createHeadlessExecutionResult()
+    });
+
+    await expect(
+      executeExecutionSessionSpawnHeadlessBatch(inheritedInput as never)
+    ).rejects.toThrow(
+      "Execution session spawn headless execute batch requires items to be an array."
+    );
+  });
+
   it("should return an empty batch result without invoking spawn or headless execution", async () => {
     const invokeSpawn = vi.fn(async () => undefined);
     const executeHeadless = vi.fn(async () =>
@@ -353,6 +367,48 @@ describe("control-plane runtime-state spawn-headless-execute-batch helpers", () 
     });
     expect(invokedSessionIds).toEqual(["thr_parent_1", "thr_parent_2"]);
     expect(invokedAttemptIds).toEqual(["att_child_1", "att_child_2"]);
+  });
+
+  it("should snapshot invokeSpawn and executeHeadless once for the whole batch", async () => {
+    let invokeSpawnReads = 0;
+    let executeHeadlessReads = 0;
+
+    await expect(
+      executeExecutionSessionSpawnHeadlessBatch({
+        items: [
+          {
+            childAttemptId: "att_child_snapshot",
+            request: createSpawnRequest({
+              parentAttemptId: "att_parent_snapshot",
+              parentSessionId: "thr_parent_snapshot"
+            }),
+            execution: {
+              prompt: "snapshot child"
+            }
+          }
+        ],
+        get invokeSpawn() {
+          invokeSpawnReads += 1;
+
+          if (invokeSpawnReads > 1) {
+            throw new Error("invokeSpawn getter read twice");
+          }
+
+          return async () => undefined;
+        },
+        get executeHeadless() {
+          executeHeadlessReads += 1;
+
+          if (executeHeadlessReads > 1) {
+            throw new Error("executeHeadless getter read twice");
+          }
+
+          return async () => createHeadlessExecutionResult();
+        }
+      } as never)
+    ).resolves.toBeDefined();
+    expect(invokeSpawnReads).toBe(1);
+    expect(executeHeadlessReads).toBe(1);
   });
 
   it("should fail fast on the first invoker error", async () => {

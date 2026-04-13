@@ -64,6 +64,35 @@ describe("control-plane runtime-state spawn-headless-context helpers", () => {
     );
   });
 
+  it("should fail closed on inherited or accessor-shaped headless view wrappers", () => {
+    const inheritedInput = Object.create({
+      headlessView: {
+        headlessRecord: {
+          record: createRecord({
+            attemptId: "att_inherited_context",
+            sessionId: "thr_inherited_context",
+            sourceKind: "direct"
+          })
+        },
+        view: buildExecutionSessionView([])
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessContext(inheritedInput as never)
+    ).toThrow(
+      "Execution session spawn headless context requires headlessView to be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessContext({
+        get headlessView() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
+  });
+
   it("should derive context from the selected attemptId within the supplied headless view", () => {
     const rootRecord = createRecord({
       attemptId: "att_parent_context",

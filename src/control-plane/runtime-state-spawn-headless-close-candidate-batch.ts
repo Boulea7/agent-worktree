@@ -1,6 +1,8 @@
 import { normalizeBatchWrapper } from "./runtime-state-batch-wrapper-guards.js";
 import {
-  normalizeBatchWrapperObjectItems
+  normalizeBatchWrapperObjectItems,
+  readOptionalBatchWrapperProperty,
+  readRequiredBatchWrapperProperty
 } from "./runtime-state-batch-wrapper-guards.js";
 import { normalizeHeadlessContextBatchWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import { deriveExecutionSessionSpawnHeadlessCloseCandidate } from "./runtime-state-spawn-headless-close-candidate.js";
@@ -18,8 +20,22 @@ export function deriveExecutionSessionSpawnHeadlessCloseCandidateBatch(
       input,
       "Execution session spawn headless close candidate batch input must be an object."
     );
+  const headlessContextBatch = readRequiredBatchWrapperProperty<
+    ExecutionSessionSpawnHeadlessCloseCandidateBatchInput["headlessContextBatch"]
+  >(
+    normalizedInput,
+    "headlessContextBatch",
+    "Execution session spawn headless close candidate batch requires headlessContextBatch to include headlessViewBatch and results."
+  );
+  const resolveSessionLifecycleCapability = readOptionalBatchWrapperProperty<
+    ExecutionSessionSpawnHeadlessCloseCandidateBatchInput["resolveSessionLifecycleCapability"]
+  >(
+    normalizedInput,
+    "resolveSessionLifecycleCapability",
+    "Execution session close consumer readiness requires resolveSessionLifecycleCapability to be a function when provided."
+  );
   const normalizedBatch = normalizeHeadlessContextBatchWrapper(
-    normalizedInput.headlessContextBatch,
+    headlessContextBatch,
     {
       context: "Execution session spawn headless close candidate batch",
       wrapperKey: "headlessContextBatch"
@@ -38,11 +54,10 @@ export function deriveExecutionSessionSpawnHeadlessCloseCandidateBatch(
     results.push(
       deriveExecutionSessionSpawnHeadlessCloseCandidate({
         headlessContext,
-        ...(normalizedInput.resolveSessionLifecycleCapability === undefined
+        ...(resolveSessionLifecycleCapability === undefined
           ? {}
           : {
-              resolveSessionLifecycleCapability:
-                normalizedInput.resolveSessionLifecycleCapability
+              resolveSessionLifecycleCapability
             })
       })
     );

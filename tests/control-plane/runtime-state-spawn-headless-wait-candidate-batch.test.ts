@@ -26,6 +26,28 @@ describe(
       );
     });
 
+    it("should reject inherited headless-context batch wrappers", () => {
+      const inheritedInput = Object.create({
+        headlessContextBatch: deriveExecutionSessionSpawnHeadlessContextBatch({
+          headlessViewBatch: {
+            descendantCoverage: "complete",
+            headlessRecordBatch: {
+              results: []
+            },
+            view: buildExecutionSessionView([])
+          }
+        })
+      });
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitCandidateBatch(
+          inheritedInput as never
+        )
+      ).toThrow(
+        "Execution session spawn headless wait candidate batch requires headlessContextBatch to include headlessViewBatch and results."
+      );
+    });
+
     it("should return an empty ordered result list for an empty headless-context batch", () => {
       const headlessContextBatch = deriveExecutionSessionSpawnHeadlessContextBatch({
         headlessViewBatch: {

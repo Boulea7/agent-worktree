@@ -19,6 +19,18 @@ describe("control-plane runtime-state spawn-headless-record-batch helpers", () =
     );
   });
 
+  it("should reject inherited items wrappers", () => {
+    const inheritedInput = Object.create({
+      items: []
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessRecordBatch(inheritedInput as never)
+    ).toThrow(
+      "Execution session spawn headless record batch requires items to be an array."
+    );
+  });
+
   it("should return an empty batch result when given no items", () => {
     expect(
       deriveExecutionSessionSpawnHeadlessRecordBatch({

@@ -26,6 +26,20 @@ describe(
       );
     });
 
+    it("should reject inherited headless-context batch wrappers", () => {
+      const inheritedInput = Object.create({
+        headlessContextBatch: deriveEmptyHeadlessContextBatch()
+      });
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseCandidateBatch(
+          inheritedInput as never
+        )
+      ).toThrow(
+        "Execution session spawn headless close candidate batch requires headlessContextBatch to include headlessViewBatch and results."
+      );
+    });
+
     it("should return an empty ordered result list for an empty headless-context batch", () => {
       const headlessContextBatch = deriveEmptyHeadlessContextBatch();
 
@@ -153,6 +167,26 @@ describe(
         })
       ).toThrow("resolver failed");
       expect(calls).toBe(2);
+    });
+
+    it("should snapshot the optional lifecycle resolver once for the whole batch", () => {
+      let resolverReads = 0;
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseCandidateBatch({
+          headlessContextBatch: deriveEmptyHeadlessContextBatch(),
+          get resolveSessionLifecycleCapability() {
+            resolverReads += 1;
+
+            if (resolverReads > 1) {
+              throw new Error("resolver getter read twice");
+            }
+
+            return () => true;
+          }
+        } as never)
+      ).not.toThrow();
+      expect(resolverReads).toBe(1);
     });
 
     it("should fail loudly when the supplied headless-context batch wrapper is malformed", () => {

@@ -1,6 +1,7 @@
 import { normalizeBatchWrapper } from "./runtime-state-batch-wrapper-guards.js";
 import {
-  normalizeBatchWrapperObjectItems
+  normalizeBatchWrapperObjectItems,
+  readRequiredBatchWrapperProperty
 } from "./runtime-state-batch-wrapper-guards.js";
 import { normalizeHeadlessContextBatchWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import { deriveExecutionSessionSpawnHeadlessWaitCandidate } from "./runtime-state-spawn-headless-wait-candidate.js";
@@ -18,8 +19,15 @@ export function deriveExecutionSessionSpawnHeadlessWaitCandidateBatch(
       input,
       "Execution session spawn headless wait candidate batch input must be an object."
     );
+  const headlessContextBatch = readRequiredBatchWrapperProperty<
+    ExecutionSessionSpawnHeadlessWaitCandidateBatchInput["headlessContextBatch"]
+  >(
+    normalizedInput,
+    "headlessContextBatch",
+    "Execution session spawn headless wait candidate batch requires headlessContextBatch to include headlessViewBatch and results."
+  );
   const normalizedBatch = normalizeHeadlessContextBatchWrapper(
-    normalizedInput.headlessContextBatch,
+    headlessContextBatch,
     {
       context: "Execution session spawn headless wait candidate batch",
       wrapperKey: "headlessContextBatch"

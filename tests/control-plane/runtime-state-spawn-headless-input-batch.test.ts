@@ -19,6 +19,18 @@ describe("control-plane runtime-state spawn-headless-input-batch helpers", () =>
     );
   });
 
+  it("should reject inherited items wrappers", () => {
+    const inheritedInput = Object.create({
+      items: []
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessInputBatch(inheritedInput as never)
+    ).toThrow(
+      "Execution session spawn headless input batch requires items to be an array."
+    );
+  });
+
   it("should return an empty batch result for an empty bridge list", () => {
     expect(
       deriveExecutionSessionSpawnHeadlessInputBatch({

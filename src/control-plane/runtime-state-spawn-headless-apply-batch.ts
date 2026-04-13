@@ -1,5 +1,9 @@
 import { ValidationError } from "../core/errors.js";
 import { applyExecutionSessionSpawnHeadlessInput } from "./runtime-state-spawn-headless-apply.js";
+import {
+  normalizeBatchWrapper,
+  readRequiredBatchWrapperProperty
+} from "./runtime-state-batch-wrapper-guards.js";
 import type {
   ExecutionSessionSpawnHeadlessApply,
   ExecutionSessionSpawnHeadlessApplyBatch,
@@ -9,29 +13,41 @@ import type {
 export async function applyExecutionSessionSpawnHeadlessInputBatch(
   input: ExecutionSessionSpawnHeadlessApplyBatchInput
 ): Promise<ExecutionSessionSpawnHeadlessApplyBatch> {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) {
-    throw new ValidationError(
+  const normalizedInput =
+    normalizeBatchWrapper<ExecutionSessionSpawnHeadlessApplyBatchInput>(
+      input,
       "Execution session spawn headless apply batch input must be an object."
     );
-  }
-
-  if (!Array.isArray(input.items)) {
+  const items = readRequiredBatchWrapperProperty<
+    ExecutionSessionSpawnHeadlessApplyBatchInput["items"]
+  >(
+    normalizedInput,
+    "items",
+    "Execution session spawn headless apply batch requires items to be an array."
+  );
+  if (!Array.isArray(items)) {
     throw new ValidationError(
       "Execution session spawn headless apply batch requires items to be an array."
     );
   }
-
-  if (typeof input.invokeSpawn !== "function") {
+  const invokeSpawn = readRequiredBatchWrapperProperty<
+    ExecutionSessionSpawnHeadlessApplyBatchInput["invokeSpawn"]
+  >(
+    normalizedInput,
+    "invokeSpawn",
+    "Execution session spawn headless apply batch requires invokeSpawn to be a function."
+  );
+  if (typeof invokeSpawn !== "function") {
     throw new ValidationError(
       "Execution session spawn headless apply batch requires invokeSpawn to be a function."
     );
   }
 
-  validateBatchItems(input.items);
+  validateBatchItems(items);
 
   const results: ExecutionSessionSpawnHeadlessApply[] = [];
 
-  for (const item of input.items) {
+  for (const item of items) {
     results.push(
       await applyExecutionSessionSpawnHeadlessInput({
         childAttemptId: item.childAttemptId,
@@ -39,7 +55,7 @@ export async function applyExecutionSessionSpawnHeadlessInputBatch(
         get execution() {
           return item.execution;
         },
-        invokeSpawn: input.invokeSpawn
+        invokeSpawn
       })
     );
   }

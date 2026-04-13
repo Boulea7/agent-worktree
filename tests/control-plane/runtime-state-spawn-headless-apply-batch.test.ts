@@ -35,6 +35,19 @@ describe("control-plane runtime-state spawn-headless-apply-batch helpers", () =>
     );
   });
 
+  it("should reject inherited items wrappers", async () => {
+    const inheritedInput = Object.create({
+      items: [],
+      invokeSpawn: async () => undefined
+    });
+
+    await expect(
+      applyExecutionSessionSpawnHeadlessInputBatch(inheritedInput as never)
+    ).rejects.toThrow(
+      "Execution session spawn headless apply batch requires items to be an array."
+    );
+  });
+
   it("should return an empty batch result without invoking spawn", async () => {
     const invokeSpawn = vi.fn(async () => undefined);
 
@@ -285,6 +298,37 @@ describe("control-plane runtime-state spawn-headless-apply-batch helpers", () =>
       ]
     });
     expect(invokedSessionIds).toEqual(["thr_parent_1", "thr_parent_2"]);
+  });
+
+  it("should snapshot invokeSpawn once for the whole batch", async () => {
+    let invokeSpawnReads = 0;
+
+    await expect(
+      applyExecutionSessionSpawnHeadlessInputBatch({
+        items: [
+          {
+            childAttemptId: "att_child_snapshot",
+            request: createSpawnRequest({
+              parentAttemptId: "att_parent_snapshot",
+              parentSessionId: "thr_parent_snapshot"
+            }),
+            execution: {
+              prompt: "snapshot child"
+            }
+          }
+        ],
+        get invokeSpawn() {
+          invokeSpawnReads += 1;
+
+          if (invokeSpawnReads > 1) {
+            throw new Error("invokeSpawn getter read twice");
+          }
+
+          return async () => undefined;
+        }
+      } as never)
+    ).resolves.toBeDefined();
+    expect(invokeSpawnReads).toBe(1);
   });
 
   it("should fail fast on the first invoker error", async () => {

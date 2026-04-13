@@ -1,4 +1,8 @@
 import { ValidationError } from "../core/errors.js";
+import {
+  normalizeBatchWrapper,
+  readRequiredBatchWrapperProperty
+} from "./runtime-state-batch-wrapper-guards.js";
 import { deriveExecutionSessionContext } from "./runtime-state-context.js";
 import type {
   ExecutionSessionSpawnHeadlessContext,
@@ -39,47 +43,53 @@ export function deriveExecutionSessionSpawnHeadlessContext(
 function validateHeadlessContextInput(
   input: ExecutionSessionSpawnHeadlessContextInput
 ): void {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) {
-    throw new ValidationError(
-      "Execution session spawn headless context input must be an object."
-    );
-  }
+  const normalizedInput = normalizeBatchWrapper<ExecutionSessionSpawnHeadlessContextInput>(
+    input,
+    "Execution session spawn headless context input must be an object."
+  );
+  const headlessView = readRequiredBatchWrapperProperty<
+    ExecutionSessionSpawnHeadlessContextInput["headlessView"]
+  >(
+    normalizedInput,
+    "headlessView",
+    "Execution session spawn headless context requires headlessView to be an object."
+  );
 
-  if (
-    typeof input.headlessView !== "object" ||
-    input.headlessView === null ||
-    Array.isArray(input.headlessView)
-  ) {
+  if (typeof headlessView !== "object" || headlessView === null || Array.isArray(headlessView)) {
     throw new ValidationError(
       "Execution session spawn headless context requires headlessView to be an object."
     );
   }
+  const headlessRecord = readRequiredBatchWrapperProperty(
+    headlessView,
+    "headlessRecord",
+    "Execution session spawn headless context requires headlessView.headlessRecord to be an object."
+  );
 
-  if (
-    typeof input.headlessView.headlessRecord !== "object" ||
-    input.headlessView.headlessRecord === null ||
-    Array.isArray(input.headlessView.headlessRecord)
-  ) {
+  if (typeof headlessRecord !== "object" || headlessRecord === null || Array.isArray(headlessRecord)) {
     throw new ValidationError(
       "Execution session spawn headless context requires headlessView.headlessRecord to be an object."
     );
   }
+  const headlessRecordContainer = headlessRecord as Record<string, unknown>;
+  const record = readRequiredBatchWrapperProperty(
+    headlessRecordContainer,
+    "record",
+    "Execution session spawn headless context requires headlessView.headlessRecord.record to be an object."
+  );
 
-  if (
-    typeof input.headlessView.headlessRecord.record !== "object" ||
-    input.headlessView.headlessRecord.record === null ||
-    Array.isArray(input.headlessView.headlessRecord.record)
-  ) {
+  if (typeof record !== "object" || record === null || Array.isArray(record)) {
     throw new ValidationError(
       "Execution session spawn headless context requires headlessView.headlessRecord.record to be an object."
     );
   }
+  const view = readRequiredBatchWrapperProperty(
+    headlessView,
+    "view",
+    "Execution session spawn headless context requires headlessView.view to be an object."
+  );
 
-  if (
-    typeof input.headlessView.view !== "object" ||
-    input.headlessView.view === null ||
-    Array.isArray(input.headlessView.view)
-  ) {
+  if (typeof view !== "object" || view === null || Array.isArray(view)) {
     throw new ValidationError(
       "Execution session spawn headless context requires headlessView.view to be an object."
     );

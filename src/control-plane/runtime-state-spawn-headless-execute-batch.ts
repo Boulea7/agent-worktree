@@ -1,5 +1,9 @@
 import { ValidationError } from "../core/errors.js";
 import { executeExecutionSessionSpawnHeadless } from "./runtime-state-spawn-headless-execute.js";
+import {
+  normalizeBatchWrapper,
+  readRequiredBatchWrapperProperty
+} from "./runtime-state-batch-wrapper-guards.js";
 import type {
   ExecutionSessionSpawnHeadlessExecute,
   ExecutionSessionSpawnHeadlessExecuteBatch,
@@ -9,35 +13,53 @@ import type {
 export async function executeExecutionSessionSpawnHeadlessBatch(
   input: ExecutionSessionSpawnHeadlessExecuteBatchInput
 ): Promise<ExecutionSessionSpawnHeadlessExecuteBatch> {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) {
-    throw new ValidationError(
+  const normalizedInput =
+    normalizeBatchWrapper<ExecutionSessionSpawnHeadlessExecuteBatchInput>(
+      input,
       "Execution session spawn headless execute batch input must be an object."
     );
-  }
-
-  if (!Array.isArray(input.items)) {
+  const items = readRequiredBatchWrapperProperty<
+    ExecutionSessionSpawnHeadlessExecuteBatchInput["items"]
+  >(
+    normalizedInput,
+    "items",
+    "Execution session spawn headless execute batch requires items to be an array."
+  );
+  if (!Array.isArray(items)) {
     throw new ValidationError(
       "Execution session spawn headless execute batch requires items to be an array."
     );
   }
-
-  if (typeof input.invokeSpawn !== "function") {
+  const invokeSpawn = readRequiredBatchWrapperProperty<
+    ExecutionSessionSpawnHeadlessExecuteBatchInput["invokeSpawn"]
+  >(
+    normalizedInput,
+    "invokeSpawn",
+    "Execution session spawn headless execute batch requires invokeSpawn to be a function."
+  );
+  if (typeof invokeSpawn !== "function") {
     throw new ValidationError(
       "Execution session spawn headless execute batch requires invokeSpawn to be a function."
     );
   }
-
-  if (typeof input.executeHeadless !== "function") {
+  const executeHeadless = readRequiredBatchWrapperProperty<
+    ExecutionSessionSpawnHeadlessExecuteBatchInput["executeHeadless"]
+  >(
+    normalizedInput,
+    "executeHeadless",
+    "Execution session spawn headless execute batch requires executeHeadless to be a function."
+  );
+  if (typeof executeHeadless !== "function") {
     throw new ValidationError(
       "Execution session spawn headless execute batch requires executeHeadless to be a function."
     );
   }
 
-  validateBatchItems(input.items);
+  validateBatchItems(items);
 
   const results: ExecutionSessionSpawnHeadlessExecute[] = [];
 
-  for (const item of input.items) {
+  for (const item of items) {
     results.push(
       await executeExecutionSessionSpawnHeadless({
         childAttemptId: item.childAttemptId,
@@ -45,8 +67,8 @@ export async function executeExecutionSessionSpawnHeadlessBatch(
         get execution() {
           return item.execution;
         },
-        invokeSpawn: input.invokeSpawn,
-        executeHeadless: input.executeHeadless
+        invokeSpawn,
+        executeHeadless
       })
     );
   }
