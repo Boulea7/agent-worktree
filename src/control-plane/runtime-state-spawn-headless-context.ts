@@ -12,20 +12,20 @@ import type {
 export function deriveExecutionSessionSpawnHeadlessContext(
   input: ExecutionSessionSpawnHeadlessContextInput
 ): ExecutionSessionSpawnHeadlessContext {
-  validateHeadlessContextInput(input);
+  const headlessView = validateHeadlessContextInput(input);
 
-  const headlessView =
-    input.headlessView.descendantCoverage === undefined
+  const normalizedHeadlessView =
+    headlessView.descendantCoverage === undefined
       ? {
-          ...input.headlessView,
+          ...headlessView,
           descendantCoverage: "incomplete" as const
         }
-      : input.headlessView;
+      : headlessView;
   const context = deriveExecutionSessionContext({
     selector: {
-      attemptId: headlessView.headlessRecord.record.attemptId
+      attemptId: normalizedHeadlessView.headlessRecord.record.attemptId
     },
-    view: headlessView.view
+    view: normalizedHeadlessView.view
   });
 
   if (context === undefined) {
@@ -35,14 +35,14 @@ export function deriveExecutionSessionSpawnHeadlessContext(
   }
 
   return {
-    headlessView,
+    headlessView: normalizedHeadlessView,
     context
   };
 }
 
 function validateHeadlessContextInput(
   input: ExecutionSessionSpawnHeadlessContextInput
-): void {
+): ExecutionSessionSpawnHeadlessContextInput["headlessView"] {
   const normalizedInput = normalizeBatchWrapper<ExecutionSessionSpawnHeadlessContextInput>(
     input,
     "Execution session spawn headless context input must be an object."
@@ -94,4 +94,6 @@ function validateHeadlessContextInput(
       "Execution session spawn headless context requires headlessView.view to be an object."
     );
   }
+
+  return headlessView;
 }

@@ -133,6 +133,12 @@ function deriveCanonicalExplanationSummary(
     );
   }
 
+  if (!explanationEntryArraysEqual(explanationResults, canonicalSummary.results)) {
+    throw new ValidationError(
+      "Attempt handoff finalization target summary requires summary.results to match the canonical explanation summary."
+    );
+  }
+
   if (
     !explanationEntryArraysEqual(
       explanationInvokedResults,

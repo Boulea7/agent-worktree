@@ -264,6 +264,24 @@ describe("selection handoff-finalization-target helpers", () => {
     );
   });
 
+  it("should fail loudly when results entries drift even if canonical subgroups still match", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationTargetSummary({
+        explanationBasis: "handoff_report_ready",
+        results: [
+          {
+            ...createInvokedExplanationEntry(),
+            explanationCode: "handoff_blocked_unsupported"
+          }
+        ],
+        invokedResults: [createInvokedExplanationEntry()],
+        blockedResults: []
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization target summary requires summary.results to match the canonical explanation summary."
+    );
+  });
+
   it("should derive a stable finalization target summary through the canonical handoff chain", async () => {
     const promotionTarget = selection.deriveAttemptPromotionTarget(
       selection.deriveAttemptPromotionDecisionSummary(

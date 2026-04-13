@@ -93,6 +93,57 @@ describe("control-plane runtime-state spawn-headless-context helpers", () => {
     ).toThrow(ValidationError);
   });
 
+  it("should snapshot headlessView once before reusing it", () => {
+    let headlessViewReads = 0;
+
+    const rootRecord = createRecord({
+      attemptId: "att_parent_snapshot_context",
+      sessionId: "thr_parent_snapshot_context",
+      sourceKind: "direct"
+    });
+    const childRecord = createHeadlessRecord({
+      attemptId: "att_child_snapshot_context",
+      parentAttemptId: "att_parent_snapshot_context",
+      sessionId: "thr_child_snapshot_context",
+      sourceKind: "delegated"
+    });
+
+    expect(
+      deriveExecutionSessionSpawnHeadlessContext({
+        get headlessView() {
+          headlessViewReads += 1;
+
+          if (headlessViewReads > 1) {
+            throw new Error("headlessView getter read twice");
+          }
+
+          return {
+            descendantCoverage: "complete",
+            headlessRecord: childRecord,
+            view: buildExecutionSessionView([rootRecord, childRecord.record])
+          };
+        }
+      } as never)
+    ).toEqual({
+      headlessView: {
+        descendantCoverage: "complete",
+        headlessRecord: childRecord,
+        view: buildExecutionSessionView([rootRecord, childRecord.record])
+      },
+      context: {
+        record: childRecord.record,
+        selectedBy: "attemptId",
+        parentRecord: rootRecord,
+        childRecords: [],
+        hasKnownSession: true,
+        hasParent: true,
+        hasResolvedParent: true,
+        hasChildren: false
+      }
+    });
+    expect(headlessViewReads).toBe(1);
+  });
+
   it("should derive context from the selected attemptId within the supplied headless view", () => {
     const rootRecord = createRecord({
       attemptId: "att_parent_context",
