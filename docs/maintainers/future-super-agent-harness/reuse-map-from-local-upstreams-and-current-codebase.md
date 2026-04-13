@@ -33,7 +33,7 @@ Maintainer planning only. This document does not modify the current public contr
 - mutable memory blobs, store records, or checkpoint state as audit truth
 - thread-native substrate
 - shared parent workspace child model
-- polling `task()` lifecycle as the main orchestration contract
+- polling a thread-native child-task lifecycle as the main orchestration contract
 - full chat-product shell as the architectural center
 
 ## Current Agent-Worktree: Reuse Candidates
@@ -84,7 +84,7 @@ The future branch should use them as separate reference lines rather than collap
 
 - feature-gated or rollout-sensitive paths as if they were stable public product commitments
 - any assumption that team memory, session memory, todo state, and runtime task state belong in one unified store
-- any assumption that `/dream`, KAIROS, TeamMem, or background distillation paths are stable product promises rather than condition paths
+- any assumption that dream-like background consolidation, shared team-memory systems, or background distillation paths are stable product promises rather than condition paths
 - prompt-only coordination in places where explicit typed runtime requests are needed
 
 ## Working Rule

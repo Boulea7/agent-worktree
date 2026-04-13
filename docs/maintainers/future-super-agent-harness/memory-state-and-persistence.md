@@ -87,4 +87,4 @@ Lesson not to copy:
 - do not move the future branch toward a thread-native workspace model
 - do not use mutable memory blobs or checkpoint-like stores as durable audit truth
 - do not let async debounce queues replace first-class durable event records
-- do not treat feature-gated memory or dream paths as if static source analysis had already proven rollout, defaults, or product guarantees
+- do not treat feature-gated memory or dream-like background-consolidation paths as if static source analysis had already proven rollout, defaults, or product guarantees

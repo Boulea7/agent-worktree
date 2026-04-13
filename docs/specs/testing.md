@@ -307,6 +307,12 @@ The current public baseline satisfies this Phase 4 test slice through `doctor`, 
 - explicit denylist and allowlist tests that keep wider repo-internal selection/control-plane helpers out of the default barrels
 - failure-mode tests for request validation, readiness validation, and fail-fast batch composition across the current internal-only capability buckets
 
+### Phase 6: Internal-Only Bounded Parallelism Prep
+
+- internal-only headless wait/close request, target-apply, and batch-wrapper tests for own-property-only ingress and snapshot reuse
+- internal-only headless context, wait/close candidate, and wait/close target tests for descendant-coverage defaults, nested wrapper snapshots, and trim-preserving target derivation
+- internal-only barrel-boundary tests that keep newer P6 helper types and repo-internal surfaces out of the default barrels while preserving the intended public type allowlist
+
 ## Definition Of Done For Future Coding Tasks
 
 

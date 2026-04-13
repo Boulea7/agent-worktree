@@ -36,7 +36,7 @@ The future branch should not inherit that upstream's:
 
 - thread-native substrate
 - shared-workspace subagent model
-- polling `task()` lifecycle as the main delegation contract
+- polling a thread-native child-task lifecycle as the main delegation contract
 - product-shell-first architecture
 
 ## Relationship To Local-Only Peer-Collaboration References

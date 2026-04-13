@@ -16,7 +16,7 @@ This directory is not a product promise for `main`.
 ## What This Directory Is
 
 - future-branch planning
-- post-current-roadmap architecture work
+- future-branch architecture work beyond the current mainline roadmap
 - maintainer-facing implementation guidance
 - a staging area for decisions that may later become RFCs, ADRs, or new specs
 
@@ -55,9 +55,11 @@ For any future implementation slice that lands in Phase 6 or later, read this di
 
 - `README.md`
 - `reuse-map-from-local-upstreams-and-current-codebase.md`
+- `execution-and-control-plane.md`
 - `sandbox-skills-and-extensibility.md`
 - `memory-state-and-persistence.md`
 - `vision-and-positioning.md`
+- `review-risks-and-open-questions.md`
 
 These files are the current public synthesis point for local-only upstream substrate research. They should be treated as the default design brief for future-branch work on sandboxing, subagents/delegation, memory, task coordination, or extension/runtime boundaries.
 

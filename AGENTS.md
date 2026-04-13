@@ -22,9 +22,11 @@ Before starting any Phase 6 or later implementation slice, read the future-branc
 
 - `docs/maintainers/future-super-agent-harness/README.md`
 - `docs/maintainers/future-super-agent-harness/reuse-map-from-local-upstreams-and-current-codebase.md`
+- `docs/maintainers/future-super-agent-harness/execution-and-control-plane.md`
 - `docs/maintainers/future-super-agent-harness/sandbox-skills-and-extensibility.md`
 - `docs/maintainers/future-super-agent-harness/memory-state-and-persistence.md`
 - `docs/maintainers/future-super-agent-harness/vision-and-positioning.md`
+- `docs/maintainers/future-super-agent-harness/review-risks-and-open-questions.md`
 
 Those documents are the current public synthesis point for local-only upstream substrate research. Future-branch work on sandboxing, subagents/delegation, memory, task coordination, or extension/runtime boundaries should start from those references rather than re-deriving the architecture from scratch.
 
@@ -91,6 +93,8 @@ Recent thin-slice follow-ups inside those buckets now also include:
 - selection shared finalization request-summary readers plus finalization-target subgroup validation now fail closed on accessor-shaped summary fields, inherited wrappers, and non-canonical subgroup reuse, while the downstream promotion explanation/decision/target readers now also reject inherited top-level wrappers without widening any public selection surface
 - direct wait/close `target-apply` and `apply-batch` seams now use the same own-property-only wrapper reads and batch-level callback snapshots as the surrounding hardened ingress path, so inherited targets or request containers and repeated callback reads no longer bypass the current internal-only request/apply boundary
 - spawn-headless `input/apply/execute/record` batch seams now also require own top-level `items` wrappers and single-read callback capture where applicable, so inherited wrapper fields and repeated `invokeSpawn` / `executeHeadless` reads no longer drift through the current headless batch bridge
+- promotion-result / promotion-audit / promotion-report now normalize readable-object snapshots before downstream reuse, while handoff-finalization outcome / grouped projection / grouped reporting seams now snapshot top-level arrays before validation and derivation, so accessor-shaped selection inputs no longer leak raw errors or drift across repeated reads without widening any public selection surface
+- headless wrapper guards plus single-entry wait/close request and target-apply seams now read top-level wrappers own-property-only and return nested snapshots for downstream reuse, while the current headless context / wait-close candidate-target tests also pin default `descendantCoverage: "incomplete"` and wait/close target trim behavior without widening public lifecycle or execution contracts
 - create-attempt rollback residue now has a bounded internal follow-up summary over the existing branch/worktree residue probe, so retained-branch rollback outcomes expose stable `residueDisposition` plus branch/worktree cleanup booleans without widening cleanup CLI semantics or deleting branches automatically
 - create-attempt rollback residue follow-up is now best-effort inside the manifest-write failure path, so follow-up probing errors no longer mask the primary rollback `RuntimeError` and instead remain additive internal cause metadata
 - create-attempt rollback failure now also keeps best-effort residue follow-up additive on top of the existing `manifestWriteError` plus `rollbackError` cause path, so safe-cleanup failures may still surface bounded branch/worktree residue diagnostics without weakening the primary rollback failure contract
