@@ -1,5 +1,10 @@
 import { ValidationError } from "../core/errors.js";
 import { applyExecutionSessionWait } from "./runtime-state-wait-apply.js";
+import {
+  normalizeBatchWrapper,
+  readOptionalBatchWrapperProperty,
+  readRequiredBatchWrapperProperty
+} from "./runtime-state-batch-wrapper-guards.js";
 import { deriveExecutionSessionWaitRequest } from "./runtime-state-wait-request.js";
 import type {
   ExecutionSessionWaitTargetApply,
@@ -9,49 +14,68 @@ import type {
 export async function applyExecutionSessionWaitTarget(
   input: ExecutionSessionWaitTargetApplyInput
 ): Promise<ExecutionSessionWaitTargetApply> {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) {
-    throw new ValidationError(
-      "Execution session wait target apply input must be an object."
-    );
-  }
-
-  if (
-    typeof input.target !== "object" ||
-    input.target === null ||
-    Array.isArray(input.target)
-  ) {
+  const normalizedInput = normalizeBatchWrapper<ExecutionSessionWaitTargetApplyInput>(
+    input,
+    "Execution session wait target apply input must be an object."
+  );
+  const target = readRequiredBatchWrapperProperty<
+    ExecutionSessionWaitTargetApplyInput["target"]
+  >(
+    normalizedInput,
+    "target",
+    "Execution session wait target apply requires target to be an object."
+  );
+  if (typeof target !== "object" || target === null || Array.isArray(target)) {
     throw new ValidationError(
       "Execution session wait target apply requires target to be an object."
     );
   }
-
-  if (typeof input.invokeWait !== "function") {
+  const invokeWait = readRequiredBatchWrapperProperty<
+    ExecutionSessionWaitTargetApplyInput["invokeWait"]
+  >(
+    normalizedInput,
+    "invokeWait",
+    "Execution session wait target apply requires invokeWait to be a function."
+  );
+  if (typeof invokeWait !== "function") {
     throw new ValidationError(
       "Execution session wait target apply requires invokeWait to be a function."
     );
   }
-
+  const resolveSessionLifecycleCapability = readOptionalBatchWrapperProperty<
+    ExecutionSessionWaitTargetApplyInput["resolveSessionLifecycleCapability"]
+  >(
+    normalizedInput,
+    "resolveSessionLifecycleCapability",
+    "Execution session wait target apply requires resolveSessionLifecycleCapability to be a function when provided."
+  );
   if (
-    input.resolveSessionLifecycleCapability !== undefined &&
-    typeof input.resolveSessionLifecycleCapability !== "function"
+    resolveSessionLifecycleCapability !== undefined &&
+    typeof resolveSessionLifecycleCapability !== "function"
   ) {
     throw new ValidationError(
       "Execution session wait target apply requires resolveSessionLifecycleCapability to be a function when provided."
     );
   }
+  const timeoutMs = readOptionalBatchWrapperProperty<
+    ExecutionSessionWaitTargetApplyInput["timeoutMs"]
+  >(
+    normalizedInput,
+    "timeoutMs",
+    "Execution session wait target apply requires timeoutMs to be a finite integer greater than 0 when provided."
+  );
 
   const request = deriveExecutionSessionWaitRequest({
-    target: input.target,
-    ...(input.timeoutMs === undefined ? {} : { timeoutMs: input.timeoutMs })
+    target,
+    ...(timeoutMs === undefined ? {} : { timeoutMs })
   });
   const apply = await applyExecutionSessionWait({
     request,
-    invokeWait: input.invokeWait,
-    ...(input.resolveSessionLifecycleCapability === undefined
+    invokeWait,
+    ...(resolveSessionLifecycleCapability === undefined
       ? {}
       : {
-          resolveSessionLifecycleCapability:
-            input.resolveSessionLifecycleCapability
+          resolveSessionLifecycleCapability
         })
   });
 

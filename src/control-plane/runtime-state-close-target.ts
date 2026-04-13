@@ -1,4 +1,8 @@
 import { ValidationError } from "../core/errors.js";
+import {
+  normalizeBatchWrapper,
+  readRequiredBatchWrapperProperty
+} from "./runtime-state-batch-wrapper-guards.js";
 import type {
   ExecutionSessionCloseTarget,
   ExecutionSessionCloseTargetInput
@@ -7,60 +11,77 @@ import type {
 export function deriveExecutionSessionCloseTarget(
   input: ExecutionSessionCloseTargetInput
 ): ExecutionSessionCloseTarget | undefined {
-  if (!isRecord(input)) {
-    throw new ValidationError(
-      "Execution session close target input must be an object."
-    );
-  }
-
-  if (!isRecord(input.candidate)) {
+  const normalizedInput = normalizeBatchWrapper<ExecutionSessionCloseTargetInput>(
+    input,
+    "Execution session close target input must be an object."
+  );
+  const candidate = readRequiredBatchWrapperProperty<
+    ExecutionSessionCloseTargetInput["candidate"]
+  >(
+    normalizedInput,
+    "candidate",
+    "Execution session close target requires candidate to be an object."
+  );
+  if (!isRecord(candidate)) {
     throw new ValidationError(
       "Execution session close target requires candidate to be an object."
     );
   }
-
-  if (!isRecord(input.candidate.context)) {
+  const context = readRequiredBatchWrapperProperty(
+    candidate,
+    "context",
+    "Execution session close target requires candidate.context to be an object."
+  );
+  if (!isRecord(context)) {
     throw new ValidationError(
       "Execution session close target requires candidate.context to be an object."
     );
   }
-
-  if (!isRecord(input.candidate.context.record)) {
+  const record = readRequiredBatchWrapperProperty(
+    context,
+    "record",
+    "Execution session close target requires candidate.context.record to be an object."
+  );
+  if (!isRecord(record)) {
     throw new ValidationError(
       "Execution session close target requires candidate.context.record to be an object."
     );
   }
-
-  if (!isRecord(input.candidate.readiness)) {
+  const readiness = readRequiredBatchWrapperProperty(
+    candidate,
+    "readiness",
+    "Execution session close target requires candidate.readiness to be an object."
+  );
+  if (!isRecord(readiness)) {
     throw new ValidationError(
       "Execution session close target requires candidate.readiness to be an object."
     );
   }
-
-  if (typeof input.candidate.readiness.canClose !== "boolean") {
+  const canClose = readRequiredBatchWrapperProperty(
+    readiness,
+    "canClose",
+    "Execution session close target requires candidate.readiness.canClose to be a boolean."
+  );
+  if (typeof canClose !== "boolean") {
     throw new ValidationError(
       "Execution session close target requires candidate.readiness.canClose to be a boolean."
     );
   }
 
-  const {
-    candidate: { context, readiness }
-  } = input;
-
   const attemptId = normalizeRequiredString(
-    context.record.attemptId,
+    record.attemptId,
     "Execution session close target requires candidate.context.record.attemptId to be a non-empty string."
   );
   const runtime = normalizeRequiredString(
-    context.record.runtime,
+    record.runtime,
     "Execution session close target requires candidate.context.record.runtime to be a non-empty string."
   );
   const sessionId = normalizeOptionalString(
-    context.record.sessionId,
+    record.sessionId,
     "Execution session close target requires candidate.context.record.sessionId to be a non-empty string when present."
   );
 
-  if (!readiness.canClose || sessionId === undefined) {
+  if (!canClose || sessionId === undefined) {
     return undefined;
   }
 

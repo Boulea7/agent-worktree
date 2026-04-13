@@ -162,6 +162,28 @@ describe("control-plane runtime-state wait-target-apply helpers", () => {
     );
   });
 
+  it("should reject inherited wait targets and fail closed on accessor-shaped target-apply inputs", async () => {
+    const inheritedInput = Object.create({
+      target: createWaitTarget(),
+      invokeWait: async () => undefined
+    });
+
+    await expect(
+      applyExecutionSessionWaitTarget(inheritedInput as never)
+    ).rejects.toThrow(
+      "Execution session wait target apply requires target to be an object."
+    );
+
+    await expect(
+      applyExecutionSessionWaitTarget({
+        get target() {
+          throw new Error("getter boom");
+        },
+        invokeWait: async () => undefined
+      } as never)
+    ).rejects.toThrow(ValidationError);
+  });
+
   it("should fail loudly when wait callbacks are not functions", async () => {
     await expect(
       applyExecutionSessionWaitTarget({
@@ -181,6 +203,37 @@ describe("control-plane runtime-state wait-target-apply helpers", () => {
     ).rejects.toThrow(
       "Execution session wait target apply requires resolveSessionLifecycleCapability to be a function when provided."
     );
+  });
+
+  it("should snapshot wait callbacks before deriving the request", async () => {
+    let invokeWaitReads = 0;
+    let resolverReads = 0;
+
+    await expect(
+      applyExecutionSessionWaitTarget({
+        target: createWaitTarget(),
+        get invokeWait() {
+          invokeWaitReads += 1;
+
+          if (invokeWaitReads > 1) {
+            throw new Error("invokeWait getter read twice");
+          }
+
+          return async () => undefined;
+        },
+        get resolveSessionLifecycleCapability() {
+          resolverReads += 1;
+
+          if (resolverReads > 1) {
+            throw new Error("resolver getter read twice");
+          }
+
+          return () => true;
+        }
+      } as never)
+    ).resolves.toBeDefined();
+    expect(invokeWaitReads).toBe(1);
+    expect(resolverReads).toBe(1);
   });
 
   it("should surface invoker failures directly without returning a partial target apply result", async () => {

@@ -164,6 +164,28 @@ describe("control-plane runtime-state close-target-apply helpers", () => {
     );
   });
 
+  it("should reject inherited close targets and fail closed on accessor-shaped target-apply inputs", async () => {
+    const inheritedInput = Object.create({
+      target: createCloseTarget(),
+      invokeClose: async () => undefined
+    });
+
+    await expect(
+      applyExecutionSessionCloseTarget(inheritedInput as never)
+    ).rejects.toThrow(
+      "Execution session close target apply requires target to be an object."
+    );
+
+    await expect(
+      applyExecutionSessionCloseTarget({
+        get target() {
+          throw new Error("getter boom");
+        },
+        invokeClose: async () => undefined
+      } as never)
+    ).rejects.toThrow(ValidationError);
+  });
+
   it("should fail loudly when close callbacks are not functions", async () => {
     await expect(
       applyExecutionSessionCloseTarget({
@@ -183,6 +205,37 @@ describe("control-plane runtime-state close-target-apply helpers", () => {
     ).rejects.toThrow(
       "Execution session close target apply requires resolveSessionLifecycleCapability to be a function when provided."
     );
+  });
+
+  it("should snapshot close callbacks before deriving the request", async () => {
+    let invokeCloseReads = 0;
+    let resolverReads = 0;
+
+    await expect(
+      applyExecutionSessionCloseTarget({
+        target: createCloseTarget(),
+        get invokeClose() {
+          invokeCloseReads += 1;
+
+          if (invokeCloseReads > 1) {
+            throw new Error("invokeClose getter read twice");
+          }
+
+          return async () => undefined;
+        },
+        get resolveSessionLifecycleCapability() {
+          resolverReads += 1;
+
+          if (resolverReads > 1) {
+            throw new Error("resolver getter read twice");
+          }
+
+          return () => true;
+        }
+      } as never)
+    ).resolves.toBeDefined();
+    expect(invokeCloseReads).toBe(1);
+    expect(resolverReads).toBe(1);
   });
 
   it("should surface invoker failures directly without returning a partial target-apply result", async () => {

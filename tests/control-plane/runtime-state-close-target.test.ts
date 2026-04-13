@@ -260,6 +260,39 @@ describe("control-plane runtime-state close-target helpers", () => {
       "Execution session close target requires candidate.context.record.runtime to be a non-empty string."
     );
   });
+
+  it("should fail closed on inherited or accessor-shaped candidate wrappers", () => {
+    const inheritedInput = Object.create({
+      candidate: deriveExecutionSessionCloseCandidate({
+        view: buildExecutionSessionView([
+          createRecord({
+            attemptId: "att_inherited_close_target",
+            sessionId: "thr_inherited_close_target",
+            sourceKind: "direct",
+            lifecycleState: "active"
+          })
+        ]),
+        selector: {
+          attemptId: "att_inherited_close_target"
+        },
+        resolveSessionLifecycleCapability: () => true
+      })
+    });
+
+    expect(() =>
+      deriveExecutionSessionCloseTarget(inheritedInput as never)
+    ).toThrow(
+      "Execution session close target requires candidate to be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionCloseTarget({
+        get candidate() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
+  });
 });
 
 function createRecord(

@@ -252,6 +252,36 @@ describe("control-plane runtime-state wait-target helpers", () => {
       "Execution session wait target requires candidate.context.record.attemptId to be a non-empty string."
     );
   });
+
+  it("should fail closed on inherited or accessor-shaped candidate wrappers", () => {
+    const inheritedInput = Object.create({
+      candidate: deriveExecutionSessionWaitCandidate({
+        view: buildExecutionSessionView([
+          createRecord({
+            attemptId: "att_inherited_wait_target",
+            sessionId: "thr_inherited_wait_target",
+            sourceKind: "direct",
+            lifecycleState: "active"
+          })
+        ]),
+        selector: {
+          attemptId: "att_inherited_wait_target"
+        }
+      })
+    });
+
+    expect(() =>
+      deriveExecutionSessionWaitTarget(inheritedInput as never)
+    ).toThrow("Execution session wait target requires candidate to be an object.");
+
+    expect(() =>
+      deriveExecutionSessionWaitTarget({
+        get candidate() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
+  });
 });
 
 function createRecord(
