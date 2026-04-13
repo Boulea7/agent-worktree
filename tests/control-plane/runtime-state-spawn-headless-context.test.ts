@@ -195,6 +195,36 @@ describe("control-plane runtime-state spawn-headless-context helpers", () => {
     expect(headlessRecordReads).toBe(1);
   });
 
+  it("should fail closed when snapshotting would otherwise redefine a non-configurable nested headlessRecord field", () => {
+    const rootRecord = createRecord({
+      attemptId: "att_parent_non_configurable_context",
+      sessionId: "thr_parent_non_configurable_context",
+      sourceKind: "direct"
+    });
+    const childRecord = createHeadlessRecord({
+      attemptId: "att_child_non_configurable_context",
+      parentAttemptId: "att_parent_non_configurable_context",
+      sessionId: "thr_child_non_configurable_context",
+      sourceKind: "delegated"
+    });
+    const headlessView = {
+      descendantCoverage: "complete",
+      view: buildExecutionSessionView([rootRecord, childRecord.record])
+    } as Record<string, unknown>;
+
+    Object.defineProperty(headlessView, "headlessRecord", {
+      enumerable: true,
+      configurable: false,
+      value: childRecord
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessContext({
+        headlessView
+      } as never)
+    ).not.toThrow();
+  });
+
   it("should derive context from the selected attemptId within the supplied headless view", () => {
     const rootRecord = createRecord({
       attemptId: "att_parent_context",

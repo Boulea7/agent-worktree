@@ -18,7 +18,13 @@ function snapshotObject(
     unknown
   >;
 
-  Object.defineProperties(snapshot, Object.getOwnPropertyDescriptors(value));
+  const descriptors = Object.getOwnPropertyDescriptors(value);
+
+  for (const key of Object.keys(overrides)) {
+    delete descriptors[key];
+  }
+
+  Object.defineProperties(snapshot, descriptors);
 
   for (const [key, override] of Object.entries(overrides)) {
     Object.defineProperty(snapshot, key, {
