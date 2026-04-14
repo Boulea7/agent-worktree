@@ -11,6 +11,10 @@ import type {
   AttemptHandoffConsumerReadiness,
   AttemptHandoffConsumeInput
 } from "./types.js";
+import {
+  readOwnedSelectionValue,
+  rethrowSelectionAccessError
+} from "./entry-validation.js";
 
 const validAttemptStatuses = new Set<AttemptStatus>(attemptStatuses);
 const validAttemptSourceKinds = new Set<AttemptSourceKind>(attemptSourceKinds);
@@ -21,26 +25,47 @@ const validBlockingReasons = new Set<AttemptHandoffConsumerBlockingReason>([
 export async function consumeAttemptHandoff(
   input: AttemptHandoffConsumeInput
 ): Promise<AttemptHandoffConsume> {
-  validateInput(input);
-  validateInvokeHandoff(input.invokeHandoff);
-  const { consumer, invokeHandoff } = input;
-  validateConsumer(consumer);
-  validateRequest(consumer.request);
-  validateReadiness(consumer.readiness);
+  let request: AttemptHandoffConsume["request"];
+  let readiness: AttemptHandoffConsume["readiness"];
+  let invokeHandoff: AttemptHandoffConsumeInput["invokeHandoff"];
 
-  if (!consumer.readiness.canConsumeHandoff) {
+  try {
+    validateInput(input);
+    invokeHandoff = readOwnedSelectionValue(
+      input,
+      "invokeHandoff",
+      "Attempt handoff consume input must be a readable object."
+    ) as AttemptHandoffConsumeInput["invokeHandoff"];
+    validateInvokeHandoff(invokeHandoff);
+    const consumer = normalizeConsumer(
+      readOwnedSelectionValue(
+        input,
+        "consumer",
+        "Attempt handoff consume input must be a readable object."
+      )
+    );
+    request = consumer.request;
+    readiness = consumer.readiness;
+  } catch (error) {
+    rethrowSelectionAccessError(
+      error,
+      "Attempt handoff consume input must be a readable object."
+    );
+  }
+
+  if (!readiness.canConsumeHandoff) {
     return {
-      request: consumer.request,
-      readiness: consumer.readiness,
+      request,
+      readiness,
       invoked: false
     };
   }
 
-  await invokeHandoff(consumer.request);
+  await invokeHandoff(request);
 
   return {
-    request: consumer.request,
-    readiness: consumer.readiness,
+    request,
+    readiness,
     invoked: true
   };
 }
@@ -77,6 +102,100 @@ function validateConsumer(value: unknown): void {
       "Attempt handoff consume requires consumer.readiness to be an object."
     );
   }
+}
+
+function normalizeConsumer(value: unknown): {
+  request: AttemptHandoffConsume["request"];
+  readiness: AttemptHandoffConsume["readiness"];
+} {
+  validateConsumer(value);
+  const consumer = value as Record<string, unknown>;
+
+  const request = readOwnedSelectionValue(
+    consumer,
+    "request",
+    "Attempt handoff consume input must be a readable object."
+  );
+  const readiness = readOwnedSelectionValue(
+    consumer,
+    "readiness",
+    "Attempt handoff consume input must be a readable object."
+  );
+
+  if (!isRecord(request)) {
+    throw new ValidationError(
+      "Attempt handoff consume requires consumer.request to be an object."
+    );
+  }
+
+  if (!isRecord(readiness)) {
+    throw new ValidationError(
+      "Attempt handoff consume requires consumer.readiness to be an object."
+    );
+  }
+
+  const normalizedReadiness = normalizeReadiness(readiness);
+
+  validateRequest({
+    taskId: readOwnedSelectionValue(
+      request,
+      "taskId",
+      "Attempt handoff consume input must be a readable object."
+    ),
+    attemptId: readOwnedSelectionValue(
+      request,
+      "attemptId",
+      "Attempt handoff consume input must be a readable object."
+    ),
+    runtime: readOwnedSelectionValue(
+      request,
+      "runtime",
+      "Attempt handoff consume input must be a readable object."
+    ),
+    status: readOwnedSelectionValue(
+      request,
+      "status",
+      "Attempt handoff consume input must be a readable object."
+    ),
+    sourceKind: readOwnedSelectionValue(
+      request,
+      "sourceKind",
+      "Attempt handoff consume input must be a readable object."
+    )
+  });
+  validateReadiness(normalizedReadiness);
+
+  return {
+    request: request as unknown as AttemptHandoffConsume["request"],
+    readiness: readiness as unknown as AttemptHandoffConsume["readiness"]
+  };
+}
+
+function normalizeReadiness(
+  value: Record<string, unknown>
+): AttemptHandoffConsumerReadiness {
+  return {
+    blockingReasons: readOwnedSelectionValue(
+      value,
+      "blockingReasons",
+      "Attempt handoff consume input must be a readable object."
+    ) as AttemptHandoffConsumerReadiness["blockingReasons"],
+    canConsumeHandoff: readOwnedSelectionValue(
+      value,
+      "canConsumeHandoff",
+      "Attempt handoff consume input must be a readable object."
+    ) as AttemptHandoffConsumerReadiness["canConsumeHandoff"],
+    hasBlockingReasons: readOwnedSelectionValue(
+      value,
+      "hasBlockingReasons",
+      "Attempt handoff consume input must be a readable object."
+    ) as AttemptHandoffConsumerReadiness["hasBlockingReasons"],
+    handoffSupported: readOwnedSelectionValue(
+      value,
+      "handoffSupported",
+      "Attempt handoff consume input must be a readable object."
+    ) as AttemptHandoffConsumerReadiness["handoffSupported"]
+  };
 }
 
 function validateRequest(value: {

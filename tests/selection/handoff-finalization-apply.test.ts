@@ -63,6 +63,26 @@ describe("selection handoff-finalization-apply helpers", () => {
     expect(invokeHandoffFinalization).not.toHaveBeenCalled();
   });
 
+  it("should fail closed when inherited apply wrapper fields or accessor-shaped callbacks are supplied", async () => {
+    const inheritedInput = Object.create({
+      request: createFinalizationRequest(),
+      invokeHandoffFinalization: async () => undefined
+    });
+
+    await expect(
+      applyAttemptHandoffFinalization(inheritedInput as never)
+    ).rejects.toThrow(ValidationError);
+
+    await expect(
+      applyAttemptHandoffFinalization({
+        request: createFinalizationRequest(),
+        get invokeHandoffFinalization() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).rejects.toThrow(ValidationError);
+  });
+
   it("should compose a supported finalization consumer and consume result for a supported request", async () => {
     const request = createFinalizationRequest({
       status: "running",

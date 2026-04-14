@@ -64,7 +64,7 @@ export function deriveAttemptPromotionDecisionSummary(
     return {
       decisionBasis: ATTEMPT_PROMOTION_DECISION_BASIS,
       taskId: normalizedTaskId,
-      selectedAttemptId: normalizedSummary.selectedAttemptId,
+      selectedAttemptId: selected?.attemptId,
       selectedIdentity: deriveSelectedIdentity(normalizedTaskId, selected),
       candidateCount: normalizedSummary.candidates.length,
       comparableCandidateCount: countComparableCandidates(normalizedSummary.candidates),
@@ -188,7 +188,10 @@ function validatePromotionExplanationSummary(
         "Attempt promotion decision summary requires summary.selectedIdentity to be undefined when candidates are empty."
       );
     }
-  } else if (summary.selectedAttemptId !== summary.candidates[0]?.attemptId) {
+  } else if (
+    normalizeComparableString(summary.selectedAttemptId) !==
+    summary.candidates[0]?.attemptId
+  ) {
     throw new ValidationError(
       "Attempt promotion decision summary requires summary.selectedAttemptId to match the first candidate when candidates are present."
     );
@@ -373,8 +376,14 @@ function normalizeExplanationCandidateSnapshot(
   }
 
   return {
-    attemptId: accessSelectionValue(candidate, "attemptId") as AttemptPromotionExplanationCandidate["attemptId"],
-    runtime: accessSelectionValue(candidate, "runtime") as AttemptPromotionExplanationCandidate["runtime"],
+    attemptId: validateNonEmptyString(
+      accessSelectionValue(candidate, "attemptId"),
+      "candidate.attemptId"
+    ),
+    runtime: validateNonEmptyString(
+      accessSelectionValue(candidate, "runtime"),
+      "candidate.runtime"
+    ),
     status: accessSelectionValue(candidate, "status") as AttemptPromotionExplanationCandidate["status"],
     sourceKind: accessSelectionValue(candidate, "sourceKind") as AttemptPromotionExplanationCandidate["sourceKind"],
     hasComparablePayload: accessSelectionValue(candidate, "hasComparablePayload") as AttemptPromotionExplanationCandidate["hasComparablePayload"],
@@ -698,6 +707,7 @@ function normalizeOptionalTaskId(
 ): AttemptPromotionExplanationSummary["taskId"] {
   return value === undefined ? undefined : value.trim();
 }
+
 
 function normalizeComparableString(value: unknown): string | undefined {
   if (typeof value !== "string") {

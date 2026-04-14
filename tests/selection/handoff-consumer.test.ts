@@ -63,6 +63,17 @@ describe("selection handoff-consumer helpers", () => {
     ).toBeUndefined();
   });
 
+  it("should fail closed when request or resolver are inherited from the prototype", () => {
+    const inheritedInput = Object.create({
+      request: createHandoffRequest(),
+      resolveHandoffCapability: () => true
+    });
+
+    expect(() => deriveAttemptHandoffConsumer(inheritedInput as never)).toThrow(
+      ValidationError
+    );
+  });
+
   it("should derive a supported handoff consumer when the runtime resolver returns true", () => {
     expect(
       deriveAttemptHandoffConsumer({

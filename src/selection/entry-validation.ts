@@ -38,6 +38,21 @@ export function readSelectionValue(
   }
 }
 
+export function readOwnedSelectionValue(
+  container: object,
+  key: string,
+  message: string
+): unknown {
+  if (
+    key in container &&
+    !Object.prototype.hasOwnProperty.call(container, key)
+  ) {
+    throw new ValidationError(message);
+  }
+
+  return readSelectionValue(container, key, message);
+}
+
 export function normalizeSelectionArrayProperty(
   container: object,
   key: string,

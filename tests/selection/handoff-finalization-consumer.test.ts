@@ -60,6 +60,17 @@ describe("selection handoff-finalization-consumer helpers", () => {
     ).toBeUndefined();
   });
 
+  it("should fail closed when request or resolver are inherited from the prototype", () => {
+    const inheritedInput = Object.create({
+      request: createFinalizationRequest(),
+      resolveHandoffFinalizationCapability: () => true
+    });
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationConsumer(inheritedInput as never)
+    ).toThrow(ValidationError);
+  });
+
   it("should derive a supported finalization consumer when the runtime resolver returns true", () => {
     expect(
       deriveAttemptHandoffFinalizationConsumer({

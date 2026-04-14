@@ -75,7 +75,7 @@ export function deriveAttemptPromotionReport(
     return {
       reportBasis: ATTEMPT_PROMOTION_REPORT_BASIS,
       taskId: normalizedTaskId,
-      selectedAttemptId: normalizedSummary.selectedAttemptId,
+      selectedAttemptId: selected?.attemptId,
       selectedIdentity: deriveSelectedIdentity(normalizedTaskId, candidates[0]),
       candidateCount: normalizedSummary.candidateCount,
       comparableCandidateCount: normalizedSummary.comparableCandidateCount,
@@ -209,7 +209,10 @@ function validatePromotionAuditSummary(
         "Attempt promotion report requires summary.selectedIdentity to be undefined when candidates are empty."
       );
     }
-  } else if (summary.selectedAttemptId !== summary.candidates[0]?.attemptId) {
+  } else if (
+    normalizeComparableString(summary.selectedAttemptId) !==
+    summary.candidates[0]?.attemptId
+  ) {
     throw new ValidationError(
       "Attempt promotion report requires summary.selectedAttemptId to match the first candidate when candidates are present."
     );
@@ -330,16 +333,14 @@ function normalizePromotionAuditCandidateSnapshot(
   }
 
   return {
-    attemptId: readSelectionValue(
-      candidate,
-      "attemptId",
-      readableObjectMessage
-    ) as AttemptPromotionAuditCandidate["attemptId"],
-    runtime: readSelectionValue(
-      candidate,
-      "runtime",
-      readableObjectMessage
-    ) as AttemptPromotionAuditCandidate["runtime"],
+    attemptId: validateNonEmptyString(
+      readSelectionValue(candidate, "attemptId", readableObjectMessage),
+      "candidate.attemptId"
+    ),
+    runtime: validateNonEmptyString(
+      readSelectionValue(candidate, "runtime", readableObjectMessage),
+      "candidate.runtime"
+    ),
     status: readSelectionValue(
       candidate,
       "status",
@@ -715,6 +716,15 @@ function normalizeOptionalTaskId(
   value: AttemptPromotionAuditSummary["taskId"]
 ): AttemptPromotionAuditSummary["taskId"] {
   return value === undefined ? undefined : value.trim();
+}
+
+function normalizeComparableString(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+  return normalized.length === 0 ? undefined : normalized;
 }
 
 function validateNonEmptyString(value: unknown, fieldName: string): string {

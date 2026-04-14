@@ -71,7 +71,7 @@ export function deriveAttemptPromotionExplanationSummary(
     return {
       explanationBasis: ATTEMPT_PROMOTION_EXPLANATION_BASIS,
       taskId: normalizedTaskId,
-      selectedAttemptId: normalizedReport.selectedAttemptId,
+      selectedAttemptId: selected?.attemptId,
       selectedIdentity: deriveSelectedIdentity(normalizedTaskId, candidates[0]),
       candidateCount: normalizedReport.candidates.length,
       comparableCandidateCount: countComparableCandidates(normalizedReport.candidates),
@@ -197,7 +197,10 @@ function validatePromotionReport(
         "Attempt promotion explanation summary requires report.selectedIdentity to be undefined when candidates are empty."
       );
     }
-  } else if (report.selectedAttemptId !== report.candidates[0]?.attemptId) {
+  } else if (
+    normalizeComparableString(report.selectedAttemptId) !==
+    report.candidates[0]?.attemptId
+  ) {
     throw new ValidationError(
       "Attempt promotion explanation summary requires report.selectedAttemptId to match the first candidate when candidates are present."
     );
@@ -428,8 +431,14 @@ function normalizePromotionAuditCandidateSnapshot(
   }
 
   return {
-    attemptId: accessSelectionValue(candidate, "attemptId") as AttemptPromotionAuditCandidate["attemptId"],
-    runtime: accessSelectionValue(candidate, "runtime") as AttemptPromotionAuditCandidate["runtime"],
+    attemptId: validateNonEmptyString(
+      accessSelectionValue(candidate, "attemptId"),
+      "candidate.attemptId"
+    ),
+    runtime: validateNonEmptyString(
+      accessSelectionValue(candidate, "runtime"),
+      "candidate.runtime"
+    ),
     status: accessSelectionValue(candidate, "status") as AttemptPromotionAuditCandidate["status"],
     sourceKind: accessSelectionValue(candidate, "sourceKind") as AttemptPromotionAuditCandidate["sourceKind"],
     summary: normalizeAttemptVerificationSummarySnapshot(
@@ -601,6 +610,7 @@ function normalizeOptionalTaskId(
 ): AttemptPromotionReport["taskId"] {
   return value === undefined ? undefined : value.trim();
 }
+
 
 function normalizeComparableString(value: unknown): string | undefined {
   if (typeof value !== "string") {

@@ -339,6 +339,53 @@ describe("selection promotion-explanation helpers", () => {
     expect(explanation.candidates[0]?.isSelected).toBe(true);
   });
 
+  it("should canonicalize candidate identity and selectedAttemptId when the incoming report candidate carries surrounding whitespace", () => {
+    const report = createPromotionReport([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        runtime: "codex-cli",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]);
+
+    const explanation = deriveAttemptPromotionExplanationSummary({
+      ...report,
+      selectedAttemptId: "  att_ready  ",
+      selectedIdentity: {
+        taskId: "task_shared",
+        attemptId: "  att_ready  ",
+        runtime: "  codex-cli  "
+      },
+      candidates: [
+        {
+          ...report.candidates[0]!,
+          attemptId: "  att_ready  ",
+          runtime: "  codex-cli  "
+        }
+      ]
+    });
+
+    expect(explanation.selectedAttemptId).toBe("att_ready");
+    expect(explanation.selectedIdentity).toEqual({
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli"
+    });
+    expect(explanation.selected?.attemptId).toBe("att_ready");
+    expect(explanation.selected?.runtime).toBe("codex-cli");
+    expect(explanation.candidates[0]?.attemptId).toBe("att_ready");
+    expect(explanation.candidates[0]?.runtime).toBe("codex-cli");
+  });
+
   it("should derive required_checks_failed when required checks failed or errored", () => {
     const report = createPromotionReport([
       createPromotionCandidate({

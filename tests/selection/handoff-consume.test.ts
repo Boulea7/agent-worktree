@@ -426,6 +426,25 @@ describe("selection handoff-consume helpers", () => {
     ).rejects.toThrow(ValidationError);
     expect(invokeHandoff).not.toHaveBeenCalled();
   });
+
+  it("should fail closed when consumer.request or consumer.readiness are inherited from the prototype", async () => {
+    const consumer = Object.create({
+      request: createHandoffRequest(),
+      readiness: {
+        blockingReasons: ["handoff_unsupported"],
+        canConsumeHandoff: false,
+        hasBlockingReasons: true,
+        handoffSupported: false
+      }
+    });
+
+    await expect(
+      consumeAttemptHandoff({
+        consumer: consumer as never,
+        invokeHandoff: async () => {}
+      })
+    ).rejects.toThrow(ValidationError);
+  });
 });
 
 function createHandoffConsumer(

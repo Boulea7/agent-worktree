@@ -965,6 +965,48 @@ describe("selection promotion-report helpers", () => {
     });
   });
 
+  it("should canonicalize candidate identity and selectedAttemptId when the selected audit candidate carries surrounding whitespace", () => {
+    const baseSummary = createPromotionAuditSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        runtime: "codex-cli",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]);
+
+    const report = deriveAttemptPromotionReport({
+      ...baseSummary,
+      selectedAttemptId: "  att_ready  ",
+      candidates: [
+        {
+          ...baseSummary.candidates[0]!,
+          attemptId: "  att_ready  ",
+          runtime: "  codex-cli  "
+        }
+      ]
+    });
+
+    expect(report.selectedAttemptId).toBe("att_ready");
+    expect(report.selectedIdentity).toEqual({
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli"
+    });
+    expect(report.selected?.attemptId).toBe("att_ready");
+    expect(report.selected?.runtime).toBe("codex-cli");
+    expect(report.candidates[0]?.attemptId).toBe("att_ready");
+    expect(report.candidates[0]?.runtime).toBe("codex-cli");
+  });
+
   it("should fail loudly when candidate.summary is not an object", () => {
     const baseSummary = createPromotionAuditSummary([
       createPromotionCandidate({

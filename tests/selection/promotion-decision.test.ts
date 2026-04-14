@@ -343,6 +343,66 @@ describe("selection promotion-decision helpers", () => {
     });
   });
 
+  it("should preserve canonical candidate identity and selectedAttemptId through decision derivation", () => {
+    const report = deriveAttemptPromotionReport(
+      deriveAttemptPromotionAuditSummary(
+        deriveAttemptPromotionResult([
+          createPromotionCandidate({
+            attemptId: "att_ready",
+            runtime: "codex-cli",
+            verification: createVerification({
+              state: "verified",
+              checks: [
+                {
+                  name: "lint",
+                  required: true,
+                  status: "passed"
+                }
+              ]
+            })
+          })
+        ])
+      )
+    );
+    const explanation = deriveAttemptPromotionExplanationSummary({
+      ...report,
+      selectedAttemptId: "  att_ready  ",
+      selectedIdentity: {
+        taskId: "task_shared",
+        attemptId: "  att_ready  ",
+        runtime: "  codex-cli  "
+      },
+      candidates: [
+        {
+          ...report.candidates[0]!,
+          attemptId: "  att_ready  ",
+          runtime: "  codex-cli  "
+        }
+      ],
+      selected: {
+        ...report.selected!
+      }
+    });
+    const decision = deriveAttemptPromotionDecisionSummary(explanation);
+
+    expect(decision.selectedAttemptId).toBe("att_ready");
+    expect(decision.selectedIdentity).toEqual({
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli"
+    });
+    expect(decision.selected?.attemptId).toBe("att_ready");
+    expect(decision.selected?.runtime).toBe("codex-cli");
+    expect(deriveAttemptPromotionTarget(decision)).toEqual({
+      targetBasis: "promotion_decision_summary",
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli",
+      status: "created",
+      sourceKind: undefined
+    });
+  });
+
   it("should fail loudly when comparableCandidateCount drifts from explanation candidates", () => {
     const summary = {
       ...createPromotionExplanationSummary([

@@ -14,6 +14,7 @@ import type {
 import { normalizeHandoffFinalizationCapability } from "./handoff-finalization-capability-shared.js";
 import {
   accessSelectionValue,
+  readOwnedSelectionValue,
   rethrowSelectionAccessError,
   validateSelectionObjectInput,
   validateSelectionOptionalFunction
@@ -31,11 +32,20 @@ export function deriveAttemptHandoffFinalizationConsumer(input: {
       input,
       "Attempt handoff finalization consumer input must be an object."
     );
+    const resolveHandoffFinalizationCapability = readOwnedSelectionValue(
+      input,
+      "resolveHandoffFinalizationCapability",
+      "Attempt handoff finalization consumer input must be a readable object."
+    );
     validateSelectionOptionalFunction(
-      input.resolveHandoffFinalizationCapability,
+      resolveHandoffFinalizationCapability,
       "Attempt handoff finalization consumer requires resolveHandoffFinalizationCapability to be a function when provided."
     );
-    const { request } = input;
+    const request = readOwnedSelectionValue(
+      input,
+      "request",
+      "Attempt handoff finalization consumer input must be a readable object."
+    );
 
     if (request === undefined) {
       return undefined;
@@ -64,9 +74,11 @@ export function deriveAttemptHandoffFinalizationConsumer(input: {
     validateAttemptSourceKind(sourceKind);
 
     const handoffFinalizationSupported = normalizeHandoffFinalizationCapability(
-      input.resolveHandoffFinalizationCapability === undefined
+      resolveHandoffFinalizationCapability === undefined
         ? false
-        : input.resolveHandoffFinalizationCapability(runtime),
+        : (
+            resolveHandoffFinalizationCapability as AttemptHandoffFinalizationCapabilityResolver
+          )(runtime),
       "Attempt handoff finalization consumer"
     );
     const blockingReasons: AttemptHandoffFinalizationConsumerBlockingReason[] =
