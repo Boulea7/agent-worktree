@@ -47,12 +47,12 @@ describe("selection handoff-consume helpers", () => {
       seenRequest = request;
     });
 
-    await expect(
-      consumeAttemptHandoff({
-        consumer,
-        invokeHandoff
-      })
-    ).resolves.toEqual({
+    const result = await consumeAttemptHandoff({
+      consumer,
+      invokeHandoff
+    });
+
+    expect(result).toEqual({
       request: {
         taskId: "task_shared",
         attemptId: "att_ready",
@@ -69,8 +69,9 @@ describe("selection handoff-consume helpers", () => {
       invoked: true
     });
     expect(invokeHandoff).toHaveBeenCalledTimes(1);
-    expect(invokeHandoff).toHaveBeenCalledWith(consumer.request);
-    expect(seenRequest).toBe(consumer.request);
+    expect(invokeHandoff).toHaveBeenCalledWith(result.request);
+    expect(seenRequest).toBe(result.request);
+    expect(result.request).not.toBe(consumer.request);
   });
 
   it("should not invoke handoff for a blocked handoff consumer", async () => {
@@ -159,12 +160,20 @@ describe("selection handoff-consume helpers", () => {
       }
     });
 
-    await consumeAttemptHandoff({
+    const result = await consumeAttemptHandoff({
       consumer,
       invokeHandoff: async (request) => {
-        expect(request).toBe(consumer.request);
+        expect(request).toEqual({
+          taskId: "task_shared",
+          attemptId: "att_ready",
+          runtime: "gemini-cli",
+          status: "created",
+          sourceKind: "delegated"
+        });
       }
     });
+
+    expect(result.request).not.toBe(consumer.request);
   });
 
   it("should surface invoker failures directly without wrapping them", async () => {
@@ -182,7 +191,13 @@ describe("selection handoff-consume helpers", () => {
       consumeAttemptHandoff({
         consumer,
         invokeHandoff: async (request) => {
-          expect(request).toBe(consumer.request);
+          expect(request).toEqual({
+            taskId: "task_shared",
+            attemptId: "att_ready",
+            runtime: "codex-cli",
+            status: "created",
+            sourceKind: undefined
+          });
           throw expectedError;
         }
       })

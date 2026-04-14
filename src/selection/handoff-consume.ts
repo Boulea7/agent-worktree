@@ -136,38 +136,58 @@ function normalizeConsumer(value: unknown): {
 
   const normalizedReadiness = normalizeReadiness(readiness);
 
-  validateRequest({
-    taskId: readOwnedSelectionValue(
-      request,
-      "taskId",
-      "Attempt handoff consume input must be a readable object."
-    ),
-    attemptId: readOwnedSelectionValue(
-      request,
-      "attemptId",
-      "Attempt handoff consume input must be a readable object."
-    ),
-    runtime: readOwnedSelectionValue(
-      request,
-      "runtime",
-      "Attempt handoff consume input must be a readable object."
-    ),
-    status: readOwnedSelectionValue(
-      request,
-      "status",
-      "Attempt handoff consume input must be a readable object."
-    ),
-    sourceKind: readOwnedSelectionValue(
-      request,
-      "sourceKind",
-      "Attempt handoff consume input must be a readable object."
-    )
-  });
+  const normalizedRequest = normalizeRequest(request);
   validateReadiness(normalizedReadiness);
 
   return {
-    request: request as unknown as AttemptHandoffConsume["request"],
-    readiness: readiness as unknown as AttemptHandoffConsume["readiness"]
+    request: normalizedRequest,
+    readiness: normalizedReadiness
+  };
+}
+
+function normalizeRequest(
+  value: Record<string, unknown>
+): AttemptHandoffConsume["request"] {
+  const taskId = readOwnedSelectionValue(
+    value,
+    "taskId",
+    "Attempt handoff consume input must be a readable object."
+  );
+  const attemptId = readOwnedSelectionValue(
+    value,
+    "attemptId",
+    "Attempt handoff consume input must be a readable object."
+  );
+  const runtime = readOwnedSelectionValue(
+    value,
+    "runtime",
+    "Attempt handoff consume input must be a readable object."
+  );
+  const status = readOwnedSelectionValue(
+    value,
+    "status",
+    "Attempt handoff consume input must be a readable object."
+  );
+  const sourceKind = readOwnedSelectionValue(
+    value,
+    "sourceKind",
+    "Attempt handoff consume input must be a readable object."
+  );
+
+  validateRequest({
+    taskId,
+    attemptId,
+    runtime,
+    status,
+    sourceKind
+  });
+
+  return {
+    taskId: taskId as string,
+    attemptId: attemptId as string,
+    runtime: runtime as string,
+    status: status as AttemptStatus,
+    sourceKind: sourceKind as AttemptSourceKind | undefined
   };
 }
 

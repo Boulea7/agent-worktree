@@ -82,6 +82,31 @@ describe("control-plane runtime-state descendant coverage helpers", () => {
       'Execution session descendant coverage summary requires descendantCoverage to be "complete" or "incomplete" when provided.'
     );
   });
+
+  it("should fail loudly when childAttemptIdsByParent returns a malformed array shape", () => {
+    const parentRecord = createRecord({
+      attemptId: "att_parent",
+      sessionId: "thr_parent"
+    });
+    const view = buildExecutionSessionView([parentRecord]);
+
+    view.childAttemptIdsByParent.set("att_parent", ["att_child"] as never);
+    Object.setPrototypeOf(view.childAttemptIdsByParent, {
+      ...Map.prototype,
+      get() {
+        return { bad: true };
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionDescendantCoverageSummary({
+        record: parentRecord,
+        view
+      })
+    ).toThrow(
+      "Execution session descendant coverage summary requires child attempt ids to be arrays."
+    );
+  });
 });
 
 function createRecord(

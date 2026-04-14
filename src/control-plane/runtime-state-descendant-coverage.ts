@@ -45,11 +45,15 @@ function collectDescendantAttemptIds(
   attemptId: string
 ): string[] {
   const descendantAttemptIds: string[] = [];
-  const queue = [...(view.childAttemptIdsByParent.get(attemptId) ?? [])];
+  const queue = normalizeChildAttemptIds(
+    view.childAttemptIdsByParent.get(attemptId)
+  );
   const visited = new Set<string>();
+  let cursor = 0;
 
-  while (queue.length > 0) {
-    const nextAttemptId = queue.shift();
+  while (cursor < queue.length) {
+    const nextAttemptId = queue[cursor];
+    cursor += 1;
 
     if (nextAttemptId === undefined || visited.has(nextAttemptId)) {
       continue;
@@ -58,12 +62,48 @@ function collectDescendantAttemptIds(
     visited.add(nextAttemptId);
     descendantAttemptIds.push(nextAttemptId);
 
-    for (const childAttemptId of view.childAttemptIdsByParent.get(nextAttemptId) ?? []) {
+    for (const childAttemptId of normalizeChildAttemptIds(
+      view.childAttemptIdsByParent.get(nextAttemptId)
+    )) {
       queue.push(childAttemptId);
     }
   }
 
   return descendantAttemptIds;
+}
+
+function normalizeChildAttemptIds(value: unknown): string[] {
+  if (value === undefined) {
+    return [];
+  }
+
+  if (!Array.isArray(value)) {
+    throw new ValidationError(
+      "Execution session descendant coverage summary requires child attempt ids to be arrays."
+    );
+  }
+
+  const normalized: string[] = [];
+
+  for (let index = 0; index < value.length; index += 1) {
+    if (!Object.prototype.hasOwnProperty.call(value, index)) {
+      throw new ValidationError(
+        "Execution session descendant coverage summary requires child attempt ids to be arrays."
+      );
+    }
+
+    const entry = value[index];
+
+    if (typeof entry !== "string") {
+      throw new ValidationError(
+        "Execution session descendant coverage summary requires child attempt ids to be arrays."
+      );
+    }
+
+    normalized.push(entry);
+  }
+
+  return normalized;
 }
 
 function normalizeAttemptId(value: unknown): string {
