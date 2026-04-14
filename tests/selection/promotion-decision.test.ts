@@ -895,7 +895,7 @@ describe("selection promotion-decision helpers", () => {
       deriveAttemptPromotionDecisionSummary({
         ...summary,
         selectedIdentity:
-          accessorSelectedIdentity as AttemptPromotionExplanationSummary["selectedIdentity"]
+          accessorSelectedIdentity as unknown as AttemptPromotionExplanationSummary["selectedIdentity"]
       })
     ).toThrow(
       "Attempt promotion decision summary requires summary to be a readable object."

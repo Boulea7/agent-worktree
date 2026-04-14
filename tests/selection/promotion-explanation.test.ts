@@ -703,7 +703,7 @@ describe("selection promotion-explanation helpers", () => {
       deriveAttemptPromotionExplanationSummary({
         ...report,
         selectedIdentity:
-          accessorSelectedIdentity as AttemptPromotionReport["selectedIdentity"]
+          accessorSelectedIdentity as unknown as AttemptPromotionReport["selectedIdentity"]
       })
     ).toThrow(
       "Attempt promotion explanation summary requires report to be a readable object."
@@ -741,7 +741,7 @@ describe("selection promotion-explanation helpers", () => {
             }
           }
         ]
-      } as AttemptPromotionReport)
+      } as unknown as AttemptPromotionReport)
     ).toThrow(
       "Attempt promotion explanation summary requires report to be a readable object."
     );

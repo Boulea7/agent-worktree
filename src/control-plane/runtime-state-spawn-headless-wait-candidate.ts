@@ -17,8 +17,12 @@ export function deriveExecutionSessionSpawnHeadlessWaitCandidate(
   const coverageSummary = deriveExecutionSessionDescendantCoverageSummary({
     record: normalizedInput.headlessContext.context.record,
     view: normalizedInput.headlessContext.headlessView.view,
-    descendantCoverage:
-      normalizedInput.headlessContext.headlessView.descendantCoverage
+    ...(normalizedInput.headlessContext.headlessView.descendantCoverage === undefined
+      ? {}
+      : {
+          descendantCoverage:
+            normalizedInput.headlessContext.headlessView.descendantCoverage
+        })
   });
   const candidateReadiness: ExecutionSessionWaitReadiness =
     deriveExecutionSessionWaitReadiness({

@@ -886,7 +886,7 @@ describe("selection promotion-report helpers", () => {
       deriveAttemptPromotionReport({
         ...baseSummary,
         selectedIdentity:
-          accessorSelectedIdentity as AttemptPromotionAuditSummary["selectedIdentity"]
+          accessorSelectedIdentity as unknown as AttemptPromotionAuditSummary["selectedIdentity"]
       })
     ).toThrow(
       "Attempt promotion report requires summary to be a readable object."
@@ -924,7 +924,7 @@ describe("selection promotion-report helpers", () => {
             }
           }
         ]
-      } as AttemptPromotionAuditSummary)
+      } as unknown as AttemptPromotionAuditSummary)
     ).toThrow(
       "Attempt promotion report requires summary to be a readable object."
     );

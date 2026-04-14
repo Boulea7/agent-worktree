@@ -73,7 +73,6 @@ function createRecord(
   overrides: Partial<ExecutionSessionRecord> & Pick<ExecutionSessionRecord, "attemptId">
 ): ExecutionSessionRecord {
   return {
-    attemptId: overrides.attemptId,
     runtime: "codex-cli",
     sourceKind: "direct",
     lifecycleState: "active",

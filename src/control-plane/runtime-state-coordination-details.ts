@@ -43,8 +43,14 @@ export function deriveExecutionCoordinationTaskDetailFromSpawnHeadlessWaitCandid
   const coverageSummary = deriveExecutionSessionDescendantCoverageSummary({
     record: input.headlessWaitCandidate.headlessContext.context.record,
     view: input.headlessWaitCandidate.headlessContext.headlessView.view,
-    descendantCoverage:
-      input.headlessWaitCandidate.headlessContext.headlessView.descendantCoverage
+    ...(input.headlessWaitCandidate.headlessContext.headlessView.descendantCoverage ===
+    undefined
+      ? {}
+      : {
+          descendantCoverage:
+            input.headlessWaitCandidate.headlessContext.headlessView
+              .descendantCoverage
+        })
   });
 
   return {
@@ -77,8 +83,10 @@ export function deriveExecutionCoordinationTaskDetailFromPromotionDecision(
           }
         }),
     blockingReasons: [...input.summary.blockingReasons],
-    taskId: input.summary.taskId,
-    selectedAttemptId: input.summary.selectedAttemptId,
+    ...(input.summary.taskId === undefined ? {} : { taskId: input.summary.taskId }),
+    ...(input.summary.selectedAttemptId === undefined
+      ? {}
+      : { selectedAttemptId: input.summary.selectedAttemptId }),
     comparableCandidateCount: input.summary.comparableCandidateCount,
     promotionReadyCandidateCount: input.summary.promotionReadyCandidateCount,
     canAdvance: input.summary.canPromote
