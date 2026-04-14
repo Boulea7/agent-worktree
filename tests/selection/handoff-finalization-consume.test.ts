@@ -47,7 +47,8 @@ describe("selection handoff-finalization-consume helpers", () => {
     });
     expect(invokeHandoffFinalization).toHaveBeenCalledTimes(1);
     expect(invokeHandoffFinalization).toHaveBeenCalledWith(consumer.request);
-    expect(seenRequest).toBe(consumer.request);
+    expect(seenRequest).toStrictEqual(consumer.request);
+    expect(seenRequest).not.toBe(consumer.request);
   });
 
   it("should not invoke handoff finalization for a blocked consumer", async () => {
@@ -93,7 +94,8 @@ describe("selection handoff-finalization-consume helpers", () => {
       consumeAttemptHandoffFinalization({
         consumer,
         invokeHandoffFinalization: async (request) => {
-          expect(request).toBe(consumer.request);
+          expect(request).toStrictEqual(consumer.request);
+          expect(request).not.toBe(consumer.request);
           throw expectedError;
         }
       })
@@ -132,6 +134,25 @@ describe("selection handoff-finalization-consume helpers", () => {
       "Attempt handoff finalization consume requires consumer to be an object."
     );
     expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
+  it("should fail closed when reading consumer or invoker through accessor-shaped input", async () => {
+    await expect(
+      consumeAttemptHandoffFinalization({
+        get consumer() {
+          throw new Error("getter boom");
+        },
+        invokeHandoffFinalization: async () => undefined
+      } as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeAttemptHandoffFinalization({
+        consumer: createFinalizationConsumer(),
+        get invokeHandoffFinalization() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).rejects.toThrow(ValidationError);
   });
 
   it("should fail before invoking handoff finalization when invokeHandoffFinalization is not a function", async () => {
@@ -259,6 +280,61 @@ describe("selection handoff-finalization-consume helpers", () => {
     expect(invokeHandoffFinalization).not.toHaveBeenCalled();
   });
 
+  it("should fail before invoking handoff finalization when consumer.request fields are inherited instead of owned", async () => {
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+    const request = Object.create({
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli",
+      status: "created",
+      sourceKind: undefined
+    });
+
+    const act = () =>
+      consumeAttemptHandoffFinalization({
+        consumer: createFinalizationConsumer({
+          request: request as never,
+          readiness: {
+            blockingReasons: [],
+            canConsumeHandoffFinalization: true,
+            hasBlockingReasons: false,
+            handoffFinalizationSupported: true
+          }
+        }),
+        invokeHandoffFinalization
+      });
+
+    await expect(act()).rejects.toThrow(ValidationError);
+    await expect(act()).rejects.toThrow(
+      "Attempt handoff finalization consume requires consumer.request.taskId to be a non-empty string."
+    );
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
+  it("should fail before invoking handoff finalization when consumer.readiness fields are inherited instead of owned", async () => {
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+    const readiness = Object.create({
+      blockingReasons: [],
+      canConsumeHandoffFinalization: true,
+      hasBlockingReasons: false,
+      handoffFinalizationSupported: true
+    });
+
+    const act = () =>
+      consumeAttemptHandoffFinalization({
+        consumer: createFinalizationConsumer({
+          readiness: readiness as never
+        }),
+        invokeHandoffFinalization
+      });
+
+    await expect(act()).rejects.toThrow(ValidationError);
+    await expect(act()).rejects.toThrow(
+      "Attempt handoff finalization consume requires consumer.readiness.blockingReasons to be an array."
+    );
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
   it("should fail before invoking handoff finalization when readiness blockingReasons contains an unknown reason", async () => {
     const consumer = createFinalizationConsumer({
       readiness: {
@@ -327,6 +403,33 @@ describe("selection handoff-finalization-consume helpers", () => {
     await expect(
       consumeAttemptHandoffFinalization({
         consumer,
+        invokeHandoffFinalization
+      })
+    ).rejects.toThrow(ValidationError);
+    expect(invokeHandoffFinalization).not.toHaveBeenCalled();
+  });
+
+  it("should fail closed when readiness blockingReasons entry throws through an accessor-shaped index", async () => {
+    const blockingReasons = ["handoff_finalization_unsupported"];
+    Object.defineProperty(blockingReasons, "0", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+    const invokeHandoffFinalization = vi.fn(async () => undefined);
+
+    await expect(
+      consumeAttemptHandoffFinalization({
+        consumer: createFinalizationConsumer({
+          readiness: {
+            blockingReasons: blockingReasons as never,
+            canConsumeHandoffFinalization: false,
+            hasBlockingReasons: true,
+            handoffFinalizationSupported: false
+          }
+        }),
         invokeHandoffFinalization
       })
     ).rejects.toThrow(ValidationError);

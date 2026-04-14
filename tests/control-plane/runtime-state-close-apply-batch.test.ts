@@ -39,6 +39,53 @@ describe("control-plane runtime-state close-apply-batch helpers", () => {
     );
   });
 
+  it("should reject inherited request containers", async () => {
+    const inheritedInput = Object.create({
+      requests: [createCloseRequest()],
+      invokeClose: async () => undefined
+    });
+
+    await expect(
+      applyExecutionSessionCloseBatch(inheritedInput as never)
+    ).rejects.toThrow(
+      "Execution session close apply batch requires requests to be an array."
+    );
+  });
+
+  it("should fail loudly when request entries are sparse or non-object before invoking", async () => {
+    const invokeClose = vi.fn(async () => undefined);
+    const sparseRequests = new Array<ExecutionSessionCloseRequest>(1);
+
+    await expect(
+      applyExecutionSessionCloseBatch({
+        requests: sparseRequests,
+        invokeClose
+      })
+    ).rejects.toThrow(
+      "Execution session close apply batch requires requests entries to be objects."
+    );
+
+    await expect(
+      applyExecutionSessionCloseBatch({
+        requests: [0] as never,
+        invokeClose
+      })
+    ).rejects.toThrow(
+      "Execution session close apply batch requires requests entries to be objects."
+    );
+
+    await expect(
+      applyExecutionSessionCloseBatch({
+        requests: [createCloseRequest(), 0] as never,
+        invokeClose
+      })
+    ).rejects.toThrow(
+      "Execution session close apply batch requires requests entries to be objects."
+    );
+
+    expect(invokeClose).not.toHaveBeenCalled();
+  });
+
   it("should return an empty batch result for an empty request list", async () => {
     await expect(
       applyExecutionSessionCloseBatch({
@@ -247,6 +294,61 @@ describe("control-plane runtime-state close-apply-batch helpers", () => {
     expect(result).not.toHaveProperty("error");
     expect(result).not.toHaveProperty("errors");
     expect(requests).toEqual(snapshot);
+  });
+
+  it("should snapshot invokeClose and the optional resolver once for the whole batch", async () => {
+    let invokeCloseReads = 0;
+    let resolverReads = 0;
+
+    await expect(
+      applyExecutionSessionCloseBatch({
+        requests: [createCloseRequest()],
+        get invokeClose() {
+          invokeCloseReads += 1;
+
+          if (invokeCloseReads > 1) {
+            throw new Error("invokeClose getter read twice");
+          }
+
+          return async () => undefined;
+        },
+        get resolveSessionLifecycleCapability() {
+          resolverReads += 1;
+
+          if (resolverReads > 1) {
+            throw new Error("resolver getter read twice");
+          }
+
+          return () => true;
+        }
+      } as never)
+    ).resolves.toEqual({
+      results: [
+        {
+          consumer: {
+            request: createCloseRequest(),
+            readiness: createReadiness({
+              blockingReasons: [],
+              canConsumeClose: true,
+              hasBlockingReasons: false,
+              sessionLifecycleSupported: true
+            })
+          },
+          consume: {
+            request: createCloseRequest(),
+            readiness: createReadiness({
+              blockingReasons: [],
+              canConsumeClose: true,
+              hasBlockingReasons: false,
+              sessionLifecycleSupported: true
+            }),
+            invoked: true
+          }
+        }
+      ]
+    });
+    expect(invokeCloseReads).toBe(1);
+    expect(resolverReads).toBe(1);
   });
 
   it("should fail fast on the first thrown invoker error from a supported request", async () => {

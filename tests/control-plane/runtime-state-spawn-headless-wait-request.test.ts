@@ -61,6 +61,27 @@ describe("control-plane runtime-state spawn-headless-wait-request helpers", () =
     });
   });
 
+  it("should preserve descendant coverage blockers when the headless wait target cannot produce a request", () => {
+    const headlessWaitTarget = createHeadlessWaitTarget({
+      attemptId: "att_child_wait_request_descendant_blocked",
+      parentAttemptId: "att_parent_wait_request_descendant_blocked",
+      sessionId: "thr_child_wait_request_descendant_blocked",
+      sourceKind: "delegated",
+      descendantCoverage: "incomplete"
+    });
+
+    expect(
+      deriveExecutionSessionSpawnHeadlessWaitRequest({
+        headlessWaitTarget
+      })
+    ).toEqual({
+      headlessWaitTarget
+    });
+    expect(
+      headlessWaitTarget.headlessWaitCandidate.candidate.readiness.blockingReasons
+    ).toContain("descendant_coverage_incomplete");
+  });
+
   it("should fail loudly when the supplied headless wait target wrapper is invalid", () => {
     expect(() =>
       deriveExecutionSessionSpawnHeadlessWaitRequest({
@@ -100,6 +121,21 @@ describe("control-plane runtime-state spawn-headless-wait-request helpers", () =
     );
   });
 
+  it("should reject a nested headless wait candidate wrapper whose companion omits context or headlessView", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessWaitRequest({
+        headlessWaitTarget: {
+          headlessWaitCandidate: {
+            candidate: {} as never,
+            headlessContext: {} as never
+          }
+        } as ExecutionSessionSpawnHeadlessWaitTarget
+      })
+    ).toThrow(
+      "Execution session spawn headless wait request requires headlessWaitTarget.headlessWaitCandidate.headlessContext to include context and headlessView objects."
+    );
+  });
+
   it("should reject non-object wait request seam inputs before reading headlessWaitTarget", () => {
     expect(() =>
       deriveExecutionSessionSpawnHeadlessWaitRequest(undefined as never)
@@ -110,6 +146,101 @@ describe("control-plane runtime-state spawn-headless-wait-request helpers", () =
       deriveExecutionSessionSpawnHeadlessWaitRequest(null as never)
     ).toThrow(
       "Execution session spawn headless wait request input must be an object."
+    );
+  });
+
+  it("should reject inherited or getter-backed top-level headlessWaitTarget inputs", () => {
+    const canonicalTarget = createHeadlessWaitTarget({
+      attemptId: "att_top_level_wait_request",
+      parentAttemptId: "att_parent_top_level_wait_request",
+      sessionId: "thr_top_level_wait_request",
+      sourceKind: "delegated"
+    });
+    const inheritedInput = Object.create({
+      headlessWaitTarget: canonicalTarget
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessWaitRequest(inheritedInput as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessWaitRequest(inheritedInput as never)
+    ).toThrow(
+      "Execution session spawn headless wait request requires a headlessWaitTarget wrapper."
+    );
+
+    const accessorInput = {};
+    Object.defineProperty(accessorInput, "headlessWaitTarget", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessWaitRequest(accessorInput as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessWaitRequest(accessorInput as never)
+    ).toThrow(
+      "Execution session spawn headless wait request requires a headlessWaitTarget wrapper."
+    );
+  });
+
+  it("should reject wrapper-level targets that come only from the prototype chain", () => {
+    const canonicalTarget = createHeadlessWaitTarget({
+      attemptId: "att_proto_wait_request",
+      parentAttemptId: "att_parent_proto_wait_request",
+      sessionId: "thr_proto_wait_request",
+      sourceKind: "delegated"
+    });
+    const headlessWaitTarget = Object.create({
+      target: canonicalTarget.target
+    });
+    headlessWaitTarget.headlessWaitCandidate = canonicalTarget.headlessWaitCandidate;
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessWaitRequest({
+        headlessWaitTarget
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessWaitRequest({
+        headlessWaitTarget
+      } as never)
+    ).toThrow(
+      "Execution session spawn headless wait request requires headlessWaitTarget.target to be an object when provided."
+    );
+  });
+
+  it("should reject wrapper-level targets whose getter throws", () => {
+    const canonicalTarget = createHeadlessWaitTarget({
+      attemptId: "att_accessor_wait_request",
+      parentAttemptId: "att_parent_accessor_wait_request",
+      sessionId: "thr_accessor_wait_request",
+      sourceKind: "delegated"
+    });
+    const headlessWaitTarget = {
+      headlessWaitCandidate: canonicalTarget.headlessWaitCandidate
+    };
+    Object.defineProperty(headlessWaitTarget, "target", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessWaitRequest({
+        headlessWaitTarget
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessWaitRequest({
+        headlessWaitTarget
+      } as never)
+    ).toThrow(
+      "Execution session spawn headless wait request requires headlessWaitTarget.target to be an object when provided."
     );
   });
 
@@ -144,12 +275,16 @@ describe("control-plane runtime-state spawn-headless-wait-request helpers", () =
 function createHeadlessWaitTarget(overrides: {
   attemptId: string;
   sourceKind: "direct" | "fork" | "delegated";
+  descendantCoverage?: "complete" | "incomplete";
   parentAttemptId?: string;
   sessionId?: string;
 }) {
   const headlessContext = createHeadlessContext({
     attemptId: overrides.attemptId,
     sourceKind: overrides.sourceKind,
+    ...(overrides.descendantCoverage === undefined
+      ? {}
+      : { descendantCoverage: overrides.descendantCoverage }),
     ...(overrides.parentAttemptId === undefined
       ? {}
       : { parentAttemptId: overrides.parentAttemptId }),
@@ -168,6 +303,7 @@ function createHeadlessWaitTarget(overrides: {
 function createHeadlessContext(overrides: {
   attemptId: string;
   sourceKind: "direct" | "fork" | "delegated";
+  descendantCoverage?: "complete" | "incomplete";
   parentAttemptId?: string;
   sessionId?: string;
 }) {
@@ -187,7 +323,7 @@ function createHeadlessContext(overrides: {
       : { sessionId: overrides.sessionId })
   });
   const headlessView = {
-    descendantCoverage: "complete",
+    descendantCoverage: overrides.descendantCoverage ?? "complete",
     headlessRecord,
     view: buildExecutionSessionView([parentRecord, headlessRecord.record])
   } satisfies ExecutionSessionSpawnHeadlessView;

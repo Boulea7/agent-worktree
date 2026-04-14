@@ -273,7 +273,7 @@ describe("control-plane runtime-state spawn-apply-batch helpers", () => {
     expect(items).toEqual(itemsSnapshot);
   });
 
-  it("should stop later items when effects fail after consume succeeds", async () => {
+  it("should stop later items before invokeSpawn when preflight effects fail", async () => {
     const invokedSessionIds: string[] = [];
 
     await expect(
@@ -306,7 +306,7 @@ describe("control-plane runtime-state spawn-apply-batch helpers", () => {
         }
       })
     ).rejects.toThrow(/childAttemptId/i);
-    expect(invokedSessionIds).toEqual(["thr_parent_1", "thr_parent_2"]);
+    expect(invokedSessionIds).toEqual(["thr_parent_1"]);
   });
 });
 

@@ -1,22 +1,16 @@
 import { z } from "zod";
 
 import { ValidationError } from "../core/errors.js";
+import { runtimeKinds, supportTiers } from "../core/capabilities.js";
 import {
   attemptSourceKinds,
   attemptStatuses,
+  attemptVerificationStates,
   type AttemptManifest
 } from "./types.js";
 import {
   attemptVerificationCheckStatuses
 } from "../verification/types.js";
-
-const attemptVerificationStates = [
-  "pending",
-  "passed",
-  "verified",
-  "failed",
-  "error"
-] as const;
 
 const attemptVerificationCheckSchema = z.object({
   name: z.string().trim().min(1),
@@ -33,34 +27,34 @@ const attemptVerificationSchema = z
 
 const attemptSessionSchema = z
   .object({
-    backend: z.string(),
-    sessionId: z.string()
+    backend: z.string().trim().min(1),
+    sessionId: z.string().trim().min(1)
   })
-  .passthrough();
+  .strict();
 
 const attemptTimestampsSchema = z
   .object({
-    createdAt: z.string(),
-    updatedAt: z.string()
+    createdAt: z.string().trim().min(1),
+    updatedAt: z.string().trim().min(1)
   })
   .passthrough();
 
 export const attemptManifestSchema = z
   .object({
-    schemaVersion: z.string(),
+    schemaVersion: z.string().trim().min(1),
     attemptId: z.string().trim().min(1),
-    taskId: z.string(),
-    runtime: z.string(),
-    adapter: z.string(),
+    taskId: z.string().trim().min(1),
+    runtime: z.enum(runtimeKinds),
+    adapter: z.string().trim().min(1),
     sourceKind: z.enum(attemptSourceKinds).optional(),
     parentAttemptId: z.string().trim().min(1).optional(),
-    repoRoot: z.string().optional(),
+    repoRoot: z.string().trim().min(1).optional(),
     status: z.enum(attemptStatuses),
     verification: attemptVerificationSchema,
-    supportTier: z.string().optional(),
-    baseRef: z.string().optional(),
-    branch: z.string().optional(),
-    worktreePath: z.string().optional(),
+    supportTier: z.enum(supportTiers).optional(),
+    baseRef: z.string().trim().min(1).optional(),
+    branch: z.string().trim().min(1).optional(),
+    worktreePath: z.string().trim().min(1).optional(),
     session: attemptSessionSchema.optional(),
     artifacts: z.array(z.unknown()).optional(),
     timestamps: attemptTimestampsSchema.optional()

@@ -32,7 +32,7 @@ Codex CLI is a natural baseline for:
 
 ## Current Implementation Boundary
 
-The current `codex-cli` adapter is intentionally limited to a public read-only
+The current `codex-cli` adapter is intentionally limited to a public
 compatibility surface plus bounded internal execution helpers.
 
 Current public compatibility truth:
@@ -41,14 +41,14 @@ Current public compatibility truth:
 - `doctor` may report whether bounded `codex-cli` detection succeeds locally
 - `agent-worktree compat probe codex-cli` may report a bounded public compatibility result for local `codex exec --json` support
 - `agent-worktree compat smoke codex-cli` may report a bounded env-gated live smoke result for the fixed `codex exec --json` path
-- that bounded public smoke path is the current Phase 4 closeout checkpoint for the first Tier 1 end-to-end compatibility promise
+- that bounded public smoke path is the current Phase 4 closeout checkpoint for the first Tier 1 bounded compatibility promise
 - `doctor`, `compat probe`, and `compat smoke` do not expose executable resolution, profile selection, env overlays, execution observation, or any internal control-plane metadata
 
 Implemented now:
 
-- a public read-only `doctor` slice for compatibility diagnostics
-- a public read-only `compat probe codex-cli` slice for bounded compatibility diagnostics
-- a public read-only `compat smoke codex-cli` slice for bounded env-gated live smoke
+- a public `doctor` slice for compatibility diagnostics
+- a public `compat probe codex-cli` slice for bounded compatibility diagnostics
+- a public env-gated `compat smoke codex-cli` slice for bounded live smoke
 - real detection for the `codex exec --json` path
 - machine-checkable command rendering
 - structured degradation for unsupported capabilities
@@ -68,19 +68,19 @@ Additional bounded internal details:
 - the default subprocess runner may still derive a best-effort relay-compatible env overlay from local Codex config, auth, or shell-export state, but custom runners do not silently inherit that overlay unless an internal caller explicitly supplies a replacement environment resolver
 - obvious non-JSON prelude lines, including bracket-prefixed log noise such as `[warn] ...`, may normalize to `unknown`
 - malformed JSON-looking records, including malformed bracket-prefixed array-like lines, still fail loudly
-- `executeHeadless()` may return an internal observation summary such as thread identifier, final turn status, last agent message, usage, and error counts derived from canonical events
-- `executeHeadless()` may also attach an internal session snapshot when the caller supplies attempt lineage metadata; that snapshot is derived from lineage plus canonical observation only
+- bounded internal execution may derive internal observation metadata and an internal session snapshot from canonical events plus supplied attempt lineage
 - the runtime manifest schema may still carry a bounded internal `session`
   block for execution metadata
+- that bounded internal `session` block is limited to `backend` plus `sessionId`
 - public CLI output does not expose that internal `session` metadata
 - that internal `session` metadata does not imply attach/resume or
   lifecycle-control truth
-- beyond that execution path, current internal continuation work is intentionally described by capability bucket rather than by fixed helper or module topology:
-  - execution-derived state and read models built from attempt lineage, bounded execution observation, and optional internal session snapshots
-  - runtime context and lifecycle-disposition metadata built from those existing internal read models
-  - delegated-child or spawn-oriented preflight and composition metadata built from runtime context, lineage, and inherited guardrails
-  - delegated or headless execution bridge metadata built from existing internal requests, apply results, or execution seeds
-  - wait- and close-oriented preflight or consume-path metadata built from existing internal contexts, requests, and capability checks
+- beyond that execution path, current internal continuation work is intentionally described only by capability bucket:
+  - execution-derived state and read models
+  - runtime context and lifecycle-disposition metadata
+  - delegated-child or spawn-oriented preflight and composition metadata
+  - delegated or headless execution bridge metadata
+  - wait- and close-oriented preflight or consume-path metadata
 - all of those buckets remain internal-only, derived, non-persistent, non-manifest-backed, and not lifecycle truth. They do not create public execution, spawn, wait, close, report, explanation, decision, or session-lifecycle surfaces.
 
 Explicitly not implemented:
@@ -97,6 +97,8 @@ Explicitly not implemented:
 - provider, auth, or config-management writers for local Codex settings
 - manifest-backed execution persistence
 - session-tree control semantics such as wait, close, or delegated-child lifecycle
+
+That deferred persistence scope does not forbid a durable audit manifest or bounded internal session metadata; it only means public execution/session persistence semantics are not implemented in `agent-worktree`.
 
 ## Executable Probing Boundary
 
@@ -127,5 +129,5 @@ The public `compat probe` and `compat smoke` contract keeps that executable-reso
 - smoke tests MUST NOT become the default validation path for the repository
 - direct-shell invocation and the env-gated Vitest smoke harness MAY still be re-verified locally when they pass, but those local checks are operational evidence rather than durable public contract text
 - the Vitest smoke harness remains narrower and should still be treated as a bounded secondary probe rather than a public reliability guarantee
-- smoke output SHOULD help diagnose differences between shell-visible `codex` resolution and the final executed binary rather than assuming they are always identical
+- internal smoke diagnostics and smoke-harness logs SHOULD help diagnose differences between shell-visible `codex` resolution and the final executed binary rather than assuming they are always identical
 - that bounded public smoke path is sufficient for the current Phase 4 compatibility closeout, but it remains a compatibility checkpoint rather than a general execution or lifecycle promise

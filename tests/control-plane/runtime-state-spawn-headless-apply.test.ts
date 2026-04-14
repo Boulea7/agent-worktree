@@ -185,7 +185,7 @@ describe("control-plane runtime-state spawn-headless-apply helpers", () => {
     ).rejects.toThrow(expectedError);
   });
 
-  it("should invoke spawn before surfacing bridge failures from the execution seed", async () => {
+  it("should fail before invokeSpawn when the execution seed cannot be read", async () => {
     const invokeSpawn = vi.fn(async () => undefined);
     const expectedError = new Error("bridge failed");
 
@@ -201,7 +201,7 @@ describe("control-plane runtime-state spawn-headless-apply helpers", () => {
         invokeSpawn
       } as const)
     ).rejects.toThrow(expectedError);
-    expect(invokeSpawn).toHaveBeenCalledTimes(1);
+    expect(invokeSpawn).not.toHaveBeenCalled();
   });
 
 });

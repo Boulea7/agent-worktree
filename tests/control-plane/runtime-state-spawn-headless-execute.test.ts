@@ -4,6 +4,7 @@ import {
   type HeadlessExecutionInput,
   type HeadlessExecutionResult
 } from "../../src/adapters/types.js";
+import { RuntimeError } from "../../src/core/errors.js";
 import {
   executeExecutionSessionSpawnHeadless,
   type ExecutionSessionSpawnRequest
@@ -329,7 +330,53 @@ describe("control-plane runtime-state spawn-headless-execute helpers", () => {
     expect(executeHeadless).not.toHaveBeenCalled();
   });
 
-  it("should invoke spawn before surfacing local spawn validation failures", async () => {
+  it("should wrap headless execution failures with parent-applied state in the internal cause", async () => {
+    const expectedError = new Error("execute failed");
+
+    const error = await executeExecutionSessionSpawnHeadless({
+      childAttemptId: "att_child_failed_after_spawn",
+      request: createSpawnRequest({
+        sourceKind: "fork"
+      }),
+      execution: {
+        prompt: "Reply with ok"
+      },
+      invokeSpawn: async () => undefined,
+      executeHeadless: async () => {
+        throw expectedError;
+      }
+    }).catch((reason: unknown) => reason);
+
+    expect(error).toBeInstanceOf(RuntimeError);
+    expect((error as RuntimeError).message).toBe(
+      "Headless child execution failed after spawn was recorded."
+    );
+    expect((error as RuntimeError).causeValue).toMatchObject({
+      cause: expectedError,
+      headlessApply: {
+        apply: {
+          consume: {
+            request: {
+              parentAttemptId: "att_parent",
+              parentRuntime: "codex-cli",
+              parentSessionId: "thr_parent",
+              sourceKind: "fork"
+            },
+            invoked: true
+          },
+          effects: {
+            lineage: {
+              attemptId: "att_child_failed_after_spawn",
+              parentAttemptId: "att_parent",
+              sourceKind: "fork"
+            }
+          }
+        }
+      }
+    });
+  });
+
+  it("should fail before invokeSpawn when local spawn validation fails", async () => {
     const invokeSpawn = vi.fn(async () => undefined);
     const executeHeadless = vi.fn(async () =>
       createHeadlessExecutionResult({
@@ -353,11 +400,11 @@ describe("control-plane runtime-state spawn-headless-execute helpers", () => {
         executeHeadless
       })
     ).rejects.toThrow(/childAttemptId/i);
-    expect(invokeSpawn).toHaveBeenCalledTimes(1);
+    expect(invokeSpawn).not.toHaveBeenCalled();
     expect(executeHeadless).not.toHaveBeenCalled();
   });
 
-  it("should invoke spawn before surfacing execution-seed bridge failures", async () => {
+  it("should fail before invokeSpawn when execution-seed bridge preflight fails", async () => {
     const invokeSpawn = vi.fn(async () => undefined);
     const executeHeadless = vi.fn(async () =>
       createHeadlessExecutionResult({
@@ -381,28 +428,35 @@ describe("control-plane runtime-state spawn-headless-execute helpers", () => {
         executeHeadless
       } as const)
     ).rejects.toThrow("bridge failed");
-    expect(invokeSpawn).toHaveBeenCalledTimes(1);
+    expect(invokeSpawn).not.toHaveBeenCalled();
     expect(executeHeadless).not.toHaveBeenCalled();
   });
 
   it("should surface headless executor failures without returning partial execution output", async () => {
     const expectedError = new Error("execute failed");
 
-    await expect(
-      executeExecutionSessionSpawnHeadless({
-        childAttemptId: "att_child_execute_failed",
-        request: createSpawnRequest({
-          sourceKind: "fork"
-        }),
-        execution: {
-          prompt: "Reply with ok"
-        },
-        invokeSpawn: async () => undefined,
-        executeHeadless: async () => {
-          throw expectedError;
-        }
-      })
-    ).rejects.toThrow(expectedError);
+    const error = await executeExecutionSessionSpawnHeadless({
+      childAttemptId: "att_child_execute_failed",
+      request: createSpawnRequest({
+        sourceKind: "fork"
+      }),
+      execution: {
+        prompt: "Reply with ok"
+      },
+      invokeSpawn: async () => undefined,
+      executeHeadless: async () => {
+        throw expectedError;
+      }
+    }).catch((reason: unknown) => reason);
+
+    expect(error).toBeInstanceOf(RuntimeError);
+    expect((error as RuntimeError).causeValue).toMatchObject({
+      cause: expectedError
+    });
+    expect(error).not.toHaveProperty("executionResult");
+    expect(error).not.toHaveProperty("stdout");
+    expect(error).not.toHaveProperty("stderr");
+    expect(error).not.toHaveProperty("events");
   });
 });
 

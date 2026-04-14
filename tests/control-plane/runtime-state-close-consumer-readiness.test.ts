@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   deriveExecutionSessionCloseConsumerReadiness,
   type ExecutionSessionCloseRequest
@@ -54,6 +55,149 @@ describe("control-plane runtime-state close-consumer-readiness helpers", () => {
         request: createCloseRequest()
       }).blockingReasons
     ).toEqual(["session_lifecycle_unsupported"]);
+  });
+
+  it("should fail loudly when the capability resolver does not return a boolean", () => {
+    expect(() =>
+      deriveExecutionSessionCloseConsumerReadiness({
+        request: createCloseRequest(),
+        resolveSessionLifecycleCapability: () => 1 as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionCloseConsumerReadiness({
+        request: createCloseRequest(),
+        resolveSessionLifecycleCapability: () => 1 as never
+      })
+    ).toThrow(
+      "Execution session close consumer readiness requires resolveSessionLifecycleCapability to return a boolean."
+    );
+  });
+
+  it("should fail loudly when the capability resolver is not a function", () => {
+    expect(() =>
+      deriveExecutionSessionCloseConsumerReadiness({
+        request: createCloseRequest(),
+        resolveSessionLifecycleCapability: 1 as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionCloseConsumerReadiness({
+        request: createCloseRequest(),
+        resolveSessionLifecycleCapability: 1 as never
+      })
+    ).toThrow(
+      "Execution session close consumer readiness requires resolveSessionLifecycleCapability to be a function when provided."
+    );
+  });
+
+  it("should fail loudly when the top-level close-consumer-readiness input or request is malformed", () => {
+    expect(() =>
+      deriveExecutionSessionCloseConsumerReadiness(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionCloseConsumerReadiness(undefined as never)
+    ).toThrow(
+      "Execution session close consumer readiness input must be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionCloseConsumerReadiness({
+        request: null as never
+      })
+    ).toThrow(
+      "Execution session close consumer readiness requires request to be an object."
+    );
+  });
+
+  it("should reject inherited request wrappers and accessor-shaped resolvers", () => {
+    const inheritedInput = Object.create({
+      request: createCloseRequest()
+    });
+
+    expect(() =>
+      deriveExecutionSessionCloseConsumerReadiness(inheritedInput as never)
+    ).toThrow(
+      "Execution session close consumer readiness requires request to be an object."
+    );
+
+    const accessorInput = {
+      request: createCloseRequest()
+    };
+    Object.defineProperty(accessorInput, "resolveSessionLifecycleCapability", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionCloseConsumerReadiness(accessorInput as never)
+    ).toThrow(
+      "Execution session close consumer readiness requires resolveSessionLifecycleCapability to be a function when provided."
+    );
+  });
+
+  it("should read the request wrapper once before reusing the normalized snapshot", () => {
+    let requestReads = 0;
+
+    expect(
+      deriveExecutionSessionCloseConsumerReadiness({
+        get request() {
+          requestReads += 1;
+
+          if (requestReads > 1) {
+            throw new Error("request getter read twice");
+          }
+
+          return createCloseRequest({
+            runtime: "supported-cli"
+          });
+        },
+        resolveSessionLifecycleCapability: () => true
+      } as never)
+    ).toEqual({
+      blockingReasons: [],
+      canConsumeClose: true,
+      hasBlockingReasons: false,
+      sessionLifecycleSupported: true
+    });
+    expect(requestReads).toBe(1);
+  });
+
+  it("should fail loudly when request identifiers are invalid at the readiness seam", () => {
+    expect(() =>
+      deriveExecutionSessionCloseConsumerReadiness({
+        request: {
+          ...createCloseRequest(),
+          attemptId: "   "
+        } as never
+      })
+    ).toThrow(
+      "Execution session close request attemptId must be a non-empty string."
+    );
+
+    expect(() =>
+      deriveExecutionSessionCloseConsumerReadiness({
+        request: {
+          ...createCloseRequest(),
+          runtime: "   "
+        } as never
+      })
+    ).toThrow(
+      "Execution session close request runtime must be a non-empty string."
+    );
+
+    expect(() =>
+      deriveExecutionSessionCloseConsumerReadiness({
+        request: {
+          ...createCloseRequest(),
+          sessionId: "   "
+        } as never
+      })
+    ).toThrow(
+      "Execution session close request sessionId must be a non-empty string."
+    );
   });
 
   it("should not mutate the supplied close request", () => {

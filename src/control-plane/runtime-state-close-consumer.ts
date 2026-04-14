@@ -1,4 +1,9 @@
 import { ValidationError } from "../core/errors.js";
+import {
+  normalizeBatchWrapper,
+  readOptionalBatchWrapperProperty,
+  readRequiredBatchWrapperProperty
+} from "./runtime-state-batch-wrapper-guards.js";
 import { normalizeExecutionSessionCloseRequest } from "./runtime-state-close-request.js";
 import {
   deriveExecutionSessionCloseConsumerReadiness
@@ -11,33 +16,46 @@ import type {
 export function deriveExecutionSessionCloseConsumer(
   input: ExecutionSessionCloseConsumerInput
 ): ExecutionSessionCloseConsumer {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) {
-    throw new ValidationError(
-      "Execution session close consumer input must be an object."
-    );
-  }
+  const normalizedInput = normalizeBatchWrapper<ExecutionSessionCloseConsumerInput>(
+    input,
+    "Execution session close consumer input must be an object."
+  );
+  const requestInput = readRequiredBatchWrapperProperty<
+    ExecutionSessionCloseConsumerInput["request"]
+  >(
+    normalizedInput,
+    "request",
+    "Execution session close consumer requires request to be an object."
+  );
 
   if (
-    typeof input.request !== "object" ||
-    input.request === null ||
-    Array.isArray(input.request)
+    typeof requestInput !== "object" ||
+    requestInput === null ||
+    Array.isArray(requestInput)
   ) {
     throw new ValidationError(
       "Execution session close consumer requires request to be an object."
     );
   }
 
-  const request = normalizeExecutionSessionCloseRequest(input.request);
+  const request = normalizeExecutionSessionCloseRequest(requestInput);
+  const resolveSessionLifecycleCapability =
+    readOptionalBatchWrapperProperty<
+      ExecutionSessionCloseConsumerInput["resolveSessionLifecycleCapability"]
+    >(
+      normalizedInput,
+      "resolveSessionLifecycleCapability",
+      "Execution session close consumer readiness requires resolveSessionLifecycleCapability to be a function when provided."
+    );
 
   return {
     request,
     readiness: deriveExecutionSessionCloseConsumerReadiness({
       request,
-      ...(input.resolveSessionLifecycleCapability === undefined
+      ...(resolveSessionLifecycleCapability === undefined
         ? {}
         : {
-            resolveSessionLifecycleCapability:
-              input.resolveSessionLifecycleCapability
+            resolveSessionLifecycleCapability
           })
     })
   };

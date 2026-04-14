@@ -3,8 +3,10 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 
 import { runtimeKinds } from "../core/capabilities.js";
+import type { RuntimeKind } from "../core/capabilities.js";
 import { RuntimeError, ValidationError } from "../core/errors.js";
 import {
+  canonicalizePathForBoundary,
   defaultManifestRoot,
   defaultWorktreeRoot,
   isPathInsideRoot,
@@ -16,6 +18,7 @@ import {
   type AttemptManifest
 } from "../manifest/types.js";
 import { cleanupWorktreeMaterial } from "./cleanup.js";
+import { deriveCreateAttemptFailureResidueFollowUp } from "./create-residue.js";
 import { buildAttemptBranch, buildWorktreeDirectoryName } from "./naming.js";
 import { runGit } from "./git.js";
 
@@ -64,12 +67,16 @@ export async function createAttempt(
   ));
   const timestamp = (dependencies.now ?? (() => new Date()))().toISOString();
   const writeManifestImpl = dependencies.writeManifestImpl ?? writeManifest;
+  const canonicalRepoRoot = await canonicalizePathForBoundary(repoRoot);
+  const canonicalManifestRoot = await canonicalizePathForBoundary(manifestRoot);
+  const canonicalWorktreeRoot = await canonicalizePathForBoundary(worktreeRoot);
+  const canonicalWorktreePath = await canonicalizePathForBoundary(worktreePath);
 
   ensureCreatableWorktreePath(
-    repoRoot,
-    manifestRoot,
-    worktreeRoot,
-    worktreePath,
+    canonicalRepoRoot,
+    canonicalManifestRoot,
+    canonicalWorktreeRoot,
+    canonicalWorktreePath,
     attemptId
   );
 
@@ -111,18 +118,59 @@ export async function createAttempt(
         worktreePath
       });
     } catch (rollbackError) {
+      const rollbackResidueFollowUpResult =
+        await deriveCreateAttemptFailureResidueFollowUpBestEffort({
+          attemptId,
+          branch,
+          repoRoot: canonicalRepoRoot,
+          worktreePath: canonicalWorktreePath
+        });
+
       throw new RuntimeError(
         `Failed to persist manifest for attempt ${attemptId}, and safe worktree rollback also failed.`,
         {
           manifestWriteError: error,
-          rollbackError
+          rollbackError,
+          ...(rollbackResidueFollowUpResult.residueFollowUp === undefined
+            ? {}
+            : {
+                rollbackResidueFollowUp:
+                  rollbackResidueFollowUpResult.residueFollowUp
+              }),
+          ...(rollbackResidueFollowUpResult.residueFollowUpError === undefined
+            ? {}
+            : {
+                rollbackResidueFollowUpError:
+                  rollbackResidueFollowUpResult.residueFollowUpError
+              })
         }
       );
     }
 
+    const residueFollowUpResult =
+      await deriveCreateAttemptFailureResidueFollowUpBestEffort({
+        attemptId,
+        branch,
+        repoRoot: canonicalRepoRoot,
+        worktreePath: canonicalWorktreePath
+      });
+
     throw new RuntimeError(
       `Failed to persist manifest for attempt ${attemptId}. The worktree was removed, but the attempt branch was intentionally retained.`,
-      error
+      {
+        manifestWriteError: error,
+        ...(residueFollowUpResult.residueFollowUp === undefined
+          ? {}
+          : {
+              residue: residueFollowUpResult.residueFollowUp.residue,
+              residueFollowUp: residueFollowUpResult.residueFollowUp
+            }),
+        ...(residueFollowUpResult.residueFollowUpError === undefined
+          ? {}
+          : {
+              residueFollowUpError: residueFollowUpResult.residueFollowUpError
+            })
+      }
     );
   }
 
@@ -133,19 +181,41 @@ function createAttemptId(): string {
   return `att_${randomUUID().replace(/-/g, "").slice(0, 12)}`;
 }
 
+async function deriveCreateAttemptFailureResidueFollowUpBestEffort(input: {
+  attemptId: string;
+  branch: string;
+  repoRoot: string;
+  worktreePath: string;
+}): Promise<{
+  residueFollowUp?: Awaited<
+    ReturnType<typeof deriveCreateAttemptFailureResidueFollowUp>
+  >;
+  residueFollowUpError?: unknown;
+}> {
+  try {
+    return {
+      residueFollowUp: await deriveCreateAttemptFailureResidueFollowUp(input)
+    };
+  } catch (error) {
+    return {
+      residueFollowUpError: error
+    };
+  }
+}
+
 async function resolveRepositoryRoot(inputPath: string): Promise<string> {
   return runGit(["rev-parse", "--show-toplevel"], {
     cwd: path.resolve(inputPath)
   });
 }
 
-function validateRuntime(runtime: string): void {
+function validateRuntime(runtime: string): asserts runtime is RuntimeKind {
   if (!runtimeKinds.includes(runtime as (typeof runtimeKinds)[number])) {
     throw new ValidationError(`Unknown runtime: ${runtime}.`);
   }
 }
 
-function resolveSupportTier(runtime: string): "tier1" | "experimental" {
+function resolveSupportTier(runtime: RuntimeKind): "tier1" | "experimental" {
   if (runtime === "openclaw" || runtime === "other-cli") {
     return "experimental";
   }
@@ -160,8 +230,6 @@ function ensureCreatableWorktreePath(
   worktreePath: string,
   attemptId: string
 ): void {
-  const normalizedRepoRoot = normalizePathForComparison(repoRoot);
-
   if (!isPathInsideRoot(worktreePath, worktreeRoot)) {
     throw new ValidationError(
       `Attempt ${attemptId} cannot be created because its worktree path is outside the controlled worktree root.`
@@ -174,7 +242,7 @@ function ensureCreatableWorktreePath(
     );
   }
 
-  if (worktreePath === normalizedRepoRoot || isPathInsideRoot(worktreePath, normalizedRepoRoot)) {
+  if (worktreePath === repoRoot || isPathInsideRoot(worktreePath, repoRoot)) {
     throw new ValidationError(
       `Attempt ${attemptId} cannot be created because its worktree path overlaps the primary repository.`
     );

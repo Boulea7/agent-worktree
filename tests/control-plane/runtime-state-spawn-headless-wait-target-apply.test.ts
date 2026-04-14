@@ -12,6 +12,53 @@ import {
 describe(
   "control-plane runtime-state spawn-headless-wait-target-apply helpers",
   () => {
+    it("should fail loudly when the top-level wait target apply input is malformed", async () => {
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTarget(undefined as never)
+      ).rejects.toThrow(ValidationError);
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTarget(undefined as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless wait target apply input must be an object."
+      );
+    });
+
+    it("should reject inherited or getter-backed top-level headlessWaitTarget inputs", async () => {
+      const canonicalTarget = createHeadlessWaitTarget({
+        target: {
+          attemptId: "att_top_level_wait_apply",
+          runtime: "supported-cli",
+          sessionId: "thr_top_level_wait_apply"
+        }
+      });
+      const inheritedInput = Object.create({
+        headlessWaitTarget: canonicalTarget
+      });
+      inheritedInput.invokeWait = async () => undefined;
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTarget(inheritedInput as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless wait target apply requires a headlessWaitTarget wrapper."
+      );
+
+      const accessorInput = {
+        invokeWait: async () => undefined
+      };
+      Object.defineProperty(accessorInput, "headlessWaitTarget", {
+        enumerable: true,
+        get() {
+          throw new Error("boom");
+        }
+      });
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTarget(accessorInput as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless wait target apply requires a headlessWaitTarget wrapper."
+      );
+    });
+
     it("should return the original wrapper unchanged when no wait target is available", async () => {
       const headlessWaitTarget = createHeadlessWaitTarget();
       let invoked = false;
@@ -29,6 +76,27 @@ describe(
       expect(invoked).toBe(false);
     });
 
+    it("should still validate invokeWait and resolveSessionLifecycleCapability when the headless wait target is blocked", async () => {
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTarget({
+          headlessWaitTarget: createHeadlessWaitTarget(),
+          invokeWait: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session wait target apply requires invokeWait to be a function."
+      );
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTarget({
+          headlessWaitTarget: createHeadlessWaitTarget(),
+          invokeWait: async () => undefined,
+          resolveSessionLifecycleCapability: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session wait target apply requires resolveSessionLifecycleCapability to be a function when provided."
+      );
+    });
+
     it("should fail loudly when the supplied headless wait target wrapper is invalid", async () => {
       await expect(
         applyExecutionSessionSpawnHeadlessWaitTarget({
@@ -43,6 +111,58 @@ describe(
         })
       ).rejects.toThrow(
         "Execution session spawn headless wait target apply requires a headlessWaitTarget wrapper."
+      );
+    });
+
+    it("should reject wrapper-level targets that come only from the prototype chain", async () => {
+      const canonicalTarget = createHeadlessWaitTarget({
+        target: {
+          attemptId: "att_proto_wait_apply",
+          runtime: "supported-cli",
+          sessionId: "thr_proto_wait_apply"
+        }
+      });
+      const headlessWaitTarget = Object.create({
+        target: canonicalTarget.target
+      });
+      headlessWaitTarget.headlessWaitCandidate =
+        canonicalTarget.headlessWaitCandidate;
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTarget({
+          headlessWaitTarget,
+          invokeWait: async () => undefined
+        } as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless wait target apply requires headlessWaitTarget.target to be an object when provided."
+      );
+    });
+
+    it("should reject wrapper-level targets whose getter throws", async () => {
+      const canonicalTarget = createHeadlessWaitTarget({
+        target: {
+          attemptId: "att_accessor_wait_apply",
+          runtime: "supported-cli",
+          sessionId: "thr_accessor_wait_apply"
+        }
+      });
+      const headlessWaitTarget = {
+        headlessWaitCandidate: canonicalTarget.headlessWaitCandidate
+      };
+      Object.defineProperty(headlessWaitTarget, "target", {
+        enumerable: true,
+        get() {
+          throw new Error("boom");
+        }
+      });
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTarget({
+          headlessWaitTarget,
+          invokeWait: async () => undefined
+        } as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless wait target apply requires headlessWaitTarget.target to be an object when provided."
       );
     });
 
@@ -75,6 +195,25 @@ describe(
       ).rejects.toThrow(
         "Execution session spawn headless wait target apply requires headlessWaitTarget.headlessWaitCandidate to include candidate and headlessContext objects."
       );
+    });
+
+    it("should reject malformed headlessContext companions before invoking wait", async () => {
+      const invokeWait = vi.fn(async () => undefined);
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTarget({
+          headlessWaitTarget: {
+            headlessWaitCandidate: {
+              candidate: {} as never,
+              headlessContext: {} as never
+            }
+          } as ExecutionSessionSpawnHeadlessWaitTarget,
+          invokeWait
+        })
+      ).rejects.toThrow(
+        "Execution session spawn headless wait target apply requires headlessWaitTarget.headlessWaitCandidate.headlessContext to include context and headlessView objects."
+      );
+      expect(invokeWait).not.toHaveBeenCalled();
     });
 
     it("should compose an apply result from an available wait target without widening the result shape", async () => {
@@ -262,6 +401,105 @@ describe(
       expect(invokedSessionIds).toEqual(["thr_supported_wait"]);
     });
 
+    it("should snapshot headlessWaitTargetBatch.results once before applying the batch", async () => {
+      let resultsReads = 0;
+      const supportedTarget = createHeadlessWaitTarget({
+        target: {
+          attemptId: "att_supported_wait_apply_results_once",
+          runtime: "supported-cli",
+          sessionId: "thr_supported_wait_apply_results_once"
+        }
+      });
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch({
+          headlessWaitTargetBatch: {
+            headlessWaitCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            get results() {
+              resultsReads += 1;
+
+              if (resultsReads > 1) {
+                throw new Error("results getter read twice");
+              }
+
+              return [supportedTarget];
+            }
+          } as never,
+          invokeWait: async () => undefined,
+          resolveSessionLifecycleCapability: (runtime) => runtime === "supported-cli"
+        })
+      ).resolves.toEqual({
+        headlessWaitTargetBatch: {
+          headlessWaitCandidateBatch: {
+            headlessContextBatch: {
+              headlessViewBatch: {
+                headlessRecordBatch: {
+                  results: []
+                },
+                view: buildEmptyView()
+              },
+              results: []
+            },
+            results: []
+          },
+          results: [supportedTarget]
+        },
+        results: [
+          {
+            headlessWaitTarget: supportedTarget,
+            apply: {
+              request: {
+                attemptId: "att_supported_wait_apply_results_once",
+                runtime: "supported-cli",
+                sessionId: "thr_supported_wait_apply_results_once"
+              },
+              apply: {
+                consumer: {
+                  request: {
+                    attemptId: "att_supported_wait_apply_results_once",
+                    runtime: "supported-cli",
+                    sessionId: "thr_supported_wait_apply_results_once"
+                  },
+                  readiness: {
+                    blockingReasons: [],
+                    canConsumeWait: true,
+                    hasBlockingReasons: false,
+                    sessionLifecycleSupported: true
+                  }
+                },
+                consume: {
+                  request: {
+                    attemptId: "att_supported_wait_apply_results_once",
+                    runtime: "supported-cli",
+                    sessionId: "thr_supported_wait_apply_results_once"
+                  },
+                  readiness: {
+                    blockingReasons: [],
+                    canConsumeWait: true,
+                    hasBlockingReasons: false,
+                    sessionLifecycleSupported: true
+                  },
+                  invoked: true
+                }
+              }
+            }
+          }
+        ]
+      });
+      expect(resultsReads).toBe(1);
+    });
+
     it("should fail fast when the first batch entry does not provide a headless wrapper", async () => {
       const invokeWait = vi.fn(async () => undefined);
 
@@ -366,6 +604,208 @@ describe(
       ).rejects.toThrow(
         "Execution session spawn headless wait target apply batch requires headlessWaitTargetBatch.results to be an array."
       );
+    });
+
+    it("should fail closed on invalid wait callbacks or resolvers even when every batch entry is blocked", async () => {
+      const blockedBatch = {
+        headlessWaitCandidateBatch: {
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildEmptyView()
+            },
+            results: []
+          },
+          results: []
+        },
+        results: [createHeadlessWaitTarget(), createHeadlessWaitTarget()]
+      };
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch({
+          headlessWaitTargetBatch: blockedBatch,
+          invokeWait: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session wait target apply requires invokeWait to be a function."
+      );
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch({
+          headlessWaitTargetBatch: blockedBatch,
+          invokeWait: async () => undefined,
+          resolveSessionLifecycleCapability: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session wait target apply requires resolveSessionLifecycleCapability to be a function when provided."
+      );
+    });
+
+    it("should fail closed on invalid wait callbacks or resolvers even when the batch is empty", async () => {
+      const emptyBatch = {
+        headlessWaitCandidateBatch: {
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildEmptyView()
+            },
+            results: []
+          },
+          results: []
+        },
+        results: []
+      };
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch({
+          headlessWaitTargetBatch: emptyBatch,
+          invokeWait: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session wait target apply requires invokeWait to be a function."
+      );
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch({
+          headlessWaitTargetBatch: emptyBatch,
+          invokeWait: async () => undefined,
+          resolveSessionLifecycleCapability: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session wait target apply requires resolveSessionLifecycleCapability to be a function when provided."
+      );
+    });
+
+    it("should reject inherited or getter-backed top-level headlessWaitTargetBatch wrappers", async () => {
+      const validBatch = {
+        headlessWaitCandidateBatch: {
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildEmptyView()
+            },
+            results: []
+          },
+          results: []
+        },
+        results: []
+      };
+      const inheritedInput = Object.create({
+        headlessWaitTargetBatch: validBatch
+      });
+      inheritedInput.invokeWait = async () => undefined;
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch(inheritedInput as never)
+      ).rejects.toThrow(ValidationError);
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch(inheritedInput as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless wait target apply batch requires a headlessWaitTargetBatch wrapper."
+      );
+
+      const accessorInput = {
+        invokeWait: async () => undefined
+      };
+      Object.defineProperty(accessorInput, "headlessWaitTargetBatch", {
+        enumerable: true,
+        get() {
+          throw new Error("boom");
+        }
+      });
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch(accessorInput as never)
+      ).rejects.toThrow(ValidationError);
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch(accessorInput as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless wait target apply batch requires a headlessWaitTargetBatch wrapper."
+      );
+    });
+
+    it("should snapshot invokeWait once for the whole batch", async () => {
+      let invokeWaitReads = 0;
+      const invokedSessionIds: string[] = [];
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessWaitTargetBatch({
+          headlessWaitTargetBatch: {
+            headlessWaitCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            results: [
+              createHeadlessWaitTarget({
+                target: {
+                  attemptId: "att_snapshot_wait_1",
+                  runtime: "supported-cli",
+                  sessionId: "thr_snapshot_wait_1"
+                }
+              }),
+              createHeadlessWaitTarget({
+                target: {
+                  attemptId: "att_snapshot_wait_2",
+                  runtime: "supported-cli",
+                  sessionId: "thr_snapshot_wait_2"
+                }
+              })
+            ]
+          },
+          get invokeWait() {
+            invokeWaitReads += 1;
+
+            if (invokeWaitReads > 1) {
+              throw new Error("invokeWait getter read twice");
+            }
+
+            return async ({ sessionId }: { sessionId: string }) => {
+              invokedSessionIds.push(sessionId);
+            };
+          },
+          resolveSessionLifecycleCapability: () => true
+        } as never)
+      ).resolves.toMatchObject({
+        results: [
+          {
+            apply: {
+              apply: {
+                consume: {
+                  invoked: true
+                }
+              }
+            }
+          },
+          {
+            apply: {
+              apply: {
+                consume: {
+                  invoked: true
+                }
+              }
+            }
+          }
+        ]
+      });
+      expect(invokeWaitReads).toBe(1);
+      expect(invokedSessionIds).toEqual([
+        "thr_snapshot_wait_1",
+        "thr_snapshot_wait_2"
+      ]);
     });
 
     it("should fail fast on the first supported invoker error in batch mode", async () => {

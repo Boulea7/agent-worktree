@@ -114,6 +114,25 @@ describe("selection handoff-explanation helpers", () => {
     );
   });
 
+  it("should fail closed when reading the supplied handoff report-ready summary through an accessor-shaped input", () => {
+    expect(() =>
+      deriveAttemptHandoffExplanationSummary({
+        get reportBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffExplanationSummary({
+        get reportBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(
+      "Attempt handoff explanation summary requires report to be a readable object."
+    );
+  });
+
   it("should derive a stable invoked explanation entry", () => {
     expect(
       deriveAttemptHandoffExplanationSummary(
@@ -189,6 +208,46 @@ describe("selection handoff-explanation helpers", () => {
       invokedResults: [createInvokedExplanationEntry()],
       blockedResults: []
     });
+  });
+
+  it("should fail loudly when report.results mixes taskIds after canonicalization", () => {
+    expect(() =>
+      deriveAttemptHandoffExplanationSummary(
+        createReport([
+          createSupportedPromotionTargetApply({
+            taskId: "task_shared",
+            attemptId: "att_one"
+          }),
+          createSupportedPromotionTargetApply({
+            taskId: " task_other ",
+            attemptId: "att_two"
+          })
+        ])
+      )
+    ).toThrow(
+      "Attempt handoff report-ready requires batch.results from a single taskId."
+    );
+  });
+
+  it("should fail loudly when report.results reuses duplicate identities after canonicalization", () => {
+    expect(() =>
+      deriveAttemptHandoffExplanationSummary(
+        createReport([
+          createSupportedPromotionTargetApply({
+            taskId: "task_shared",
+            attemptId: "att_dup",
+            runtime: "codex-cli"
+          }),
+          createSupportedPromotionTargetApply({
+            taskId: " task_shared ",
+            attemptId: " att_dup ",
+            runtime: " codex-cli "
+          })
+        ])
+      )
+    ).toThrow(
+      "Attempt handoff report-ready requires batch.results to use unique (taskId, attemptId, runtime) identities."
+    );
   });
 
   it("should preserve order and derive invoked and blocked subgroups from report results", () => {
@@ -612,6 +671,7 @@ function createBlockedExplanationEntry(
 }
 
 function createPromotionTargetApply(input?: {
+  taskId?: string;
   attemptId?: string;
   runtime?: string;
   status?: AttemptPromotionTarget["status"];
@@ -620,6 +680,7 @@ function createPromotionTargetApply(input?: {
   invoked?: boolean;
 }): AttemptPromotionTargetApply {
   const target = createPromotionTarget({
+    ...(input?.taskId === undefined ? {} : { taskId: input.taskId }),
     ...(input?.attemptId === undefined ? {} : { attemptId: input.attemptId }),
     ...(input?.runtime === undefined ? {} : { runtime: input.runtime }),
     ...(input?.status === undefined ? {} : { status: input.status }),
@@ -678,6 +739,7 @@ function createBlockedPromotionTargetApply(
   overrides: Partial<AttemptPromotionTarget> = {}
 ): AttemptPromotionTargetApply {
   return createPromotionTargetApply({
+    ...(overrides.taskId === undefined ? {} : { taskId: overrides.taskId }),
     ...(overrides.attemptId === undefined ? {} : { attemptId: overrides.attemptId }),
     ...(overrides.runtime === undefined ? {} : { runtime: overrides.runtime }),
     ...(overrides.status === undefined ? {} : { status: overrides.status }),
@@ -693,6 +755,7 @@ function createSupportedPromotionTargetApply(
   overrides: Partial<AttemptPromotionTarget> = {}
 ): AttemptPromotionTargetApply {
   return createPromotionTargetApply({
+    ...(overrides.taskId === undefined ? {} : { taskId: overrides.taskId }),
     ...(overrides.attemptId === undefined ? {} : { attemptId: overrides.attemptId }),
     ...(overrides.runtime === undefined ? {} : { runtime: overrides.runtime }),
     ...(overrides.status === undefined ? {} : { status: overrides.status }),

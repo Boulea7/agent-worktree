@@ -203,6 +203,41 @@ describe("control-plane runtime-state spawn-budget helpers", () => {
       withinDepthLimit: false
     });
   });
+
+  it("should keep lineage depth known when the selected record carries a padded parentAttemptId", () => {
+    const rootRecord = createRecord({
+      attemptId: "att_root",
+      sessionId: "thr_root",
+      sourceKind: "direct",
+      lifecycleState: "active"
+    });
+    const childRecord = createRecord({
+      attemptId: "  att_child  ",
+      sessionId: "thr_child",
+      sourceKind: "fork",
+      parentAttemptId: "  att_root  ",
+      lifecycleState: "active",
+      guardrails: {
+        maxDepth: 3
+      }
+    });
+    const context = createContext([rootRecord, childRecord], "att_child");
+
+    expect(
+      deriveExecutionSessionSpawnBudget({
+        context,
+        view: buildExecutionSessionView([rootRecord, childRecord])
+      })
+    ).toEqual({
+      childCount: 0,
+      lineageDepth: 1,
+      lineageDepthKnown: true,
+      maxDepth: 3,
+      remainingDepthAllowance: 1,
+      withinChildLimit: true,
+      withinDepthLimit: true
+    });
+  });
 });
 
 function createContext(

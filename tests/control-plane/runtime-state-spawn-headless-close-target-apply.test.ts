@@ -12,6 +12,53 @@ import {
 describe(
   "control-plane runtime-state spawn-headless-close-target-apply helpers",
   () => {
+    it("should fail loudly when the top-level close target apply input is malformed", async () => {
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTarget(undefined as never)
+      ).rejects.toThrow(ValidationError);
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTarget(undefined as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless close target apply input must be an object."
+      );
+    });
+
+    it("should reject inherited or getter-backed top-level headlessCloseTarget inputs", async () => {
+      const canonicalTarget = createHeadlessCloseTarget({
+        target: {
+          attemptId: "att_top_level_close_apply",
+          runtime: "supported-cli",
+          sessionId: "thr_top_level_close_apply"
+        }
+      });
+      const inheritedInput = Object.create({
+        headlessCloseTarget: canonicalTarget
+      });
+      inheritedInput.invokeClose = async () => undefined;
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTarget(inheritedInput as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless close target apply requires a headlessCloseTarget wrapper."
+      );
+
+      const accessorInput = {
+        invokeClose: async () => undefined
+      };
+      Object.defineProperty(accessorInput, "headlessCloseTarget", {
+        enumerable: true,
+        get() {
+          throw new Error("boom");
+        }
+      });
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTarget(accessorInput as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless close target apply requires a headlessCloseTarget wrapper."
+      );
+    });
+
     it("should return the original wrapper unchanged when no close target is available", async () => {
       const headlessCloseTarget = createHeadlessCloseTarget();
       let invoked = false;
@@ -29,6 +76,27 @@ describe(
       expect(invoked).toBe(false);
     });
 
+    it("should still validate invokeClose and resolveSessionLifecycleCapability when the headless close target is blocked", async () => {
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTarget({
+          headlessCloseTarget: createHeadlessCloseTarget(),
+          invokeClose: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session close target apply requires invokeClose to be a function."
+      );
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTarget({
+          headlessCloseTarget: createHeadlessCloseTarget(),
+          invokeClose: async () => undefined,
+          resolveSessionLifecycleCapability: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session close target apply requires resolveSessionLifecycleCapability to be a function when provided."
+      );
+    });
+
     it("should fail loudly when the supplied headless close target wrapper is invalid", async () => {
       await expect(
         applyExecutionSessionSpawnHeadlessCloseTarget({
@@ -43,6 +111,58 @@ describe(
         })
       ).rejects.toThrow(
         "Execution session spawn headless close target apply requires a headlessCloseTarget wrapper."
+      );
+    });
+
+    it("should reject wrapper-level targets that come only from the prototype chain", async () => {
+      const canonicalTarget = createHeadlessCloseTarget({
+        target: {
+          attemptId: "att_proto_close_apply",
+          runtime: "supported-cli",
+          sessionId: "thr_proto_close_apply"
+        }
+      });
+      const headlessCloseTarget = Object.create({
+        target: canonicalTarget.target
+      });
+      headlessCloseTarget.headlessCloseCandidate =
+        canonicalTarget.headlessCloseCandidate;
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTarget({
+          headlessCloseTarget,
+          invokeClose: async () => undefined
+        } as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless close target apply requires headlessCloseTarget.target to be an object when provided."
+      );
+    });
+
+    it("should reject wrapper-level targets whose getter throws", async () => {
+      const canonicalTarget = createHeadlessCloseTarget({
+        target: {
+          attemptId: "att_accessor_close_apply",
+          runtime: "supported-cli",
+          sessionId: "thr_accessor_close_apply"
+        }
+      });
+      const headlessCloseTarget = {
+        headlessCloseCandidate: canonicalTarget.headlessCloseCandidate
+      };
+      Object.defineProperty(headlessCloseTarget, "target", {
+        enumerable: true,
+        get() {
+          throw new Error("boom");
+        }
+      });
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTarget({
+          headlessCloseTarget,
+          invokeClose: async () => undefined
+        } as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless close target apply requires headlessCloseTarget.target to be an object when provided."
       );
     });
 
@@ -75,6 +195,25 @@ describe(
       ).rejects.toThrow(
         "Execution session spawn headless close target apply requires headlessCloseTarget.headlessCloseCandidate to include candidate and headlessContext objects."
       );
+    });
+
+    it("should reject malformed headlessContext companions before invoking close", async () => {
+      const invokeClose = vi.fn(async () => undefined);
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTarget({
+          headlessCloseTarget: {
+            headlessCloseCandidate: {
+              candidate: {} as never,
+              headlessContext: {} as never
+            }
+          } as ExecutionSessionSpawnHeadlessCloseTarget,
+          invokeClose
+        })
+      ).rejects.toThrow(
+        "Execution session spawn headless close target apply requires headlessCloseTarget.headlessCloseCandidate.headlessContext to include context and headlessView objects."
+      );
+      expect(invokeClose).not.toHaveBeenCalled();
     });
 
     it("should compose an apply result from an available close target without widening the result shape", async () => {
@@ -252,6 +391,105 @@ describe(
       expect(invokedSessionIds).toEqual(["thr_supported_close"]);
     });
 
+    it("should snapshot headlessCloseTargetBatch.results once before applying the batch", async () => {
+      let resultsReads = 0;
+      const supportedTarget = createHeadlessCloseTarget({
+        target: {
+          attemptId: "att_supported_close_apply_results_once",
+          runtime: "supported-cli",
+          sessionId: "thr_supported_close_apply_results_once"
+        }
+      });
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch({
+          headlessCloseTargetBatch: {
+            headlessCloseCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            get results() {
+              resultsReads += 1;
+
+              if (resultsReads > 1) {
+                throw new Error("results getter read twice");
+              }
+
+              return [supportedTarget];
+            }
+          } as never,
+          invokeClose: async () => undefined,
+          resolveSessionLifecycleCapability: (runtime) => runtime === "supported-cli"
+        })
+      ).resolves.toEqual({
+        headlessCloseTargetBatch: {
+          headlessCloseCandidateBatch: {
+            headlessContextBatch: {
+              headlessViewBatch: {
+                headlessRecordBatch: {
+                  results: []
+                },
+                view: buildEmptyView()
+              },
+              results: []
+            },
+            results: []
+          },
+          results: [supportedTarget]
+        },
+        results: [
+          {
+            headlessCloseTarget: supportedTarget,
+            apply: {
+              request: {
+                attemptId: "att_supported_close_apply_results_once",
+                runtime: "supported-cli",
+                sessionId: "thr_supported_close_apply_results_once"
+              },
+              apply: {
+                consumer: {
+                  request: {
+                    attemptId: "att_supported_close_apply_results_once",
+                    runtime: "supported-cli",
+                    sessionId: "thr_supported_close_apply_results_once"
+                  },
+                  readiness: {
+                    blockingReasons: [],
+                    canConsumeClose: true,
+                    hasBlockingReasons: false,
+                    sessionLifecycleSupported: true
+                  }
+                },
+                consume: {
+                  request: {
+                    attemptId: "att_supported_close_apply_results_once",
+                    runtime: "supported-cli",
+                    sessionId: "thr_supported_close_apply_results_once"
+                  },
+                  readiness: {
+                    blockingReasons: [],
+                    canConsumeClose: true,
+                    hasBlockingReasons: false,
+                    sessionLifecycleSupported: true
+                  },
+                  invoked: true
+                }
+              }
+            }
+          }
+        ]
+      });
+      expect(resultsReads).toBe(1);
+    });
+
     it("should fail fast when the first batch entry does not provide a headless wrapper", async () => {
       const invokeClose = vi.fn(async () => undefined);
 
@@ -356,6 +594,208 @@ describe(
       ).rejects.toThrow(
         "Execution session spawn headless close target apply batch requires headlessCloseTargetBatch.results to be an array."
       );
+    });
+
+    it("should fail closed on invalid close callbacks or resolvers even when every batch entry is blocked", async () => {
+      const blockedBatch = {
+        headlessCloseCandidateBatch: {
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildEmptyView()
+            },
+            results: []
+          },
+          results: []
+        },
+        results: [createHeadlessCloseTarget(), createHeadlessCloseTarget()]
+      };
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch({
+          headlessCloseTargetBatch: blockedBatch,
+          invokeClose: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session close target apply requires invokeClose to be a function."
+      );
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch({
+          headlessCloseTargetBatch: blockedBatch,
+          invokeClose: async () => undefined,
+          resolveSessionLifecycleCapability: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session close target apply requires resolveSessionLifecycleCapability to be a function when provided."
+      );
+    });
+
+    it("should fail closed on invalid close callbacks or resolvers even when the batch is empty", async () => {
+      const emptyBatch = {
+        headlessCloseCandidateBatch: {
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildEmptyView()
+            },
+            results: []
+          },
+          results: []
+        },
+        results: []
+      };
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch({
+          headlessCloseTargetBatch: emptyBatch,
+          invokeClose: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session close target apply requires invokeClose to be a function."
+      );
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch({
+          headlessCloseTargetBatch: emptyBatch,
+          invokeClose: async () => undefined,
+          resolveSessionLifecycleCapability: "not-a-function" as never
+        })
+      ).rejects.toThrow(
+        "Execution session close target apply requires resolveSessionLifecycleCapability to be a function when provided."
+      );
+    });
+
+    it("should reject inherited or getter-backed top-level headlessCloseTargetBatch wrappers", async () => {
+      const validBatch = {
+        headlessCloseCandidateBatch: {
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildEmptyView()
+            },
+            results: []
+          },
+          results: []
+        },
+        results: []
+      };
+      const inheritedInput = Object.create({
+        headlessCloseTargetBatch: validBatch
+      });
+      inheritedInput.invokeClose = async () => undefined;
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch(inheritedInput as never)
+      ).rejects.toThrow(ValidationError);
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch(inheritedInput as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless close target apply batch requires a headlessCloseTargetBatch wrapper."
+      );
+
+      const accessorInput = {
+        invokeClose: async () => undefined
+      };
+      Object.defineProperty(accessorInput, "headlessCloseTargetBatch", {
+        enumerable: true,
+        get() {
+          throw new Error("boom");
+        }
+      });
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch(accessorInput as never)
+      ).rejects.toThrow(ValidationError);
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch(accessorInput as never)
+      ).rejects.toThrow(
+        "Execution session spawn headless close target apply batch requires a headlessCloseTargetBatch wrapper."
+      );
+    });
+
+    it("should snapshot invokeClose once for the whole batch", async () => {
+      let invokeCloseReads = 0;
+      const invokedSessionIds: string[] = [];
+
+      await expect(
+        applyExecutionSessionSpawnHeadlessCloseTargetBatch({
+          headlessCloseTargetBatch: {
+            headlessCloseCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            results: [
+              createHeadlessCloseTarget({
+                target: {
+                  attemptId: "att_snapshot_close_1",
+                  runtime: "supported-cli",
+                  sessionId: "thr_snapshot_close_1"
+                }
+              }),
+              createHeadlessCloseTarget({
+                target: {
+                  attemptId: "att_snapshot_close_2",
+                  runtime: "supported-cli",
+                  sessionId: "thr_snapshot_close_2"
+                }
+              })
+            ]
+          },
+          get invokeClose() {
+            invokeCloseReads += 1;
+
+            if (invokeCloseReads > 1) {
+              throw new Error("invokeClose getter read twice");
+            }
+
+            return async ({ sessionId }: { sessionId: string }) => {
+              invokedSessionIds.push(sessionId);
+            };
+          },
+          resolveSessionLifecycleCapability: () => true
+        } as never)
+      ).resolves.toMatchObject({
+        results: [
+          {
+            apply: {
+              apply: {
+                consume: {
+                  invoked: true
+                }
+              }
+            }
+          },
+          {
+            apply: {
+              apply: {
+                consume: {
+                  invoked: true
+                }
+              }
+            }
+          }
+        ]
+      });
+      expect(invokeCloseReads).toBe(1);
+      expect(invokedSessionIds).toEqual([
+        "thr_snapshot_close_1",
+        "thr_snapshot_close_2"
+      ]);
     });
 
     it("should fail fast on the first supported invoker error in batch mode", async () => {

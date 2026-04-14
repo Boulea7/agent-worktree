@@ -166,6 +166,68 @@ describe("control-plane runtime-state close-apply helpers", () => {
     );
   });
 
+  it("should fail loudly when the apply input or callbacks are malformed", async () => {
+    await expect(
+      applyExecutionSessionClose(undefined as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyExecutionSessionClose(undefined as never)
+    ).rejects.toThrow(
+      "Execution session close apply input must be an object."
+    );
+
+    await expect(
+      applyExecutionSessionClose({
+        request: createCloseRequest(),
+        invokeClose: "close" as never
+      })
+    ).rejects.toThrow(
+      "Execution session close apply requires invokeClose to be a function."
+    );
+
+    await expect(
+      applyExecutionSessionClose({
+        request: createCloseRequest(),
+        invokeClose: async () => undefined,
+        resolveSessionLifecycleCapability: "yes" as never
+      })
+    ).rejects.toThrow(
+      "Execution session close apply requires resolveSessionLifecycleCapability to be a function when provided."
+    );
+  });
+
+  it("should snapshot invokeClose once before reusing it across the apply flow", async () => {
+    let invokeCloseReads = 0;
+    const seenSessionIds: string[] = [];
+
+    await expect(
+      applyExecutionSessionClose({
+        request: createCloseRequest(),
+        get invokeClose() {
+          invokeCloseReads += 1;
+
+          if (invokeCloseReads > 1) {
+            throw new Error("invokeClose getter read twice");
+          }
+
+          return async ({ sessionId }: { sessionId: string }) => {
+            seenSessionIds.push(sessionId);
+          };
+        },
+        resolveSessionLifecycleCapability: () => true
+      } as never)
+    ).resolves.toMatchObject({
+      consume: {
+        invoked: true,
+        request: {
+          sessionId: "thr_active"
+        }
+      }
+    });
+    expect(invokeCloseReads).toBe(1);
+    expect(seenSessionIds).toEqual(["thr_active"]);
+  });
+
   it("should surface invoker failures directly without returning a partial apply result", async () => {
     const expectedError = new Error("close failed");
 

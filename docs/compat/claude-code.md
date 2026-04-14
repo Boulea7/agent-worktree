@@ -40,7 +40,7 @@ In the current Phase 4 compatibility baseline, Claude Code remains descriptor-on
 
 - `doctor` may report Claude Code in the Tier 1 catalog
 - `compat probe claude-code` currently returns a descriptor-only / not-probed result
-- public `compat smoke claude-code` remains available as a bounded read-only command, but descriptor-only coverage currently returns `smokeStatus: "not_supported"` with `diagnosis.code: "descriptor_only"`
+- public `compat smoke claude-code` remains available as a bounded compatibility command, but descriptor-only coverage currently returns `smokeStatus: "not_supported"` with `diagnosis.code: "descriptor_only"`
 - no public execution, wait, close, spawn, or lifecycle surface exists for Claude Code in `agent-worktree` today
 
 This page describes why Claude Code remains a Tier 1 target and what it could eventually map to.

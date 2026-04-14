@@ -4,7 +4,8 @@ This document defines the intended machine-readable manifest for an agent attemp
 
 ## Purpose
 
-The runtime manifest is the durable record of an attempt launched by the orchestrator.
+The runtime manifest is the durable record of an orchestrated attempt.
+It may be created as soon as the orchestrator creates the attempt, before any runtime execution has started.
 
 It exists so that:
 
@@ -39,6 +40,25 @@ The exact storage backend is intentionally unspecified.
 
 These are the minimum fields that early validators should require.
 
+The current `verification.state` vocabulary is intentionally small and
+validation-backed:
+
+- `pending`
+- `passed`
+- `verified`
+- `failed`
+- `error`
+
+Early validators SHOULD reject values outside this set rather than silently
+normalizing them.
+The wider TypeScript `AttemptVerification` object type intentionally remains
+looser than this runtime manifest boundary so internal verification ingestion
+may still classify legacy or unknown payloads before they are rewritten into a
+validated manifest shape.
+The default public manifest barrel does not export standalone verification-ingest
+helper types, but `AttemptManifest` may still carry that wider in-memory
+verification shape until persistence reaches this stricter manifest boundary.
+
 ## Recommended Early Lifecycle Fields
 
 ```json
@@ -68,9 +88,17 @@ These are the minimum fields that early validators should require.
 ```
 
 These fields are recommended once worktree lifecycle commands begin to land, but they are not required for the earliest manifest validators.
-`repoRoot` is an additive lifecycle field that records the canonical repository root for the attempt.
+The current `supportTier` vocabulary is intentionally small and validation-backed:
+
+- `tier1`
+- `experimental`
+
+Early validators SHOULD reject values outside this set rather than silently
+normalizing them.
+`repoRoot` is an additive lifecycle field that identifies the repository root for the attempt.
 Early consumers SHOULD tolerate its absence, and later producers SHOULD prefer populating it once the worktree lifecycle exists.
-Session-backed execution metadata still remains intentionally non-public in the current phase. The current schema may carry a bounded internal `session` block in the manifest, but public consumers SHOULD NOT read it as attach/resume truth or as a promise of lifecycle control.
+Current producers may still persist lexical absolute lifecycle paths such as `repoRoot` and `worktreePath`, while internal boundary checks canonicalize those paths through realpath-backed truth before enforcing safety decisions.
+Session-backed execution metadata still remains intentionally non-public in the current phase. The current schema may carry a bounded internal `session` block in the manifest, but public consumers SHOULD NOT read it as attach/resume truth or as a promise of lifecycle control. The current bounded persistence shape is limited to a non-empty `backend` plus a non-empty `sessionId`, even though in-memory objects may still carry additive extra keys before manifest validation runs.
 
 ## Thin Attempt Provenance Fields
 
@@ -93,6 +121,13 @@ The current source vocabulary is intentionally small:
 These fields are additive provenance metadata, not runtime-control state.
 Early consumers SHOULD tolerate their absence for backward compatibility with older manifests.
 Current producers SHOULD emit `sourceKind: "direct"` for plain `attempt create` flows and SHOULD omit `parentAttemptId` for direct attempts.
+Current validators are stricter than that shorthand:
+
+- `parentAttemptId` MUST NOT appear unless `sourceKind` is present
+- `sourceKind: "direct"` MUST NOT carry `parentAttemptId`
+- non-direct `sourceKind` values MUST carry a non-empty `parentAttemptId`
+- `parentAttemptId` MUST NOT equal `attemptId`
+
 When `parentAttemptId` is present, it is an opaque reference to another attempt record; consumers SHOULD NOT treat it as proof that the parent manifest is still present, valid, or resumable.
 
 ## Required Semantics
@@ -116,7 +151,7 @@ Cleanup MAY remove a worktree or other transient artifacts, but it SHOULD preser
 The most common visible outcome is expected to be `status: "cleaned"` plus an updated timestamp.
 Phase 2 cleanup MUST NOT delete branches and MUST fail clearly when it cannot confirm a safe cleanup target.
 Cleanup SHOULD preserve thin provenance fields such as `sourceKind` and `parentAttemptId` when rewriting a manifest into a cleaned state.
-In the current implementation, cleanup also refuses to proceed while a durable `manifest.session` record is still present, regardless of whether the stored attempt status is `running`; callers should treat session presence itself as the blocking precondition rather than expecting cleanup to silently clear session metadata.
+In the current implementation, cleanup refuses to proceed while a durable `manifest.session` record is still present on non-`cleaned` cleanup paths; the separate `already_cleaned` fast path remains unchanged. Callers SHOULD treat session presence as a cleanup blocker rather than expecting cleanup to silently clear session metadata.
 Any future internal close-preflight metadata MUST remain derived and non-manifest-backed in this phase; manifest rewrites for cleanup MUST NOT persist close blockers, closeability summaries, or other internal preflight-only hints as durable state.
 
 ## Minimal Status Vocabulary

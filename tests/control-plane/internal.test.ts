@@ -28,12 +28,16 @@ import type {
   ExecutionSessionSpawnHeadlessCloseTargetApply,
   ExecutionSessionSpawnHeadlessCloseTargetApplyBatch,
   ExecutionSessionSpawnHeadlessCloseTarget,
+  ExecutionSessionSpawnHeadlessCloseTargetBatch,
+  ExecutionSessionSpawnHeadlessCloseCandidateBatch,
   ExecutionSessionSpawnHeadlessInput,
   ExecutionSessionSpawnHeadlessWaitRequest,
+  ExecutionSessionSpawnHeadlessWaitRequestInput,
   ExecutionSessionSpawnHeadlessWaitRequestBatch,
   ExecutionSessionSpawnHeadlessWaitTargetApply,
   ExecutionSessionSpawnHeadlessWaitTargetApplyBatch,
   ExecutionSessionSpawnRequest,
+  SessionLifecycleCapabilityResolver,
   ExecutionSessionWaitApply,
   ExecutionSessionWaitApplyBatch,
   ExecutionSessionWaitConsume,
@@ -197,6 +201,10 @@ describe("control-plane internal exports", () => {
     };
 
     expectTypeOf<ControlPlaneInternalExports>().not.toBeAny();
+    expectTypeOf<ExecutionSessionSpawnHeadlessWaitRequestInput>().not.toBeAny();
+    expectTypeOf<ExecutionSessionSpawnHeadlessCloseCandidateBatch>().not.toBeAny();
+    expectTypeOf<ExecutionSessionSpawnHeadlessCloseTargetBatch>().not.toBeAny();
+    expectTypeOf<SessionLifecycleCapabilityResolver>().not.toBeAny();
   });
 });
 

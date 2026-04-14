@@ -61,10 +61,17 @@ export interface AttemptPromotionAuditCandidate {
   skippedCheckNames: string[];
 }
 
+export interface AttemptSelectedIdentity {
+  taskId: string;
+  attemptId: string;
+  runtime: string;
+}
+
 export interface AttemptPromotionAuditSummary {
   auditBasis: "promotion_result";
   taskId: string | undefined;
   selectedAttemptId: string | undefined;
+  selectedIdentity: AttemptSelectedIdentity | undefined;
   candidateCount: number;
   comparableCandidateCount: number;
   promotionReadyCandidateCount: number;
@@ -76,6 +83,7 @@ export interface AttemptPromotionReport {
   reportBasis: "promotion_audit_summary";
   taskId: string | undefined;
   selectedAttemptId: string | undefined;
+  selectedIdentity: AttemptSelectedIdentity | undefined;
   candidateCount: number;
   comparableCandidateCount: number;
   promotionReadyCandidateCount: number;
@@ -113,6 +121,7 @@ export interface AttemptPromotionExplanationSummary {
   explanationBasis: "promotion_report";
   taskId: string | undefined;
   selectedAttemptId: string | undefined;
+  selectedIdentity: AttemptSelectedIdentity | undefined;
   candidateCount: number;
   comparableCandidateCount: number;
   promotionReadyCandidateCount: number;
@@ -131,6 +140,7 @@ export interface AttemptPromotionDecisionSummary {
   decisionBasis: "promotion_explanation_summary";
   taskId: string | undefined;
   selectedAttemptId: string | undefined;
+  selectedIdentity: AttemptSelectedIdentity | undefined;
   candidateCount: number;
   comparableCandidateCount: number;
   promotionReadyCandidateCount: number;
@@ -533,7 +543,8 @@ export interface AttemptHandoffFinalizationClosureSummary {
 
 export type AttemptHandoffFinalizationCloseoutDecisionBlockingReason =
   | "no_results"
-  | "handoff_finalization_unsupported";
+  | "handoff_finalization_unsupported"
+  | "handoff_finalization_mixed_disposition";
 
 export interface AttemptHandoffFinalizationCloseoutDecisionSummary {
   decisionBasis: "handoff_finalization_closure_summary";

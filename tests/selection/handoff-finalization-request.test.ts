@@ -53,6 +53,25 @@ describe("selection handoff-finalization-request helpers", () => {
     ).toThrow(ValidationError);
   });
 
+  it("should fail closed when reading the finalization target summary through an accessor-shaped input", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationRequestSummary({
+        get finalizationBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationRequestSummary({
+        get finalizationBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization request summary requires summary to be a readable object."
+    );
+  });
+
   it("should return undefined when the supplied blocked finalization target summary is valid", () => {
     expect(
       deriveAttemptHandoffFinalizationRequestSummary(createFinalizationTargetSummary([]))
@@ -268,6 +287,89 @@ describe("selection handoff-finalization-request helpers", () => {
     );
   });
 
+  it("should fail loudly when a target identity field is inherited instead of owned", () => {
+    const inheritedTarget = Object.create({
+      taskId: "task_inherited",
+      attemptId: "att_inherited",
+      runtime: "codex-cli",
+      status: "created",
+      sourceKind: undefined
+    }) as ReturnType<typeof createFinalizationTargetSummary>["targets"][number];
+
+    const act = () =>
+      deriveAttemptHandoffFinalizationRequestSummary({
+        ...createFinalizationTargetSummary([
+          {
+            taskId: "task_shared",
+            attemptId: "att_ready",
+            runtime: "codex-cli",
+            status: "created",
+            sourceKind: undefined
+          }
+        ]),
+        targets: [inheritedTarget],
+        resultCount: 1,
+        invokedResultCount: 1,
+        blockedResultCount: 0,
+        blockingReasons: []
+      });
+
+    expect(act).toThrow(ValidationError);
+    expect(act).toThrow(
+      "Attempt handoff finalization request summary requires target.taskId to be a non-empty string."
+    );
+  });
+
+  it("should fail loudly when summary.targets mixes taskIds after normalization", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationRequestSummary(
+        createFinalizationTargetSummary([
+          {
+            taskId: "task_shared",
+            attemptId: "att_a",
+            runtime: "codex-cli",
+            status: "created",
+            sourceKind: undefined
+          },
+          {
+            taskId: " task_other ",
+            attemptId: "att_b",
+            runtime: "gemini-cli",
+            status: "running",
+            sourceKind: "delegated"
+          }
+        ])
+      )
+    ).toThrow(
+      "Attempt handoff finalization request summary requires summary.targets from a single taskId."
+    );
+  });
+
+  it("should fail loudly when summary.targets reuses normalized target identities", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationRequestSummary(
+        createFinalizationTargetSummary([
+          {
+            taskId: "task_shared",
+            attemptId: "att_dup",
+            runtime: "codex-cli",
+            status: "created",
+            sourceKind: undefined
+          },
+          {
+            taskId: " task_shared ",
+            attemptId: " att_dup ",
+            runtime: " codex-cli ",
+            status: "running",
+            sourceKind: "delegated"
+          }
+        ])
+      )
+    ).toThrow(
+      "Attempt handoff finalization request summary requires summary.targets to use unique (taskId, attemptId, runtime) identities."
+    );
+  });
+
   it("should fail loudly when summary.blockingReasons contains sparse array holes", () => {
     const blockingReasons = new Array<string>(1);
 
@@ -358,22 +460,22 @@ describe("selection handoff-finalization-request helpers", () => {
     );
   });
 
-  it("should derive stable minimal requests from finalization targets in input order", () => {
+  it("should derive stable minimal requests from single-task finalization targets in input order", () => {
     expect(
       deriveAttemptHandoffFinalizationRequestSummary(
         createFinalizationTargetSummary([
-          {
-            taskId: "task_one",
-            attemptId: "att_one",
-            runtime: "gemini-cli",
-            status: "running",
+        {
+          taskId: "task_shared",
+          attemptId: "att_one",
+          runtime: "gemini-cli",
+          status: "running",
             sourceKind: "delegated"
           },
-          {
-            taskId: "task_two",
-            attemptId: "att_two",
-            runtime: "codex-cli",
-            status: "created",
+        {
+          taskId: "task_shared",
+          attemptId: "att_two",
+          runtime: "codex-cli",
+          status: "created",
             sourceKind: "fork"
           }
         ])
@@ -387,14 +489,14 @@ describe("selection handoff-finalization-request helpers", () => {
       canFinalizeHandoff: true,
       requests: [
         {
-          taskId: "task_one",
+          taskId: "task_shared",
           attemptId: "att_one",
           runtime: "gemini-cli",
           status: "running",
           sourceKind: "delegated"
         },
         {
-          taskId: "task_two",
+          taskId: "task_shared",
           attemptId: "att_two",
           runtime: "codex-cli",
           status: "created",
@@ -596,7 +698,7 @@ function createPromotionCandidate(
 function createManifest(
   overrides: {
     attemptId: string;
-    runtime?: string;
+    runtime?: import("../../src/manifest/types.js").AttemptManifest["runtime"];
     sourceKind?: "direct" | "resume" | "fork" | "delegated";
     status?: "created" | "running" | "paused" | "failed" | "verified" | "merged" | "cleaned";
     taskId?: string;

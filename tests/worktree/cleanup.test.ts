@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -200,26 +200,30 @@ describe("cleanupAttempt", () => {
     ).rejects.toThrow(ValidationError);
   });
 
-  it("should reject cleanup when the worktree is dirty", async () => {
-    const { manifest, manifestRoot, worktreeRoot } = await createFixtureAttempt(
-      "att_dirty",
-      "Dirty cleanup"
-    );
+  it(
+    "should reject cleanup when the worktree is dirty",
+    async () => {
+      const { manifest, manifestRoot, worktreeRoot } = await createFixtureAttempt(
+        "att_dirty",
+        "Dirty cleanup"
+      );
 
-    await writeFile(
-      path.join(manifest.worktreePath!, "dirty.txt"),
-      "dirty\n",
-      "utf8"
-    );
+      await writeFile(
+        path.join(manifest.worktreePath!, "dirty.txt"),
+        "dirty\n",
+        "utf8"
+      );
 
-    await expect(
-      cleanupAttempt({
-        attemptId: manifest.attemptId,
-        manifestRoot,
-        worktreeRoot
-      })
-    ).rejects.toThrow(ValidationError);
-  });
+      await expect(
+        cleanupAttempt({
+          attemptId: manifest.attemptId,
+          manifestRoot,
+          worktreeRoot
+        })
+      ).rejects.toThrow(ValidationError);
+    },
+    10_000
+  );
 
   it("should reject cleanup when the manifest points outside the controlled worktree root", async () => {
     const { manifest, manifestRoot, worktreeRoot } = await createFixtureAttempt(
@@ -265,18 +269,189 @@ describe("cleanupAttempt", () => {
     ).rejects.toThrow(ValidationError);
   });
 
-  it(
-    "should reject cleanup when a running attempt manifest still records a session",
-    async () => {
+  it("should reject cleanup when repoRoot is missing from the manifest", async () => {
     const { manifest, manifestRoot, worktreeRoot } = await createFixtureAttempt(
-      "att_running",
-      "Running cleanup"
+      "att_missing_repo_root",
+      "Missing repo root"
+    );
+    const { repoRoot: _repoRoot, ...manifestWithoutRepoRoot } = manifest;
+
+    await writeManifest(
+      manifestWithoutRepoRoot,
+      { rootDir: manifestRoot }
+    );
+
+    await expect(
+      cleanupAttempt({
+        attemptId: manifest.attemptId,
+        manifestRoot,
+        worktreeRoot
+      })
+    ).rejects.toThrow(
+      `Attempt ${manifest.attemptId} cannot be cleaned because repoRoot is missing from the manifest.`
+    );
+  });
+
+  it("should reject cleanup when repoRoot or worktreePath are not absolute", async () => {
+    const { manifest, manifestRoot, worktreeRoot } = await createFixtureAttempt(
+      "att_relative_paths",
+      "Relative paths"
     );
 
     await writeManifest(
       {
         ...manifest,
-        status: "running",
+        repoRoot: "relative/repo",
+        worktreePath: "relative/worktree"
+      },
+      { rootDir: manifestRoot }
+    );
+
+    await expect(
+      cleanupAttempt({
+        attemptId: manifest.attemptId,
+        manifestRoot,
+        worktreeRoot
+      })
+    ).rejects.toThrow(
+      `Attempt ${manifest.attemptId} cannot be cleaned because repoRoot and worktreePath must be absolute paths.`
+    );
+  });
+
+  it("should reject cleanup when the manifest points at the controlled worktree root itself", async () => {
+    const { manifest, manifestRoot, worktreeRoot } = await createFixtureAttempt(
+      "att_worktree_root",
+      "Worktree root"
+    );
+
+    await writeManifest(
+      {
+        ...manifest,
+        worktreePath: worktreeRoot
+      },
+      { rootDir: manifestRoot }
+    );
+
+    await expect(
+      cleanupAttempt({
+        attemptId: manifest.attemptId,
+        manifestRoot,
+        worktreeRoot
+      })
+    ).rejects.toThrow(
+      `Attempt ${manifest.attemptId} cannot be cleaned because its worktree path points at the worktree root itself.`
+    );
+  });
+
+  it("should reject cleanup when the manifest points inside the manifest store", async () => {
+    const { manifest, manifestRoot, worktreeRoot } = await createFixtureAttempt(
+      "att_manifest_overlap",
+      "Manifest overlap"
+    );
+
+    await writeManifest(
+      {
+        ...manifest,
+        worktreePath: path.join(manifestRoot, "att_manifest_overlap")
+      },
+      { rootDir: manifestRoot }
+    );
+
+    await expect(
+      cleanupAttempt({
+        attemptId: manifest.attemptId,
+        manifestRoot,
+        worktreeRoot: os.tmpdir()
+      })
+    ).rejects.toThrow(
+      `Attempt ${manifest.attemptId} cannot be cleaned because its worktree path overlaps the manifest store.`
+    );
+  });
+
+  it("should match registered worktrees through a symlinked controlled root using real paths", async () => {
+    const { manifest, manifestRoot, repoRoot, worktreeRoot } =
+      await createFixtureAttempt("att_symlink_cleanup", "Symlink cleanup");
+    const aliasContainer = await createTempDirectory("agent-worktree-alias-");
+    const symlinkedWorktreeRoot = path.join(aliasContainer, "worktrees-link");
+    const symlinkedWorktreePath = path.join(
+      symlinkedWorktreeRoot,
+      path.basename(manifest.worktreePath!)
+    );
+
+    await symlink(worktreeRoot, symlinkedWorktreeRoot, "dir");
+    await writeManifest(
+      {
+        ...manifest,
+        worktreePath: symlinkedWorktreePath
+      },
+      { rootDir: manifestRoot }
+    );
+
+    const result = await cleanupAttempt({
+      attemptId: manifest.attemptId,
+      manifestRoot,
+      worktreeRoot: symlinkedWorktreeRoot
+    });
+
+    expect(result.cleanup).toEqual({
+      outcome: "removed",
+      worktreeRemoved: true
+    });
+
+    const worktreeListOutput = await runGit(["worktree", "list", "--porcelain"], {
+      cwd: repoRoot
+    });
+    expect(worktreeListOutput).not.toContain(manifest.worktreePath);
+  }, 10_000);
+
+  it("should clean a managed worktree when the stored path traverses symlink plus dot-dot segments", async () => {
+    const { manifest, manifestRoot, repoRoot, worktreeRoot } =
+      await createFixtureAttempt("att_symlink_parent_cleanup", "Symlink parent cleanup");
+    const aliasContainer = await createTempDirectory("agent-worktree-alias-");
+    const nestedRoot = path.join(worktreeRoot, "nested-anchor");
+    const symlinkedNestedRoot = path.join(aliasContainer, "nested-link");
+    const escapedWorktreePath =
+      `${symlinkedNestedRoot}${path.sep}..${path.sep}${path.basename(manifest.worktreePath!)}`;
+
+    await mkdir(nestedRoot, { recursive: true });
+    await symlink(nestedRoot, symlinkedNestedRoot, "dir");
+    await writeManifest(
+      {
+        ...manifest,
+        worktreePath: escapedWorktreePath
+      },
+      { rootDir: manifestRoot }
+    );
+
+    const result = await cleanupAttempt({
+      attemptId: manifest.attemptId,
+      manifestRoot,
+      worktreeRoot
+    });
+
+    expect(result.cleanup).toEqual({
+      outcome: "removed",
+      worktreeRemoved: true
+    });
+
+    const worktreeListOutput = await runGit(["worktree", "list", "--porcelain"], {
+      cwd: repoRoot
+    });
+    expect(worktreeListOutput).not.toContain(manifest.worktreePath);
+  }, 10_000);
+
+  it(
+    "should reject cleanup when a non-cleaned attempt manifest still records a session",
+    async () => {
+    const { manifest, manifestRoot, worktreeRoot } = await createFixtureAttempt(
+      "att_session_blocked",
+      "Session-blocked cleanup"
+    );
+
+    await writeManifest(
+      {
+        ...manifest,
+        status: "created",
         session: {
           backend: "tmux",
           sessionId: "session-1"
@@ -292,8 +467,83 @@ describe("cleanupAttempt", () => {
         worktreeRoot
       })
     ).rejects.toThrow(ValidationError);
+
+    await expect(
+      cleanupAttempt({
+        attemptId: manifest.attemptId,
+        manifestRoot,
+        worktreeRoot
+      })
+    ).rejects.toThrow(
+      `Attempt ${manifest.attemptId} cannot be cleaned while a session is recorded in the manifest.`
+    );
     }
   );
+
+  it("should keep the already-cleaned fast path even when a cleaned manifest still records a session", async () => {
+    const { manifest, manifestRoot, worktreeRoot } = await createFixtureAttempt(
+      "att_cleaned_session_fast_path",
+      "Already cleaned session fast path"
+    );
+
+    await runGit(["worktree", "remove", manifest.worktreePath!], {
+      cwd: manifest.repoRoot!
+    });
+
+    const manifestWithSession = {
+      ...manifest,
+      status: "cleaned" as const,
+      session: {
+        backend: "tmux",
+        sessionId: "session-cleaned"
+      }
+    };
+
+    await writeManifest(manifestWithSession, { rootDir: manifestRoot });
+
+    await expect(
+      cleanupAttempt({
+        attemptId: manifest.attemptId,
+        manifestRoot,
+        worktreeRoot
+      })
+    ).resolves.toEqual({
+      attempt: manifestWithSession,
+      cleanup: {
+        outcome: "already_cleaned",
+        worktreeRemoved: false
+      }
+    });
+
+    await expect(
+      readManifest(manifest.attemptId, { rootDir: manifestRoot })
+    ).resolves.toEqual(manifestWithSession);
+  });
+
+  it("should reject already-cleaned manifests when worktree material still exists", async () => {
+    const { manifest, manifestRoot, worktreeRoot } = await createFixtureAttempt(
+      "att_cleaned_residue",
+      "Cleaned residue"
+    );
+
+    await writeManifest(
+      {
+        ...manifest,
+        status: "cleaned"
+      },
+      { rootDir: manifestRoot }
+    );
+
+    await expect(
+      cleanupAttempt({
+        attemptId: manifest.attemptId,
+        manifestRoot,
+        worktreeRoot
+      })
+    ).rejects.toThrow(
+      `Attempt ${manifest.attemptId} is marked cleaned, but git still reports worktree material for it.`
+    );
+  });
 
   it("should reject cleanup when the stored manifest attemptId does not match the selector", async () => {
     const { manifest, manifestRoot, worktreeRoot } = await createFixtureAttempt(

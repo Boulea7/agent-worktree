@@ -11,7 +11,10 @@ import type {
   AttemptHandoffFinalizationConsumerBlockingReason,
   AttemptHandoffFinalizationRequest
 } from "./types.js";
+import { normalizeHandoffFinalizationCapability } from "./handoff-finalization-capability-shared.js";
 import {
+  accessSelectionValue,
+  rethrowSelectionAccessError,
   validateSelectionObjectInput,
   validateSelectionOptionalFunction
 } from "./entry-validation.js";
@@ -23,59 +26,73 @@ export function deriveAttemptHandoffFinalizationConsumer(input: {
   request: AttemptHandoffFinalizationRequest | undefined;
   resolveHandoffFinalizationCapability?: AttemptHandoffFinalizationCapabilityResolver;
 }): AttemptHandoffFinalizationConsumer | undefined {
-  validateSelectionObjectInput(
-    input,
-    "Attempt handoff finalization consumer input must be an object."
-  );
-  validateSelectionOptionalFunction(
-    input.resolveHandoffFinalizationCapability,
-    "Attempt handoff finalization consumer requires resolveHandoffFinalizationCapability to be a function when provided."
-  );
-  const { request } = input;
+  try {
+    validateSelectionObjectInput(
+      input,
+      "Attempt handoff finalization consumer input must be an object."
+    );
+    validateSelectionOptionalFunction(
+      input.resolveHandoffFinalizationCapability,
+      "Attempt handoff finalization consumer requires resolveHandoffFinalizationCapability to be a function when provided."
+    );
+    const { request } = input;
 
-  if (request === undefined) {
-    return undefined;
-  }
-
-  const taskId = normalizeRequiredString(request.taskId, "request.taskId");
-  const attemptId = normalizeRequiredString(request.attemptId, "request.attemptId");
-  const runtime = normalizeRequiredString(request.runtime, "request.runtime");
-  validateAttemptStatus(request.status);
-  validateAttemptSourceKind(request.sourceKind);
-
-  const handoffFinalizationSupported = normalizeHandoffFinalizationCapability(
-    input.resolveHandoffFinalizationCapability === undefined
-      ? false
-      : input.resolveHandoffFinalizationCapability(runtime)
-  );
-  const blockingReasons: AttemptHandoffFinalizationConsumerBlockingReason[] =
-    handoffFinalizationSupported ? [] : ["handoff_finalization_unsupported"];
-
-  return {
-    request: {
-      taskId,
-      attemptId,
-      runtime,
-      status: request.status,
-      sourceKind: request.sourceKind
-    },
-    readiness: {
-      blockingReasons,
-      canConsumeHandoffFinalization: blockingReasons.length === 0,
-      hasBlockingReasons: blockingReasons.length > 0,
-      handoffFinalizationSupported
+    if (request === undefined) {
+      return undefined;
     }
-  };
-}
 
-function normalizeHandoffFinalizationCapability(value: unknown): boolean {
-  if (typeof value !== "boolean") {
-    throw new ValidationError(
-      "Attempt handoff finalization consumer requires resolveHandoffFinalizationCapability to return a boolean."
+    validateSelectionObjectInput(
+      request,
+      "Attempt handoff finalization consumer requires request to be an object when provided."
+    );
+
+    const taskId = normalizeRequiredString(
+      accessSelectionValue(request, "taskId"),
+      "request.taskId"
+    );
+    const attemptId = normalizeRequiredString(
+      accessSelectionValue(request, "attemptId"),
+      "request.attemptId"
+    );
+    const runtime = normalizeRequiredString(
+      accessSelectionValue(request, "runtime"),
+      "request.runtime"
+    );
+    const status = accessSelectionValue(request, "status");
+    const sourceKind = accessSelectionValue(request, "sourceKind");
+    validateAttemptStatus(status);
+    validateAttemptSourceKind(sourceKind);
+
+    const handoffFinalizationSupported = normalizeHandoffFinalizationCapability(
+      input.resolveHandoffFinalizationCapability === undefined
+        ? false
+        : input.resolveHandoffFinalizationCapability(runtime),
+      "Attempt handoff finalization consumer"
+    );
+    const blockingReasons: AttemptHandoffFinalizationConsumerBlockingReason[] =
+      handoffFinalizationSupported ? [] : ["handoff_finalization_unsupported"];
+
+    return {
+      request: {
+        taskId,
+        attemptId,
+        runtime,
+        status: status as AttemptStatus,
+        sourceKind: sourceKind as AttemptSourceKind | undefined
+      },
+      readiness: {
+        blockingReasons,
+        canConsumeHandoffFinalization: blockingReasons.length === 0,
+        hasBlockingReasons: blockingReasons.length > 0,
+        handoffFinalizationSupported
+      }
+    };
+  } catch (error) {
+    rethrowSelectionAccessError(
+      error,
+      "Attempt handoff finalization consumer input must be a readable object."
     );
   }
-
-  return value;
 }
 
 function normalizeRequiredString(value: unknown, fieldName: string): string {

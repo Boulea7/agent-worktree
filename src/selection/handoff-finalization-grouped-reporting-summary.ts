@@ -1,12 +1,11 @@
 import { ValidationError } from "../core/errors.js";
+import { readSelectionValue } from "./entry-validation.js";
 import {
-  attemptSourceKinds,
-  attemptStatuses,
-  type AttemptSourceKind,
-  type AttemptStatus
-} from "../manifest/types.js";
+  validateDownstreamSingleTaskBoundary,
+  validateDownstreamUniqueIdentity
+} from "./downstream-identity-guardrails.js";
+import { validateAndCloneAttemptHandoffFinalizationReportReadyEntry } from "./handoff-finalization-report-ready-entry-shared.js";
 import type {
-  AttemptHandoffFinalizationConsumerBlockingReason,
   AttemptHandoffFinalizationExplanationCode,
   AttemptHandoffFinalizationGroupedProjectionGroup,
   AttemptHandoffFinalizationGroupedProjectionSummary,
@@ -24,12 +23,6 @@ const validExplanationCodes = new Set<AttemptHandoffFinalizationExplanationCode>
   "handoff_finalization_invoked",
   "handoff_finalization_blocked_unsupported"
 ]);
-const validBlockingReasons =
-  new Set<AttemptHandoffFinalizationConsumerBlockingReason>([
-    "handoff_finalization_unsupported"
-  ]);
-const validAttemptStatuses = new Set<AttemptStatus>(attemptStatuses);
-const validAttemptSourceKinds = new Set<AttemptSourceKind>(attemptSourceKinds);
 
 export function deriveAttemptHandoffFinalizationGroupedReportingSummary(
   summary: AttemptHandoffFinalizationGroupedProjectionSummary | undefined
@@ -38,8 +31,8 @@ export function deriveAttemptHandoffFinalizationGroupedReportingSummary(
     return undefined;
   }
 
-  validateSummary(summary);
-  const groups = validateGroups(summary.groups);
+  const normalizedSummary = normalizeSummary(summary);
+  const groups = validateGroups(normalizedSummary.groups);
 
   const resultCount = groups.reduce((sum, group) => sum + group.resultCount, 0);
   const invokedResultCount = groups.reduce(
@@ -51,19 +44,19 @@ export function deriveAttemptHandoffFinalizationGroupedReportingSummary(
     0
   );
 
-  if (summary.resultCount !== resultCount) {
+  if (normalizedSummary.resultCount !== resultCount) {
     throw new ValidationError(
       "Attempt handoff finalization grouped reporting summary requires summary.resultCount to match the canonical total derived from summary.groups."
     );
   }
 
-  if (summary.invokedResultCount !== invokedResultCount) {
+  if (normalizedSummary.invokedResultCount !== invokedResultCount) {
     throw new ValidationError(
       "Attempt handoff finalization grouped reporting summary requires summary.invokedResultCount to match the canonical invoked total derived from summary.groups."
     );
   }
 
-  if (summary.blockedResultCount !== blockedResultCount) {
+  if (normalizedSummary.blockedResultCount !== blockedResultCount) {
     throw new ValidationError(
       "Attempt handoff finalization grouped reporting summary requires summary.blockedResultCount to match the canonical blocked total derived from summary.groups."
     );
@@ -78,36 +71,87 @@ export function deriveAttemptHandoffFinalizationGroupedReportingSummary(
   };
 }
 
-function validateSummary(
+function normalizeSummary(
   summary: AttemptHandoffFinalizationGroupedProjectionSummary
-): void {
+): {
+  resultCount: number;
+  invokedResultCount: number;
+  blockedResultCount: number;
+  groups: readonly AttemptHandoffFinalizationGroupedProjectionGroup[];
+} {
   if (!isRecord(summary)) {
     throw new ValidationError(
       "Attempt handoff finalization grouped reporting summary requires summary to be an object."
     );
   }
 
-  if (summary.groupedProjectionBasis !== attemptHandoffFinalizationGroupedProjectionBasis) {
+  if (
+    readSelectionValue(
+      summary,
+      "groupedProjectionBasis",
+      'Attempt handoff finalization grouped reporting summary requires summary.groupedProjectionBasis to be "handoff_finalization_report_ready".'
+    ) !== attemptHandoffFinalizationGroupedProjectionBasis
+  ) {
     throw new ValidationError(
       'Attempt handoff finalization grouped reporting summary requires summary.groupedProjectionBasis to be "handoff_finalization_report_ready".'
     );
   }
 
-  validateNonNegativeInteger(summary.resultCount, "summary.resultCount");
   validateNonNegativeInteger(
-    summary.invokedResultCount,
+    readSelectionValue(
+      summary,
+      "resultCount",
+      "Attempt handoff finalization grouped reporting summary requires summary.resultCount to be a non-negative integer."
+    ),
+    "summary.resultCount"
+  );
+  validateNonNegativeInteger(
+    readSelectionValue(
+      summary,
+      "invokedResultCount",
+      "Attempt handoff finalization grouped reporting summary requires summary.invokedResultCount to be a non-negative integer."
+    ),
     "summary.invokedResultCount"
   );
   validateNonNegativeInteger(
-    summary.blockedResultCount,
+    readSelectionValue(
+      summary,
+      "blockedResultCount",
+      "Attempt handoff finalization grouped reporting summary requires summary.blockedResultCount to be a non-negative integer."
+    ),
     "summary.blockedResultCount"
   );
 
-  if (!Array.isArray(summary.groups)) {
+  const groups = readSelectionValue(
+    summary,
+    "groups",
+    "Attempt handoff finalization grouped reporting summary requires summary.groups to be an array."
+  );
+
+  if (!Array.isArray(groups)) {
     throw new ValidationError(
       "Attempt handoff finalization grouped reporting summary requires summary.groups to be an array."
     );
   }
+
+  return {
+    resultCount: readSelectionValue(
+      summary,
+      "resultCount",
+      "Attempt handoff finalization grouped reporting summary requires summary.resultCount to be a non-negative integer."
+    ) as number,
+    invokedResultCount: readSelectionValue(
+      summary,
+      "invokedResultCount",
+      "Attempt handoff finalization grouped reporting summary requires summary.invokedResultCount to be a non-negative integer."
+    ) as number,
+    blockedResultCount: readSelectionValue(
+      summary,
+      "blockedResultCount",
+      "Attempt handoff finalization grouped reporting summary requires summary.blockedResultCount to be a non-negative integer."
+    ) as number,
+    groups: groups as readonly AttemptHandoffFinalizationGroupedProjectionGroup[]
+  };
 }
 
 function validateGroups(
@@ -115,75 +159,137 @@ function validateGroups(
 ): AttemptHandoffFinalizationGroupedReportingGroup[] {
   const validatedGroups: AttemptHandoffFinalizationGroupedReportingGroup[] = [];
   const seenGroupKeys = new Set<AttemptHandoffFinalizationExplanationCode>();
+  const validatedEntries: AttemptHandoffFinalizationReportReadyEntry[] = [];
 
   for (let index = 0; index < groups.length; index += 1) {
-    if (!hasOwnIndex(groups, index) || !isRecord(groups[index])) {
+    if (!hasOwnIndex(groups, index)) {
       throw new ValidationError(
         "Attempt handoff finalization grouped reporting summary requires summary.groups entries to be objects."
       );
     }
 
-    const group = groups[index] as AttemptHandoffFinalizationGroupedProjectionGroup;
-    validateGroupKey(group.groupKey);
+    const group = readArrayEntry(
+      groups,
+      index,
+      "Attempt handoff finalization grouped reporting summary requires summary.groups entries to be objects."
+    );
 
-    if (seenGroupKeys.has(group.groupKey)) {
+    if (!isRecord(group)) {
+      throw new ValidationError(
+        "Attempt handoff finalization grouped reporting summary requires summary.groups entries to be objects."
+      );
+    }
+
+    const groupKey = readSelectionValue(
+      group,
+      "groupKey",
+      "Attempt handoff finalization grouped reporting summary requires each groupKey to use the existing handoff-finalization explanation vocabulary."
+    );
+    validateGroupKey(groupKey);
+
+    if (
+      seenGroupKeys.has(groupKey as AttemptHandoffFinalizationExplanationCode)
+    ) {
       throw new ValidationError(
         "Attempt handoff finalization grouped reporting summary requires summary.groups to keep a single canonical group per explanation code."
       );
     }
 
-    seenGroupKeys.add(group.groupKey);
-    validateNonNegativeInteger(group.resultCount, "group.resultCount");
+    seenGroupKeys.add(groupKey as AttemptHandoffFinalizationExplanationCode);
+    const resultCount = readSelectionValue(
+      group,
+      "resultCount",
+      "Attempt handoff finalization grouped reporting summary requires group.resultCount to be a non-negative integer."
+    );
+    validateNonNegativeInteger(resultCount, "group.resultCount");
     validateNonNegativeInteger(
-      group.invokedResultCount,
+      readSelectionValue(
+        group,
+        "invokedResultCount",
+        "Attempt handoff finalization grouped reporting summary requires group.invokedResultCount to be a non-negative integer."
+      ),
       "group.invokedResultCount"
     );
     validateNonNegativeInteger(
-      group.blockedResultCount,
+      readSelectionValue(
+        group,
+        "blockedResultCount",
+        "Attempt handoff finalization grouped reporting summary requires group.blockedResultCount to be a non-negative integer."
+      ),
       "group.blockedResultCount"
     );
 
-    if (!Array.isArray(group.results)) {
+    const groupResults = readSelectionValue(
+      group,
+      "results",
+      "Attempt handoff finalization grouped reporting summary requires each group results to be an array."
+    );
+
+    if (!Array.isArray(groupResults)) {
       throw new ValidationError(
         "Attempt handoff finalization grouped reporting summary requires each group results to be an array."
       );
     }
 
-    if (group.resultCount !== group.results.length) {
+    if (resultCount !== groupResults.length) {
       throw new ValidationError(
         "Attempt handoff finalization grouped reporting summary requires each group resultCount to match group.results.length."
       );
     }
 
-    if (group.invokedResultCount + group.blockedResultCount !== group.resultCount) {
+    const invokedResultCountValue = readSelectionValue(
+      group,
+      "invokedResultCount",
+      "Attempt handoff finalization grouped reporting summary requires group.invokedResultCount to be a non-negative integer."
+    ) as number;
+    const blockedResultCountValue = readSelectionValue(
+      group,
+      "blockedResultCount",
+      "Attempt handoff finalization grouped reporting summary requires group.blockedResultCount to be a non-negative integer."
+    ) as number;
+
+    if (invokedResultCountValue + blockedResultCountValue !== resultCount) {
       throw new ValidationError(
         "Attempt handoff finalization grouped reporting summary requires each group count split to add up to group.resultCount."
       );
     }
 
-    const results = validateGroupResults(group.groupKey, group.results);
+    const results = validateGroupResults(
+      groupKey as AttemptHandoffFinalizationExplanationCode,
+      groupResults as AttemptHandoffFinalizationReportReadyEntry[]
+    );
+    validatedEntries.push(...results);
     const invokedResultCount = results.filter((entry) => entry.invoked).length;
     const blockedResultCount = results.length - invokedResultCount;
 
-    if (group.invokedResultCount !== invokedResultCount) {
+    if (invokedResultCountValue !== invokedResultCount) {
       throw new ValidationError(
         "Attempt handoff finalization grouped reporting summary requires each group invokedResultCount to match the canonical invoked count derived from group.results."
       );
     }
 
-    if (group.blockedResultCount !== blockedResultCount) {
+    if (blockedResultCountValue !== blockedResultCount) {
       throw new ValidationError(
         "Attempt handoff finalization grouped reporting summary requires each group blockedResultCount to match the canonical blocked count derived from group.results."
       );
     }
 
     validatedGroups.push({
-      groupKey: group.groupKey,
-      resultCount: group.resultCount,
-      invokedResultCount: group.invokedResultCount,
-      blockedResultCount: group.blockedResultCount
+      groupKey: groupKey as AttemptHandoffFinalizationExplanationCode,
+      resultCount: resultCount as number,
+      invokedResultCount: invokedResultCountValue,
+      blockedResultCount: blockedResultCountValue
     });
   }
+
+  validateDownstreamSingleTaskBoundary(
+    validatedEntries,
+    "Attempt handoff finalization grouped reporting summary requires summary.groups results from a single taskId."
+  );
+  validateDownstreamUniqueIdentity(
+    validatedEntries,
+    "Attempt handoff finalization grouped reporting summary requires summary.groups results to use unique (taskId, attemptId, runtime) identities."
+  );
 
   return validatedGroups;
 }
@@ -195,14 +301,26 @@ function validateGroupResults(
   const validatedResults: AttemptHandoffFinalizationReportReadyEntry[] = [];
 
   for (let index = 0; index < results.length; index += 1) {
-    if (!hasOwnIndex(results, index) || !isRecord(results[index])) {
+    if (!hasOwnIndex(results, index)) {
+      throw new ValidationError(
+        "Attempt handoff finalization grouped reporting summary requires group.results entries to be objects."
+      );
+    }
+
+    const resultEntry = readArrayEntry(
+      results,
+      index,
+      "Attempt handoff finalization grouped reporting summary requires group.results entries to be objects."
+    );
+
+    if (!isRecord(resultEntry)) {
       throw new ValidationError(
         "Attempt handoff finalization grouped reporting summary requires group.results entries to be objects."
       );
     }
 
     const entry = validateReportReadyEntry(
-      results[index] as AttemptHandoffFinalizationReportReadyEntry
+      resultEntry as unknown as AttemptHandoffFinalizationReportReadyEntry
     );
 
     if (entry.explanationCode !== groupKey) {
@@ -220,64 +338,10 @@ function validateGroupResults(
 function validateReportReadyEntry(
   entry: AttemptHandoffFinalizationReportReadyEntry
 ): AttemptHandoffFinalizationReportReadyEntry {
-  if (!isRecord(entry)) {
-    throw new ValidationError(
-      "Attempt handoff finalization grouped reporting summary requires group.results entries to be objects."
-    );
-  }
-
-  const taskId = normalizeRequiredString(entry.taskId, "entry.taskId");
-  const attemptId = normalizeRequiredString(entry.attemptId, "entry.attemptId");
-  const runtime = normalizeRequiredString(entry.runtime, "entry.runtime");
-  validateAttemptStatus(entry.status, "entry.status");
-  validateAttemptSourceKind(entry.sourceKind, "entry.sourceKind");
-  validateBlockingReasons(entry.blockingReasons, "entry.blockingReasons");
-
-  if (typeof entry.invoked !== "boolean") {
-    throw new ValidationError(
-      "Attempt handoff finalization grouped reporting summary requires entry.invoked to be a boolean."
-    );
-  }
-
-  validateGroupKey(entry.explanationCode);
-
-  if (entry.invoked && entry.explanationCode !== "handoff_finalization_invoked") {
-    throw new ValidationError(
-      'Attempt handoff finalization grouped reporting summary requires invoked entries to use "handoff_finalization_invoked".'
-    );
-  }
-
-  if (
-    !entry.invoked &&
-    entry.explanationCode !== "handoff_finalization_blocked_unsupported"
-  ) {
-    throw new ValidationError(
-      'Attempt handoff finalization grouped reporting summary requires blocked entries to use "handoff_finalization_blocked_unsupported".'
-    );
-  }
-
-  if (entry.invoked && entry.blockingReasons.length > 0) {
-    throw new ValidationError(
-      "Attempt handoff finalization grouped reporting summary requires invoked entries to use empty blockingReasons."
-    );
-  }
-
-  if (!entry.invoked && entry.blockingReasons.length === 0) {
-    throw new ValidationError(
-      "Attempt handoff finalization grouped reporting summary requires blocked entries to keep blockingReasons."
-    );
-  }
-
-  return {
-    taskId,
-    attemptId,
-    runtime,
-    status: entry.status,
-    sourceKind: entry.sourceKind,
-    explanationCode: entry.explanationCode,
-    invoked: entry.invoked,
-    blockingReasons: [...entry.blockingReasons]
-  };
+  return validateAndCloneAttemptHandoffFinalizationReportReadyEntry(
+    entry,
+    "Attempt handoff finalization grouped reporting summary"
+  );
 }
 
 function validateGroupKey(value: unknown): void {
@@ -299,71 +363,20 @@ function validateNonNegativeInteger(value: unknown, fieldName: string): void {
   }
 }
 
-function validateAttemptStatus(value: unknown, fieldName: string): void {
-  if (
-    typeof value !== "string" ||
-    !validAttemptStatuses.has(value as AttemptStatus)
-  ) {
-    throw new ValidationError(
-      `Attempt handoff finalization grouped reporting summary requires ${fieldName} to use the existing attempt status vocabulary.`
-    );
-  }
-}
-
-function validateAttemptSourceKind(value: unknown, fieldName: string): void {
-  if (
-    value !== undefined &&
-    (typeof value !== "string" ||
-      !validAttemptSourceKinds.has(value as AttemptSourceKind))
-  ) {
-    throw new ValidationError(
-      `Attempt handoff finalization grouped reporting summary requires ${fieldName} to use the existing attempt source-kind vocabulary when provided.`
-    );
-  }
-}
-
-function validateBlockingReasons(value: unknown, fieldName: string): void {
-  if (!Array.isArray(value)) {
-    throw new ValidationError(
-      `Attempt handoff finalization grouped reporting summary requires ${fieldName} to be an array.`
-    );
-  }
-
-  for (let index = 0; index < value.length; index += 1) {
-    if (
-      !hasOwnIndex(value, index) ||
-      typeof value[index] !== "string" ||
-      !validBlockingReasons.has(
-        value[index] as AttemptHandoffFinalizationConsumerBlockingReason
-      )
-    ) {
-      throw new ValidationError(
-        `Attempt handoff finalization grouped reporting summary requires ${fieldName} to use the existing handoff-finalization blocker vocabulary.`
-      );
-    }
-  }
-}
-
-function normalizeRequiredString(value: unknown, fieldName: string): string {
-  if (typeof value !== "string") {
-    throw new ValidationError(
-      `Attempt handoff finalization grouped reporting summary requires ${fieldName} to be a non-empty string.`
-    );
-  }
-
-  const normalized = value.trim();
-
-  if (normalized.length === 0) {
-    throw new ValidationError(
-      `Attempt handoff finalization grouped reporting summary requires ${fieldName} to be a non-empty string.`
-    );
-  }
-
-  return normalized;
-}
-
 function hasOwnIndex(values: readonly unknown[], index: number): boolean {
   return Object.prototype.hasOwnProperty.call(values, index);
+}
+
+function readArrayEntry(
+  values: readonly unknown[],
+  index: number,
+  message: string
+): unknown {
+  try {
+    return values[index];
+  } catch {
+    throw new ValidationError(message);
+  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

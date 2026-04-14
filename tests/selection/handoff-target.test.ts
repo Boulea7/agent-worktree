@@ -63,6 +63,51 @@ describe("selection handoff-target helpers", () => {
     );
   });
 
+  it("should fail loudly when target is not an object", () => {
+    expect(() => deriveAttemptHandoffTarget(null as never)).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptHandoffTarget(null as never)).toThrow(
+      "Attempt handoff target requires target to be an object when provided."
+    );
+  });
+
+  it("should fail closed when reading target through an accessor-shaped input", () => {
+    expect(() =>
+      deriveAttemptHandoffTarget({
+        get targetBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffTarget({
+        get targetBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(
+      "Attempt handoff target requires target to be a readable object when provided."
+    );
+  });
+
+  it("should reject promotion targets that only provide required identity fields through the prototype chain", () => {
+    const target = Object.create(createPromotionTarget(), {
+      targetBasis: {
+        configurable: true,
+        enumerable: true,
+        value: "promotion_decision_summary"
+      }
+    });
+
+    expect(() => deriveAttemptHandoffTarget(target as never)).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptHandoffTarget(target as never)).toThrow(
+      "Attempt handoff target requires target.taskId to be a non-empty string."
+    );
+  });
+
   it("should fail loudly when target.taskId is not a non-empty string", () => {
     const target = {
       ...createPromotionTarget(),

@@ -217,11 +217,13 @@ export function normalizeRequiredAttemptId(
   attemptId: string,
   message: string
 ): string {
-  if (attemptId.trim().length === 0) {
+  const normalized = attemptId.trim();
+
+  if (normalized.length === 0) {
     throw new ValidationError(message);
   }
 
-  return attemptId;
+  return normalized;
 }
 
 function normalizeParentAttemptId(

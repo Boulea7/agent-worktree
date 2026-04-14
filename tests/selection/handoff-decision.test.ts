@@ -76,6 +76,25 @@ describe("selection handoff-decision helpers", () => {
     ).toThrow(ValidationError);
   });
 
+  it("should fail closed when reading the supplied handoff explanation summary through an accessor-shaped input", () => {
+    expect(() =>
+      deriveAttemptHandoffDecisionSummary({
+        get explanationBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffDecisionSummary({
+        get explanationBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(
+      "Attempt handoff decision summary requires summary to be a readable object."
+    );
+  });
+
   it("should fail loudly when summary.results is not an array", () => {
     expect(() =>
       deriveAttemptHandoffDecisionSummary({
@@ -151,6 +170,23 @@ describe("selection handoff-decision helpers", () => {
       canFinalizeHandoff: true,
       hasBlockingReasons: false
     });
+  });
+
+  it("should fail loudly when summary.results mixes taskIds after canonicalization", () => {
+    expect(() =>
+      deriveAttemptHandoffDecisionSummary(
+        createExplanationSummary([
+          createInvokedExplanationEntry({
+            taskId: "task_shared",
+            attemptId: "att_one"
+          }),
+          createInvokedExplanationEntry({
+            taskId: " task_other ",
+            attemptId: "att_two"
+          })
+        ])
+      )
+    ).toThrow(ValidationError);
   });
 
   it("should fail loudly when explanation subgroup projections drift from canonical results", () => {
@@ -455,6 +491,7 @@ function createBlockedExplanationEntry(
 }
 
 function createPromotionTargetApply(input?: {
+  taskId?: string;
   attemptId?: string;
   runtime?: string;
   status?: AttemptPromotionTarget["status"];
@@ -463,6 +500,7 @@ function createPromotionTargetApply(input?: {
   invoked?: boolean;
 }): AttemptPromotionTargetApply {
   const target = createPromotionTarget({
+    ...(input?.taskId === undefined ? {} : { taskId: input.taskId }),
     ...(input?.attemptId === undefined ? {} : { attemptId: input.attemptId }),
     ...(input?.runtime === undefined ? {} : { runtime: input.runtime }),
     ...(input?.status === undefined ? {} : { status: input.status }),
@@ -521,6 +559,7 @@ function createBlockedPromotionTargetApply(
   overrides: Partial<AttemptPromotionTarget> = {}
 ): AttemptPromotionTargetApply {
   return createPromotionTargetApply({
+    ...(overrides.taskId === undefined ? {} : { taskId: overrides.taskId }),
     ...(overrides.attemptId === undefined ? {} : { attemptId: overrides.attemptId }),
     ...(overrides.runtime === undefined ? {} : { runtime: overrides.runtime }),
     ...(overrides.status === undefined ? {} : { status: overrides.status }),
@@ -536,6 +575,7 @@ function createSupportedPromotionTargetApply(
   overrides: Partial<AttemptPromotionTarget> = {}
 ): AttemptPromotionTargetApply {
   return createPromotionTargetApply({
+    ...(overrides.taskId === undefined ? {} : { taskId: overrides.taskId }),
     ...(overrides.attemptId === undefined ? {} : { attemptId: overrides.attemptId }),
     ...(overrides.runtime === undefined ? {} : { runtime: overrides.runtime }),
     ...(overrides.status === undefined ? {} : { status: overrides.status }),

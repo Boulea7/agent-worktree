@@ -87,7 +87,7 @@ describe(
       });
     });
 
-    it("should reject malformed headless wait request batch wrappers before iterating results", () => {
+    it("should reject malformed headless wait request batch wrappers", () => {
       expect(() =>
         deriveExecutionSessionSpawnHeadlessWaitRequestBatch(undefined as never)
       ).toThrow(
@@ -104,6 +104,251 @@ describe(
         })
       ).toThrow(
         "Execution session spawn headless wait request batch requires a headlessWaitTargetBatch wrapper."
+      );
+    });
+
+    it("should reject inherited or getter-backed top-level headlessWaitTargetBatch wrappers", () => {
+      const validBatch = {
+        headlessWaitCandidateBatch: {
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildEmptyView()
+            },
+            results: []
+          },
+          results: []
+        },
+        results: []
+      } satisfies ExecutionSessionSpawnHeadlessWaitTargetBatch;
+      const inheritedInput = Object.create({
+        headlessWaitTargetBatch: validBatch
+      });
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitRequestBatch(inheritedInput as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitRequestBatch(inheritedInput as never)
+      ).toThrow(
+        "Execution session spawn headless wait request batch requires a headlessWaitTargetBatch wrapper."
+      );
+
+      const accessorInput = {};
+      Object.defineProperty(accessorInput, "headlessWaitTargetBatch", {
+        enumerable: true,
+        get() {
+          throw new Error("boom");
+        }
+      });
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitRequestBatch(accessorInput as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitRequestBatch(accessorInput as never)
+      ).toThrow(
+        "Execution session spawn headless wait request batch requires a headlessWaitTargetBatch wrapper."
+      );
+    });
+
+    it("should read timeoutMs once and reuse the snapshot across the whole batch", () => {
+      let timeoutReads = 0;
+
+      expect(
+        deriveExecutionSessionSpawnHeadlessWaitRequestBatch({
+          headlessWaitTargetBatch: {
+            headlessWaitCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            results: [
+              createHeadlessWaitTarget({
+                target: {
+                  attemptId: "att_supported_wait_once",
+                  runtime: "supported-cli",
+                  sessionId: "thr_supported_wait_once"
+                }
+              })
+            ]
+          },
+          get timeoutMs() {
+            timeoutReads += 1;
+
+            if (timeoutReads > 1) {
+              throw new Error("timeout getter read twice");
+            }
+
+            return 500;
+          }
+        } as never)
+      ).toEqual({
+        headlessWaitTargetBatch: {
+          headlessWaitCandidateBatch: {
+            headlessContextBatch: {
+              headlessViewBatch: {
+                headlessRecordBatch: {
+                  results: []
+                },
+                view: buildEmptyView()
+              },
+              results: []
+            },
+            results: []
+          },
+          results: [
+            createHeadlessWaitTarget({
+              target: {
+                attemptId: "att_supported_wait_once",
+                runtime: "supported-cli",
+                sessionId: "thr_supported_wait_once"
+              }
+            })
+          ]
+        },
+        results: [
+          {
+            headlessWaitTarget: createHeadlessWaitTarget({
+              target: {
+                attemptId: "att_supported_wait_once",
+                runtime: "supported-cli",
+                sessionId: "thr_supported_wait_once"
+              }
+            }),
+            request: {
+              attemptId: "att_supported_wait_once",
+              runtime: "supported-cli",
+              sessionId: "thr_supported_wait_once",
+              timeoutMs: 500
+            }
+          }
+        ]
+      });
+      expect(timeoutReads).toBe(1);
+    });
+
+    it("should snapshot headlessWaitTargetBatch.results once before iterating the batch", () => {
+      let resultsReads = 0;
+
+      const supportedTarget = createHeadlessWaitTarget({
+        target: {
+          attemptId: "att_supported_wait_results_once",
+          runtime: "supported-cli",
+          sessionId: "thr_supported_wait_results_once"
+        }
+      });
+
+      expect(
+        deriveExecutionSessionSpawnHeadlessWaitRequestBatch({
+          headlessWaitTargetBatch: {
+            headlessWaitCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            get results() {
+              resultsReads += 1;
+
+              if (resultsReads > 1) {
+                throw new Error("results getter read twice");
+              }
+
+              return [supportedTarget];
+            }
+          } as never
+        })
+      ).toEqual({
+        headlessWaitTargetBatch: {
+          headlessWaitCandidateBatch: {
+            headlessContextBatch: {
+              headlessViewBatch: {
+                headlessRecordBatch: {
+                  results: []
+                },
+                view: buildEmptyView()
+              },
+              results: []
+            },
+            results: []
+          },
+          results: [supportedTarget]
+        },
+        results: [
+          {
+            headlessWaitTarget: supportedTarget,
+            request: {
+              attemptId: "att_supported_wait_results_once",
+              runtime: "supported-cli",
+              sessionId: "thr_supported_wait_results_once"
+            }
+          }
+        ]
+      });
+      expect(resultsReads).toBe(1);
+    });
+
+    it("should fail loudly when headlessWaitTargetBatch.results entries are sparse or non-object", () => {
+      const sparseResults = new Array(1);
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitRequestBatch({
+          headlessWaitTargetBatch: {
+            headlessWaitCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            results: sparseResults
+          } as never
+        })
+      ).toThrow(
+        "Execution session spawn headless wait request batch requires headlessWaitTargetBatch.results entries to be objects."
+      );
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitRequestBatch({
+          headlessWaitTargetBatch: {
+            headlessWaitCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            results: [0]
+          } as never
+        })
+      ).toThrow(
+        "Execution session spawn headless wait request batch requires headlessWaitTargetBatch.results entries to be objects."
       );
     });
 

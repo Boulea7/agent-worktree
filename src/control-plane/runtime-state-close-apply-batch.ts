@@ -1,6 +1,8 @@
 import {
   normalizeBatchWrapper,
-  normalizeBatchWrapperItems
+  normalizeBatchWrapperObjectItems,
+  readOptionalBatchWrapperProperty,
+  readRequiredBatchWrapperProperty
 } from "./runtime-state-batch-wrapper-guards.js";
 import { applyExecutionSessionClose } from "./runtime-state-close-apply.js";
 import type {
@@ -16,11 +18,33 @@ export async function applyExecutionSessionCloseBatch(
     input,
     "Execution session close apply batch input must be an object."
   );
-  const requests = normalizeBatchWrapperItems<
+  const requestsInput = readRequiredBatchWrapperProperty<
+    ExecutionSessionCloseApplyBatchInput["requests"]
+  >(
+    normalizedInput,
+    "requests",
+    "Execution session close apply batch requires requests to be an array."
+  );
+  const requests = normalizeBatchWrapperObjectItems<
     ExecutionSessionCloseApplyBatchInput["requests"][number]
   >(
-    normalizedInput.requests,
-    "Execution session close apply batch requires requests to be an array."
+    requestsInput,
+    "Execution session close apply batch requires requests to be an array.",
+    "Execution session close apply batch requires requests entries to be objects."
+  );
+  const invokeClose = readRequiredBatchWrapperProperty<
+    ExecutionSessionCloseApplyBatchInput["invokeClose"]
+  >(
+    normalizedInput,
+    "invokeClose",
+    "Execution session close apply requires invokeClose to be a function."
+  );
+  const resolveSessionLifecycleCapability = readOptionalBatchWrapperProperty<
+    ExecutionSessionCloseApplyBatchInput["resolveSessionLifecycleCapability"]
+  >(
+    normalizedInput,
+    "resolveSessionLifecycleCapability",
+    "Execution session close consumer readiness requires resolveSessionLifecycleCapability to be a function when provided."
   );
 
   const results: ExecutionSessionCloseApply[] = [];
@@ -29,12 +53,11 @@ export async function applyExecutionSessionCloseBatch(
     results.push(
       await applyExecutionSessionClose({
         request,
-        invokeClose: normalizedInput.invokeClose,
-        ...(normalizedInput.resolveSessionLifecycleCapability === undefined
+        invokeClose,
+        ...(resolveSessionLifecycleCapability === undefined
           ? {}
           : {
-              resolveSessionLifecycleCapability:
-                normalizedInput.resolveSessionLifecycleCapability
+              resolveSessionLifecycleCapability
             })
       })
     );

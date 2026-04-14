@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   deriveExecutionSessionSpawnHeadlessInputBatch,
   type ExecutionSessionSpawnEffects,
@@ -7,6 +8,29 @@ import {
 } from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-headless-input-batch helpers", () => {
+  it("should fail loudly when the top-level headless-input batch input is malformed", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessInputBatch(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessInputBatch(undefined as never)
+    ).toThrow(
+      "Execution session spawn headless input batch input must be an object."
+    );
+  });
+
+  it("should reject inherited items wrappers", () => {
+    const inheritedInput = Object.create({
+      items: []
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessInputBatch(inheritedInput as never)
+    ).toThrow(
+      "Execution session spawn headless input batch requires items to be an array."
+    );
+  });
+
   it("should return an empty batch result for an empty bridge list", () => {
     expect(
       deriveExecutionSessionSpawnHeadlessInputBatch({
@@ -81,6 +105,21 @@ describe("control-plane runtime-state spawn-headless-input-batch helpers", () =>
         }
       ]
     });
+  });
+
+  it("should fail loudly when a batch entry is not an object", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessInputBatch({
+        items: [null] as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessInputBatch({
+        items: [null] as never
+      })
+    ).toThrow(
+      "Execution session spawn headless input batch requires items entries to be objects."
+    );
   });
 
   it("should keep the batch result minimal and leave inputs untouched", () => {

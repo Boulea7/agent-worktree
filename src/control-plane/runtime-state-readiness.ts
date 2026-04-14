@@ -40,6 +40,10 @@ export function deriveExecutionSessionWaitReadiness(
     blockingReasons.push("session_unknown");
   }
 
+  if (normalizeDescendantCoverage(input.descendantCoverage) === "incomplete") {
+    blockingReasons.push("descendant_coverage_incomplete");
+  }
+
   if (disposition.wouldAffectDescendants) {
     blockingReasons.push("child_attempts_present");
   }
@@ -53,4 +57,20 @@ export function deriveExecutionSessionWaitReadiness(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function normalizeDescendantCoverage(
+  value: ExecutionSessionWaitReadinessInput["descendantCoverage"]
+): "complete" | "incomplete" | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === "complete" || value === "incomplete") {
+    return value;
+  }
+
+  throw new ValidationError(
+    "Execution session wait readiness requires descendantCoverage to be \"complete\" or \"incomplete\" when provided."
+  );
 }

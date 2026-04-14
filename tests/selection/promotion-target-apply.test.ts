@@ -130,6 +130,23 @@ describe("selection promotion-target-apply helpers", () => {
     );
   });
 
+  it("should fail loudly when the supplied promotion target is not an object", async () => {
+    await expect(
+      applyAttemptPromotionTarget({
+        target: null as never,
+        invokeHandoff: async () => undefined
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyAttemptPromotionTarget({
+        target: null as never,
+        invokeHandoff: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Attempt handoff target requires target to be an object when provided."
+    );
+  });
+
   it("should surface invoker failures directly without returning a partial promotion target-apply result", async () => {
     const expectedError = new Error("handoff failed");
 

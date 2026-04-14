@@ -10,6 +10,221 @@ import {
 } from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-headless-context helpers", () => {
+  it("should fail loudly when the supplied headless context input or nested objects are malformed", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessContext(undefined as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessContext(undefined as never)
+    ).toThrow(
+      "Execution session spawn headless context input must be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessContext({} as never)
+    ).toThrow(
+      "Execution session spawn headless context requires headlessView to be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessContext({
+        headlessView: {
+          headlessRecord: null,
+          view: {}
+        }
+      } as never)
+    ).toThrow(
+      "Execution session spawn headless context requires headlessView.headlessRecord to be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessContext({
+        headlessView: {
+          headlessRecord: {
+            record: null
+          },
+          view: {}
+        }
+      } as never)
+    ).toThrow(
+      "Execution session spawn headless context requires headlessView.headlessRecord.record to be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessContext({
+        headlessView: {
+          headlessRecord: {
+            record: {}
+          },
+          view: null
+        }
+      } as never)
+    ).toThrow(
+      "Execution session spawn headless context requires headlessView.view to be an object."
+    );
+  });
+
+  it("should fail closed on inherited or accessor-shaped headless view wrappers", () => {
+    const inheritedInput = Object.create({
+      headlessView: {
+        headlessRecord: {
+          record: createRecord({
+            attemptId: "att_inherited_context",
+            sessionId: "thr_inherited_context",
+            sourceKind: "direct"
+          })
+        },
+        view: buildExecutionSessionView([])
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessContext(inheritedInput as never)
+    ).toThrow(
+      "Execution session spawn headless context requires headlessView to be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessContext({
+        get headlessView() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
+  });
+
+  it("should snapshot headlessView once before reusing it", () => {
+    let headlessViewReads = 0;
+
+    const rootRecord = createRecord({
+      attemptId: "att_parent_snapshot_context",
+      sessionId: "thr_parent_snapshot_context",
+      sourceKind: "direct"
+    });
+    const childRecord = createHeadlessRecord({
+      attemptId: "att_child_snapshot_context",
+      parentAttemptId: "att_parent_snapshot_context",
+      sessionId: "thr_child_snapshot_context",
+      sourceKind: "delegated"
+    });
+
+    expect(
+      deriveExecutionSessionSpawnHeadlessContext({
+        get headlessView() {
+          headlessViewReads += 1;
+
+          if (headlessViewReads > 1) {
+            throw new Error("headlessView getter read twice");
+          }
+
+          return {
+            descendantCoverage: "complete",
+            headlessRecord: childRecord,
+            view: buildExecutionSessionView([rootRecord, childRecord.record])
+          };
+        }
+      } as never)
+    ).toEqual({
+      headlessView: {
+        descendantCoverage: "complete",
+        headlessRecord: childRecord,
+        view: buildExecutionSessionView([rootRecord, childRecord.record])
+      },
+      context: {
+        record: childRecord.record,
+        selectedBy: "attemptId",
+        parentRecord: rootRecord,
+        childRecords: [],
+        hasKnownSession: true,
+        hasParent: true,
+        hasResolvedParent: true,
+        hasChildren: false
+      }
+    });
+    expect(headlessViewReads).toBe(1);
+  });
+
+  it("should snapshot nested headlessRecord values so later reads do not touch the original wrapper again", () => {
+    let headlessRecordReads = 0;
+
+    const rootRecord = createRecord({
+      attemptId: "att_parent_snapshot_nested_context",
+      sessionId: "thr_parent_snapshot_nested_context",
+      sourceKind: "direct"
+    });
+    const childRecord = createHeadlessRecord({
+      attemptId: "att_child_snapshot_nested_context",
+      parentAttemptId: "att_parent_snapshot_nested_context",
+      sessionId: "thr_child_snapshot_nested_context",
+      sourceKind: "delegated"
+    });
+
+    expect(
+      deriveExecutionSessionSpawnHeadlessContext({
+        headlessView: {
+          descendantCoverage: "complete",
+          get headlessRecord() {
+            headlessRecordReads += 1;
+
+            if (headlessRecordReads > 1) {
+              throw new Error("headlessRecord getter read twice");
+            }
+
+            return childRecord;
+          },
+          view: buildExecutionSessionView([rootRecord, childRecord.record])
+        }
+      } as never)
+    ).toEqual({
+      headlessView: {
+        descendantCoverage: "complete",
+        headlessRecord: childRecord,
+        view: buildExecutionSessionView([rootRecord, childRecord.record])
+      },
+      context: {
+        record: childRecord.record,
+        selectedBy: "attemptId",
+        parentRecord: rootRecord,
+        childRecords: [],
+        hasKnownSession: true,
+        hasParent: true,
+        hasResolvedParent: true,
+        hasChildren: false
+      }
+    });
+    expect(headlessRecordReads).toBe(1);
+  });
+
+  it("should fail closed when snapshotting would otherwise redefine a non-configurable nested headlessRecord field", () => {
+    const rootRecord = createRecord({
+      attemptId: "att_parent_non_configurable_context",
+      sessionId: "thr_parent_non_configurable_context",
+      sourceKind: "direct"
+    });
+    const childRecord = createHeadlessRecord({
+      attemptId: "att_child_non_configurable_context",
+      parentAttemptId: "att_parent_non_configurable_context",
+      sessionId: "thr_child_non_configurable_context",
+      sourceKind: "delegated"
+    });
+    const headlessView = {
+      descendantCoverage: "complete",
+      view: buildExecutionSessionView([rootRecord, childRecord.record])
+    } as Record<string, unknown>;
+
+    Object.defineProperty(headlessView, "headlessRecord", {
+      enumerable: true,
+      configurable: false,
+      value: childRecord
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessContext({
+        headlessView
+      } as never)
+    ).not.toThrow();
+  });
+
   it("should derive context from the selected attemptId within the supplied headless view", () => {
     const rootRecord = createRecord({
       attemptId: "att_parent_context",
@@ -40,9 +255,17 @@ describe("control-plane runtime-state spawn-headless-context helpers", () => {
 
     const result = deriveExecutionSessionSpawnHeadlessContext({
       headlessView
-    }) as unknown as Record<string, unknown>;
+    });
 
-    expect(result.headlessView).toBe(headlessView);
+    expect(result.headlessView).toEqual(headlessView);
+    expect(result.headlessView).not.toBe(headlessView);
+    expect(result.headlessView.headlessRecord).toEqual(
+      headlessView.headlessRecord
+    );
+    expect(result.headlessView.headlessRecord).not.toBe(
+      headlessView.headlessRecord
+    );
+    expect(result.headlessView.view).toBe(headlessView.view);
     expect(result.context).toEqual({
       record: childRecord.record,
       selectedBy: "attemptId",
@@ -65,6 +288,33 @@ describe("control-plane runtime-state spawn-headless-context helpers", () => {
     expect(result).not.toHaveProperty("spawnHeadlessContextBatch");
     expect(result).not.toHaveProperty("spawnHeadlessWaitCandidate");
     expect(result).not.toHaveProperty("spawnHeadlessWaitCandidateBatch");
+  });
+
+  it("should default descendantCoverage to incomplete when the supplied headless view omits it", () => {
+    const parentRecord = createRecord({
+      attemptId: "att_parent_default_descendant_coverage",
+      sessionId: "thr_parent_default_descendant_coverage",
+      sourceKind: "direct"
+    });
+    const childRecord = createHeadlessRecord({
+      attemptId: "att_child_default_descendant_coverage",
+      parentAttemptId: "att_parent_default_descendant_coverage",
+      sessionId: "thr_child_default_descendant_coverage",
+      sourceKind: "delegated"
+    });
+
+    expect(
+      deriveExecutionSessionSpawnHeadlessContext({
+        headlessView: {
+          headlessRecord: childRecord,
+          view: buildExecutionSessionView([parentRecord, childRecord.record])
+        }
+      })
+    ).toMatchObject({
+      headlessView: {
+        descendantCoverage: "incomplete"
+      }
+    });
   });
 
   it("should fail when the supplied headless view cannot select the headless record", () => {

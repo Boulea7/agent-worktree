@@ -14,6 +14,17 @@ import {
 describe(
   "control-plane runtime-state spawn-headless-context-batch helpers",
   () => {
+    it("should fail loudly when the top-level headless-view batch input is malformed", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch(undefined as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch(undefined as never)
+      ).toThrow(
+        "Execution session spawn headless context batch input must be an object."
+      );
+    });
+
     it("should return an empty ordered result list for an empty headless-view batch", () => {
       const headlessViewBatch = {
         descendantCoverage: "complete",
@@ -27,7 +38,8 @@ describe(
         headlessViewBatch
       }) as unknown as Record<string, unknown>;
 
-      expect(result.headlessViewBatch).toBe(headlessViewBatch);
+      expect(result.headlessViewBatch).toEqual(headlessViewBatch);
+      expect(result.headlessViewBatch).not.toBe(headlessViewBatch);
       expect(result.results).toEqual([]);
       expect(result).not.toHaveProperty("summary");
       expect(result).not.toHaveProperty("count");
@@ -81,10 +93,11 @@ describe(
       const typedResult =
         result as ExecutionSessionSpawnHeadlessContextBatch & Record<string, unknown>;
 
-      expect(typedResult.headlessViewBatch).toBe(headlessViewBatch);
+      expect(typedResult.headlessViewBatch).toEqual(headlessViewBatch);
+      expect(typedResult.headlessViewBatch).not.toBe(headlessViewBatch);
       expect(typedResult.results).toHaveLength(2);
-      expect(typedResult.results[0]?.headlessView.headlessRecord).toBe(childRecordA);
-      expect(typedResult.results[1]?.headlessView.headlessRecord).toBe(childRecordB);
+      expect(typedResult.results[0]?.headlessView.headlessRecord).toEqual(childRecordA);
+      expect(typedResult.results[1]?.headlessView.headlessRecord).toEqual(childRecordB);
       expect(typedResult.results[0]?.headlessView.view).toBe(headlessViewBatch.view);
       expect(typedResult.results[1]?.headlessView.view).toBe(headlessViewBatch.view);
       expect(typedResult.results[0]?.context).toEqual({
@@ -160,6 +173,110 @@ describe(
         })
       ).toThrow(
         "Execution session spawn headless context requires a selected record."
+      );
+    });
+
+    it("should fail loudly when the supplied headless-view batch wrapper is malformed", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch({
+          headlessViewBatch: {} as ExecutionSessionSpawnHeadlessViewBatch
+        })
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch({
+          headlessViewBatch: {} as ExecutionSessionSpawnHeadlessViewBatch
+        })
+      ).toThrow(
+        "Execution session spawn headless context batch requires headlessViewBatch to include headlessRecordBatch and view objects."
+      );
+    });
+
+    it("should reject inherited or getter-backed top-level headlessViewBatch wrappers", () => {
+      const validHeadlessViewBatch = {
+        headlessRecordBatch: {
+          results: []
+        },
+        view: buildExecutionSessionView([])
+      } satisfies ExecutionSessionSpawnHeadlessViewBatch;
+      const inheritedInput = Object.create({
+        headlessViewBatch: validHeadlessViewBatch
+      });
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch(inheritedInput as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch(inheritedInput as never)
+      ).toThrow(
+        "Execution session spawn headless context batch requires a headlessViewBatch wrapper."
+      );
+
+      const accessorInput = {};
+      Object.defineProperty(accessorInput, "headlessViewBatch", {
+        enumerable: true,
+        get() {
+          throw new Error("boom");
+        }
+      });
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch(accessorInput as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch(accessorInput as never)
+      ).toThrow(
+        "Execution session spawn headless context batch requires a headlessViewBatch wrapper."
+      );
+    });
+
+    it("should fail loudly when headlessRecordBatch.results is missing from the wrapper", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch({
+          headlessViewBatch: {
+            headlessRecordBatch: {} as never,
+            view: buildExecutionSessionView([])
+          } as ExecutionSessionSpawnHeadlessViewBatch
+        })
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch({
+          headlessViewBatch: {
+            headlessRecordBatch: {} as never,
+            view: buildExecutionSessionView([])
+          } as ExecutionSessionSpawnHeadlessViewBatch
+        })
+      ).toThrow(
+        "Execution session spawn headless context batch requires headlessViewBatch.headlessRecordBatch.results to be an array."
+      );
+    });
+
+    it("should fail loudly when headlessRecordBatch.results entries are sparse or non-object", () => {
+      const sparseResults = new Array(1);
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch({
+          headlessViewBatch: {
+            headlessRecordBatch: {
+              results: sparseResults
+            },
+            view: buildExecutionSessionView([])
+          } as ExecutionSessionSpawnHeadlessViewBatch
+        })
+      ).toThrow(
+        "Execution session spawn headless context batch requires headlessViewBatch.headlessRecordBatch.results entries to be objects."
+      );
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessContextBatch({
+          headlessViewBatch: {
+            headlessRecordBatch: {
+              results: [0]
+            },
+            view: buildExecutionSessionView([])
+          } as never
+        })
+      ).toThrow(
+        "Execution session spawn headless context batch requires headlessViewBatch.headlessRecordBatch.results entries to be objects."
       );
     });
   }

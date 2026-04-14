@@ -87,6 +87,33 @@ describe("control-plane runtime-state view helpers", () => {
     ).toBe(rootRecord);
   });
 
+  it("should resolve canonicalized selectors against records with spaced identity fields", () => {
+    const rootRecord = createRecord({
+      attemptId: "  att_root  ",
+      sessionId: "  thr_root  ",
+      sourceKind: "direct"
+    });
+    const childRecord = createRecord({
+      attemptId: "  att_child  ",
+      sessionId: "  thr_child  ",
+      sourceKind: "fork",
+      parentAttemptId: "  att_root  "
+    });
+    const view = buildExecutionSessionView([rootRecord, childRecord]);
+
+    expect(
+      resolveExecutionSessionRecord(view, {
+        attemptId: "att_child"
+      })
+    ).toBe(childRecord);
+    expect(
+      resolveExecutionSessionRecord(view, {
+        sessionId: "thr_root"
+      })
+    ).toBe(rootRecord);
+    expect(listChildExecutionSessions(view, "att_root")).toEqual([childRecord]);
+  });
+
   it("should return undefined when the selector does not match a record", () => {
     const rootRecord = createRecord({
       attemptId: "att_root",

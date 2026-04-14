@@ -9,6 +9,14 @@ import type {
 } from "../verification/types.js";
 import { attemptVerificationCheckStatuses } from "../verification/types.js";
 import {
+  normalizeSelectionArrayProperty,
+  readSelectionValue,
+  rethrowSelectionAccessError
+} from "./entry-validation.js";
+import {
+  validateDownstreamIdentityIngress
+} from "./downstream-identity-guardrails.js";
+import {
   validatePromotionArtifactSummaryCheckNameLists
 } from "./promotion-artifact-summary-guardrails.js";
 import { deriveAttemptPromotionResult } from "./promotion-result.js";
@@ -16,7 +24,8 @@ import type {
   AttemptPromotionAuditCandidate,
   AttemptPromotionAuditSummary,
   AttemptPromotionCandidate,
-  AttemptPromotionResult
+  AttemptPromotionResult,
+  AttemptSelectedIdentity
 } from "./types.js";
 
 const ATTEMPT_PROMOTION_AUDIT_BASIS = "promotion_result" as const;
@@ -27,26 +36,113 @@ const validVerificationCheckStatuses = new Set(attemptVerificationCheckStatuses)
 export function deriveAttemptPromotionAuditSummary(
   result: AttemptPromotionResult
 ): AttemptPromotionAuditSummary {
-  validatePromotionResultBasis(result);
+  if (!isRecord(result)) {
+    throw new ValidationError(
+      "Attempt promotion audit summary requires result to be an object."
+    );
+  }
 
-  const canonicalResult = deriveAttemptPromotionResult(result.candidates);
+  try {
+    const normalizedResult = normalizePromotionResultSnapshot(result);
 
-  validatePromotionResultConsistency(result, canonicalResult);
-  result.candidates.forEach((candidate) =>
-    validatePromotionAuditCandidate(candidate)
-  );
+    validatePromotionResultBasis(normalizedResult);
+    validateSelectedCandidate(normalizedResult.selected);
+    validateCanonicalCandidateIdentity(
+      normalizedResult.taskId,
+      normalizedResult.candidates
+    );
+
+    const canonicalResult = deriveAttemptPromotionResult(
+      normalizedResult.candidates
+    );
+
+    validatePromotionResultConsistency(normalizedResult, canonicalResult);
+    normalizedResult.candidates.forEach((candidate) =>
+      validatePromotionAuditCandidate(candidate)
+    );
+
+    return {
+      auditBasis: ATTEMPT_PROMOTION_AUDIT_BASIS,
+      taskId: normalizedResult.taskId,
+      selectedAttemptId: normalizedResult.selected?.attemptId,
+      selectedIdentity: deriveSelectedIdentity(normalizedResult.selected),
+      candidateCount: normalizedResult.candidates.length,
+      comparableCandidateCount: countComparableCandidates(
+        normalizedResult.candidates
+      ),
+      promotionReadyCandidateCount: countPromotionReadyCandidates(
+        normalizedResult.candidates
+      ),
+      recommendedForPromotion:
+        normalizedResult.selected?.recommendedForPromotion ?? false,
+      candidates: normalizedResult.candidates.map(
+        deriveAttemptPromotionAuditCandidate
+      )
+    };
+  } catch (error) {
+    rethrowSelectionAccessError(
+      error,
+      "Attempt promotion audit summary requires result to be a readable object."
+    );
+  }
+}
+
+function normalizePromotionResultSnapshot(
+  result: Record<string, unknown>
+): AttemptPromotionResult {
+  const candidates = normalizeSelectionArrayProperty(
+    result,
+    "candidates",
+    "Attempt promotion audit summary requires result to be a readable object."
+  ) as AttemptPromotionResult["candidates"];
+  const selected = readSelectionValue(
+    result,
+    "selected",
+    "Attempt promotion audit summary requires result to be a readable object."
+  ) as AttemptPromotionResult["selected"];
 
   return {
-    auditBasis: ATTEMPT_PROMOTION_AUDIT_BASIS,
-    taskId: result.taskId,
-    selectedAttemptId: result.selected?.attemptId,
-    candidateCount: result.candidates.length,
-    comparableCandidateCount: countComparableCandidates(result.candidates),
-    promotionReadyCandidateCount: countPromotionReadyCandidates(
-      result.candidates
-    ),
-    recommendedForPromotion: result.selected?.recommendedForPromotion ?? false,
-    candidates: result.candidates.map(deriveAttemptPromotionAuditCandidate)
+    promotionResultBasis: readSelectionValue(
+      result,
+      "promotionResultBasis",
+      "Attempt promotion audit summary requires result to be a readable object."
+    ) as AttemptPromotionResult["promotionResultBasis"],
+    taskId: readSelectionValue(
+      result,
+      "taskId",
+      "Attempt promotion audit summary requires result to be a readable object."
+    ) as AttemptPromotionResult["taskId"],
+    selected,
+    candidates,
+    comparableCandidateCount: readSelectionValue(
+      result,
+      "comparableCandidateCount",
+      "Attempt promotion audit summary requires result to be a readable object."
+    ) as AttemptPromotionResult["comparableCandidateCount"],
+    promotionReadyCandidateCount: readSelectionValue(
+      result,
+      "promotionReadyCandidateCount",
+      "Attempt promotion audit summary requires result to be a readable object."
+    ) as AttemptPromotionResult["promotionReadyCandidateCount"],
+    recommendedForPromotion: readSelectionValue(
+      result,
+      "recommendedForPromotion",
+      "Attempt promotion audit summary requires result to be a readable object."
+    ) as AttemptPromotionResult["recommendedForPromotion"]
+  };
+}
+
+function deriveSelectedIdentity(
+  selected: AttemptPromotionResult["selected"]
+): AttemptSelectedIdentity | undefined {
+  if (selected === undefined) {
+    return undefined;
+  }
+
+  return {
+    taskId: selected.taskId,
+    attemptId: selected.attemptId,
+    runtime: selected.runtime
   };
 }
 
@@ -117,6 +213,37 @@ function validatePromotionResultConsistency(
       "Attempt promotion audit summary requires result.candidates to preserve canonical promotion-result ordering."
     );
   }
+}
+
+function validateSelectedCandidate(
+  selected: AttemptPromotionResult["selected"]
+): void {
+  if (selected !== undefined && !isRecord(selected)) {
+    throw new ValidationError(
+      "Attempt promotion audit summary requires result.selected to be an object when provided."
+    );
+  }
+}
+
+function validateCanonicalCandidateIdentity(
+  taskId: AttemptPromotionResult["taskId"],
+  candidates: readonly AttemptPromotionCandidate[]
+): void {
+  validateDownstreamIdentityIngress(
+    candidates.map((candidate) => ({
+      taskId,
+      attemptId: candidate.attemptId,
+      runtime: candidate.runtime
+    })),
+    {
+      required:
+        "Attempt promotion audit summary requires result.taskId together with candidate.attemptId and candidate.runtime to be non-empty strings when candidates are present.",
+      singleTask:
+        "Attempt promotion audit summary requires result.candidates to remain within result.taskId.",
+      unique:
+        "Attempt promotion audit summary requires result.candidates to use unique (taskId, attemptId, runtime) identities."
+    }
+  );
 }
 
 function countComparableCandidates(
@@ -351,4 +478,8 @@ function stringArraysEqual(
     left.length === right.length &&
     left.every((value, index) => value === right[index])
   );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

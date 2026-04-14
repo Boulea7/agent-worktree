@@ -101,6 +101,55 @@ describe("selection handoff-request helpers", () => {
     );
   });
 
+  it("should fail loudly when target is not an object", () => {
+    expect(() => deriveAttemptHandoffRequest(null as never)).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptHandoffRequest(null as never)).toThrow(
+      "Attempt handoff request requires target to be an object when provided."
+    );
+  });
+
+  it("should fail closed when reading target through an accessor-shaped input", () => {
+    expect(() =>
+      deriveAttemptHandoffRequest({
+        get handoffBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffRequest({
+        get handoffBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(
+      "Attempt handoff request requires target to be a readable object when provided."
+    );
+  });
+
+  it("should fail loudly when target identity fields are inherited instead of owned", () => {
+    const target = Object.create({
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli",
+      status: "created",
+      sourceKind: undefined
+    }) as AttemptHandoffTarget;
+
+    Object.defineProperty(target, "handoffBasis", {
+      configurable: true,
+      enumerable: true,
+      value: "promotion_target"
+    });
+
+    expect(() => deriveAttemptHandoffRequest(target)).toThrow(ValidationError);
+    expect(() => deriveAttemptHandoffRequest(target)).toThrow(
+      "Attempt handoff request requires target.taskId to be a non-empty string."
+    );
+  });
+
   it("should fail loudly when target.taskId is not a non-empty string", () => {
     const target = {
       ...createHandoffTarget(),

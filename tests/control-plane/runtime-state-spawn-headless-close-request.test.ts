@@ -44,6 +44,109 @@ describe("control-plane runtime-state spawn-headless-close-request helpers", () 
     });
   });
 
+  it("should preserve descendant coverage blockers when the headless close target cannot produce a request", () => {
+    const headlessCloseTarget = createHeadlessCloseTarget({
+      headlessCloseCandidate: {
+        headlessContext: {
+          context: {
+            childRecords: [],
+            hasChildren: false,
+            hasKnownSession: true,
+            hasParent: true,
+            hasResolvedParent: true,
+            parentRecord: {
+              attemptId: "att_parent_descendant_close",
+              errorEventCount: 0,
+              lifecycleState: "active",
+              origin: "headless_result",
+              runCompleted: false,
+              runtime: "codex-cli",
+              sessionId: "thr_parent_descendant_close",
+              sourceKind: "direct"
+            },
+            record: {
+              attemptId: "att_child_descendant_close",
+              errorEventCount: 0,
+              lifecycleState: "active",
+              origin: "headless_result",
+              runCompleted: false,
+              runtime: "codex-cli",
+              sessionId: "thr_child_descendant_close",
+              sourceKind: "delegated"
+            },
+            selectedBy: "attemptId"
+          },
+          headlessView: {
+            descendantCoverage: "incomplete",
+            headlessRecord: {
+              headlessExecute: {} as never,
+              record: {
+                attemptId: "att_child_descendant_close",
+                errorEventCount: 0,
+                lifecycleState: "active",
+                origin: "headless_result",
+                runCompleted: false,
+                runtime: "codex-cli",
+                sessionId: "thr_child_descendant_close",
+                sourceKind: "delegated"
+              }
+            },
+            view: buildEmptyView()
+          }
+        },
+        candidate: {
+          context: {
+            childRecords: [],
+            hasChildren: false,
+            hasKnownSession: true,
+            hasParent: true,
+            hasResolvedParent: true,
+            parentRecord: {
+              attemptId: "att_parent_descendant_close",
+              errorEventCount: 0,
+              lifecycleState: "active",
+              origin: "headless_result",
+              runCompleted: false,
+              runtime: "codex-cli",
+              sessionId: "thr_parent_descendant_close",
+              sourceKind: "direct"
+            },
+            record: {
+              attemptId: "att_child_descendant_close",
+              errorEventCount: 0,
+              lifecycleState: "active",
+              origin: "headless_result",
+              runCompleted: false,
+              runtime: "codex-cli",
+              sessionId: "thr_child_descendant_close",
+              sourceKind: "delegated"
+            },
+            selectedBy: "attemptId"
+          },
+          readiness: {
+            alreadyFinal: false,
+            blockingReasons: ["descendant_coverage_incomplete"],
+            canClose: false,
+            hasBlockingReasons: true,
+            sessionLifecycleSupported: true,
+            wouldAffectDescendants: false
+          }
+        }
+      }
+    });
+
+    expect(
+      deriveExecutionSessionSpawnHeadlessCloseRequest({
+        headlessCloseTarget
+      })
+    ).toEqual({
+      headlessCloseTarget
+    });
+    expect(
+      headlessCloseTarget.headlessCloseCandidate.candidate.readiness.blockingReasons
+    ).toContain("descendant_coverage_incomplete");
+  });
+
   it("should reject non-object close request seam inputs before reading headlessCloseTarget", () => {
     expect(() =>
       deriveExecutionSessionSpawnHeadlessCloseRequest(undefined as never)
@@ -54,6 +157,105 @@ describe("control-plane runtime-state spawn-headless-close-request helpers", () 
       deriveExecutionSessionSpawnHeadlessCloseRequest(null as never)
     ).toThrow(
       "Execution session spawn headless close request input must be an object."
+    );
+  });
+
+  it("should reject inherited or getter-backed top-level headlessCloseTarget inputs", () => {
+    const canonicalTarget = createHeadlessCloseTarget({
+      target: {
+        attemptId: "att_top_level_close_request",
+        runtime: "codex-cli",
+        sessionId: "thr_top_level_close_request"
+      }
+    });
+    const inheritedInput = Object.create({
+      headlessCloseTarget: canonicalTarget
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessCloseRequest(inheritedInput as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessCloseRequest(inheritedInput as never)
+    ).toThrow(
+      "Execution session spawn headless close request requires a headlessCloseTarget wrapper."
+    );
+
+    const accessorInput = {};
+    Object.defineProperty(accessorInput, "headlessCloseTarget", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessCloseRequest(accessorInput as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessCloseRequest(accessorInput as never)
+    ).toThrow(
+      "Execution session spawn headless close request requires a headlessCloseTarget wrapper."
+    );
+  });
+
+  it("should reject wrapper-level targets that come only from the prototype chain", () => {
+    const canonicalTarget = createHeadlessCloseTarget({
+      target: {
+        attemptId: "att_proto_close_request",
+        runtime: "codex-cli",
+        sessionId: "thr_proto_close_request"
+      }
+    });
+    const headlessCloseTarget = Object.create({
+      target: canonicalTarget.target
+    });
+    headlessCloseTarget.headlessCloseCandidate =
+      canonicalTarget.headlessCloseCandidate;
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessCloseRequest({
+        headlessCloseTarget
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessCloseRequest({
+        headlessCloseTarget
+      } as never)
+    ).toThrow(
+      "Execution session spawn headless close request requires headlessCloseTarget.target to be an object when provided."
+    );
+  });
+
+  it("should reject wrapper-level targets whose getter throws", () => {
+    const canonicalTarget = createHeadlessCloseTarget({
+      target: {
+        attemptId: "att_accessor_close_request",
+        runtime: "codex-cli",
+        sessionId: "thr_accessor_close_request"
+      }
+    });
+    const headlessCloseTarget = {
+      headlessCloseCandidate: canonicalTarget.headlessCloseCandidate
+    };
+    Object.defineProperty(headlessCloseTarget, "target", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessCloseRequest({
+        headlessCloseTarget
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessCloseRequest({
+        headlessCloseTarget
+      } as never)
+    ).toThrow(
+      "Execution session spawn headless close request requires headlessCloseTarget.target to be an object when provided."
     );
   });
 
@@ -93,6 +295,21 @@ describe("control-plane runtime-state spawn-headless-close-request helpers", () 
       })
     ).toThrow(
       "Execution session spawn headless close request requires headlessCloseTarget.headlessCloseCandidate to include candidate and headlessContext objects."
+    );
+  });
+
+  it("should reject nested headless close candidates whose companion omits context or headlessView", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnHeadlessCloseRequest({
+        headlessCloseTarget: {
+          headlessCloseCandidate: {
+            candidate: {} as never,
+            headlessContext: {} as never
+          }
+        } as ExecutionSessionSpawnHeadlessCloseTarget
+      })
+    ).toThrow(
+      "Execution session spawn headless close request requires headlessCloseTarget.headlessCloseCandidate.headlessContext to include context and headlessView objects."
     );
   });
 

@@ -27,7 +27,7 @@ The future branch should evolve from the current repository instead of replacing
 
 - replacing attempt/worktree truth with thread/session truth
 - widening the current `main` public CLI surface by accident
-- importing DeerFlow's chat-product assumptions into the substrate
+- importing external chat-product assumptions into the substrate
 - promoting internal control objects into public contracts too early
 
 ## Migration Strategy

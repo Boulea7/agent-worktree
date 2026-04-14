@@ -28,6 +28,15 @@ export function deriveExecutionSessionCloseReadiness(
     );
   }
 
+  if (
+    input.resolveSessionLifecycleCapability !== undefined &&
+    typeof input.resolveSessionLifecycleCapability !== "function"
+  ) {
+    throw new ValidationError(
+      "Execution session close readiness requires resolveSessionLifecycleCapability to be a function when provided."
+    );
+  }
+
   const disposition = deriveExecutionSessionLifecycleDisposition({
     context: input.context
   });
@@ -45,6 +54,10 @@ export function deriveExecutionSessionCloseReadiness(
 
   if (!disposition.hasKnownSession) {
     blockingReasons.push("session_unknown");
+  }
+
+  if (normalizeDescendantCoverage(input.descendantCoverage) === "incomplete") {
+    blockingReasons.push("descendant_coverage_incomplete");
   }
 
   if (disposition.wouldAffectDescendants) {
@@ -66,7 +79,15 @@ function resolveSessionLifecycleCapability(
   runtime: string
 ): boolean {
   if (input.resolveSessionLifecycleCapability !== undefined) {
-    return input.resolveSessionLifecycleCapability(runtime);
+    const supported = input.resolveSessionLifecycleCapability(runtime);
+
+    if (typeof supported !== "boolean") {
+      throw new ValidationError(
+        "Execution session close readiness requires resolveSessionLifecycleCapability to return a boolean."
+      );
+    }
+
+    return supported;
   }
 
   try {
@@ -96,4 +117,20 @@ function normalizeRequiredRuntime(value: unknown): string {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function normalizeDescendantCoverage(
+  value: ExecutionSessionCloseReadinessInput["descendantCoverage"]
+): "complete" | "incomplete" | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === "complete" || value === "incomplete") {
+    return value;
+  }
+
+  throw new ValidationError(
+    "Execution session close readiness requires descendantCoverage to be \"complete\" or \"incomplete\" when provided."
+  );
 }

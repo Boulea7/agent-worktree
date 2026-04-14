@@ -1,4 +1,9 @@
-import { ValidationError } from "../core/errors.js";
+import {
+  normalizeBatchWrapper,
+  normalizeBatchWrapperObjectItems,
+  readOptionalBatchWrapperProperty,
+  readRequiredBatchWrapperProperty
+} from "./runtime-state-batch-wrapper-guards.js";
 import { normalizeHeadlessTargetBatchWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import { deriveExecutionSessionSpawnHeadlessWaitRequest } from "./runtime-state-spawn-headless-wait-request.js";
 import type {
@@ -10,22 +15,40 @@ import type {
 export function deriveExecutionSessionSpawnHeadlessWaitRequestBatch(
   input: ExecutionSessionSpawnHeadlessWaitRequestBatchInput
 ): ExecutionSessionSpawnHeadlessWaitRequestBatch {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) {
-    throw new ValidationError(
+  const normalizedInput =
+    normalizeBatchWrapper<ExecutionSessionSpawnHeadlessWaitRequestBatchInput>(
+      input,
       "Execution session spawn headless wait request batch input must be an object."
     );
-  }
 
   const headlessWaitTargetBatch = normalizeHeadlessWaitTargetBatch(
-    input.headlessWaitTargetBatch
+    readRequiredBatchWrapperProperty<
+      ExecutionSessionSpawnHeadlessWaitRequestBatchInput["headlessWaitTargetBatch"]
+    >(
+      normalizedInput,
+      "headlessWaitTargetBatch",
+      "Execution session spawn headless wait request batch requires a headlessWaitTargetBatch wrapper."
+    )
+  );
+  const timeoutMs = readOptionalBatchWrapperProperty<number>(
+    normalizedInput,
+    "timeoutMs",
+    "Execution session wait request timeoutMs must be a finite integer greater than 0."
+  );
+  const headlessWaitTargets = normalizeBatchWrapperObjectItems<
+    ExecutionSessionSpawnHeadlessWaitRequestBatch["headlessWaitTargetBatch"]["results"][number]
+  >(
+    headlessWaitTargetBatch.results,
+    "Execution session spawn headless wait request batch requires headlessWaitTargetBatch.results to be an array.",
+    "Execution session spawn headless wait request batch requires headlessWaitTargetBatch.results entries to be objects."
   );
   const results: ExecutionSessionSpawnHeadlessWaitRequest[] = [];
 
-  for (const headlessWaitTarget of headlessWaitTargetBatch.results) {
+  for (const headlessWaitTarget of headlessWaitTargets) {
     results.push(
       deriveExecutionSessionSpawnHeadlessWaitRequest({
         headlessWaitTarget,
-        ...(input.timeoutMs === undefined ? {} : { timeoutMs: input.timeoutMs })
+        ...(timeoutMs === undefined ? {} : { timeoutMs })
       })
     );
   }
@@ -41,6 +64,7 @@ function normalizeHeadlessWaitTargetBatch(
 ) {
   return normalizeHeadlessTargetBatchWrapper(value, {
     context: "Execution session spawn headless wait request batch",
-    wrapperKey: "headlessWaitTargetBatch"
+    wrapperKey: "headlessWaitTargetBatch",
+    companionKey: "headlessWaitCandidateBatch"
   });
 }

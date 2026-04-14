@@ -127,7 +127,7 @@ describe("selection handoff-finalization-closeout-decision helpers", () => {
     });
   });
 
-  it("should stay advance-ready when closeout results are mixed", () => {
+  it("should derive a mixed-disposition blocker when closeout results are mixed", () => {
     expect(
       deriveAttemptHandoffFinalizationCloseoutDecisionSummary(
         createClosureSummary({
@@ -149,9 +149,9 @@ describe("selection handoff-finalization-closeout-decision helpers", () => {
       blockedResultCount: 2,
       groupCount: 2,
       reportingDisposition: "mixed",
-      blockingReasons: [],
-      canAdvanceFromCloseout: true,
-      hasBlockingReasons: false
+      blockingReasons: ["handoff_finalization_mixed_disposition"],
+      canAdvanceFromCloseout: false,
+      hasBlockingReasons: true
     });
   });
 
@@ -175,6 +175,35 @@ describe("selection handoff-finalization-closeout-decision helpers", () => {
     expect(act).toThrow(ValidationError);
     expect(act).toThrow(
       'Attempt handoff finalization closeout decision summary requires summary.closureBasis to be "handoff_finalization_grouped_reporting_disposition_summary".'
+    );
+  });
+
+  it("should fail closed when reading closure booleans throws through an accessor-shaped input", () => {
+    const summary = createClosureSummary({
+      resultCount: 1,
+      invokedResultCount: 1,
+      blockedResultCount: 0,
+      groupCount: 1,
+      reportingDisposition: "all_invoked",
+      hasResults: true,
+      allResultsInvoked: true,
+      allResultsBlocked: false,
+      hasMixedDisposition: false
+    });
+    Object.defineProperty(summary, "hasResults", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    const act = () =>
+      deriveAttemptHandoffFinalizationCloseoutDecisionSummary(summary as never);
+
+    expect(act).toThrow(ValidationError);
+    expect(act).toThrow(
+      "Attempt handoff finalization closeout decision summary requires summary.hasResults to match the canonical result-count derivation."
     );
   });
 

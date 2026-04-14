@@ -69,14 +69,14 @@ describe("selection handoff-finalization-target helpers", () => {
             runtime: "claude-code"
           }),
           createInvokedExplanationEntry({
-            taskId: "task_one",
+            taskId: "task_shared",
             attemptId: "att_invoked_one",
             runtime: "gemini-cli",
             status: "running",
             sourceKind: "delegated"
           }),
           createInvokedExplanationEntry({
-            taskId: "task_two",
+            taskId: "task_shared",
             attemptId: "att_invoked_two",
             runtime: "codex-cli",
             status: "created",
@@ -93,14 +93,14 @@ describe("selection handoff-finalization-target helpers", () => {
       canFinalizeHandoff: true,
       targets: [
         {
-          taskId: "task_one",
+          taskId: "task_shared",
           attemptId: "att_invoked_one",
           runtime: "gemini-cli",
           status: "running",
           sourceKind: "delegated"
         },
         {
-          taskId: "task_two",
+          taskId: "task_shared",
           attemptId: "att_invoked_two",
           runtime: "codex-cli",
           status: "created",
@@ -140,6 +140,42 @@ describe("selection handoff-finalization-target helpers", () => {
     });
   });
 
+  it("should fail loudly when explanation results mix taskIds after canonicalization", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationTargetSummary(
+        createExplanationSummary([
+          createInvokedExplanationEntry({
+            taskId: "task_shared",
+            attemptId: "att_one"
+          }),
+          createInvokedExplanationEntry({
+            taskId: " task_other ",
+            attemptId: "att_two"
+          })
+        ])
+      )
+    ).toThrow(ValidationError);
+  });
+
+  it("should fail loudly when explanation results reuse duplicate identities after canonicalization", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationTargetSummary(
+        createExplanationSummary([
+          createInvokedExplanationEntry({
+            taskId: "task_shared",
+            attemptId: "att_same",
+            runtime: " codex-cli "
+          }),
+          createInvokedExplanationEntry({
+            taskId: " task_shared ",
+            attemptId: " att_same ",
+            runtime: "codex-cli"
+          })
+        ])
+      )
+    ).toThrow(ValidationError);
+  });
+
   it("should keep the finalization target shape minimal without leaking apply or readiness metadata", () => {
     const summary = deriveAttemptHandoffFinalizationTargetSummary(
       createExplanationSummary([createInvokedExplanationEntry()])
@@ -170,14 +206,109 @@ describe("selection handoff-finalization-target helpers", () => {
     expect(summary).not.toHaveProperty("readiness");
   });
 
-  it("should fail loudly when handoff finalization is ready but invokedResults is empty", () => {
-    const summary = {
-      ...createExplanationSummary([createInvokedExplanationEntry()]),
-      invokedResults: []
-    };
+  it("should fail closed when subgroup accessors throw instead of silently rebuilding subgroup projections", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationTargetSummary({
+        explanationBasis: "handoff_report_ready",
+        results: [createInvokedExplanationEntry()],
+        get invokedResults() {
+          throw new Error("getter boom");
+        },
+        get blockedResults() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationTargetSummary({
+        explanationBasis: "handoff_report_ready",
+        results: [createInvokedExplanationEntry()],
+        get invokedResults() {
+          throw new Error("getter boom");
+        },
+        get blockedResults() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization target summary requires summary to be a readable object."
+    );
+  });
 
-    expect(() => deriveAttemptHandoffFinalizationTargetSummary(summary)).toThrow(
-      ValidationError
+  it("should fail loudly when invokedResults or blockedResults is omitted", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationTargetSummary({
+        explanationBasis: "handoff_report_ready",
+        results: [createInvokedExplanationEntry()]
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationTargetSummary({
+        explanationBasis: "handoff_report_ready",
+        results: [createInvokedExplanationEntry()]
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization target summary requires summary.invokedResults to be an array."
+    );
+  });
+
+  it("should fail loudly when subgroup entries drift from the canonical explanation summary", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationTargetSummary({
+        explanationBasis: "handoff_report_ready",
+        results: [createInvokedExplanationEntry()],
+        invokedResults: [
+          {
+            ...createInvokedExplanationEntry(),
+            explanationCode: "handoff_blocked_unsupported"
+          }
+        ],
+        blockedResults: []
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationTargetSummary({
+        explanationBasis: "handoff_report_ready",
+        results: [createInvokedExplanationEntry()],
+        invokedResults: [
+          {
+            ...createInvokedExplanationEntry(),
+            explanationCode: "handoff_blocked_unsupported"
+          }
+        ],
+        blockedResults: []
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization target summary requires summary subgroup projections to match the canonical explanation summary."
+    );
+  });
+
+  it("should fail loudly when a finalize-ready decision would keep no invoked results", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationTargetSummary({
+        explanationBasis: "handoff_report_ready",
+        results: [createBlockedExplanationEntry()],
+        invokedResults: [],
+        blockedResults: []
+      } as never)
+    ).toThrow(ValidationError);
+  });
+
+  it("should fail loudly when results entries drift even if canonical subgroups still match", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationTargetSummary({
+        explanationBasis: "handoff_report_ready",
+        results: [
+          {
+            ...createInvokedExplanationEntry(),
+            explanationCode: "handoff_blocked_unsupported"
+          }
+        ],
+        invokedResults: [createInvokedExplanationEntry()],
+        blockedResults: []
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization target summary requires summary.results to match the canonical explanation summary."
     );
   });
 
@@ -415,7 +546,7 @@ function createPromotionCandidate(
 function createManifest(
   overrides: {
     attemptId: string;
-    runtime?: string;
+    runtime?: import("../../src/manifest/types.js").AttemptManifest["runtime"];
     sourceKind?: "direct" | "resume" | "fork" | "delegated";
     status?: "created" | "running" | "paused" | "failed" | "verified" | "merged" | "cleaned";
     taskId?: string;

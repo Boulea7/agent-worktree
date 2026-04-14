@@ -75,6 +75,25 @@ describe("selection handoff-finalization-report-ready helpers", () => {
     );
   });
 
+  it("should fail closed when reading the supplied explanation summary through an accessor-shaped input", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady({
+        get explanationBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady({
+        get explanationBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization report-ready requires summary to be a readable object."
+    );
+  });
+
   it("should fail loudly when the supplied explanation basis drifts from the current finalization explanation layer", () => {
     expect(() =>
       deriveAttemptHandoffFinalizationReportReady({
@@ -110,6 +129,33 @@ describe("selection handoff-finalization-report-ready helpers", () => {
       } as never)
     ).toThrow(
       "Attempt handoff finalization report-ready requires summary.results to be an array."
+    );
+  });
+
+  it("should fail loudly when summary.invokedResults or summary.blockedResults is omitted", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady({
+        explanationBasis: "handoff_finalization_outcome_summary",
+        results: []
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady({
+        explanationBasis: "handoff_finalization_outcome_summary",
+        results: []
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization report-ready requires summary.invokedResults to be an array."
+    );
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady({
+        explanationBasis: "handoff_finalization_outcome_summary",
+        results: [],
+        invokedResults: []
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization report-ready requires summary.blockedResults to be an array."
     );
   });
 
@@ -217,6 +263,72 @@ describe("selection handoff-finalization-report-ready helpers", () => {
     });
   });
 
+  it("should fail loudly when summary.results mixes taskIds after canonicalization", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady(
+        createExplanationSummary([
+          createBlockedExplanationEntry({
+            outcome: {
+              taskId: "task_shared",
+              attemptId: "att_a",
+              runtime: "blocked-cli",
+              status: "created",
+              sourceKind: undefined,
+              invoked: false,
+              blockingReasons: ["handoff_finalization_unsupported"]
+            }
+          }),
+          createInvokedExplanationEntry({
+            outcome: {
+              taskId: " task_other ",
+              attemptId: "att_b",
+              runtime: "codex-cli",
+              status: "running",
+              sourceKind: "delegated",
+              invoked: true,
+              blockingReasons: []
+            }
+          })
+        ])
+      )
+    ).toThrow(
+      "Attempt handoff finalization report-ready requires summary.results from a single taskId."
+    );
+  });
+
+  it("should fail loudly when summary.results reuse normalized downstream identities", () => {
+    expect(() =>
+      deriveAttemptHandoffFinalizationReportReady(
+        createExplanationSummary([
+          createInvokedExplanationEntry({
+            outcome: {
+              taskId: "task_shared",
+              attemptId: "att_dup",
+              runtime: "codex-cli",
+              status: "created",
+              sourceKind: undefined,
+              invoked: true,
+              blockingReasons: []
+            }
+          }),
+          createInvokedExplanationEntry({
+            outcome: {
+              taskId: " task_shared ",
+              attemptId: " att_dup ",
+              runtime: " codex-cli ",
+              status: "running",
+              sourceKind: "delegated",
+              invoked: true,
+              blockingReasons: []
+            }
+          })
+        ])
+      )
+    ).toThrow(
+      "Attempt handoff finalization report-ready requires summary.results to use unique (taskId, attemptId, runtime) identities."
+    );
+  });
+
   it("should fail loudly when explanation subgroups drift from the canonical filtered groups", () => {
     expect(() =>
       deriveAttemptHandoffFinalizationReportReady({
@@ -250,7 +362,7 @@ describe("selection handoff-finalization-report-ready helpers", () => {
         invokedResults: sparseInvokedResults
       })
     ).toThrow(
-      "Attempt handoff finalization report-ready requires summary.invokedResults to match the stable filtered invoked subgroup."
+      "Attempt handoff finalization report-ready requires summary.invokedResults entries to be objects."
     );
   });
 

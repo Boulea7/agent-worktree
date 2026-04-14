@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { GitError, ValidationError } from "../core/errors.js";
 import {
+  canonicalizePathForBoundary,
   defaultManifestRoot,
   defaultWorktreeRoot,
   isPathInsideRoot,
@@ -57,11 +58,13 @@ export async function cleanupAttempt(
 
   validateCleanupManifest(manifest, options.attemptId);
 
-  const normalizedWorktreePath = await normalizePath(manifest.worktreePath);
-  const normalizedRepoRoot = await normalizePath(manifest.repoRoot);
-  const normalizedWorktreeRoot = await normalizePath(worktreeRoot);
-  const normalizedManifestRoot = await normalizePath(manifestRoot);
-  const normalizedManifestDirectory = await normalizePath(
+  const normalizedWorktreePath = await canonicalizePathForBoundary(
+    manifest.worktreePath
+  );
+  const normalizedRepoRoot = await canonicalizePathForBoundary(manifest.repoRoot);
+  const normalizedWorktreeRoot = await canonicalizePathForBoundary(worktreeRoot);
+  const normalizedManifestRoot = await canonicalizePathForBoundary(manifestRoot);
+  const normalizedManifestDirectory = await canonicalizePathForBoundary(
     getManifestDirectory(options.attemptId, { rootDir: manifestRoot })
   );
 
@@ -74,12 +77,12 @@ export async function cleanupAttempt(
     options.attemptId
   );
 
-  const registeredWorktrees = await listRegisteredWorktrees(manifest.repoRoot);
+  const registeredWorktrees = await listRegisteredWorktrees(normalizedRepoRoot);
   const registeredWorktree = findRegisteredWorktree(
     registeredWorktrees,
     normalizedWorktreePath
   );
-  const worktreeExists = await pathExists(manifest.worktreePath);
+  const worktreeExists = await pathExists(normalizedWorktreePath);
 
   if (manifest.status === "cleaned") {
     return handleAlreadyCleaned(manifest, worktreeExists, registeredWorktree);
@@ -115,10 +118,10 @@ export async function cleanupAttempt(
     );
   }
 
-  await ensureWorktreeIsClean(manifest.worktreePath, options.attemptId);
+  await ensureWorktreeIsClean(normalizedWorktreePath, options.attemptId);
   await cleanupWorktreeMaterial({
-    repoRoot: manifest.repoRoot,
-    worktreePath: manifest.worktreePath
+    repoRoot: normalizedRepoRoot,
+    worktreePath: normalizedWorktreePath
   });
 
   const cleanedAttempt = createCleanedManifest(manifest, now);
@@ -136,14 +139,37 @@ export async function cleanupWorktreeMaterial(options: {
     });
   } catch (error) {
     if (error instanceof GitError) {
-      throw new ValidationError(
-        `Cleanup refused because git would require a forceful worktree removal for ${options.worktreePath}.`,
-        error
-      );
+      throw classifyCleanupGitError(error, options.worktreePath);
     }
 
     throw error;
   }
+}
+
+function classifyCleanupGitError(
+  error: GitError,
+  worktreePath: string
+): ValidationError {
+  const stderr = extractGitStderr(error);
+
+  if (requiresForcefulWorktreeRemoval(stderr)) {
+    return new ValidationError(
+      `Cleanup refused because git would require a forceful worktree removal for ${worktreePath}.`,
+      error
+    );
+  }
+
+  if (indicatesUnregisteredWorktree(stderr)) {
+    return new ValidationError(
+      `Cleanup refused because git could not confirm ${worktreePath} is still a registered worktree.`,
+      error
+    );
+  }
+
+  return new ValidationError(
+    `Cleanup failed because git could not remove the managed worktree for ${worktreePath}.`,
+    error
+  );
 }
 
 function validateCleanupManifest(
@@ -219,32 +245,36 @@ async function listRegisteredWorktrees(repoRoot: string): Promise<RegisteredWork
   return parseRegisteredWorktrees(output);
 }
 
-function parseRegisteredWorktrees(output: string): RegisteredWorktree[] {
+async function parseRegisteredWorktrees(output: string): Promise<RegisteredWorktree[]> {
   if (output.length === 0) {
     return [];
   }
 
-  return output
-    .trim()
-    .split(/\n\s*\n/)
-    .flatMap((block) => {
+  const blocks = output.trim().split(/\n\s*\n/);
+  const registeredWorktrees = await Promise.all(
+    blocks.map(async (block) => {
       const lines = block.split("\n");
       const pathLine = lines.find((line) => line.startsWith("worktree "));
 
       if (!pathLine) {
-        return [];
+        return undefined;
       }
 
       const branchLine = lines.find((line) => line.startsWith("branch "));
       const branch = normalizeBranchRef(branchLine?.slice("branch ".length).trim());
 
-      return [
-        {
-          path: normalizePathForComparison(pathLine.slice("worktree ".length).trim()),
-          branch
-        }
-      ];
-    });
+      return {
+        path: await canonicalizePathForBoundary(
+          pathLine.slice("worktree ".length).trim()
+        ),
+        branch
+      };
+    })
+  );
+
+  return registeredWorktrees.filter(
+    (worktree): worktree is RegisteredWorktree => worktree !== undefined
+  );
 }
 
 function normalizeBranchRef(branch: string | undefined): string | undefined {
@@ -305,10 +335,6 @@ function ensureControlledWorktreePath(
   }
 }
 
-async function normalizePath(targetPath: string): Promise<string> {
-  return normalizePathForComparison(targetPath);
-}
-
 async function pathExists(targetPath: string): Promise<boolean> {
   try {
     await access(targetPath);
@@ -320,6 +346,35 @@ async function pathExists(targetPath: string): Promise<boolean> {
 
     throw error;
   }
+}
+
+function extractGitStderr(error: GitError): string {
+  const causeValue = error.causeValue;
+
+  if (
+    causeValue &&
+    typeof causeValue === "object" &&
+    "stderr" in causeValue &&
+    typeof causeValue.stderr === "string"
+  ) {
+    return causeValue.stderr.trim().toLowerCase();
+  }
+
+  return "";
+}
+
+function requiresForcefulWorktreeRemoval(stderr: string): boolean {
+  return (
+    stderr.includes("use --force to delete it") ||
+    stderr.includes("use -f to delete it")
+  );
+}
+
+function indicatesUnregisteredWorktree(stderr: string): boolean {
+  return (
+    stderr.includes("is not a working tree") ||
+    stderr.includes("is not a git worktree")
+  );
 }
 
 function createCleanedManifest(

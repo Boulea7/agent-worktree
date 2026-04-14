@@ -41,6 +41,18 @@ Potential future work:
 - routing coding-heavy stages to coding-focused runtimes
 - routing evaluation-heavy stages to faster verifier-style models
 
+## Track 6: Internal Closeout And Lifecycle Prep
+
+Potential future work:
+
+- continue internal-only selection closeout hardening across report-ready, grouped reporting, closure, and closeout decision composition
+- continue internal-only headless wait/close request and target-apply prep on top of the existing control-plane foundation
+- keep these thin slices traceable through the maintainer phase guide without promoting them into public lifecycle guarantees
+
+See also:
+
+- [Development Phases](../maintainers/development-phases.md)
+
 ## Research Rule
 
 These tracks are intentional research directions, not v1 commitments.

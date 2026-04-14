@@ -39,6 +39,53 @@ describe("control-plane runtime-state wait-apply-batch helpers", () => {
     );
   });
 
+  it("should reject inherited request containers", async () => {
+    const inheritedInput = Object.create({
+      requests: [createWaitRequest()],
+      invokeWait: async () => undefined
+    });
+
+    await expect(
+      applyExecutionSessionWaitBatch(inheritedInput as never)
+    ).rejects.toThrow(
+      "Execution session wait apply batch requires requests to be an array."
+    );
+  });
+
+  it("should fail loudly when request entries are sparse or non-object before invoking", async () => {
+    const invokeWait = vi.fn(async () => undefined);
+    const sparseRequests = new Array<ExecutionSessionWaitRequest>(1);
+
+    await expect(
+      applyExecutionSessionWaitBatch({
+        requests: sparseRequests,
+        invokeWait
+      })
+    ).rejects.toThrow(
+      "Execution session wait apply batch requires requests entries to be objects."
+    );
+
+    await expect(
+      applyExecutionSessionWaitBatch({
+        requests: [0] as never,
+        invokeWait
+      })
+    ).rejects.toThrow(
+      "Execution session wait apply batch requires requests entries to be objects."
+    );
+
+    await expect(
+      applyExecutionSessionWaitBatch({
+        requests: [createWaitRequest(), 0] as never,
+        invokeWait
+      })
+    ).rejects.toThrow(
+      "Execution session wait apply batch requires requests entries to be objects."
+    );
+
+    expect(invokeWait).not.toHaveBeenCalled();
+  });
+
   it("should return an empty batch result for an empty request list", async () => {
     await expect(
       applyExecutionSessionWaitBatch({
@@ -250,6 +297,61 @@ describe("control-plane runtime-state wait-apply-batch helpers", () => {
     expect(result).not.toHaveProperty("error");
     expect(result).not.toHaveProperty("errors");
     expect(requests).toEqual(snapshot);
+  });
+
+  it("should snapshot invokeWait and the optional resolver once for the whole batch", async () => {
+    let invokeWaitReads = 0;
+    let resolverReads = 0;
+
+    await expect(
+      applyExecutionSessionWaitBatch({
+        requests: [createWaitRequest()],
+        get invokeWait() {
+          invokeWaitReads += 1;
+
+          if (invokeWaitReads > 1) {
+            throw new Error("invokeWait getter read twice");
+          }
+
+          return async () => undefined;
+        },
+        get resolveSessionLifecycleCapability() {
+          resolverReads += 1;
+
+          if (resolverReads > 1) {
+            throw new Error("resolver getter read twice");
+          }
+
+          return () => true;
+        }
+      } as never)
+    ).resolves.toEqual({
+      results: [
+        {
+          consumer: {
+            request: createWaitRequest(),
+            readiness: createReadiness({
+              blockingReasons: [],
+              canConsumeWait: true,
+              hasBlockingReasons: false,
+              sessionLifecycleSupported: true
+            })
+          },
+          consume: {
+            request: createWaitRequest(),
+            readiness: createReadiness({
+              blockingReasons: [],
+              canConsumeWait: true,
+              hasBlockingReasons: false,
+              sessionLifecycleSupported: true
+            }),
+            invoked: true
+          }
+        }
+      ]
+    });
+    expect(invokeWaitReads).toBe(1);
+    expect(resolverReads).toBe(1);
   });
 
   it("should normalize each request before deriving readiness in batch mode", async () => {

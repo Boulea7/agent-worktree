@@ -70,6 +70,46 @@ describe("parseProjectConfig", () => {
     });
   });
 
+  it("should reject unknown keys inside reserved core namespaces", () => {
+    expect(() =>
+      parseProjectConfig({
+        version: "0.x",
+        runtimes: {
+          codex_cli: {
+            enabled: true
+          }
+        }
+      })
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      parseProjectConfig({
+        version: "0.x",
+        bootstrap: {
+          install: true
+        }
+      })
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      parseProjectConfig({
+        version: "0.x",
+        verify: {
+          lint: true
+        }
+      })
+    ).toThrow(ValidationError);
+
+    expect(() =>
+      parseProjectConfig({
+        version: "0.x",
+        policies: {
+          approvals: "strict"
+        }
+      })
+    ).toThrow(ValidationError);
+  });
+
   it("should return fresh mutable containers on each parse", () => {
     const first = parseProjectConfig({ version: "0.x" });
     first.compatibility.experimental.push("custom-runtime");
@@ -96,6 +136,28 @@ describe("parseProjectConfig", () => {
     const fresh = parseProjectConfig({ version: "0.x" });
 
     expect(fresh.extensions).toEqual({});
+  });
+
+  it("should reject defaults.execution_mode outside the documented vocabulary", () => {
+    expect(() =>
+      parseProjectConfig({
+        version: "0.x",
+        defaults: {
+          execution_mode: "background_daemon"
+        }
+      })
+    ).toThrow(ValidationError);
+  });
+
+  it("should reject defaults.safety_intent outside the documented vocabulary", () => {
+    expect(() =>
+      parseProjectConfig({
+        version: "0.x",
+        defaults: {
+          safety_intent: "unsafe_unbounded"
+        }
+      })
+    ).toThrow(ValidationError);
   });
 });
 

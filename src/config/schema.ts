@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-import { runtimeKinds } from "../core/capabilities.js";
+import {
+  executionModes,
+  runtimeKinds,
+  safetyIntents
+} from "../core/capabilities.js";
 import { ValidationError } from "../core/errors.js";
 import {
   builtInProjectConfig,
@@ -20,8 +24,8 @@ const compatibilitySchema = z
 
 const defaultsSchema = z
   .object({
-    execution_mode: z.string().optional(),
-    safety_intent: z.string().optional()
+    execution_mode: z.enum(executionModes).optional(),
+    safety_intent: z.enum(safetyIntents).optional()
   })
   .strict();
 
@@ -32,16 +36,18 @@ const instructionsSchema = z
   })
   .strict();
 
+const reservedEmptyNamespaceSchema = z.object({}).strict();
+
 export const rawProjectConfigSchema = z
   .object({
     version: z.string(),
     compatibility: compatibilitySchema.optional(),
     defaults: defaultsSchema.optional(),
     instructions: instructionsSchema.optional(),
-    runtimes: z.record(z.string(), z.unknown()).optional(),
-    bootstrap: z.record(z.string(), z.unknown()).optional(),
-    verify: z.record(z.string(), z.unknown()).optional(),
-    policies: z.record(z.string(), z.unknown()).optional(),
+    runtimes: reservedEmptyNamespaceSchema.optional(),
+    bootstrap: reservedEmptyNamespaceSchema.optional(),
+    verify: reservedEmptyNamespaceSchema.optional(),
+    policies: reservedEmptyNamespaceSchema.optional(),
     extensions: z.record(z.string(), z.unknown()).optional()
   })
   .strict();

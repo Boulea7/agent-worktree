@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { ValidationError } from "../../src/core/errors.js";
 import type {
@@ -14,6 +14,7 @@ import {
   deriveAttemptVerificationArtifactSummary,
   deriveAttemptVerificationSummary
 } from "../../src/verification/internal.js";
+import * as handoffTargetApplyModule from "../../src/selection/handoff-target-apply.js";
 import type {
   AttemptVerificationArtifactSummary,
   AttemptVerificationCheckStatus,
@@ -116,6 +117,20 @@ describe("selection handoff-target-apply-batch helpers", () => {
     );
   });
 
+  it("should fail closed when reading targets throws through an accessor-shaped input", async () => {
+    const invokeHandoff = vi.fn(async () => undefined);
+
+    await expect(
+      applyAttemptHandoffTargetBatch({
+        get targets() {
+          throw new Error("getter boom");
+        },
+        invokeHandoff
+      } as never)
+    ).rejects.toThrow(ValidationError);
+    expect(invokeHandoff).not.toHaveBeenCalled();
+  });
+
   it("should return an empty batch result for an empty target list", async () => {
     await expect(
       applyAttemptHandoffTargetBatch({
@@ -127,6 +142,86 @@ describe("selection handoff-target-apply-batch helpers", () => {
     ).resolves.toEqual({
       results: []
     });
+  });
+
+  it("should fail loudly when targets from different taskIds are mixed after normalization", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      applyAttemptHandoffTargetBatch({
+        targets: [
+          createHandoffTarget({
+            taskId: "task_shared",
+            attemptId: "att_a"
+          }),
+          createHandoffTarget({
+            taskId: " task_other ",
+            attemptId: "att_b"
+          })
+        ],
+        invokeHandoff: async (request) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(
+      "Attempt handoff target apply batch requires targets from a single taskId."
+    );
+    expect(invokedAttemptIds).toEqual([]);
+  });
+
+  it("should fail loudly when targets reuse normalized target identities", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      applyAttemptHandoffTargetBatch({
+        targets: [
+          createHandoffTarget({
+            taskId: "task_shared",
+            attemptId: "att_dup",
+            runtime: "codex-cli"
+          }),
+          createHandoffTarget({
+            taskId: " task_shared ",
+            attemptId: " att_dup ",
+            runtime: " codex-cli "
+          })
+        ],
+        invokeHandoff: async (request) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(
+      "Attempt handoff target apply batch requires targets to use unique (taskId, attemptId, runtime) identities."
+    );
+    expect(invokedAttemptIds).toEqual([]);
+  });
+
+  it("should fail before invoking when any target identity field is blank after normalization", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      applyAttemptHandoffTargetBatch({
+        targets: [
+          createHandoffTarget({
+            taskId: "task_shared",
+            attemptId: "att_valid"
+          }),
+          {
+            ...createHandoffTarget({
+              taskId: "task_shared",
+              attemptId: "att_invalid"
+            }),
+            runtime: "   "
+          } as AttemptHandoffTarget
+        ],
+        invokeHandoff: async (request) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(
+      "Attempt handoff target apply batch requires targets entries to include non-empty taskId, attemptId, and runtime strings."
+    );
+    expect(invokedAttemptIds).toEqual([]);
   });
 
   it("should preserve input order and continue past blocked targets", async () => {
@@ -290,6 +385,25 @@ describe("selection handoff-target-apply-batch helpers", () => {
     );
   });
 
+  it("should fail loudly when a target does not produce a target-apply result", async () => {
+    const applySpy = vi
+      .spyOn(handoffTargetApplyModule, "applyAttemptHandoffTarget")
+      .mockResolvedValueOnce(undefined as never);
+
+    try {
+      await expect(
+        applyAttemptHandoffTargetBatch({
+          targets: [createHandoffTarget()],
+          invokeHandoff: async () => undefined
+        })
+      ).rejects.toThrow(
+        "Attempt handoff target apply batch requires each target to produce a target-apply result."
+      );
+    } finally {
+      applySpy.mockRestore();
+    }
+  });
+
   it("should fail loudly when target entries are sparse or non-objects before later helpers run", async () => {
     const sparseTargets = new Array<AttemptHandoffTarget>(1);
 
@@ -303,7 +417,7 @@ describe("selection handoff-target-apply-batch helpers", () => {
     );
   });
 
-  it("should preserve ordered fail-fast semantics when a later target entry is malformed", async () => {
+  it("should fail preflight before invoking when a later target entry is malformed", async () => {
     const invokedAttemptIds: string[] = [];
 
     await expect(
@@ -325,7 +439,7 @@ describe("selection handoff-target-apply-batch helpers", () => {
     ).rejects.toThrow(
       "Attempt handoff target apply batch requires targets entries to be objects."
     );
-    expect(invokedAttemptIds).toEqual(["att_supported_1"]);
+    expect(invokedAttemptIds).toEqual([]);
   });
 
   it("should not mutate the supplied targets", async () => {

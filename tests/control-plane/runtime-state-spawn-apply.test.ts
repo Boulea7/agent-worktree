@@ -173,7 +173,7 @@ describe("control-plane runtime-state spawn-apply helpers", () => {
     ).rejects.toThrow(expectedError);
   });
 
-  it("should invoke consume before surfacing invalid childAttemptId failures", async () => {
+  it("should reject invalid childAttemptId before invoking spawn", async () => {
     const invokeSpawn = vi.fn(async () => undefined);
 
     await expect(
@@ -185,7 +185,7 @@ describe("control-plane runtime-state spawn-apply helpers", () => {
         invokeSpawn
       })
     ).rejects.toThrow(ValidationError);
-    expect(invokeSpawn).toHaveBeenCalledTimes(1);
+    expect(invokeSpawn).not.toHaveBeenCalled();
   });
 
   it("should normalize the request before deriving effects and invoking spawn", async () => {

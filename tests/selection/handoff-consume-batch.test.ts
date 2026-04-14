@@ -59,6 +59,17 @@ describe("selection handoff-consume-batch helpers", () => {
     );
   });
 
+  it("should fail closed when reading consumers throws through an accessor-shaped input", async () => {
+    await expect(
+      consumeAttemptHandoffBatch({
+        get consumers() {
+          throw new Error("getter boom");
+        },
+        invokeHandoff: async () => undefined
+      } as never)
+    ).rejects.toThrow(ValidationError);
+  });
+
   it("should preserve input order and continue past blocked consumers", async () => {
     const consumers = [
       createHandoffConsumer({

@@ -1,8 +1,8 @@
-import { mkdtemp, realpath, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, realpath, rm, symlink } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { RuntimeError, ValidationError } from "../../src/core/errors.js";
 import { readManifest } from "../../src/manifest/store.js";
@@ -22,6 +22,8 @@ describe("createAttempt", () => {
       )
     );
     tempDirectories.length = 0;
+    vi.resetModules();
+    vi.doUnmock("../../src/worktree/create-residue.js");
   });
 
   async function createTempDirectory(prefix: string): Promise<string> {
@@ -171,6 +173,49 @@ describe("createAttempt", () => {
     ).rejects.toThrow(ValidationError);
   }, integrationTestTimeoutMs);
 
+  it("should reject symlinked worktree roots whose real target overlaps the primary repository", async () => {
+    const { repoRoot } = await createTestRepository();
+    tempDirectories.push(repoRoot);
+    const manifestRoot = await createTempDirectory("agent-worktree-manifest-");
+    const aliasContainer = await createTempDirectory("agent-worktree-alias-");
+    const symlinkedWorktreeRoot = path.join(aliasContainer, "worktrees-link");
+
+    await mkdir(path.join(repoRoot, ".nested-worktrees"), { recursive: true });
+    await symlink(
+      path.join(repoRoot, ".nested-worktrees"),
+      symlinkedWorktreeRoot,
+      "dir"
+    );
+
+    await expect(
+      createAttempt({
+        repoRoot,
+        taskId: "Symlink overlap",
+        manifestRoot,
+        worktreeRoot: symlinkedWorktreeRoot
+      })
+    ).rejects.toThrow(ValidationError);
+  }, integrationTestTimeoutMs);
+
+  it("should reject symlinked worktree roots whose real target overlaps the manifest store", async () => {
+    const { repoRoot } = await createTestRepository();
+    tempDirectories.push(repoRoot);
+    const manifestRoot = await createTempDirectory("agent-worktree-manifest-");
+    const aliasContainer = await createTempDirectory("agent-worktree-alias-");
+    const symlinkedWorktreeRoot = path.join(aliasContainer, "manifest-link");
+
+    await symlink(manifestRoot, symlinkedWorktreeRoot, "dir");
+
+    await expect(
+      createAttempt({
+        repoRoot,
+        taskId: "Symlink manifest overlap",
+        manifestRoot,
+        worktreeRoot: symlinkedWorktreeRoot
+      })
+    ).rejects.toThrow(ValidationError);
+  }, integrationTestTimeoutMs);
+
   it(
     "should roll back the created worktree when manifest persistence fails",
     async () => {
@@ -182,30 +227,257 @@ describe("createAttempt", () => {
         worktreeRoot,
         "rollback-manifest-write-att_rollback"
       );
+      const expectedBranch = "attempt/rollback-manifest-write/att_rollback";
 
-      await expect(
-        createAttempt(
-          {
-            repoRoot,
-            taskId: "Rollback manifest write",
-            manifestRoot,
-            worktreeRoot
-          },
-          {
-            generateAttemptId: () => "att_rollback",
-            writeManifestImpl: async () => {
-              throw new Error("manifest write failed");
-            }
+      const error = await createAttempt(
+        {
+          repoRoot,
+          taskId: "Rollback manifest write",
+          manifestRoot,
+          worktreeRoot
+        },
+        {
+          generateAttemptId: () => "att_rollback",
+          writeManifestImpl: async () => {
+            throw new Error("manifest write failed");
           }
-        )
-      ).rejects.toThrow(RuntimeError);
+        }
+      ).catch((reason: unknown) => reason);
+
+      expect(error).toBeInstanceOf(RuntimeError);
+      expect((error as RuntimeError).message).toBe(
+        "Failed to persist manifest for attempt att_rollback. The worktree was removed, but the attempt branch was intentionally retained."
+      );
+      expect((error as RuntimeError).causeValue).toMatchObject({
+        manifestWriteError: expect.any(Error),
+        residue: {
+          attemptId: "att_rollback",
+          branch: expectedBranch,
+          worktreePath: expectedWorktreePath,
+          branchStillPresent: true,
+          worktreeStillPresent: false
+        },
+        residueFollowUp: {
+          residueDisposition: "branch_only",
+          hasResidualMaterial: true,
+          requiresManualBranchCleanup: true,
+          requiresWorktreeCleanup: false
+        }
+      });
+      expect(
+        ((error as RuntimeError).causeValue as { residueFollowUpError?: unknown })
+          .residueFollowUpError
+      ).toBeUndefined();
 
       const worktreeListOutput = await runGit(["worktree", "list", "--porcelain"], {
         cwd: repoRoot
       });
+      const branchListOutput = await runGit(["branch", "--list", expectedBranch], {
+        cwd: repoRoot
+      });
 
       expect(worktreeListOutput).not.toContain(expectedWorktreePath);
+      expect(branchListOutput).toContain(expectedBranch);
     },
     15_000
+  );
+
+  it(
+    "should preserve the primary manifest-write failure when residue follow-up derivation fails",
+    async () => {
+      vi.resetModules();
+      vi.doMock("../../src/worktree/create-residue.js", async () => ({
+        deriveCreateAttemptFailureResidueFollowUp: async () => {
+          throw new Error("residue follow-up failed");
+        }
+      }));
+
+      const { createAttempt: createAttemptWithFailingResidueFollowUp } =
+        await import("../../src/worktree/create.js");
+      const { repoRoot } = await createTestRepository();
+      tempDirectories.push(repoRoot);
+      const manifestRoot = await createTempDirectory("agent-worktree-manifest-");
+      const worktreeRoot = await createTempDirectory("agent-worktree-worktree-");
+
+      const error = await createAttemptWithFailingResidueFollowUp(
+        {
+          repoRoot,
+          taskId: "Rollback residue failure",
+          manifestRoot,
+          worktreeRoot
+        },
+        {
+          generateAttemptId: () => "att_rollback_residue_error",
+          writeManifestImpl: async () => {
+            throw new Error("manifest write failed");
+          }
+        }
+      ).catch((reason: unknown) => reason);
+
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).name).toBe("RuntimeError");
+      expect((error as RuntimeError).message).toBe(
+        "Failed to persist manifest for attempt att_rollback_residue_error. The worktree was removed, but the attempt branch was intentionally retained."
+      );
+      expect((error as RuntimeError).causeValue).toMatchObject({
+        manifestWriteError: expect.any(Error)
+      });
+      expect(
+        ((error as RuntimeError).causeValue as { residueFollowUpError?: unknown })
+          .residueFollowUpError
+      ).toEqual(expect.any(Error));
+      expect(
+        ((error as RuntimeError).causeValue as { residueFollowUp?: unknown })
+          .residueFollowUp
+      ).toBeUndefined();
+    },
+    integrationTestTimeoutMs
+  );
+
+  it(
+    "should attach best-effort rollback residue diagnostics when safe cleanup fails",
+    async () => {
+      const rollbackError = new ValidationError("rollback cleanup failed");
+      const rollbackResidueFollowUp = {
+        residue: {
+          attemptId: "att_rollback_cleanup_error",
+          branch: "attempt/rollback-cleanup-failure/att_rollback_cleanup_error",
+          worktreePath: "/tmp/rollback-cleanup-failure",
+          branchStillPresent: true,
+          worktreeStillPresent: true
+        },
+        residueDisposition: "branch_and_worktree" as const,
+        hasResidualMaterial: true,
+        requiresManualBranchCleanup: true,
+        requiresWorktreeCleanup: true
+      };
+
+      vi.resetModules();
+      vi.doMock("../../src/worktree/cleanup.js", async () => ({
+        cleanupWorktreeMaterial: async () => {
+          throw rollbackError;
+        }
+      }));
+      vi.doMock("../../src/worktree/create-residue.js", async () => ({
+        deriveCreateAttemptFailureResidueFollowUp: async () => {
+          return rollbackResidueFollowUp;
+        }
+      }));
+
+      const { createAttempt: createAttemptWithFailingRollback } =
+        await import("../../src/worktree/create.js");
+      const { repoRoot } = await createTestRepository();
+      tempDirectories.push(repoRoot);
+      const manifestRoot = await createTempDirectory("agent-worktree-manifest-");
+      const worktreeRoot = await createTempDirectory("agent-worktree-worktree-");
+
+      const error = await createAttemptWithFailingRollback(
+        {
+          repoRoot,
+          taskId: "Rollback cleanup failure",
+          manifestRoot,
+          worktreeRoot
+        },
+        {
+          generateAttemptId: () => "att_rollback_cleanup_error",
+          writeManifestImpl: async () => {
+            throw new Error("manifest write failed");
+          }
+        }
+      ).catch((reason: unknown) => reason);
+
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).name).toBe("RuntimeError");
+      expect((error as RuntimeError).message).toBe(
+        "Failed to persist manifest for attempt att_rollback_cleanup_error, and safe worktree rollback also failed."
+      );
+      expect((error as RuntimeError).causeValue).toMatchObject({
+        manifestWriteError: expect.any(Error),
+        rollbackError,
+        rollbackResidueFollowUp
+      });
+      expect(
+        ((error as RuntimeError).causeValue as { residue?: unknown }).residue
+      ).toBeUndefined();
+      expect(
+        ((error as RuntimeError).causeValue as { residueFollowUp?: unknown })
+          .residueFollowUp
+      ).toBeUndefined();
+      expect(
+        (
+          (error as RuntimeError).causeValue as {
+            rollbackResidueFollowUpError?: unknown;
+          }
+        ).rollbackResidueFollowUpError
+      ).toBeUndefined();
+    },
+    integrationTestTimeoutMs
+  );
+
+  it(
+    "should preserve the typed rollback failure when rollback residue follow-up also fails",
+    async () => {
+      const rollbackError = new ValidationError("rollback cleanup failed");
+
+      vi.resetModules();
+      vi.doMock("../../src/worktree/cleanup.js", async () => ({
+        cleanupWorktreeMaterial: async () => {
+          throw rollbackError;
+        }
+      }));
+      vi.doMock("../../src/worktree/create-residue.js", async () => ({
+        deriveCreateAttemptFailureResidueFollowUp: async () => {
+          throw new Error("rollback residue follow-up failed");
+        }
+      }));
+
+      const { createAttempt: createAttemptWithFailingRollback } =
+        await import("../../src/worktree/create.js");
+      const { repoRoot } = await createTestRepository();
+      tempDirectories.push(repoRoot);
+      const manifestRoot = await createTempDirectory("agent-worktree-manifest-");
+      const worktreeRoot = await createTempDirectory("agent-worktree-worktree-");
+
+      const error = await createAttemptWithFailingRollback(
+        {
+          repoRoot,
+          taskId: "Rollback cleanup failure",
+          manifestRoot,
+          worktreeRoot
+        },
+        {
+          generateAttemptId: () => "att_rollback_cleanup_error",
+          writeManifestImpl: async () => {
+            throw new Error("manifest write failed");
+          }
+        }
+      ).catch((reason: unknown) => reason);
+
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).name).toBe("RuntimeError");
+      expect((error as RuntimeError).message).toBe(
+        "Failed to persist manifest for attempt att_rollback_cleanup_error, and safe worktree rollback also failed."
+      );
+      expect((error as RuntimeError).causeValue).toMatchObject({
+        manifestWriteError: expect.any(Error),
+        rollbackError,
+        rollbackResidueFollowUpError: expect.any(Error)
+      });
+      expect(
+        (
+          (error as RuntimeError).causeValue as {
+            rollbackResidueFollowUp?: unknown;
+          }
+        ).rollbackResidueFollowUp
+      ).toBeUndefined();
+      expect(
+        (
+          (error as RuntimeError).causeValue as {
+            residue?: unknown;
+          }
+        ).residue
+      ).toBeUndefined();
+    },
+    integrationTestTimeoutMs
   );
 });

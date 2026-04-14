@@ -85,7 +85,7 @@ describe(
       });
     });
 
-    it("should reject malformed headless close request batch wrappers before iterating results", () => {
+    it("should reject malformed headless close request batch wrappers", () => {
       expect(() =>
         deriveExecutionSessionSpawnHeadlessCloseRequestBatch(undefined as never)
       ).toThrow(
@@ -102,6 +102,168 @@ describe(
         })
       ).toThrow(
         "Execution session spawn headless close request batch requires a headlessCloseTargetBatch wrapper."
+      );
+    });
+
+    it("should reject inherited or getter-backed top-level headlessCloseTargetBatch wrappers", () => {
+      const validBatch = {
+        headlessCloseCandidateBatch: {
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildEmptyView()
+            },
+            results: []
+          },
+          results: []
+        },
+        results: []
+      } satisfies ExecutionSessionSpawnHeadlessCloseTargetBatch;
+      const inheritedInput = Object.create({
+        headlessCloseTargetBatch: validBatch
+      });
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseRequestBatch(inheritedInput as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseRequestBatch(inheritedInput as never)
+      ).toThrow(
+        "Execution session spawn headless close request batch requires a headlessCloseTargetBatch wrapper."
+      );
+
+      const accessorInput = {};
+      Object.defineProperty(accessorInput, "headlessCloseTargetBatch", {
+        enumerable: true,
+        get() {
+          throw new Error("boom");
+        }
+      });
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseRequestBatch(accessorInput as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseRequestBatch(accessorInput as never)
+      ).toThrow(
+        "Execution session spawn headless close request batch requires a headlessCloseTargetBatch wrapper."
+      );
+    });
+
+    it("should snapshot headlessCloseTargetBatch.results once before iterating the batch", () => {
+      let resultsReads = 0;
+
+      const supportedTarget = createHeadlessCloseTarget({
+        target: {
+          attemptId: "att_supported_close_results_once",
+          runtime: "supported-cli",
+          sessionId: "thr_supported_close_results_once"
+        }
+      });
+
+      expect(
+        deriveExecutionSessionSpawnHeadlessCloseRequestBatch({
+          headlessCloseTargetBatch: {
+            headlessCloseCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            get results() {
+              resultsReads += 1;
+
+              if (resultsReads > 1) {
+                throw new Error("results getter read twice");
+              }
+
+              return [supportedTarget];
+            }
+          } as never
+        })
+      ).toEqual({
+        headlessCloseTargetBatch: {
+          headlessCloseCandidateBatch: {
+            headlessContextBatch: {
+              headlessViewBatch: {
+                headlessRecordBatch: {
+                  results: []
+                },
+                view: buildEmptyView()
+              },
+              results: []
+            },
+            results: []
+          },
+          results: [supportedTarget]
+        },
+        results: [
+          {
+            headlessCloseTarget: supportedTarget,
+            request: {
+              attemptId: "att_supported_close_results_once",
+              runtime: "supported-cli",
+              sessionId: "thr_supported_close_results_once"
+            }
+          }
+        ]
+      });
+      expect(resultsReads).toBe(1);
+    });
+
+    it("should fail loudly when headlessCloseTargetBatch.results entries are sparse or non-object", () => {
+      const sparseResults = new Array(1);
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseRequestBatch({
+          headlessCloseTargetBatch: {
+            headlessCloseCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            results: sparseResults
+          } as never
+        })
+      ).toThrow(
+        "Execution session spawn headless close request batch requires headlessCloseTargetBatch.results entries to be objects."
+      );
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseRequestBatch({
+          headlessCloseTargetBatch: {
+            headlessCloseCandidateBatch: {
+              headlessContextBatch: {
+                headlessViewBatch: {
+                  headlessRecordBatch: {
+                    results: []
+                  },
+                  view: buildEmptyView()
+                },
+                results: []
+              },
+              results: []
+            },
+            results: [0]
+          } as never
+        })
+      ).toThrow(
+        "Execution session spawn headless close request batch requires headlessCloseTargetBatch.results entries to be objects."
       );
     });
 

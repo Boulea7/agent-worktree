@@ -101,6 +101,29 @@ describe("control-plane runtime-state close-target helpers", () => {
     });
   });
 
+  it("should trim raw wrapper string fields before returning a close target", () => {
+    expect(
+      deriveExecutionSessionCloseTarget({
+        candidate: {
+          context: {
+            record: {
+              attemptId: "  att_trim_close  ",
+              runtime: "  codex-cli  ",
+              sessionId: "  thr_trim_close  "
+            }
+          },
+          readiness: {
+            canClose: true
+          }
+        } as never
+      })
+    ).toEqual({
+      attemptId: "att_trim_close",
+      runtime: "codex-cli",
+      sessionId: "thr_trim_close"
+    });
+  });
+
   it("should return undefined when the candidate has an unknown session", () => {
     const candidate = deriveExecutionSessionCloseCandidate({
       view: buildExecutionSessionView([
@@ -250,6 +273,90 @@ describe("control-plane runtime-state close-target helpers", () => {
               runtime: "   ",
               sessionId: "thr_active"
             }
+          },
+          readiness: {
+            canClose: true
+          }
+        } as never
+      })
+    ).toThrow(
+      "Execution session close target requires candidate.context.record.runtime to be a non-empty string."
+    );
+  });
+
+  it("should fail closed on inherited or accessor-shaped candidate wrappers", () => {
+    const inheritedInput = Object.create({
+      candidate: deriveExecutionSessionCloseCandidate({
+        view: buildExecutionSessionView([
+          createRecord({
+            attemptId: "att_inherited_close_target",
+            sessionId: "thr_inherited_close_target",
+            sourceKind: "direct",
+            lifecycleState: "active"
+          })
+        ]),
+        selector: {
+          attemptId: "att_inherited_close_target"
+        },
+        resolveSessionLifecycleCapability: () => true
+      })
+    });
+
+    expect(() =>
+      deriveExecutionSessionCloseTarget(inheritedInput as never)
+    ).toThrow(
+      "Execution session close target requires candidate to be an object."
+    );
+
+    expect(() =>
+      deriveExecutionSessionCloseTarget({
+        get candidate() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
+  });
+
+  it("should fail closed on prototype-backed or accessor-backed candidate.context.record identifiers", () => {
+    expect(() =>
+      deriveExecutionSessionCloseTarget({
+        candidate: {
+          context: {
+            record: Object.assign(
+              Object.create({
+                sessionId: "thr_proto_close_target"
+              }),
+              {
+                attemptId: "att_proto_close_target",
+                runtime: "codex-cli"
+              }
+            )
+          },
+          readiness: {
+            canClose: true
+          }
+        } as never
+      })
+    ).toThrow(
+      "Execution session close target requires candidate.context.record.sessionId to be a non-empty string when present."
+    );
+
+    const recordWithAccessor = {
+      attemptId: "att_accessor_close_target",
+      sessionId: "thr_accessor_close_target"
+    };
+    Object.defineProperty(recordWithAccessor, "runtime", {
+      enumerable: true,
+      get() {
+        throw new Error("runtime getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionCloseTarget({
+        candidate: {
+          context: {
+            record: recordWithAccessor as never
           },
           readiness: {
             canClose: true

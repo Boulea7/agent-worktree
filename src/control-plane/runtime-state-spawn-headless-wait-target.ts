@@ -1,4 +1,5 @@
 import { deriveExecutionSessionWaitTarget } from "./runtime-state-wait-target.js";
+import { normalizeHeadlessTargetWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import type {
   ExecutionSessionSpawnHeadlessWaitTarget,
   ExecutionSessionSpawnHeadlessWaitTargetInput
@@ -7,12 +8,17 @@ import type {
 export function deriveExecutionSessionSpawnHeadlessWaitTarget(
   input: ExecutionSessionSpawnHeadlessWaitTargetInput
 ): ExecutionSessionSpawnHeadlessWaitTarget {
+  const normalizedInput = normalizeHeadlessTargetWrapper(input, {
+    context: "Execution session spawn headless wait target",
+    nestedKey: "headlessWaitCandidate",
+    wrapperKey: "headlessWaitCandidate"
+  });
   const target = deriveExecutionSessionWaitTarget({
-    candidate: input.headlessWaitCandidate.candidate
+    candidate: normalizedInput.headlessWaitCandidate.candidate
   });
 
   return {
-    headlessWaitCandidate: input.headlessWaitCandidate,
+    headlessWaitCandidate: normalizedInput.headlessWaitCandidate,
     ...(target === undefined ? {} : { target })
   };
 }

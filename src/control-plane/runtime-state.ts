@@ -183,11 +183,13 @@ function validateIndexedSessionId(
     return undefined;
   }
 
-  if (sessionId.trim().length === 0) {
+  const normalized = sessionId.trim();
+
+  if (normalized.length === 0) {
     throw new ValidationError(
       "Execution session index sessionId must be a non-empty string when present."
     );
   }
 
-  return sessionId;
+  return normalized;
 }

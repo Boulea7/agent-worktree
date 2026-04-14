@@ -258,7 +258,8 @@ describe("selection handoff-finalization-apply helpers", () => {
     });
     expect(result).not.toBeUndefined();
     expect(result?.consumer.request).not.toBe(request);
-    expect(result?.consume.request).toBe(result?.consumer.request);
+    expect(result?.consume.request).toStrictEqual(result?.consumer.request);
+    expect(result?.consume.request).not.toBe(result?.consumer.request);
   });
 
   it("should keep the apply result shape minimal without leaking orchestration or persistence metadata", async () => {

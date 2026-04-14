@@ -137,6 +137,69 @@ describe("control-plane runtime-state wait-request helpers", () => {
     ).toThrow("Execution session wait request target must be an object.");
   });
 
+  it("should reject wait targets that come only from the prototype chain", () => {
+    const input = Object.create({
+      target: createWaitTarget()
+    });
+
+    expect(() =>
+      deriveExecutionSessionWaitRequest(input as never)
+    ).toThrow("Execution session wait request target must be an object.");
+  });
+
+  it("should reject accessor-shaped wait targets whose getter throws", () => {
+    const input = {};
+    Object.defineProperty(input, "target", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionWaitRequest(input as never)
+    ).toThrow("Execution session wait request target must be an object.");
+  });
+
+  it("should fail closed on prototype-backed or accessor-backed target identifiers", () => {
+    const prototypeBackedTarget = Object.assign(
+      Object.create({
+        attemptId: "att_proto_wait_request"
+      }),
+      {
+        runtime: "codex-cli",
+        sessionId: "thr_proto_wait_request"
+      }
+    );
+
+    expect(() =>
+      deriveExecutionSessionWaitRequest({
+        target: prototypeBackedTarget as never
+      })
+    ).toThrow(
+      "Execution session wait request attemptId must be a non-empty string."
+    );
+
+    const accessorBackedTarget = {
+      attemptId: "att_accessor_wait_request",
+      runtime: "codex-cli"
+    };
+    Object.defineProperty(accessorBackedTarget, "sessionId", {
+      enumerable: true,
+      get() {
+        throw new Error("sessionId getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveExecutionSessionWaitRequest({
+        target: accessorBackedTarget as never
+      })
+    ).toThrow(
+      "Execution session wait request sessionId must be a non-empty string."
+    );
+  });
+
   it("should reject non-object wait request inputs before reading target", () => {
     expect(() =>
       deriveExecutionSessionWaitRequest(undefined as never)

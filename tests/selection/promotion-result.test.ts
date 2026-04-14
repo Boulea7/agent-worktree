@@ -27,6 +27,30 @@ import type {
 } from "../../src/verification/internal.js";
 
 describe("selection promotion-result helpers", () => {
+  it("should fail loudly when the supplied candidate container is malformed or sparse", () => {
+    expect(() => deriveAttemptPromotionResult(null as never)).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptPromotionResult(null as never)).toThrow(
+      "Attempt promotion result requires candidates to be an array."
+    );
+
+    expect(() =>
+      deriveAttemptPromotionResult([null] as unknown as AttemptPromotionCandidate[])
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionResult([null] as unknown as AttemptPromotionCandidate[])
+    ).toThrow(
+      "Attempt promotion result requires candidates entries to be objects."
+    );
+
+    const sparseCandidates = new Array<AttemptPromotionCandidate>(1);
+
+    expect(() => deriveAttemptPromotionResult(sparseCandidates)).toThrow(
+      "Attempt promotion result requires candidates entries to be objects."
+    );
+  });
+
   it("should return a stable empty promotion result for an empty candidate list", () => {
     expect(deriveAttemptPromotionResult([])).toEqual({
       promotionResultBasis: "promotion_candidate",
@@ -175,6 +199,186 @@ describe("selection promotion-result helpers", () => {
     expect(() => deriveAttemptPromotionResult(candidates)).toThrow(
       "Attempt promotion result requires candidates from a single taskId."
     );
+  });
+
+  it("should fail loudly when candidates reuse a normalized canonical identity", () => {
+    const candidates = [
+      createPromotionCandidate({
+        attemptId: "att_dup",
+        runtime: "codex-cli"
+      }),
+      createPromotionCandidate({
+        attemptId: " att_dup ",
+        runtime: " codex-cli " as never,
+        taskId: " task_shared "
+      })
+    ];
+
+    expect(() => deriveAttemptPromotionResult(candidates)).toThrow(
+      ValidationError
+    );
+    expect(() => deriveAttemptPromotionResult(candidates)).toThrow(
+      "Attempt promotion result requires candidates to use unique (taskId, attemptId, runtime) identities."
+    );
+  });
+
+  it("should fail loudly when candidate.taskId is inherited instead of owned", () => {
+    const baseCandidate = createPromotionCandidate({
+      attemptId: "att_inherited_task"
+    });
+    const candidate = {
+      ...baseCandidate
+    } as Record<string, unknown>;
+
+    delete candidate.taskId;
+    Object.setPrototypeOf(candidate, {
+      taskId: baseCandidate.taskId
+    });
+
+    expect(() =>
+      deriveAttemptPromotionResult([candidate as unknown as AttemptPromotionCandidate])
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionResult([candidate as unknown as AttemptPromotionCandidate])
+    ).toThrow(
+      "Attempt promotion result requires candidate.taskId to be a non-empty string."
+    );
+  });
+
+  it("should fail loudly when candidate.summary is inherited instead of owned", () => {
+    const baseCandidate = createPromotionCandidate({
+      attemptId: "att_inherited_summary"
+    });
+    const candidate = {
+      ...baseCandidate
+    } as Record<string, unknown>;
+
+    delete candidate.summary;
+    Object.setPrototypeOf(candidate, {
+      summary: baseCandidate.summary
+    });
+
+    expect(() =>
+      deriveAttemptPromotionResult([candidate as unknown as AttemptPromotionCandidate])
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionResult([candidate as unknown as AttemptPromotionCandidate])
+    ).toThrow(
+      "Attempt promotion result requires candidate.summary to be an object."
+    );
+  });
+
+  it("should fail closed when candidate.summary throws through an accessor-shaped input", () => {
+    const candidate = createPromotionCandidate({
+      attemptId: "att_summary_getter"
+    }) as unknown as Record<string, unknown>;
+
+    Object.defineProperty(candidate, "summary", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveAttemptPromotionResult([candidate as unknown as AttemptPromotionCandidate])
+    ).toThrow(ValidationError);
+  });
+
+  it("should fail loudly when candidate.summary.counts is inherited instead of owned", () => {
+    const baseCandidate = createPromotionCandidate({
+      attemptId: "att_inherited_counts"
+    });
+    const summary = {
+      ...baseCandidate.summary
+    } as Record<string, unknown>;
+
+    delete summary.counts;
+    Object.setPrototypeOf(summary, {
+      counts: baseCandidate.summary.counts
+    });
+
+    const candidate = {
+      ...baseCandidate,
+      summary
+    } as unknown as AttemptPromotionCandidate;
+
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      ValidationError
+    );
+  });
+
+  it("should fail closed when candidate.summary.counts fields throw through accessor-shaped input", () => {
+    const baseCandidate = createPromotionCandidate({
+      attemptId: "att_counts_getter"
+    });
+    const counts = {
+      ...baseCandidate.summary.counts
+    } as Record<string, unknown>;
+
+    Object.defineProperty(counts, "total", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    const candidate = {
+      ...baseCandidate,
+      summary: {
+        ...baseCandidate.summary,
+        counts
+      }
+    } as unknown as AttemptPromotionCandidate;
+
+    expect(() => deriveAttemptPromotionResult([candidate])).toThrow(
+      ValidationError
+    );
+  });
+
+  it("should snapshot candidate.taskId once before downstream validation reuses it", () => {
+    const baseCandidate = createPromotionCandidate({
+      attemptId: "att_snapshot"
+    });
+    const candidate = {
+      ...baseCandidate
+    } as AttemptPromotionCandidate;
+    let taskIdReads = 0;
+
+    Object.defineProperty(candidate, "taskId", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        taskIdReads += 1;
+
+        if (taskIdReads > 1) {
+          throw new Error("getter boom");
+        }
+
+        return baseCandidate.taskId;
+      }
+    });
+
+    expect(deriveAttemptPromotionResult([candidate])).toEqual({
+      promotionResultBasis: "promotion_candidate",
+      taskId: "task_shared",
+      candidates: [
+        expect.objectContaining({
+          attemptId: "att_snapshot",
+          taskId: "task_shared"
+        })
+      ],
+      selected: expect.objectContaining({
+        attemptId: "att_snapshot",
+        taskId: "task_shared"
+      }),
+      comparableCandidateCount: 1,
+      promotionReadyCandidateCount: 1,
+      recommendedForPromotion: true
+    });
+    expect(taskIdReads).toBe(1);
   });
 
   it("should fail loudly when candidate.promotionBasis is invalid", () => {

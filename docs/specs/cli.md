@@ -202,6 +202,7 @@ The initial `detected` semantics are also intentionally small:
 `agent-worktree compat probe <tool>` is a read-only per-runtime compatibility probe command.
 
 It SHOULD report current adapter truth plus a bounded public probe result for exactly one runtime.
+In the current implementation, the only concrete execution-backed probe path is `codex-cli`; other runtimes are expected to remain descriptor-only until a later phase adds another concrete probe path.
 
 Machine-readable output SHOULD expose one `probe` record:
 
@@ -255,7 +256,7 @@ Unknown runtimes MUST fail with a structured `NOT_FOUND` error envelope.
 
 ## Compat Smoke Contract
 
-`agent-worktree compat smoke <tool>` is a read-only per-runtime compatibility smoke command.
+`agent-worktree compat smoke <tool>` is an env-gated per-runtime compatibility smoke command.
 
 It SHOULD report a bounded live compatibility result for exactly one runtime while remaining a compatibility surface rather than a general execution command.
 
@@ -314,21 +315,42 @@ Current phase rules:
 - when `RUN_CODEX_SMOKE` is not enabled, `codex-cli` SHOULD return a success envelope with `smokeStatus: "skipped"` and `diagnosis.code: "gate_disabled"`
 - unknown runtimes MUST fail with a structured `NOT_FOUND` error envelope
 
-`compat smoke` MUST remain read-only in this phase. It MUST NOT accept a public prompt, MUST NOT expose resolved executable paths, env overlays, subprocess stdout/stderr, exit codes, raw events, observation summaries, internal profile metadata, or any control-plane/session/runtime-state details, and MUST NOT widen into public runtime lifecycle control.
+`compat smoke` MAY execute one bounded fixed internal smoke path in this phase, but it MUST remain a narrow compatibility checkpoint rather than a general execution surface. It MUST NOT accept a public prompt, MUST NOT expose resolved executable paths, env overlays, subprocess stdout/stderr, exit codes, raw events, observation summaries, internal profile metadata, or any control-plane/session/runtime-state details, and MUST NOT widen into public runtime lifecycle control.
 
 ## Attempt Create Contract
 
 `agent-worktree attempt create` currently creates a direct attempt only.
 
 Machine-readable output for a successful create SHOULD expose the stored attempt record, including additive provenance fields when present.
-In the current thin lineage/source slice, create output is expected to include `sourceKind: "direct"` and omit `parentAttemptId`.
+In the current thin lineage/source slice, create output is expected to include `supportTier`, `sourceKind: "direct"`, and omit `parentAttemptId`.
 The CLI does not yet expose public flags or commands for fork, resume, or delegated-child creation.
+A durable manifest may already be written at attempt-create time, before any runtime execution starts.
+
+An early informative shape may look like:
+
+```json
+{
+  "ok": true,
+  "command": "attempt.create",
+  "data": {
+    "attempt": {
+      "attemptId": "att_demo",
+      "taskId": "task_demo",
+      "runtime": "codex-cli",
+      "supportTier": "tier1",
+      "status": "created",
+      "sourceKind": "direct"
+    }
+  }
+}
+```
 
 ## Attempt List Contract
 
 `agent-worktree attempt list` is expected to be the primary discovery command for persisted attempts.
 
 Machine-readable output SHOULD expose per-attempt records rather than formatted terminal rows.
+Per-attempt records are currently expected to preserve attempt-facing contract fields such as `supportTier`, plus additive provenance fields like `sourceKind` and `parentAttemptId` when present.
 
 By default, list output SHOULD include attempts whose manifest status is `cleaned`.
 Future filtering flags MAY narrow the result set, but cleaned attempts are part of the default inventory and MUST NOT be omitted simply because their worktree was removed.
@@ -358,10 +380,11 @@ List behavior MUST remain inventory-oriented: it does not validate parent lineag
 `agent-worktree attempt cleanup` SHOULD identify its target with an explicit `--attempt-id` flag.
 A positional attempt identifier is intentionally not part of the preferred contract.
 
-Cleanup is intended to remove disposable runtime material such as a worktree or transient session artifacts while preserving the durable runtime manifest.
+Cleanup is intended to remove disposable runtime material such as a worktree while preserving the durable runtime manifest.
 Cleanup MUST NOT treat manifest removal as success for a cleaned attempt.
 Cleanup MUST return a structured success payload for exactly one targeted attempt.
 Cleanup SHOULD preserve additive attempt provenance fields in the returned attempt payload and in the rewritten manifest.
+In the current implementation, a recorded `manifest.session` blocks non-`already_cleaned` cleanup paths rather than being silently cleared as disposable runtime material.
 
 Machine-readable cleanup output SHOULD be structured around explicit outcomes rather than free-form text.
 The success payload SHOULD distinguish at least:
@@ -380,6 +403,7 @@ An early informative shape may look like:
     "attempt": {
       "attemptId": "att_demo",
       "status": "cleaned",
+      "supportTier": "tier1",
       "sourceKind": "direct",
       "repoRoot": "/abs/repo/root",
       "worktreePath": "/abs/worktree"

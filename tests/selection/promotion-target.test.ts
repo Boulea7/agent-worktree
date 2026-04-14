@@ -92,6 +92,11 @@ describe("selection promotion-target helpers", () => {
       deriveAttemptPromotionTarget({
         ...summary,
         selectedAttemptId: "  att_ready  ",
+        selectedIdentity: {
+          taskId: "  task_shared  ",
+          attemptId: "  att_ready  ",
+          runtime: "  codex-cli  "
+        },
         selected: {
           ...summary.selected!,
           attemptId: "  att_ready  ",
@@ -106,6 +111,109 @@ describe("selection promotion-target helpers", () => {
       status: "running",
       sourceKind: "delegated"
     });
+  });
+
+  it("should fail closed when summary.selected is inherited instead of owned", () => {
+    const summary = createPromotionDecisionSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]) as unknown as Record<string, unknown>;
+
+    delete summary.selected;
+    Object.setPrototypeOf(summary, {
+      selected: {
+        attemptId: "att_ready",
+        runtime: "codex-cli",
+        status: "created",
+        sourceKind: undefined,
+        hasComparablePayload: true,
+        isSelected: true,
+        recommendedForPromotion: true,
+        explanationCode: "selected",
+        blockingRequiredCheckNames: [],
+        failedOrErrorCheckNames: [],
+        pendingCheckNames: [],
+        skippedCheckNames: []
+      }
+    });
+
+    expect(() =>
+      deriveAttemptPromotionTargetDirect(
+        summary as unknown as AttemptPromotionDecisionSummary
+      )
+    ).toThrow(ValidationError);
+  });
+
+  it("should fail closed when summary.selectedIdentity inner fields are inherited instead of owned", () => {
+    const summary = createPromotionDecisionSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]) as unknown as Record<string, unknown>;
+
+    summary.selectedIdentity = Object.create({
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli"
+    });
+
+    expect(() =>
+      deriveAttemptPromotionTargetDirect(
+        summary as unknown as AttemptPromotionDecisionSummary
+      )
+    ).toThrow(ValidationError);
+  });
+
+  it("should fail closed when summary.selected inner fields throw through accessor-shaped input", () => {
+    const summary = createPromotionDecisionSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]) as unknown as Record<string, unknown>;
+
+    summary.selected = {
+      ...summary.selected!,
+      get attemptId() {
+        throw new Error("getter boom");
+      }
+    };
+
+    expect(() =>
+      deriveAttemptPromotionTargetDirect(
+        summary as unknown as AttemptPromotionDecisionSummary
+      )
+    ).toThrow(ValidationError);
   });
 
   it("should return undefined when the selected decision candidate is blocked by failed checks", () => {
@@ -307,6 +415,56 @@ describe("selection promotion-target helpers", () => {
     ).toThrow("Attempt promotion target requires summary to be an object.");
   });
 
+  it("should fail closed when reading summary through an accessor-shaped input", () => {
+    expect(() =>
+      deriveAttemptPromotionTargetDirect({
+        get decisionBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptPromotionTargetDirect({
+        get decisionBasis() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow("Attempt promotion target requires summary to be a readable object.");
+  });
+
+  it("should reject prototype-backed blockingReasons arrays", () => {
+    const blockingReasons = ["required_checks_failed"];
+    Object.setPrototypeOf(
+      blockingReasons,
+      Object.assign([], {
+        1: "verification_incomplete"
+      })
+    );
+    blockingReasons.length = 2;
+    const summary = createPromotionDecisionSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "failed",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "failed"
+            }
+          ]
+        })
+      })
+    ]);
+    summary.blockingReasons = blockingReasons as never;
+    summary.canPromote = false;
+    summary.hasBlockingReasons = true;
+
+    expect(() =>
+      deriveAttemptPromotionTarget(summary)
+    ).toThrow(ValidationError);
+  });
+
   it("should fail loudly when candidateCount is inconsistent with selectedAttemptId or selected", () => {
     const emptySummary = {
       ...createPromotionDecisionSummary([]),
@@ -341,7 +499,7 @@ describe("selection promotion-target helpers", () => {
     );
   });
 
-  it("should fail loudly when summary.selectedAttemptId or summary.selected does not match the canonical selected candidate", () => {
+  it("should fail loudly when summary.selected identity fields or summary.selected do not match the canonical selected candidate", () => {
     const summary = createPromotionDecisionSummary([
       createPromotionCandidate({
         attemptId: "att_ready",
@@ -365,6 +523,26 @@ describe("selection promotion-target helpers", () => {
       })
     ).toThrow(
       "Attempt promotion target requires summary.selectedAttemptId to match summary.selected.attemptId."
+    );
+    expect(() =>
+      deriveAttemptPromotionTarget({
+        ...summary,
+        selectedIdentity: undefined
+      })
+    ).toThrow(
+      "Attempt promotion target requires summary.selectedIdentity to be defined when summary.candidateCount is greater than 0."
+    );
+    expect(() =>
+      deriveAttemptPromotionTarget({
+        ...summary,
+        selectedIdentity: {
+          taskId: "task_shared",
+          attemptId: "att_ready",
+          runtime: "gemini-cli"
+        }
+      })
+    ).toThrow(
+      "Attempt promotion target requires summary.selectedIdentity to match summary.selected taskId, attemptId, and runtime."
     );
     expect(() =>
       deriveAttemptPromotionTarget({

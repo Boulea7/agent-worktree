@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { ValidationError } from "../../src/core/errors.js";
+import * as handoffApplyModule from "../../src/selection/handoff-apply.js";
 import {
   applyAttemptHandoffBatch,
   type AttemptHandoffRequest
@@ -66,6 +67,134 @@ describe("selection handoff-apply-batch helpers", () => {
     ).rejects.toThrow(
       "Attempt handoff apply batch requires requests entries to be objects."
     );
+  });
+
+  it("should fail loudly when requests from different taskIds are mixed after normalization", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      applyAttemptHandoffBatch({
+        requests: [
+          createHandoffRequest({
+            taskId: "task_shared",
+            attemptId: "att_a"
+          }),
+          createHandoffRequest({
+            taskId: " task_other ",
+            attemptId: "att_b"
+          })
+        ],
+        invokeHandoff: async (request: AttemptHandoffRequest) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(
+      "Attempt handoff apply batch requires requests from a single taskId."
+    );
+    expect(invokedAttemptIds).toEqual([]);
+  });
+
+  it("should fail loudly when requests reuse normalized request identities", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      applyAttemptHandoffBatch({
+        requests: [
+          createHandoffRequest({
+            taskId: "task_shared",
+            attemptId: "att_dup",
+            runtime: "codex-cli"
+          }),
+          createHandoffRequest({
+            taskId: " task_shared ",
+            attemptId: " att_dup ",
+            runtime: " codex-cli "
+          })
+        ],
+        invokeHandoff: async (request: AttemptHandoffRequest) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(
+      "Attempt handoff apply batch requires requests to use unique (taskId, attemptId, runtime) identities."
+    );
+    expect(invokedAttemptIds).toEqual([]);
+  });
+
+  it("should fail before invoking when any request identity field is blank after normalization", async () => {
+    const invokedAttemptIds: string[] = [];
+
+    await expect(
+      applyAttemptHandoffBatch({
+        requests: [
+          createHandoffRequest({
+            taskId: "task_shared",
+            attemptId: "att_valid"
+          }),
+          {
+            ...createHandoffRequest({
+              taskId: "task_shared",
+              attemptId: "att_invalid"
+            }),
+            runtime: "   "
+          } as AttemptHandoffRequest
+        ],
+        invokeHandoff: async (request: AttemptHandoffRequest) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(
+      "Attempt handoff apply batch requires requests entries to include non-empty taskId, attemptId, and runtime strings."
+    );
+    expect(invokedAttemptIds).toEqual([]);
+  });
+
+  it("should fail before invoking when a later request entry is missing from the array", async () => {
+    const invokedAttemptIds: string[] = [];
+    const requests = new Array<AttemptHandoffRequest>(2);
+
+    requests[0] = createHandoffRequest({
+      taskId: "task_shared",
+      attemptId: "att_valid"
+    });
+
+    await expect(
+      applyAttemptHandoffBatch({
+        requests,
+        invokeHandoff: async (request: AttemptHandoffRequest) => {
+          invokedAttemptIds.push(request.attemptId);
+        }
+      })
+    ).rejects.toThrow(
+      "Attempt handoff apply batch requires requests entries to be objects."
+    );
+    expect(invokedAttemptIds).toEqual([]);
+  });
+
+  it("should ignore unrelated enumerable getters while normalizing batch input", async () => {
+    await expect(
+      applyAttemptHandoffBatch({
+        requests: [createHandoffRequest()],
+        invokeHandoff: async () => undefined,
+        get queue() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).resolves.toEqual({
+      results: [
+        {
+          consumer: {
+            request: createHandoffRequest(),
+            readiness: createBlockedReadiness()
+          },
+          consume: {
+            request: createHandoffRequest(),
+            readiness: createBlockedReadiness(),
+            invoked: false
+          }
+        }
+      ]
+    });
   });
 
   it("should preserve input order and continue past blocked requests", async () => {
@@ -263,7 +392,7 @@ describe("selection handoff-apply-batch helpers", () => {
     expect(invokedAttemptIds).toEqual(["att_supported_1", "att_supported_2"]);
   });
 
-  it("should fail loudly when a batch entry does not produce an apply result", async () => {
+  it("should fail loudly when a batch entry is malformed before any apply result could be produced", async () => {
     const requests = [undefined] as unknown as readonly AttemptHandoffRequest[];
 
     await expect(
@@ -280,6 +409,25 @@ describe("selection handoff-apply-batch helpers", () => {
     ).rejects.toThrow(
       "Attempt handoff apply batch requires requests entries to be objects."
     );
+  });
+
+  it("should fail loudly when a request does not produce an apply result", async () => {
+    const applySpy = vi
+      .spyOn(handoffApplyModule, "applyAttemptHandoff")
+      .mockResolvedValueOnce(undefined as never);
+
+    try {
+      await expect(
+        applyAttemptHandoffBatch({
+          requests: [createHandoffRequest()],
+          invokeHandoff: async () => undefined
+        })
+      ).rejects.toThrow(
+        "Attempt handoff apply batch requires each request to produce an apply result."
+      );
+    } finally {
+      applySpy.mockRestore();
+    }
   });
 
   it("should not mutate the supplied requests", async () => {

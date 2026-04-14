@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   buildExecutionSessionView,
   deriveExecutionSessionSpawnHeadlessCloseCandidateBatch,
@@ -14,6 +15,31 @@ import {
 describe(
   "control-plane runtime-state spawn-headless-close-candidate-batch helpers",
   () => {
+    it("should fail loudly when the top-level headless-context batch input is malformed", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseCandidateBatch(undefined as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseCandidateBatch(undefined as never)
+      ).toThrow(
+        "Execution session spawn headless close candidate batch input must be an object."
+      );
+    });
+
+    it("should reject inherited headless-context batch wrappers", () => {
+      const inheritedInput = Object.create({
+        headlessContextBatch: deriveEmptyHeadlessContextBatch()
+      });
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseCandidateBatch(
+          inheritedInput as never
+        )
+      ).toThrow(
+        "Execution session spawn headless close candidate batch requires headlessContextBatch to include headlessViewBatch and results."
+      );
+    });
+
     it("should return an empty ordered result list for an empty headless-context batch", () => {
       const headlessContextBatch = deriveEmptyHeadlessContextBatch();
 
@@ -21,7 +47,8 @@ describe(
         headlessContextBatch
       }) as unknown as Record<string, unknown>;
 
-      expect(result.headlessContextBatch).toBe(headlessContextBatch);
+      expect(result.headlessContextBatch).toEqual(headlessContextBatch);
+      expect(result.headlessContextBatch).not.toBe(headlessContextBatch);
       expect(result.results).toEqual([]);
       expect(result).not.toHaveProperty("summary");
       expect(result).not.toHaveProperty("count");
@@ -62,12 +89,13 @@ describe(
           }>;
         };
 
-      expect(result.headlessContextBatch).toBe(headlessContextBatch);
+      expect(result.headlessContextBatch).toEqual(headlessContextBatch);
+      expect(result.headlessContextBatch).not.toBe(headlessContextBatch);
       expect(result.results).toHaveLength(2);
-      expect(result.results[0]?.headlessContext).toBe(
+      expect(result.results[0]?.headlessContext).toEqual(
         headlessContextBatch.results[0]
       );
-      expect(result.results[1]?.headlessContext).toBe(
+      expect(result.results[1]?.headlessContext).toEqual(
         headlessContextBatch.results[1]
       );
       expect(result.results[0]?.candidate.context).toBe(
@@ -141,6 +169,77 @@ describe(
         })
       ).toThrow("resolver failed");
       expect(calls).toBe(2);
+    });
+
+    it("should snapshot the optional lifecycle resolver once for the whole batch", () => {
+      let resolverReads = 0;
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseCandidateBatch({
+          headlessContextBatch: deriveEmptyHeadlessContextBatch(),
+          get resolveSessionLifecycleCapability() {
+            resolverReads += 1;
+
+            if (resolverReads > 1) {
+              throw new Error("resolver getter read twice");
+            }
+
+            return () => true;
+          }
+        } as never)
+      ).not.toThrow();
+      expect(resolverReads).toBe(1);
+    });
+
+    it("should fail loudly when the supplied headless-context batch wrapper is malformed", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseCandidateBatch({
+          headlessContextBatch: {} as never
+        })
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseCandidateBatch({
+          headlessContextBatch: {} as never
+        })
+      ).toThrow(
+        "Execution session spawn headless close candidate batch requires headlessContextBatch to include headlessViewBatch and results."
+      );
+    });
+
+    it("should fail loudly when headlessContextBatch.results entries are sparse or non-object", () => {
+      const sparseResults = new Array(1);
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseCandidateBatch({
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildExecutionSessionView([])
+            },
+            results: sparseResults
+          } as never
+        })
+      ).toThrow(
+        "Execution session spawn headless close candidate batch requires headlessContextBatch.results entries to be objects."
+      );
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseCandidateBatch({
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildExecutionSessionView([])
+            },
+            results: [0]
+          } as never
+        })
+      ).toThrow(
+        "Execution session spawn headless close candidate batch requires headlessContextBatch.results entries to be objects."
+      );
     });
   }
 );

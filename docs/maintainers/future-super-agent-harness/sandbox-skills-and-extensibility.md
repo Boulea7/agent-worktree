@@ -63,7 +63,7 @@ The future branch should separate:
 - extension definition metadata
 - activation state
 
-This mirrors one of DeerFlow's strongest structural lessons and fits the current `extensions` namespace in `agent-worktree`.
+This mirrors one strong structural lesson from the local-only upstream reference set and fits the current `extensions` namespace in `agent-worktree`.
 
 ### Deferred Capability Expansion
 

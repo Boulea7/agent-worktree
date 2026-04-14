@@ -14,6 +14,17 @@ import type {
   AttemptHandoffFinalizationOutcomeSummary,
   AttemptHandoffFinalizationRequest
 } from "./types.js";
+import {
+  normalizeSelectionArrayProperty,
+  normalizeSelectionObjectArrayEntry,
+  normalizeSelectionObjectProperty,
+  readSelectionValue,
+  validateSelectionObjectInput
+} from "./entry-validation.js";
+import {
+  validateDownstreamSingleTaskBoundary,
+  validateDownstreamUniqueIdentity
+} from "./downstream-identity-guardrails.js";
 
 const attemptHandoffFinalizationOutcomeBasis =
   "handoff_finalization_apply_batch" as const;
@@ -32,14 +43,30 @@ export function deriveAttemptHandoffFinalizationOutcomeSummary(
     return undefined;
   }
 
-  if (!isRecord(batch) || !Array.isArray(batch.results)) {
-    throw new ValidationError(
-      "Attempt handoff finalization outcome summary requires batch.results to be an array."
-    );
-  }
+  validateSelectionObjectInput(
+    batch,
+    "Attempt handoff finalization outcome summary requires batch.results to be an array."
+  );
 
-  const results = validateApplyResultArray(batch.results, "batch.results");
+  const results = validateApplyResultArray(
+    normalizeSelectionArrayProperty(
+      batch,
+      "results",
+      "Attempt handoff finalization outcome summary requires batch.results to be an array."
+    ),
+    "batch.results"
+  );
   const outcomes = results.map(deriveOutcome);
+
+  validateDownstreamSingleTaskBoundary(
+    outcomes,
+    "Attempt handoff finalization outcome summary requires batch.results from a single taskId."
+  );
+  validateDownstreamUniqueIdentity(
+    outcomes,
+    "Attempt handoff finalization outcome summary requires batch.results to use unique (taskId, attemptId, runtime) identities."
+  );
+
   const blockingReasons = collectBlockingReasons(outcomes);
   const invokedResultCount = outcomes.filter((outcome) => outcome.invoked).length;
   const blockedResultCount = outcomes.length - invokedResultCount;
@@ -55,68 +82,174 @@ export function deriveAttemptHandoffFinalizationOutcomeSummary(
 }
 
 function validateApplyResultArray(
-  results: readonly AttemptHandoffFinalizationApply[],
+  results: readonly unknown[],
   fieldName: string
 ): AttemptHandoffFinalizationApply[] {
   const validatedResults: AttemptHandoffFinalizationApply[] = [];
 
   for (let index = 0; index < results.length; index += 1) {
-    if (!hasOwnIndex(results, index)) {
-      throw new ValidationError(
-        `Attempt handoff finalization outcome summary requires ${fieldName}[${index}] to expose consumer and consume objects.`
-      );
-    }
+    const entry = normalizeSelectionObjectArrayEntry<Record<string, unknown>>(
+      results,
+      index,
+      `Attempt handoff finalization outcome summary requires ${fieldName}[${index}] to expose consumer and consume objects.`
+    );
 
-    validatedResults.push(results[index]!);
+    validatedResults.push(
+      normalizeApplyResult(
+        entry,
+        `Attempt handoff finalization outcome summary requires ${fieldName}[${index}] to expose consumer and consume objects.`
+      )
+    );
   }
 
   return validatedResults;
 }
 
+function normalizeApplyResult(
+  entry: Record<string, unknown>,
+  message: string
+): AttemptHandoffFinalizationApply {
+  return {
+    consumer: normalizeSelectionObjectProperty(entry, "consumer", message),
+    consume: normalizeSelectionObjectProperty(entry, "consume", message)
+  } as unknown as AttemptHandoffFinalizationApply;
+}
+
 function deriveOutcome(
   entry: AttemptHandoffFinalizationApply
 ): AttemptHandoffFinalizationOutcome {
-  if (!isRecord(entry) || !isRecord(entry.consumer) || !isRecord(entry.consume)) {
-    throw new ValidationError(
-      "Attempt handoff finalization outcome summary requires each batch result to expose consumer and consume objects."
-    );
-  }
+  const consumer = normalizeSelectionObjectProperty(
+    entry,
+    "consumer",
+    "Attempt handoff finalization outcome summary requires each batch result to expose consumer and consume objects."
+  );
+  const consume = normalizeSelectionObjectProperty(
+    entry,
+    "consume",
+    "Attempt handoff finalization outcome summary requires each batch result to expose consumer and consume objects."
+  );
 
-  validateMatchingRequest(
-    entry.consumer.request,
-    entry.consume.request,
+  const consumerRequest = normalizeRequest(
+    normalizeSelectionObjectProperty(
+      consumer,
+      "request",
+      "Attempt handoff finalization outcome summary requires entry.consumer.request to be an object."
+    ),
+    "entry.consumer.request"
+  );
+  const consumeRequest = normalizeRequest(
+    normalizeSelectionObjectProperty(
+      consume,
+      "request",
+      "Attempt handoff finalization outcome summary requires entry.consume.request to be an object."
+    ),
     "entry.consume.request"
   );
-  validateMatchingReadiness(entry.consumer.readiness, entry.consume.readiness);
 
-  if (typeof entry.consume.invoked !== "boolean") {
+  validateMatchingRequest(
+    consumerRequest,
+    consumeRequest,
+    "entry.consume.request"
+  );
+
+  const consumerReadiness = normalizeReadiness(
+    normalizeSelectionObjectProperty(
+      consumer,
+      "readiness",
+      "Attempt handoff finalization outcome summary requires entry.consumer.readiness to be an object."
+    ),
+    "entry.consumer.readiness"
+  );
+  const consumeReadiness = normalizeReadiness(
+    normalizeSelectionObjectProperty(
+      consume,
+      "readiness",
+      "Attempt handoff finalization outcome summary requires entry.consume.readiness to be an object."
+    ),
+    "entry.consume.readiness"
+  );
+
+  validateMatchingReadiness(consumerReadiness, consumeReadiness);
+
+  const invoked = readSelectionValue(
+    consume,
+    "invoked",
+    "Attempt handoff finalization outcome summary requires entry.consume.invoked to be a boolean."
+  );
+
+  if (typeof invoked !== "boolean") {
     throw new ValidationError(
       "Attempt handoff finalization outcome summary requires entry.consume.invoked to be a boolean."
     );
   }
 
-  const blockingReasons = [...entry.consumer.readiness.blockingReasons];
+  const blockingReasons = [...consumerReadiness.blockingReasons];
 
-  if (entry.consume.invoked && blockingReasons.length > 0) {
+  if (invoked && blockingReasons.length > 0) {
     throw new ValidationError(
       "Attempt handoff finalization outcome summary requires invoked entries to use empty blockingReasons."
     );
   }
 
-  if (!entry.consume.invoked && blockingReasons.length === 0) {
+  if (!invoked && blockingReasons.length === 0) {
     throw new ValidationError(
       "Attempt handoff finalization outcome summary requires blocked entries to keep blockingReasons."
     );
   }
 
   return {
-    taskId: entry.consumer.request.taskId,
-    attemptId: entry.consumer.request.attemptId,
-    runtime: entry.consumer.request.runtime,
-    status: entry.consumer.request.status,
-    sourceKind: entry.consumer.request.sourceKind,
-    invoked: entry.consume.invoked,
+    taskId: consumerRequest.taskId,
+    attemptId: consumerRequest.attemptId,
+    runtime: consumerRequest.runtime,
+    status: consumerRequest.status,
+    sourceKind: consumerRequest.sourceKind,
+    invoked,
     blockingReasons
+  };
+}
+
+function normalizeRequest(
+  request: Record<string, unknown>,
+  fieldName: string
+): AttemptHandoffFinalizationRequest {
+  const taskId = readSelectionValue(
+    request,
+    "taskId",
+    `Attempt handoff finalization outcome summary requires ${fieldName}.taskId to be a non-empty string.`
+  );
+  const attemptId = readSelectionValue(
+    request,
+    "attemptId",
+    `Attempt handoff finalization outcome summary requires ${fieldName}.attemptId to be a non-empty string.`
+  );
+  const runtime = readSelectionValue(
+    request,
+    "runtime",
+    `Attempt handoff finalization outcome summary requires ${fieldName}.runtime to be a non-empty string.`
+  );
+  const status = readSelectionValue(
+    request,
+    "status",
+    `Attempt handoff finalization outcome summary requires ${fieldName}.status to use the existing attempt status vocabulary.`
+  );
+  const sourceKind = readSelectionValue(
+    request,
+    "sourceKind",
+    `Attempt handoff finalization outcome summary requires ${fieldName}.sourceKind to use the existing attempt source-kind vocabulary when provided.`
+  );
+
+  validateRequiredString(taskId, `${fieldName}.taskId`);
+  validateRequiredString(attemptId, `${fieldName}.attemptId`);
+  validateRequiredString(runtime, `${fieldName}.runtime`);
+  validateAttemptStatus(status, `${fieldName}.status`);
+  validateAttemptSourceKind(sourceKind, `${fieldName}.sourceKind`);
+
+  return {
+    taskId: (taskId as string).trim(),
+    attemptId: (attemptId as string).trim(),
+    runtime: (runtime as string).trim(),
+    status: status as AttemptStatus,
+    sourceKind: sourceKind as AttemptSourceKind | undefined
   };
 }
 
@@ -125,9 +258,6 @@ function validateMatchingRequest(
   consumeRequest: AttemptHandoffFinalizationRequest,
   fieldName: string
 ): void {
-  validateRequest(consumerRequest, "entry.consumer.request");
-  validateRequest(consumeRequest, fieldName);
-
   if (
     consumerRequest.taskId !== consumeRequest.taskId ||
     consumerRequest.attemptId !== consumeRequest.attemptId ||
@@ -141,13 +271,84 @@ function validateMatchingRequest(
   }
 }
 
+function normalizeReadiness(
+  readiness: Record<string, unknown>,
+  fieldName: string
+): AttemptHandoffFinalizationConsumerReadiness {
+  const blockingReasons = normalizeBlockingReasons(
+    normalizeSelectionArrayProperty(
+      readiness,
+      "blockingReasons",
+      `Attempt handoff finalization outcome summary requires ${fieldName}.blockingReasons to be an array.`
+    ),
+    `${fieldName}.blockingReasons`
+  );
+  const canConsumeHandoffFinalization = readSelectionValue(
+    readiness,
+    "canConsumeHandoffFinalization",
+    `Attempt handoff finalization outcome summary requires ${fieldName}.canConsumeHandoffFinalization to be a boolean.`
+  );
+  const hasBlockingReasons = readSelectionValue(
+    readiness,
+    "hasBlockingReasons",
+    `Attempt handoff finalization outcome summary requires ${fieldName}.hasBlockingReasons to be a boolean.`
+  );
+  const handoffFinalizationSupported = readSelectionValue(
+    readiness,
+    "handoffFinalizationSupported",
+    `Attempt handoff finalization outcome summary requires ${fieldName}.handoffFinalizationSupported to be a boolean.`
+  );
+
+  if (typeof canConsumeHandoffFinalization !== "boolean") {
+    throw new ValidationError(
+      `Attempt handoff finalization outcome summary requires ${fieldName}.canConsumeHandoffFinalization to be a boolean.`
+    );
+  }
+
+  if (typeof hasBlockingReasons !== "boolean") {
+    throw new ValidationError(
+      `Attempt handoff finalization outcome summary requires ${fieldName}.hasBlockingReasons to be a boolean.`
+    );
+  }
+
+  if (typeof handoffFinalizationSupported !== "boolean") {
+    throw new ValidationError(
+      `Attempt handoff finalization outcome summary requires ${fieldName}.handoffFinalizationSupported to be a boolean.`
+    );
+  }
+
+  const derivedHasBlockingReasons = blockingReasons.length > 0;
+
+  if (canConsumeHandoffFinalization !== !derivedHasBlockingReasons) {
+    throw new ValidationError(
+      `Attempt handoff finalization outcome summary requires ${fieldName}.canConsumeHandoffFinalization to match whether blockingReasons is empty.`
+    );
+  }
+
+  if (hasBlockingReasons !== derivedHasBlockingReasons) {
+    throw new ValidationError(
+      `Attempt handoff finalization outcome summary requires ${fieldName}.hasBlockingReasons to match whether blockingReasons is non-empty.`
+    );
+  }
+
+  if (handoffFinalizationSupported !== canConsumeHandoffFinalization) {
+    throw new ValidationError(
+      `Attempt handoff finalization outcome summary requires ${fieldName}.handoffFinalizationSupported to match ${fieldName}.canConsumeHandoffFinalization.`
+    );
+  }
+
+  return {
+    blockingReasons,
+    canConsumeHandoffFinalization,
+    hasBlockingReasons,
+    handoffFinalizationSupported
+  };
+}
+
 function validateMatchingReadiness(
   consumerReadiness: AttemptHandoffFinalizationConsumerReadiness,
   consumeReadiness: AttemptHandoffFinalizationConsumerReadiness
 ): void {
-  validateReadiness(consumerReadiness, "entry.consumer.readiness");
-  validateReadiness(consumeReadiness, "entry.consume.readiness");
-
   if (
     consumerReadiness.canConsumeHandoffFinalization !==
       consumeReadiness.canConsumeHandoffFinalization ||
@@ -166,87 +367,33 @@ function validateMatchingReadiness(
   }
 }
 
-function validateReadiness(
-  readiness: AttemptHandoffFinalizationConsumerReadiness,
-  fieldName: string
-): void {
-  if (!isRecord(readiness)) {
-    throw new ValidationError(
-      `Attempt handoff finalization outcome summary requires ${fieldName} to be an object.`
-    );
-  }
-
-  if (!Array.isArray(readiness.blockingReasons)) {
-    throw new ValidationError(
-      `Attempt handoff finalization outcome summary requires ${fieldName}.blockingReasons to be an array.`
-    );
-  }
-  validateBlockingReasons(
-    readiness.blockingReasons,
-    `${fieldName}.blockingReasons`
-  );
-
-  if (typeof readiness.canConsumeHandoffFinalization !== "boolean") {
-    throw new ValidationError(
-      `Attempt handoff finalization outcome summary requires ${fieldName}.canConsumeHandoffFinalization to be a boolean.`
-    );
-  }
-
-  if (typeof readiness.hasBlockingReasons !== "boolean") {
-    throw new ValidationError(
-      `Attempt handoff finalization outcome summary requires ${fieldName}.hasBlockingReasons to be a boolean.`
-    );
-  }
-
-  if (typeof readiness.handoffFinalizationSupported !== "boolean") {
-    throw new ValidationError(
-      `Attempt handoff finalization outcome summary requires ${fieldName}.handoffFinalizationSupported to be a boolean.`
-    );
-  }
-
-  const hasBlockingReasons = readiness.blockingReasons.length > 0;
-
-  if (readiness.canConsumeHandoffFinalization !== !hasBlockingReasons) {
-    throw new ValidationError(
-      `Attempt handoff finalization outcome summary requires ${fieldName}.canConsumeHandoffFinalization to match whether blockingReasons is empty.`
-    );
-  }
-
-  if (readiness.hasBlockingReasons !== hasBlockingReasons) {
-    throw new ValidationError(
-      `Attempt handoff finalization outcome summary requires ${fieldName}.hasBlockingReasons to match whether blockingReasons is non-empty.`
-    );
-  }
-
-  if (
-    readiness.handoffFinalizationSupported !==
-    readiness.canConsumeHandoffFinalization
-  ) {
-    throw new ValidationError(
-      `Attempt handoff finalization outcome summary requires ${fieldName}.handoffFinalizationSupported to match ${fieldName}.canConsumeHandoffFinalization.`
-    );
-  }
-}
-
-function validateBlockingReasons(
+function normalizeBlockingReasons(
   blockingReasons: readonly unknown[],
   fieldName: string
-): void {
+): AttemptHandoffFinalizationConsumerBlockingReason[] {
+  const normalizedBlockingReasons: AttemptHandoffFinalizationConsumerBlockingReason[] = [];
+
   for (let index = 0; index < blockingReasons.length; index += 1) {
+    const value = blockingReasons[index];
+
     if (
-      !hasOwnIndex(blockingReasons, index) ||
-      typeof blockingReasons[index] !== "string" ||
+      !Object.prototype.hasOwnProperty.call(blockingReasons, index) ||
+      typeof value !== "string" ||
       !validBlockingReasons.has(
-        blockingReasons[
-          index
-        ] as AttemptHandoffFinalizationConsumerBlockingReason
+        value as AttemptHandoffFinalizationConsumerBlockingReason
       )
     ) {
       throw new ValidationError(
         `Attempt handoff finalization outcome summary requires ${fieldName} to use the existing handoff-finalization blocker vocabulary.`
       );
     }
+
+    normalizedBlockingReasons.push(
+      value as AttemptHandoffFinalizationConsumerBlockingReason
+    );
   }
+
+  return normalizedBlockingReasons;
 }
 
 function collectBlockingReasons(
@@ -271,31 +418,6 @@ function stringArraysEqual(
     left.length === right.length &&
     left.every((value, index) => value === right[index])
   );
-}
-
-function hasOwnIndex(values: readonly unknown[], index: number): boolean {
-  return Object.prototype.hasOwnProperty.call(values, index);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function validateRequest(
-  request: AttemptHandoffFinalizationRequest,
-  fieldName: string
-): void {
-  if (!isRecord(request)) {
-    throw new ValidationError(
-      `Attempt handoff finalization outcome summary requires ${fieldName} to be an object.`
-    );
-  }
-
-  validateRequiredString(request.taskId, `${fieldName}.taskId`);
-  validateRequiredString(request.attemptId, `${fieldName}.attemptId`);
-  validateRequiredString(request.runtime, `${fieldName}.runtime`);
-  validateAttemptStatus(request.status, `${fieldName}.status`);
-  validateAttemptSourceKind(request.sourceKind, `${fieldName}.sourceKind`);
 }
 
 function validateRequiredString(value: unknown, fieldName: string): void {

@@ -1,5 +1,7 @@
 import { ValidationError } from "../core/errors.js";
 import {
+  accessSelectionValue,
+  rethrowSelectionAccessError,
   validateSelectionArray,
   validateSelectionObjectArrayEntries,
   validateSelectionObjectInput
@@ -23,91 +25,108 @@ export function deriveAttemptHandoffDecisionSummary(
     return undefined;
   }
 
-  validateSelectionObjectInput(
-    summary,
-    "Attempt handoff decision summary requires summary to be an object."
-  );
+  try {
+    validateSelectionObjectInput(
+      summary,
+      "Attempt handoff decision summary requires summary to be an object."
+    );
 
-  validateExplanationBasis(summary);
-  validateSummaryResults(summary.results);
-  validateSummarySubgroupEntries(
-    summary.invokedResults,
-    "summary.invokedResults"
-  );
-  validateSummarySubgroupEntries(
-    summary.blockedResults,
-    "summary.blockedResults"
-  );
-
-  const canonicalSummary = deriveAttemptHandoffExplanationSummary({
-    reportBasis: "promotion_target_apply_batch",
-    results: summary.results.map((entry) => ({
-      handoffTarget: entry.handoffTarget,
-      targetApply: entry.targetApply
-    })),
-    invokedResults: summary.results
-      .filter((entry) => entry.invoked)
-      .map((entry) => ({
+    const normalizedSummary = normalizeExplanationSummary(summary);
+    const canonicalSummary = deriveAttemptHandoffExplanationSummary({
+      reportBasis: "promotion_target_apply_batch",
+      results: normalizedSummary.results.map((entry) => ({
         handoffTarget: entry.handoffTarget,
         targetApply: entry.targetApply
       })),
-    blockedResults: summary.results
-      .filter((entry) => !entry.invoked)
-      .map((entry) => ({
-        handoffTarget: entry.handoffTarget,
-        targetApply: entry.targetApply
-      }))
-  });
+      invokedResults: normalizedSummary.results
+        .filter((entry) => entry.invoked)
+        .map((entry) => ({
+          handoffTarget: entry.handoffTarget,
+          targetApply: entry.targetApply
+        })),
+      blockedResults: normalizedSummary.results
+        .filter((entry) => !entry.invoked)
+        .map((entry) => ({
+          handoffTarget: entry.handoffTarget,
+          targetApply: entry.targetApply
+        }))
+    });
 
-  if (canonicalSummary === undefined) {
-    throw new ValidationError(
-      "Attempt handoff decision summary requires summary.results to produce a canonical explanation summary."
+    if (canonicalSummary === undefined) {
+      throw new ValidationError(
+        "Attempt handoff decision summary requires summary.results to produce a canonical explanation summary."
+      );
+    }
+
+    validateCanonicalSummary(normalizedSummary, canonicalSummary);
+
+    const resultCount = canonicalSummary.results.length;
+    const invokedResultCount = canonicalSummary.invokedResults.length;
+    const blockedResultCount = canonicalSummary.blockedResults.length;
+    const blockingReasons = deriveBlockingReasons(
+      resultCount,
+      invokedResultCount
+    );
+
+    return {
+      decisionBasis: ATTEMPT_HANDOFF_DECISION_BASIS,
+      resultCount,
+      invokedResultCount,
+      blockedResultCount,
+      blockingReasons,
+      canFinalizeHandoff: blockingReasons.length === 0,
+      hasBlockingReasons: blockingReasons.length > 0
+    };
+  } catch (error) {
+    rethrowSelectionAccessError(
+      error,
+      "Attempt handoff decision summary requires summary to be a readable object."
     );
   }
+}
 
-  validateCanonicalSummary(summary, canonicalSummary);
+function normalizeExplanationSummary(
+  summary: Record<string, unknown>
+): AttemptHandoffExplanationSummary {
+  const explanationBasis = accessSelectionValue(summary, "explanationBasis");
+  const results = normalizeSummarySubgroupEntries(
+    accessSelectionValue(summary, "results"),
+    "summary.results"
+  );
+  const invokedResults = normalizeSummarySubgroupEntries(
+    accessSelectionValue(summary, "invokedResults"),
+    "summary.invokedResults"
+  );
+  const blockedResults = normalizeSummarySubgroupEntries(
+    accessSelectionValue(summary, "blockedResults"),
+    "summary.blockedResults"
+  );
 
-  const resultCount = canonicalSummary.results.length;
-  const invokedResultCount = canonicalSummary.invokedResults.length;
-  const blockedResultCount = canonicalSummary.blockedResults.length;
-  const blockingReasons = deriveBlockingReasons(resultCount, invokedResultCount);
+  validateExplanationBasis(explanationBasis);
 
   return {
-    decisionBasis: ATTEMPT_HANDOFF_DECISION_BASIS,
-    resultCount,
-    invokedResultCount,
-    blockedResultCount,
-    blockingReasons,
-    canFinalizeHandoff: blockingReasons.length === 0,
-    hasBlockingReasons: blockingReasons.length > 0
+    explanationBasis: ATTEMPT_HANDOFF_EXPLANATION_BASIS,
+    results: results as AttemptHandoffExplanationEntry[],
+    invokedResults: invokedResults as AttemptHandoffExplanationEntry[],
+    blockedResults: blockedResults as AttemptHandoffExplanationEntry[]
   };
 }
 
-function validateExplanationBasis(
-  summary: AttemptHandoffExplanationSummary
-): void {
-  if (summary.explanationBasis !== ATTEMPT_HANDOFF_EXPLANATION_BASIS) {
+function validateExplanationBasis(explanationBasis: unknown): void {
+  if (explanationBasis !== ATTEMPT_HANDOFF_EXPLANATION_BASIS) {
     throw new ValidationError(
       'Attempt handoff decision summary requires summary.explanationBasis to be "handoff_report_ready".'
     );
   }
 }
 
-function validateSummaryResults(value: unknown): void {
-  validateSelectionArray(
-    value,
-    "Attempt handoff decision summary requires summary.results to be an array."
-  );
-  validateSelectionObjectArrayEntries(
-    value,
-    "Attempt handoff decision summary requires summary.results entries to be objects."
-  );
-}
-
-function validateSummarySubgroupEntries(
+function normalizeSummarySubgroupEntries(
   value: unknown,
-  fieldName: "summary.invokedResults" | "summary.blockedResults"
-): void {
+  fieldName:
+    | "summary.results"
+    | "summary.invokedResults"
+    | "summary.blockedResults"
+): readonly unknown[] {
   validateSelectionArray(
     value,
     `Attempt handoff decision summary requires ${fieldName} to be an array.`
@@ -116,6 +135,7 @@ function validateSummarySubgroupEntries(
     value,
     `Attempt handoff decision summary requires ${fieldName} entries to be objects.`
   );
+  return value;
 }
 
 function validateCanonicalSummary(

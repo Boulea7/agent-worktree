@@ -1,6 +1,8 @@
 import {
   normalizeBatchWrapper,
-  normalizeBatchWrapperItems
+  normalizeBatchWrapperObjectItems,
+  readOptionalBatchWrapperProperty,
+  readRequiredBatchWrapperProperty
 } from "./runtime-state-batch-wrapper-guards.js";
 import { applyExecutionSessionWait } from "./runtime-state-wait-apply.js";
 import type {
@@ -16,11 +18,33 @@ export async function applyExecutionSessionWaitBatch(
     input,
     "Execution session wait apply batch input must be an object."
   );
-  const requests = normalizeBatchWrapperItems<
+  const requestsInput = readRequiredBatchWrapperProperty<
+    ExecutionSessionWaitApplyBatchInput["requests"]
+  >(
+    normalizedInput,
+    "requests",
+    "Execution session wait apply batch requires requests to be an array."
+  );
+  const requests = normalizeBatchWrapperObjectItems<
     ExecutionSessionWaitApplyBatchInput["requests"][number]
   >(
-    normalizedInput.requests,
-    "Execution session wait apply batch requires requests to be an array."
+    requestsInput,
+    "Execution session wait apply batch requires requests to be an array.",
+    "Execution session wait apply batch requires requests entries to be objects."
+  );
+  const invokeWait = readRequiredBatchWrapperProperty<
+    ExecutionSessionWaitApplyBatchInput["invokeWait"]
+  >(
+    normalizedInput,
+    "invokeWait",
+    "Execution session wait apply requires invokeWait to be a function."
+  );
+  const resolveSessionLifecycleCapability = readOptionalBatchWrapperProperty<
+    ExecutionSessionWaitApplyBatchInput["resolveSessionLifecycleCapability"]
+  >(
+    normalizedInput,
+    "resolveSessionLifecycleCapability",
+    "Execution session wait consumer readiness requires resolveSessionLifecycleCapability to be a function when provided."
   );
 
   const results: ExecutionSessionWaitApply[] = [];
@@ -29,12 +53,11 @@ export async function applyExecutionSessionWaitBatch(
     results.push(
       await applyExecutionSessionWait({
         request,
-        invokeWait: normalizedInput.invokeWait,
-        ...(normalizedInput.resolveSessionLifecycleCapability === undefined
+        invokeWait,
+        ...(resolveSessionLifecycleCapability === undefined
           ? {}
           : {
-              resolveSessionLifecycleCapability:
-                normalizedInput.resolveSessionLifecycleCapability
+              resolveSessionLifecycleCapability
             })
       })
     );

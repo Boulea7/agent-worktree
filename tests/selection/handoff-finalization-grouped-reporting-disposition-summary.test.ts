@@ -146,6 +146,38 @@ describe(
       );
     });
 
+    it("should snapshot top-level grouped reporting groups once before downstream reuse", () => {
+      let reads = 0;
+      const summary = createGroupedReportingSummary([createBlockedReportingGroup()]);
+
+      Object.defineProperty(summary, "groups", {
+        configurable: true,
+        enumerable: true,
+        get() {
+          reads += 1;
+
+          if (reads > 1) {
+            throw new Error("second read boom");
+          }
+
+          return [createBlockedReportingGroup()];
+        }
+      });
+
+      expect(
+        deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary(summary)
+      ).toEqual({
+        groupedReportingDispositionBasis:
+          "handoff_finalization_grouped_reporting_summary",
+        resultCount: 2,
+        invokedResultCount: 0,
+        blockedResultCount: 2,
+        groupCount: 1,
+        reportingDisposition: "all_blocked"
+      });
+      expect(reads).toBe(1);
+    });
+
     it("should fail loudly when top-level grouped reporting counts are not non-negative integers", () => {
       const act = () =>
         deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary({
@@ -225,6 +257,53 @@ describe(
       } finally {
         delete Array.prototype[0];
       }
+    });
+
+    it("should fail closed when reading a grouped reporting group field throws through an accessor-shaped input", () => {
+      const group = createBlockedReportingGroup();
+      Object.defineProperty(group, "groupKey", {
+        configurable: true,
+        enumerable: true,
+        get() {
+          throw new Error("getter boom");
+        }
+      });
+
+      const act = () =>
+        deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary(
+          createGroupedReportingSummary([group as never])
+        );
+
+      expect(act).toThrow(ValidationError);
+      expect(act).toThrow(
+        "Attempt handoff finalization grouped reporting disposition summary requires each groupKey to use the existing handoff-finalization explanation vocabulary."
+      );
+    });
+
+    it("should fail closed when a grouped reporting groups array entry throws through an accessor-shaped index", () => {
+      const groups = [createBlockedReportingGroup()];
+      Object.defineProperty(groups, "0", {
+        configurable: true,
+        enumerable: true,
+        get() {
+          throw new Error("getter boom");
+        }
+      });
+
+      const act = () =>
+        deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary({
+          groupedReportingBasis:
+            "handoff_finalization_grouped_projection_summary",
+          resultCount: 1,
+          invokedResultCount: 0,
+          blockedResultCount: 1,
+          groups: groups as never
+        });
+
+      expect(act).toThrow(ValidationError);
+      expect(act).toThrow(
+        "Attempt handoff finalization grouped reporting disposition summary requires summary.groups entries to be objects."
+      );
     });
 
     it("should fail loudly when a grouped reporting group count split stops adding up to the group total", () => {

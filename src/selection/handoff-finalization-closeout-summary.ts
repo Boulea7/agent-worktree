@@ -3,6 +3,11 @@ import type {
   AttemptHandoffFinalizationClosureSummary,
   AttemptHandoffFinalizationRequestSummaryApplyInput
 } from "./types.js";
+import {
+  accessSelectionValue,
+  rethrowSelectionAccessError,
+  validateSelectionObjectInput
+} from "./entry-validation.js";
 import { applyAttemptHandoffFinalizationRequestSummary } from "./handoff-finalization-request-apply.js";
 import { deriveAttemptHandoffFinalizationOutcomeSummary } from "./handoff-finalization-outcome-summary.js";
 import { deriveAttemptHandoffFinalizationExplanationSummary } from "./handoff-finalization-explanation.js";
@@ -15,53 +20,78 @@ import { deriveAttemptHandoffFinalizationClosureSummary } from "./handoff-finali
 export async function deriveAttemptHandoffFinalizationCloseoutSummary(
   input: AttemptHandoffFinalizationRequestSummaryApplyInput
 ): Promise<AttemptHandoffFinalizationClosureSummary | undefined> {
-  validateInput(input);
-  const applyBatch =
-    await applyAttemptHandoffFinalizationRequestSummary(input);
-  const outcomeSummary = deriveAttemptHandoffFinalizationOutcomeSummary(applyBatch);
-  const explanationSummary =
-    deriveAttemptHandoffFinalizationExplanationSummary(outcomeSummary);
-  const reportReady =
-    deriveAttemptHandoffFinalizationReportReady(explanationSummary);
-  const groupedProjectionSummary =
-    deriveAttemptHandoffFinalizationGroupedProjectionSummary(reportReady);
-  const groupedReportingSummary =
-    deriveAttemptHandoffFinalizationGroupedReportingSummary(
-      groupedProjectionSummary
-    );
-  const groupedReportingDispositionSummary =
-    deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary(
-      groupedReportingSummary
-    );
-
-  return deriveAttemptHandoffFinalizationClosureSummary(
-    groupedReportingDispositionSummary
-  );
-}
-
-function validateInput(value: unknown): void {
-  if (!isRecord(value)) {
-    throw new ValidationError(
+  try {
+    validateSelectionObjectInput(
+      input,
       "Attempt handoff finalization closeout summary input must be an object."
     );
-  }
-
-  if (typeof value.invokeHandoffFinalization !== "function") {
-    throw new ValidationError(
+    const summary = accessSelectionValue(input, "summary") as
+      | AttemptHandoffFinalizationRequestSummaryApplyInput["summary"]
+      | undefined;
+    const invokeHandoffFinalization = normalizeRequiredFunction(
+      accessSelectionValue(input, "invokeHandoffFinalization"),
       "Attempt handoff finalization closeout summary requires invokeHandoffFinalization to be a function."
-    );
-  }
-
-  if (
-    value.resolveHandoffFinalizationCapability !== undefined &&
-    typeof value.resolveHandoffFinalizationCapability !== "function"
-  ) {
-    throw new ValidationError(
+    ) as AttemptHandoffFinalizationRequestSummaryApplyInput["invokeHandoffFinalization"];
+    const resolveHandoffFinalizationCapability = normalizeOptionalFunction(
+      accessSelectionValue(input, "resolveHandoffFinalizationCapability"),
       "Attempt handoff finalization closeout summary requires resolveHandoffFinalizationCapability to be a function when provided."
+    ) as AttemptHandoffFinalizationRequestSummaryApplyInput["resolveHandoffFinalizationCapability"];
+
+    const applyBatch = await applyAttemptHandoffFinalizationRequestSummary({
+      summary,
+      invokeHandoffFinalization,
+      ...(resolveHandoffFinalizationCapability === undefined
+        ? {}
+        : {
+            resolveHandoffFinalizationCapability
+          })
+    });
+    const outcomeSummary =
+      deriveAttemptHandoffFinalizationOutcomeSummary(applyBatch);
+    const explanationSummary =
+      deriveAttemptHandoffFinalizationExplanationSummary(outcomeSummary);
+    const reportReady =
+      deriveAttemptHandoffFinalizationReportReady(explanationSummary);
+    const groupedProjectionSummary =
+      deriveAttemptHandoffFinalizationGroupedProjectionSummary(reportReady);
+    const groupedReportingSummary =
+      deriveAttemptHandoffFinalizationGroupedReportingSummary(
+        groupedProjectionSummary
+      );
+    const groupedReportingDispositionSummary =
+      deriveAttemptHandoffFinalizationGroupedReportingDispositionSummary(
+        groupedReportingSummary
+      );
+
+    return deriveAttemptHandoffFinalizationClosureSummary(
+      groupedReportingDispositionSummary
+    );
+  } catch (error) {
+    rethrowSelectionAccessError(
+      error,
+      "Attempt handoff finalization closeout summary input must be a readable object."
     );
   }
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+function normalizeRequiredFunction(
+  value: unknown,
+  message: string
+): (...args: never[]) => unknown {
+  if (typeof value !== "function") {
+    throw new ValidationError(message);
+  }
+
+  return value as (...args: never[]) => unknown;
+}
+
+function normalizeOptionalFunction(
+  value: unknown,
+  message: string
+): ((...args: never[]) => unknown) | undefined {
+  if (value !== undefined && typeof value !== "function") {
+    throw new ValidationError(message);
+  }
+
+  return value as ((...args: never[]) => unknown) | undefined;
 }

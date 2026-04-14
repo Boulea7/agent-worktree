@@ -1,4 +1,9 @@
 import { ValidationError } from "../core/errors.js";
+import {
+  normalizeBatchWrapper,
+  readOptionalBatchWrapperProperty,
+  readRequiredBatchWrapperProperty
+} from "./runtime-state-batch-wrapper-guards.js";
 import type {
   ExecutionSessionWaitTarget,
   ExecutionSessionWaitTargetInput
@@ -7,60 +12,89 @@ import type {
 export function deriveExecutionSessionWaitTarget(
   input: ExecutionSessionWaitTargetInput
 ): ExecutionSessionWaitTarget | undefined {
-  if (!isRecord(input)) {
-    throw new ValidationError(
-      "Execution session wait target input must be an object."
-    );
-  }
-
-  if (!isRecord(input.candidate)) {
+  const normalizedInput = normalizeBatchWrapper<ExecutionSessionWaitTargetInput>(
+    input,
+    "Execution session wait target input must be an object."
+  );
+  const candidate = readRequiredBatchWrapperProperty<
+    ExecutionSessionWaitTargetInput["candidate"]
+  >(
+    normalizedInput,
+    "candidate",
+    "Execution session wait target requires candidate to be an object."
+  );
+  if (!isRecord(candidate)) {
     throw new ValidationError(
       "Execution session wait target requires candidate to be an object."
     );
   }
-
-  if (!isRecord(input.candidate.context)) {
+  const context = readRequiredBatchWrapperProperty(
+    candidate,
+    "context",
+    "Execution session wait target requires candidate.context to be an object."
+  );
+  if (!isRecord(context)) {
     throw new ValidationError(
       "Execution session wait target requires candidate.context to be an object."
     );
   }
-
-  if (!isRecord(input.candidate.context.record)) {
+  const record = readRequiredBatchWrapperProperty(
+    context,
+    "record",
+    "Execution session wait target requires candidate.context.record to be an object."
+  );
+  if (!isRecord(record)) {
     throw new ValidationError(
       "Execution session wait target requires candidate.context.record to be an object."
     );
   }
-
-  if (!isRecord(input.candidate.readiness)) {
+  const readiness = readRequiredBatchWrapperProperty(
+    candidate,
+    "readiness",
+    "Execution session wait target requires candidate.readiness to be an object."
+  );
+  if (!isRecord(readiness)) {
     throw new ValidationError(
       "Execution session wait target requires candidate.readiness to be an object."
     );
   }
-
-  if (typeof input.candidate.readiness.canWait !== "boolean") {
+  const canWait = readRequiredBatchWrapperProperty(
+    readiness,
+    "canWait",
+    "Execution session wait target requires candidate.readiness.canWait to be a boolean."
+  );
+  if (typeof canWait !== "boolean") {
     throw new ValidationError(
       "Execution session wait target requires candidate.readiness.canWait to be a boolean."
     );
   }
 
-  const {
-    candidate: { context, readiness }
-  } = input;
-
   const attemptId = normalizeRequiredString(
-    context.record.attemptId,
+    readRequiredBatchWrapperProperty(
+      record,
+      "attemptId",
+      "Execution session wait target requires candidate.context.record.attemptId to be a non-empty string."
+    ),
     "Execution session wait target requires candidate.context.record.attemptId to be a non-empty string."
   );
   const runtime = normalizeRequiredString(
-    context.record.runtime,
+    readRequiredBatchWrapperProperty(
+      record,
+      "runtime",
+      "Execution session wait target requires candidate.context.record.runtime to be a non-empty string."
+    ),
     "Execution session wait target requires candidate.context.record.runtime to be a non-empty string."
   );
   const sessionId = normalizeOptionalString(
-    context.record.sessionId,
+    readOptionalBatchWrapperProperty(
+      record,
+      "sessionId",
+      "Execution session wait target requires candidate.context.record.sessionId to be a non-empty string when present."
+    ),
     "Execution session wait target requires candidate.context.record.sessionId to be a non-empty string when present."
   );
 
-  if (!readiness.canWait || sessionId === undefined) {
+  if (!canWait || sessionId === undefined) {
     return undefined;
   }
 

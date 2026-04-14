@@ -6,6 +6,48 @@ import {
 } from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-headless-apply-batch helpers", () => {
+  it("should fail loudly when the top-level spawn-headless-apply batch input is malformed", async () => {
+    await expect(
+      applyExecutionSessionSpawnHeadlessInputBatch(undefined as never)
+    ).rejects.toThrow(/spawn headless apply batch input must be an object/i);
+
+    await expect(
+      applyExecutionSessionSpawnHeadlessInputBatch({
+        items: undefined as never,
+        invokeSpawn: async () => undefined
+      })
+    ).rejects.toThrow(/requires items to be an array/i);
+
+    await expect(
+      applyExecutionSessionSpawnHeadlessInputBatch({
+        items: [],
+        invokeSpawn: undefined as never
+      })
+    ).rejects.toThrow(/requires invokeSpawn to be a function/i);
+
+    await expect(
+      applyExecutionSessionSpawnHeadlessInputBatch({
+        items: [null] as never,
+        invokeSpawn: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Execution session spawn headless apply batch requires items entries to be objects."
+    );
+  });
+
+  it("should reject inherited items wrappers", async () => {
+    const inheritedInput = Object.create({
+      items: [],
+      invokeSpawn: async () => undefined
+    });
+
+    await expect(
+      applyExecutionSessionSpawnHeadlessInputBatch(inheritedInput as never)
+    ).rejects.toThrow(
+      "Execution session spawn headless apply batch requires items to be an array."
+    );
+  });
+
   it("should return an empty batch result without invoking spawn", async () => {
     const invokeSpawn = vi.fn(async () => undefined);
 
@@ -17,6 +59,106 @@ describe("control-plane runtime-state spawn-headless-apply-batch helpers", () =>
     ).resolves.toEqual({
       results: []
     });
+    expect(invokeSpawn).not.toHaveBeenCalled();
+  });
+
+  it("should reject malformed later batch entries before any spawn side effect happens", async () => {
+    const invokeSpawn = vi.fn(async () => undefined);
+
+    await expect(
+      applyExecutionSessionSpawnHeadlessInputBatch({
+        items: [
+          {
+            childAttemptId: "att_child_1",
+            request: createSpawnRequest({
+              parentAttemptId: "att_parent_1",
+              parentSessionId: "thr_parent_1"
+            }),
+            execution: {
+              prompt: "child one"
+            }
+          },
+          null as never
+        ],
+        invokeSpawn
+      })
+    ).rejects.toThrow(
+      "Execution session spawn headless apply batch requires items entries to be objects."
+    );
+    expect(invokeSpawn).not.toHaveBeenCalled();
+  });
+
+  it("should reject sparse batch holes before any spawn side effect happens", async () => {
+    const invokeSpawn = vi.fn(async () => undefined);
+    const items = new Array<{
+      childAttemptId: string;
+      request: ExecutionSessionSpawnRequest;
+      execution: {
+        prompt: string;
+      };
+    }>(2);
+
+    items[0] = {
+      childAttemptId: "att_child_1",
+      request: createSpawnRequest({
+        parentAttemptId: "att_parent_1",
+        parentSessionId: "thr_parent_1"
+      }),
+      execution: {
+        prompt: "child one"
+      }
+    };
+
+    await expect(
+      applyExecutionSessionSpawnHeadlessInputBatch({
+        items,
+        invokeSpawn
+      })
+    ).rejects.toThrow(
+      "Execution session spawn headless apply batch requires items entries to be objects."
+    );
+    expect(invokeSpawn).not.toHaveBeenCalled();
+  });
+
+  it("should reject inherited batch indexes before any spawn side effect happens", async () => {
+    const invokeSpawn = vi.fn(async () => undefined);
+    const prototype = {
+      1: {
+        childAttemptId: "att_child_proto",
+        request: createSpawnRequest({
+          parentAttemptId: "att_parent_proto",
+          parentSessionId: "thr_parent_proto"
+        }),
+        execution: {
+          prompt: "proto child"
+        }
+      }
+    };
+    const items = Object.setPrototypeOf(
+      [
+        {
+          childAttemptId: "att_child_1",
+          request: createSpawnRequest({
+            parentAttemptId: "att_parent_1",
+            parentSessionId: "thr_parent_1"
+          }),
+          execution: {
+            prompt: "child one"
+          }
+        }
+      ],
+      prototype
+    );
+    items.length = 2;
+
+    await expect(
+      applyExecutionSessionSpawnHeadlessInputBatch({
+        items: items as never,
+        invokeSpawn
+      })
+    ).rejects.toThrow(
+      "Execution session spawn headless apply batch requires items entries to be objects."
+    );
     expect(invokeSpawn).not.toHaveBeenCalled();
   });
 
@@ -156,6 +298,37 @@ describe("control-plane runtime-state spawn-headless-apply-batch helpers", () =>
       ]
     });
     expect(invokedSessionIds).toEqual(["thr_parent_1", "thr_parent_2"]);
+  });
+
+  it("should snapshot invokeSpawn once for the whole batch", async () => {
+    let invokeSpawnReads = 0;
+
+    await expect(
+      applyExecutionSessionSpawnHeadlessInputBatch({
+        items: [
+          {
+            childAttemptId: "att_child_snapshot",
+            request: createSpawnRequest({
+              parentAttemptId: "att_parent_snapshot",
+              parentSessionId: "thr_parent_snapshot"
+            }),
+            execution: {
+              prompt: "snapshot child"
+            }
+          }
+        ],
+        get invokeSpawn() {
+          invokeSpawnReads += 1;
+
+          if (invokeSpawnReads > 1) {
+            throw new Error("invokeSpawn getter read twice");
+          }
+
+          return async () => undefined;
+        }
+      } as never)
+    ).resolves.toBeDefined();
+    expect(invokeSpawnReads).toBe(1);
   });
 
   it("should fail fast on the first invoker error", async () => {
@@ -351,7 +524,7 @@ describe("control-plane runtime-state spawn-headless-apply-batch helpers", () =>
     expect(items).toEqual(itemsSnapshot);
   });
 
-  it("should stop later items when headless-input derivation fails after spawn apply succeeds", async () => {
+  it("should stop later items before invokeSpawn when headless-input preflight fails", async () => {
     const invokedSessionIds: string[] = [];
 
     await expect(
@@ -393,7 +566,7 @@ describe("control-plane runtime-state spawn-headless-apply-batch helpers", () =>
         }
       })
     ).rejects.toThrow("bridge failed");
-    expect(invokedSessionIds).toEqual(["thr_parent_1", "thr_parent_2"]);
+    expect(invokedSessionIds).toEqual(["thr_parent_1"]);
   });
 
 });

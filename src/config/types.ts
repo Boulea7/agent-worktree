@@ -15,8 +15,8 @@ export interface ProjectCompatibilityConfig {
 }
 
 export interface ProjectDefaultsConfig {
-  execution_mode: ExecutionMode | string;
-  safety_intent: SafetyIntent | string;
+  execution_mode: ExecutionMode;
+  safety_intent: SafetyIntent;
 }
 
 export interface ProjectInstructionsConfig {

@@ -3,6 +3,11 @@ import type {
   AttemptHandoffFinalizationCloseoutDecisionSummary,
   AttemptHandoffFinalizationRequestSummaryApplyInput
 } from "./types.js";
+import {
+  normalizeSelectionOptionalFunctionProperty,
+  normalizeSelectionRequiredFunctionProperty,
+  validateSelectionObjectInput
+} from "./entry-validation.js";
 import { deriveAttemptHandoffFinalizationCloseoutSummary } from "./handoff-finalization-closeout-summary.js";
 import { deriveAttemptHandoffFinalizationCloseoutDecisionSummary } from "./handoff-finalization-closeout-decision.js";
 
@@ -19,28 +24,18 @@ export async function applyAttemptHandoffFinalizationCloseoutDecisionSummary(
 }
 
 function validateInput(value: unknown): void {
-  if (!isRecord(value)) {
-    throw new ValidationError(
-      "Attempt handoff finalization closeout decision apply input must be an object."
-    );
-  }
-
-  if (typeof value.invokeHandoffFinalization !== "function") {
-    throw new ValidationError(
-      "Attempt handoff finalization closeout decision apply requires invokeHandoffFinalization to be a function."
-    );
-  }
-
-  if (
-    value.resolveHandoffFinalizationCapability !== undefined &&
-    typeof value.resolveHandoffFinalizationCapability !== "function"
-  ) {
-    throw new ValidationError(
-      "Attempt handoff finalization closeout decision apply requires resolveHandoffFinalizationCapability to be a function when provided."
-    );
-  }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  validateSelectionObjectInput(
+    value,
+    "Attempt handoff finalization closeout decision apply input must be an object."
+  );
+  normalizeSelectionRequiredFunctionProperty(
+    value,
+    "invokeHandoffFinalization",
+    "Attempt handoff finalization closeout decision apply requires invokeHandoffFinalization to be a function."
+  );
+  normalizeSelectionOptionalFunctionProperty(
+    value,
+    "resolveHandoffFinalizationCapability",
+    "Attempt handoff finalization closeout decision apply requires resolveHandoffFinalizationCapability to be a function when provided."
+  );
 }

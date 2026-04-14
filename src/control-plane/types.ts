@@ -214,6 +214,7 @@ export interface ExecutionSessionLifecycleDisposition {
 
 export interface ExecutionSessionWaitReadinessInput {
   context: ExecutionSessionContext;
+  descendantCoverage?: ExecutionSessionDescendantCoverage;
 }
 
 export interface ExecutionSessionWaitReadiness {
@@ -346,6 +347,7 @@ export interface ExecutionSessionWaitTargetApplyBatch {
 
 export interface ExecutionSessionCloseReadinessInput {
   context: ExecutionSessionContext;
+  descendantCoverage?: ExecutionSessionDescendantCoverage;
   resolveSessionLifecycleCapability?: SessionLifecycleCapabilityResolver;
 }
 

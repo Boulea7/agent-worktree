@@ -148,6 +148,48 @@ describe("control-plane runtime-state close-consumer helpers", () => {
     );
   });
 
+  it("should reject inherited request wrappers and read getter-backed requests once", () => {
+    const inheritedInput = Object.create({
+      request: createCloseRequest()
+    });
+
+    expect(() =>
+      deriveExecutionSessionCloseConsumer(inheritedInput as never)
+    ).toThrow(
+      "Execution session close consumer requires request to be an object."
+    );
+
+    let requestReads = 0;
+
+    expect(
+      deriveExecutionSessionCloseConsumer({
+        get request() {
+          requestReads += 1;
+
+          if (requestReads > 1) {
+            throw new Error("request getter read twice");
+          }
+
+          return createCloseRequest();
+        },
+        resolveSessionLifecycleCapability: () => true
+      } as never)
+    ).toEqual({
+      request: {
+        attemptId: "att_active",
+        runtime: "codex-cli",
+        sessionId: "thr_active"
+      },
+      readiness: {
+        blockingReasons: [],
+        canConsumeClose: true,
+        hasBlockingReasons: false,
+        sessionLifecycleSupported: true
+      }
+    });
+    expect(requestReads).toBe(1);
+  });
+
   it("should continue surfacing downstream close request validation failures", () => {
     expect(() =>
       deriveExecutionSessionCloseConsumer({

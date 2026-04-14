@@ -66,6 +66,26 @@ extensions: {}
 
 - `extensions`
 
+## Defaults Vocabulary
+
+The current documented `defaults` vocabulary is intentionally small and
+implementation-backed.
+
+`execution_mode` MUST be one of:
+
+- `headless_event_stream`
+- `interactive_terminal`
+
+`safety_intent` MUST be one of:
+
+- `plan_readonly`
+- `workspace_write_with_approval`
+- `workspace_write_auto_edit`
+- `full_access`
+
+Values outside these vocabularies should be rejected rather than carried through
+as open-ended strings.
+
 Anything outside the reserved core fields should be treated as invalid until the spec says otherwise.
 
 ## Precedence Intent
@@ -88,12 +108,13 @@ Environment-variable and CLI-flag precedence MAY be added later once the overrid
 
 ## Unknown Keys
 
-In future implementation:
+The current implementation already rejects unknown keys at the top level outside the documented contract.
+Within that contract, reserved core namespaces are currently strict:
 
-- unknown keys at the top level should be rejected
+- unknown keys under `runtimes`, `bootstrap`, `verify`, and `policies` are rejected
 - unknown keys under `extensions` may be tolerated
 
-Early implementations SHOULD prefer strict validation for reserved core namespaces and use `extensions` as the only intentionally open-ended top-level namespace.
+`extensions` remains the only intentionally open-ended top-level namespace in the current contract.
 
 ## Out Of Scope For v1 Docs
 

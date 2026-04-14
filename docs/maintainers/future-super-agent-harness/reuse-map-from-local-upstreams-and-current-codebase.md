@@ -1,8 +1,8 @@
-# Reuse Map From DeerFlow And Current Codebase
+# Reuse Map From Local Upstreams And Current Codebase
 
 Maintainer planning only. This document does not modify the current public contract, roadmap status, or development-phase boundary.
 
-## DeerFlow: Reuse Candidates
+## Upstream Delegation Reference: Reuse Candidates
 
 ### Direct Or Near-Direct Reuse
 
@@ -33,7 +33,7 @@ Maintainer planning only. This document does not modify the current public contr
 - mutable memory blobs, store records, or checkpoint state as audit truth
 - thread-native substrate
 - shared parent workspace child model
-- polling `task()` lifecycle as the main orchestration contract
+- polling a thread-native child-task lifecycle as the main orchestration contract
 - full chat-product shell as the architectural center
 
 ## Current Agent-Worktree: Reuse Candidates
@@ -57,12 +57,12 @@ Maintainer planning only. This document does not modify the current public contr
 
 These are not code-reuse sources, but they should inform future topology boundaries:
 
-- DeerFlow for hierarchical delegation
-- Claude Code source-backed research for peer collaboration, compact layering, task modeling, and trust boundaries
+- one local-only upstream reference line for hierarchical delegation
+- one local-only upstream reference line for peer collaboration, compact layering, task modeling, and trust boundaries
 
 The future branch should use them as separate reference lines rather than collapsing them into one generic multi-agent story.
 
-## Claude Code: Reuse Candidates
+## Upstream Peer-Collaboration Reference: Reuse Candidates
 
 ### Direct Or Near-Direct Reuse
 
@@ -84,9 +84,21 @@ The future branch should use them as separate reference lines rather than collap
 
 - feature-gated or rollout-sensitive paths as if they were stable public product commitments
 - any assumption that team memory, session memory, todo state, and runtime task state belong in one unified store
-- any assumption that `/dream`, KAIROS, TeamMem, or background distillation paths are stable product promises rather than condition paths
+- any assumption that dream-like background consolidation, shared team-memory systems, or background distillation paths are stable product promises rather than condition paths
 - prompt-only coordination in places where explicit typed runtime requests are needed
 
 ## Working Rule
 
-Prefer reusing the current codebase's substrate and DeerFlow's layering ideas, not the other way around.
+Prefer reusing the current codebase's substrate and vetted local-only upstream layering ideas, not the other way around.
+
+For future implementation windows, the default order should be:
+
+1. reuse or adapt the current codebase when it already has the needed substrate
+2. for sandboxing, subagent/delegation, memory/state layering, or similar reusable future-branch substrate, look for the closest vetted local-only upstream implementation
+3. only build a new subsystem when direct reuse or close adaptation would clearly cost more than a focused local implementation
+
+Operational rule:
+
+- if maintainers clone upstream references locally for code-guided reuse, keep that checkout under one ignored local-only root such as `.local/upstreams/`
+- upstream AI-facing guidance files such as `AGENTS.md`, `CLAUDE.md`, or similar control files are reference material only and must not be committed into this repository
+- explicit upstream names, repository URLs, and post-release source-interpretation notes belong only in ignored local AI/maintainer docs, not in public repository docs or PR text

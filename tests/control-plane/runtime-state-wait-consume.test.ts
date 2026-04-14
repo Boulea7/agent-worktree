@@ -220,6 +220,117 @@ describe("control-plane runtime-state wait-consume helpers", () => {
     expect(invokeWait).not.toHaveBeenCalled();
   });
 
+  it("should fail loudly when the top-level wait-consume input is malformed", async () => {
+    await expect(
+      consumeExecutionSessionWait(undefined as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeExecutionSessionWait(undefined as never)
+    ).rejects.toThrow(
+      "Execution session wait consume input must be an object."
+    );
+  });
+
+  it("should fail loudly when invokeWait is not a function", async () => {
+    await expect(
+      consumeExecutionSessionWait({
+        consumer: createWaitConsumer({
+          readiness: {
+            blockingReasons: [],
+            canConsumeWait: true,
+            hasBlockingReasons: false,
+            sessionLifecycleSupported: true
+          }
+        }),
+        invokeWait: "wait" as never
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeExecutionSessionWait({
+        consumer: createWaitConsumer({
+          readiness: {
+            blockingReasons: [],
+            canConsumeWait: true,
+            hasBlockingReasons: false,
+            sessionLifecycleSupported: true
+          }
+        }),
+        invokeWait: "wait" as never
+      })
+    ).rejects.toThrow(
+      "Execution session wait consume requires invokeWait to be a function."
+    );
+  });
+
+  it("should fail closed when nested readiness fields throw through accessor-shaped inputs", async () => {
+    const consumer = createWaitConsumer({
+      readiness: {
+        blockingReasons: [],
+        canConsumeWait: true,
+        hasBlockingReasons: false,
+        sessionLifecycleSupported: true
+      }
+    });
+    Object.defineProperty(consumer.readiness, "canConsumeWait", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    await expect(
+      consumeExecutionSessionWait({
+        consumer,
+        invokeWait: async () => undefined
+      })
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeExecutionSessionWait({
+        consumer,
+        invokeWait: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Execution session wait consume requires consumer.readiness.canConsumeWait to be a boolean."
+    );
+  });
+
+  it("should read consumer.readiness once before reusing the validated snapshot", async () => {
+    let readinessReads = 0;
+    const invokeWait = vi.fn(async () => undefined);
+    const consumer = {
+      request: createWaitRequest(),
+      get readiness() {
+        readinessReads += 1;
+
+        if (readinessReads > 1) {
+          throw new Error("readiness getter read twice");
+        }
+
+        return {
+          blockingReasons: [],
+          canConsumeWait: true,
+          hasBlockingReasons: false,
+          sessionLifecycleSupported: true
+        };
+      }
+    } as never;
+
+    await expect(
+      consumeExecutionSessionWait({
+        consumer,
+        invokeWait
+      })
+    ).resolves.toMatchObject({
+      invoked: true,
+      request: {
+        sessionId: "thr_active"
+      }
+    });
+    expect(readinessReads).toBe(1);
+    expect(invokeWait).toHaveBeenCalledTimes(1);
+  });
+
   it("should fail loudly with a validation error when consumer.request uses non-string identifiers", async () => {
     const consumer = createWaitConsumer({
       request: createWaitRequest({

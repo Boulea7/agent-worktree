@@ -185,6 +185,68 @@ describe("control-plane runtime-state wait-apply helpers", () => {
     );
   });
 
+  it("should fail loudly when the apply input or callbacks are malformed", async () => {
+    await expect(
+      applyExecutionSessionWait(undefined as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyExecutionSessionWait(undefined as never)
+    ).rejects.toThrow(
+      "Execution session wait apply input must be an object."
+    );
+
+    await expect(
+      applyExecutionSessionWait({
+        request: createWaitRequest(),
+        invokeWait: "wait" as never
+      })
+    ).rejects.toThrow(
+      "Execution session wait apply requires invokeWait to be a function."
+    );
+
+    await expect(
+      applyExecutionSessionWait({
+        request: createWaitRequest(),
+        invokeWait: async () => undefined,
+        resolveSessionLifecycleCapability: "yes" as never
+      })
+    ).rejects.toThrow(
+      "Execution session wait apply requires resolveSessionLifecycleCapability to be a function when provided."
+    );
+  });
+
+  it("should snapshot invokeWait once before reusing it across the apply flow", async () => {
+    let invokeWaitReads = 0;
+    const seenSessionIds: string[] = [];
+
+    await expect(
+      applyExecutionSessionWait({
+        request: createWaitRequest(),
+        get invokeWait() {
+          invokeWaitReads += 1;
+
+          if (invokeWaitReads > 1) {
+            throw new Error("invokeWait getter read twice");
+          }
+
+          return async ({ sessionId }: { sessionId: string }) => {
+            seenSessionIds.push(sessionId);
+          };
+        },
+        resolveSessionLifecycleCapability: () => true
+      } as never)
+    ).resolves.toMatchObject({
+      consume: {
+        invoked: true,
+        request: {
+          sessionId: "thr_active"
+        }
+      }
+    });
+    expect(invokeWaitReads).toBe(1);
+    expect(seenSessionIds).toEqual(["thr_active"]);
+  });
+
   it("should surface invoker failures directly without returning a partial apply result", async () => {
     const expectedError = new Error("wait failed");
 

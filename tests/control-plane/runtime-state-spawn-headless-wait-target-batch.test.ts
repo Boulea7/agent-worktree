@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   deriveExecutionSessionSpawnHeadlessRecordBatch,
   buildExecutionSessionView,
@@ -37,7 +38,8 @@ describe(
         headlessWaitCandidateBatch
       }) as unknown as Record<string, unknown>;
 
-      expect(result.headlessWaitCandidateBatch).toBe(headlessWaitCandidateBatch);
+      expect(result.headlessWaitCandidateBatch).toEqual(headlessWaitCandidateBatch);
+      expect(result.headlessWaitCandidateBatch).not.toBe(headlessWaitCandidateBatch);
       expect(result.results).toEqual([]);
       expect(result).not.toHaveProperty("summary");
       expect(result).not.toHaveProperty("count");
@@ -69,12 +71,13 @@ describe(
         results: Array<Record<string, unknown>>;
       };
 
-      expect(result.headlessWaitCandidateBatch).toBe(headlessWaitCandidateBatch);
+      expect(result.headlessWaitCandidateBatch).toEqual(headlessWaitCandidateBatch);
+      expect(result.headlessWaitCandidateBatch).not.toBe(headlessWaitCandidateBatch);
       expect(result.results).toHaveLength(2);
-      expect(result.results[0]?.headlessWaitCandidate).toBe(
+      expect(result.results[0]?.headlessWaitCandidate).toEqual(
         headlessWaitCandidateBatch.results[0]
       );
-      expect(result.results[1]?.headlessWaitCandidate).toBe(
+      expect(result.results[1]?.headlessWaitCandidate).toEqual(
         headlessWaitCandidateBatch.results[1]
       );
       expect(result.results[0]?.target).toEqual({
@@ -102,7 +105,7 @@ describe(
       expect(batchSnapshot).toEqual(headlessWaitCandidateBatch);
     });
 
-    it("should fail fast on the first wait-target derivation error and stop later items", () => {
+    it("should fail fast on the first malformed wrapped wait candidate and stop later items", () => {
       const validHeadlessWaitCandidate = createHeadlessWaitCandidate({
         attemptId: "att_child_wait_target_batch_valid",
         parentAttemptId: "att_root_wait_target_batch_fail",
@@ -144,11 +147,61 @@ describe(
             ]
           } as unknown as ExecutionSessionSpawnHeadlessWaitCandidateBatch
         })
-      ).toThrow("wait target derivation failed");
+      ).toThrow(
+        "Execution session spawn headless wait target requires headlessWaitCandidate to include candidate and headlessContext objects."
+      );
       expect(tailCandidateAccessed).toBe(false);
     });
 
-    it("should keep every sparse real-builder batch entry blocked when descendant coverage is incomplete", () => {
+    it("should fail loudly when the supplied batch wrapper is malformed", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitTargetBatch({} as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitTargetBatch({} as never)
+      ).toThrow(
+        "Execution session spawn headless wait target batch requires a headlessWaitCandidateBatch wrapper."
+      );
+    });
+
+    it("should fail loudly when a batch entry does not include a headless wait candidate wrapper", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitTargetBatch({
+          headlessWaitCandidateBatch: {
+            headlessContextBatch: {
+              headlessViewBatch: {
+                headlessRecordBatch: {
+                  results: []
+                },
+                view: buildExecutionSessionView([])
+              },
+              results: []
+            },
+            results: [{} as never]
+          } as never
+        })
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitTargetBatch({
+          headlessWaitCandidateBatch: {
+            headlessContextBatch: {
+              headlessViewBatch: {
+                headlessRecordBatch: {
+                  results: []
+                },
+                view: buildExecutionSessionView([])
+              },
+              results: []
+            },
+            results: [{} as never]
+          } as never
+        })
+      ).toThrow(
+        "Execution session spawn headless wait target requires headlessWaitCandidate to include candidate and headlessContext objects."
+      );
+    });
+
+    it("should keep every real-builder batch entry blocked when descendant coverage is incomplete", () => {
       const headlessRecordBatch = deriveExecutionSessionSpawnHeadlessRecordBatch({
         items: [
           createHeadlessExecute({

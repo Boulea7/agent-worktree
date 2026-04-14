@@ -138,6 +138,46 @@ describe("selection handoff-report-ready helpers", () => {
     });
   });
 
+  it("should fail loudly when batch.results mixes taskIds after canonicalization", () => {
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [
+          createSupportedPromotionTargetApply({
+            taskId: "task_shared",
+            attemptId: "att_one"
+          }),
+          createSupportedPromotionTargetApply({
+            taskId: " task_other ",
+            attemptId: "att_two"
+          })
+        ]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires batch.results from a single taskId."
+    );
+  });
+
+  it("should fail loudly when batch.results reuses duplicate identities after canonicalization", () => {
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [
+          createSupportedPromotionTargetApply({
+            taskId: "task_shared",
+            attemptId: "att_dup",
+            runtime: "codex-cli"
+          }),
+          createSupportedPromotionTargetApply({
+            taskId: " task_shared ",
+            attemptId: " att_dup ",
+            runtime: " codex-cli "
+          })
+        ]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires batch.results to use unique (taskId, attemptId, runtime) identities."
+    );
+  });
+
   it("should fail loudly when an invoked entry still carries blocking reasons", () => {
     const batch = {
       results: [
@@ -221,6 +261,102 @@ describe("selection handoff-report-ready helpers", () => {
       })
     ).toThrow(
       "Attempt handoff report-ready requires each batch result to be an object."
+    );
+  });
+
+  it("should fail closed when reading nested handoffTarget identity fields throws through an accessor-shaped input", () => {
+    const invalidEntry = createSupportedPromotionTargetApply();
+    Object.defineProperty(invalidEntry.handoffTarget, "taskId", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [invalidEntry]
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [invalidEntry]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires entry.handoffTarget.taskId to be a non-empty string."
+    );
+  });
+
+  it("should reject nested request fields that are supplied only through the prototype chain", () => {
+    const invalidEntry = createSupportedPromotionTargetApply();
+    invalidEntry.targetApply.request = Object.create(
+      invalidEntry.targetApply.request
+    );
+
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [invalidEntry]
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [invalidEntry]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires entry.targetApply.request.taskId to be a non-empty string."
+    );
+  });
+
+  it("should fail closed when reading nested readiness fields throws through an accessor-shaped input", () => {
+    const invalidEntry = createSupportedPromotionTargetApply();
+    Object.defineProperty(
+      invalidEntry.targetApply.apply.consumer.readiness,
+      "canConsumeHandoff",
+      {
+        configurable: true,
+        enumerable: true,
+        get() {
+          throw new Error("getter boom");
+        }
+      }
+    );
+
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [invalidEntry]
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [invalidEntry]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires targetApply.apply.consumer.readiness.canConsumeHandoff to be a boolean."
+    );
+  });
+
+  it("should fail closed when reading nested consume.invoked throws through an accessor-shaped input", () => {
+    const invalidEntry = createSupportedPromotionTargetApply();
+    Object.defineProperty(invalidEntry.targetApply.apply.consume, "invoked", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [invalidEntry]
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffReportReady({
+        results: [invalidEntry]
+      })
+    ).toThrow(
+      "Attempt handoff report-ready requires targetApply.apply.consume.invoked to be a boolean."
     );
   });
 

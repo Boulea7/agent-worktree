@@ -41,9 +41,9 @@ Before delegated execution lands, the future branch should first define:
 
 This assumes the future branch has already defined what durable child state must survive execution and cleanup.
 
-### Why This Is Not DeerFlow `task()`
+### Why This Is Not A Thread-Native Child-Task Model
 
-DeerFlow's `task()` path mixes:
+A thread-native child-task path mixes:
 
 - submission
 - execution

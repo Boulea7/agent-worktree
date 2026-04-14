@@ -5,8 +5,27 @@ import path from "node:path";
 export interface CodexCliEnvironmentInput {
   baseEnv?: NodeJS.ProcessEnv;
   homeDir?: string;
+  profile?: string;
   readTextFile?: (filePath: string) => Promise<string>;
 }
+
+const allowedBaseEnvKeys = new Set([
+  "HOME",
+  "LANG",
+  "LC_ALL",
+  "LC_CTYPE",
+  "LOGNAME",
+  "PATH",
+  "PATHEXT",
+  "SHELL",
+  "SystemRoot",
+  "TEMP",
+  "TERM",
+  "TMP",
+  "TMPDIR",
+  "USER",
+  "WINDIR"
+]);
 
 export async function resolveCodexCliEnvironment(
   input: CodexCliEnvironmentInput = {}
@@ -31,7 +50,7 @@ export async function resolveCodexCliEnvironment(
     readTextFile,
     path.join(homeDir, ".codex", "config.toml")
   );
-  const envKey = resolveActiveProviderEnvKey(configText);
+  const envKey = resolveActiveProviderEnvKey(configText, input.profile);
 
   if (envKey !== undefined && !overlay.has(envKey)) {
     const authText = await readOptionalTextFile(
@@ -42,6 +61,12 @@ export async function resolveCodexCliEnvironment(
 
     if (authToken !== undefined) {
       overlay.set(envKey, authToken);
+    } else {
+      const shellToken = baseEnv[envKey];
+
+      if (typeof shellToken === "string" && shellToken.length > 0) {
+        overlay.set(envKey, shellToken);
+      }
     }
   }
 
@@ -49,13 +74,27 @@ export async function resolveCodexCliEnvironment(
     return undefined;
   }
 
-  const resolvedEnv: NodeJS.ProcessEnv = {
-    ...baseEnv
-  };
+  const resolvedEnv = deriveAllowedBaseEnvironment(baseEnv);
 
   for (const [key, value] of overlay) {
     if (value === undefined) {
       delete resolvedEnv[key];
+      continue;
+    }
+
+    resolvedEnv[key] = value;
+  }
+
+  return resolvedEnv;
+}
+
+function deriveAllowedBaseEnvironment(
+  baseEnv: NodeJS.ProcessEnv
+): NodeJS.ProcessEnv {
+  const resolvedEnv: NodeJS.ProcessEnv = {};
+
+  for (const [key, value] of Object.entries(baseEnv)) {
+    if (!allowedBaseEnvKeys.has(key) || value === undefined) {
       continue;
     }
 
@@ -141,13 +180,16 @@ function parseShellValue(rawValue: string): string | undefined {
 }
 
 function resolveActiveProviderEnvKey(
-  configText: string | undefined
+  configText: string | undefined,
+  profile: string | undefined
 ): string | undefined {
   if (configText === undefined) {
     return undefined;
   }
 
-  const modelProvider = readRootTomlString(configText, "model_provider");
+  const modelProvider =
+    resolveProfileModelProvider(configText, profile) ??
+    readRootTomlString(configText, "model_provider");
 
   if (modelProvider === undefined) {
     return undefined;
@@ -166,6 +208,35 @@ function resolveActiveProviderEnvKey(
   }
 
   return readTomlString(providerBlock, "env_key");
+}
+
+function resolveProfileModelProvider(
+  configText: string,
+  profile: string | undefined
+): string | undefined {
+  if (profile === undefined) {
+    return undefined;
+  }
+
+  const normalizedProfile = profile.trim();
+
+  if (normalizedProfile.length === 0) {
+    return undefined;
+  }
+
+  const profileBlock = readTomlTableBlock(
+    configText,
+    [
+      `profiles.${normalizedProfile}`,
+      `profiles.${quoteTomlKeySegment(normalizedProfile)}`
+    ]
+  );
+
+  if (profileBlock === undefined) {
+    return undefined;
+  }
+
+  return readTomlString(profileBlock, "model_provider");
 }
 
 function readRootTomlString(content: string, key: string): string | undefined {

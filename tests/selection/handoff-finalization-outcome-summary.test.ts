@@ -40,6 +40,57 @@ describe("selection handoff-finalization-outcome-summary helpers", () => {
     );
   });
 
+  it("should fail closed when reading batch.results throws through an accessor-shaped input", () => {
+    expect(() =>
+      selection.deriveAttemptHandoffFinalizationOutcomeSummary({
+        get results() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      selection.deriveAttemptHandoffFinalizationOutcomeSummary({
+        get results() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).toThrow(
+      "Attempt handoff finalization outcome summary requires batch.results to be an array."
+    );
+  });
+
+  it("should fail loudly when batch.results is inherited instead of owned", () => {
+    const batch = Object.create({
+      results: [
+        createApplyResult({
+          request: {
+            taskId: "task_shared",
+            attemptId: "att_inherited",
+            runtime: "codex-cli",
+            status: "created",
+            sourceKind: undefined
+          },
+          readiness: {
+            blockingReasons: [],
+            canConsumeHandoffFinalization: true,
+            hasBlockingReasons: false,
+            handoffFinalizationSupported: true
+          },
+          invoked: true
+        })
+      ]
+    });
+
+    expect(() =>
+      selection.deriveAttemptHandoffFinalizationOutcomeSummary(batch as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      selection.deriveAttemptHandoffFinalizationOutcomeSummary(batch as never)
+    ).toThrow(
+      "Attempt handoff finalization outcome summary requires batch.results to be an array."
+    );
+  });
+
   it("should derive a zero-count summary for an empty apply batch results array", () => {
     expect(
       selection.deriveAttemptHandoffFinalizationOutcomeSummary({
@@ -53,6 +104,60 @@ describe("selection handoff-finalization-outcome-summary helpers", () => {
       blockingReasons: [],
       outcomes: []
     });
+  });
+
+  it("should snapshot batch.results once before downstream outcome derivation reuses it", () => {
+    const canonicalResults = [
+      createApplyResult({
+        request: {
+          taskId: "task_shared",
+          attemptId: "att_invoked",
+          runtime: "codex-cli",
+          status: "running",
+          sourceKind: "delegated"
+        },
+        readiness: {
+          blockingReasons: [],
+          canConsumeHandoffFinalization: true,
+          hasBlockingReasons: false,
+          handoffFinalizationSupported: true
+        },
+        invoked: true
+      })
+    ];
+    let resultsReads = 0;
+
+    expect(
+      selection.deriveAttemptHandoffFinalizationOutcomeSummary({
+        get results() {
+          resultsReads += 1;
+
+          if (resultsReads > 1) {
+            throw new Error("getter boom");
+          }
+
+          return canonicalResults;
+        }
+      } as never)
+    ).toEqual({
+      outcomeBasis: "handoff_finalization_apply_batch",
+      resultCount: 1,
+      invokedResultCount: 1,
+      blockedResultCount: 0,
+      blockingReasons: [],
+      outcomes: [
+        {
+          taskId: "task_shared",
+          attemptId: "att_invoked",
+          runtime: "codex-cli",
+          status: "running",
+          sourceKind: "delegated",
+          invoked: true,
+          blockingReasons: []
+        }
+      ]
+    });
+    expect(resultsReads).toBe(1);
   });
 
   it("should fail loudly when batch.results contains sparse array holes", () => {
@@ -172,6 +277,92 @@ describe("selection handoff-finalization-outcome-summary helpers", () => {
         }
       ]
     });
+  });
+
+  it("should fail loudly when batch.results mixes taskIds after canonicalization", () => {
+    expect(() =>
+      selection.deriveAttemptHandoffFinalizationOutcomeSummary({
+        results: [
+          createApplyResult({
+            request: {
+              taskId: "task_shared",
+              attemptId: "att_a",
+              runtime: "codex-cli",
+              status: "created",
+              sourceKind: undefined
+            },
+            readiness: {
+              blockingReasons: [],
+              canConsumeHandoffFinalization: true,
+              hasBlockingReasons: false,
+              handoffFinalizationSupported: true
+            },
+            invoked: true
+          }),
+          createApplyResult({
+            request: {
+              taskId: " task_other ",
+              attemptId: "att_b",
+              runtime: "gemini-cli",
+              status: "running",
+              sourceKind: "delegated"
+            },
+            readiness: {
+              blockingReasons: [],
+              canConsumeHandoffFinalization: true,
+              hasBlockingReasons: false,
+              handoffFinalizationSupported: true
+            },
+            invoked: true
+          })
+        ]
+      })
+    ).toThrow(
+      "Attempt handoff finalization outcome summary requires batch.results from a single taskId."
+    );
+  });
+
+  it("should fail loudly when batch.results reuse normalized downstream identities", () => {
+    expect(() =>
+      selection.deriveAttemptHandoffFinalizationOutcomeSummary({
+        results: [
+          createApplyResult({
+            request: {
+              taskId: "task_shared",
+              attemptId: "att_dup",
+              runtime: "codex-cli",
+              status: "created",
+              sourceKind: undefined
+            },
+            readiness: {
+              blockingReasons: [],
+              canConsumeHandoffFinalization: true,
+              hasBlockingReasons: false,
+              handoffFinalizationSupported: true
+            },
+            invoked: true
+          }),
+          createApplyResult({
+            request: {
+              taskId: " task_shared ",
+              attemptId: " att_dup ",
+              runtime: " codex-cli ",
+              status: "running",
+              sourceKind: "delegated"
+            },
+            readiness: {
+              blockingReasons: [],
+              canConsumeHandoffFinalization: true,
+              hasBlockingReasons: false,
+              handoffFinalizationSupported: true
+            },
+            invoked: true
+          })
+        ]
+      })
+    ).toThrow(
+      "Attempt handoff finalization outcome summary requires batch.results to use unique (taskId, attemptId, runtime) identities."
+    );
   });
 
   it("should fail when consumer and consume requests do not match", () => {

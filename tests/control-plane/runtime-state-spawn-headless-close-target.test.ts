@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   buildExecutionSessionView,
   deriveExecutionSessionCloseTarget,
@@ -28,7 +29,11 @@ describe(
         headlessCloseCandidate
       }) as unknown as Record<string, unknown>;
 
-      expect(result.headlessCloseCandidate).toBe(headlessCloseCandidate);
+      expect(result.headlessCloseCandidate).toEqual(headlessCloseCandidate);
+      expect(result.headlessCloseCandidate).not.toBe(headlessCloseCandidate);
+      expect(
+        (result.headlessCloseCandidate as { candidate: unknown }).candidate
+      ).toBe(headlessCloseCandidate.candidate);
       expect(result.target).toEqual(
         deriveExecutionSessionCloseTarget({
           candidate: headlessCloseCandidate.candidate
@@ -61,7 +66,8 @@ describe(
         headlessCloseCandidate
       }) as unknown as Record<string, unknown>;
 
-      expect(result.headlessCloseCandidate).toBe(headlessCloseCandidate);
+      expect(result.headlessCloseCandidate).toEqual(headlessCloseCandidate);
+      expect(result.headlessCloseCandidate).not.toBe(headlessCloseCandidate);
       expect(result).not.toHaveProperty("target");
       expect(result).not.toHaveProperty("closeTarget");
     });
@@ -78,9 +84,53 @@ describe(
         headlessCloseCandidate
       }) as unknown as Record<string, unknown>;
 
-      expect(result.headlessCloseCandidate).toBe(headlessCloseCandidate);
+      expect(result.headlessCloseCandidate).toEqual(headlessCloseCandidate);
+      expect(result.headlessCloseCandidate).not.toBe(headlessCloseCandidate);
       expect(result).not.toHaveProperty("target");
       expect(result).not.toHaveProperty("closeTarget");
+    });
+
+    it("should fail loudly when the supplied wrapper does not include a headless close candidate", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseTarget({} as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessCloseTarget({} as never)
+      ).toThrow(
+        "Execution session spawn headless close target requires a headlessCloseCandidate wrapper."
+      );
+    });
+
+    it("should snapshot nested headlessCloseCandidate values so target derivation only reads them once", () => {
+      let candidateReads = 0;
+
+      const canonicalCandidate = createHeadlessCloseCandidate({
+        attemptId: "att_child_close_target_snapshot",
+        parentAttemptId: "att_parent_close_target_snapshot",
+        sessionId: "thr_child_close_target_snapshot",
+        sourceKind: "delegated",
+        resolveSessionLifecycleCapability: () => true
+      });
+
+      const result = deriveExecutionSessionSpawnHeadlessCloseTarget({
+        get headlessCloseCandidate() {
+          candidateReads += 1;
+
+          if (candidateReads > 1) {
+            throw new Error("headlessCloseCandidate getter read twice");
+          }
+
+          return canonicalCandidate;
+        }
+      } as never);
+
+      expect(result).toEqual({
+        headlessCloseCandidate: canonicalCandidate,
+        target: deriveExecutionSessionCloseTarget({
+          candidate: canonicalCandidate.candidate
+        })
+      });
+      expect(candidateReads).toBe(1);
     });
   }
 );

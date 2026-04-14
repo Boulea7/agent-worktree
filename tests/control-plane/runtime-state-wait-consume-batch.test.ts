@@ -40,6 +40,69 @@ describe("control-plane runtime-state wait-consume-batch helpers", () => {
     );
   });
 
+  it("should reject inherited consumer containers and accessor-shaped invokeWait callbacks", async () => {
+    const inheritedInput = Object.create({
+      consumers: [createWaitConsumer()]
+    });
+    inheritedInput.invokeWait = async () => undefined;
+
+    await expect(
+      consumeExecutionSessionWaitBatch(inheritedInput as never)
+    ).rejects.toThrow(
+      "Execution session wait consume batch requires consumers to be an array."
+    );
+
+    const accessorInput = {
+      consumers: [createWaitConsumer()]
+    };
+    Object.defineProperty(accessorInput, "invokeWait", {
+      enumerable: true,
+      get() {
+        throw new Error("boom");
+      }
+    });
+
+    await expect(
+      consumeExecutionSessionWaitBatch(accessorInput as never)
+    ).rejects.toThrow(
+      "Execution session wait consume requires invokeWait to be a function."
+    );
+  });
+
+  it("should fail loudly when consumer entries are sparse or non-object before invoking", async () => {
+    const invokeWait = vi.fn(async () => undefined);
+    const sparseConsumers = new Array<ExecutionSessionWaitConsumer>(1);
+
+    await expect(
+      consumeExecutionSessionWaitBatch({
+        consumers: sparseConsumers,
+        invokeWait
+      })
+    ).rejects.toThrow(
+      "Execution session wait consume batch requires consumers entries to be objects."
+    );
+
+    await expect(
+      consumeExecutionSessionWaitBatch({
+        consumers: [0] as never,
+        invokeWait
+      })
+    ).rejects.toThrow(
+      "Execution session wait consume batch requires consumers entries to be objects."
+    );
+
+    await expect(
+      consumeExecutionSessionWaitBatch({
+        consumers: [createWaitConsumer(), 0] as never,
+        invokeWait
+      })
+    ).rejects.toThrow(
+      "Execution session wait consume batch requires consumers entries to be objects."
+    );
+
+    expect(invokeWait).not.toHaveBeenCalled();
+  });
+
   it("should return an empty batch result for an empty consumer list", async () => {
     await expect(
       consumeExecutionSessionWaitBatch({

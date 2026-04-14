@@ -161,6 +161,44 @@ describe("selection handoff-finalization-grouped-reporting-summary helpers", () 
     );
   });
 
+  it("should snapshot summary.groups once before downstream grouped reporting derivation reuses them", () => {
+    const canonicalGroups = [createBlockedProjectionGroup()];
+    let groupsReads = 0;
+
+    expect(
+      deriveAttemptHandoffFinalizationGroupedReportingSummary({
+        groupedProjectionBasis: "handoff_finalization_report_ready",
+        resultCount: 1,
+        invokedResultCount: 0,
+        blockedResultCount: 1,
+        get groups() {
+          groupsReads += 1;
+
+          if (groupsReads > 1) {
+            throw new Error("getter boom");
+          }
+
+          return canonicalGroups;
+        }
+      } as never)
+    ).toEqual({
+      groupedReportingBasis:
+        "handoff_finalization_grouped_projection_summary",
+      resultCount: 1,
+      invokedResultCount: 0,
+      blockedResultCount: 1,
+      groups: [
+        {
+          groupKey: "handoff_finalization_blocked_unsupported",
+          resultCount: 1,
+          invokedResultCount: 0,
+          blockedResultCount: 1
+        }
+      ]
+    });
+    expect(groupsReads).toBe(1);
+  });
+
   it("should fail loudly when grouped projection groups rely on inherited array indexes", () => {
     Array.prototype[0] = createBlockedProjectionGroup();
 
@@ -183,6 +221,91 @@ describe("selection handoff-finalization-grouped-reporting-summary helpers", () 
     } finally {
       delete Array.prototype[0];
     }
+  });
+
+  it("should fail closed when reading groupKey throws through an accessor-shaped input", () => {
+    const group = createBlockedProjectionGroup();
+    Object.defineProperty(group, "groupKey", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedReportingSummary(
+        createGroupedProjectionSummary([group as never])
+      )
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedReportingSummary(
+        createGroupedProjectionSummary([group as never])
+      )
+    ).toThrow(
+      "Attempt handoff finalization grouped reporting summary requires each groupKey to use the existing handoff-finalization explanation vocabulary."
+    );
+  });
+
+  it("should fail closed when a grouped projection groups array entry throws through an accessor-shaped index", () => {
+    const groups = [createBlockedProjectionGroup()];
+    Object.defineProperty(groups, "0", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedReportingSummary({
+        groupedProjectionBasis: "handoff_finalization_report_ready",
+        resultCount: 1,
+        invokedResultCount: 0,
+        blockedResultCount: 1,
+        groups: groups as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedReportingSummary({
+        groupedProjectionBasis: "handoff_finalization_report_ready",
+        resultCount: 1,
+        invokedResultCount: 0,
+        blockedResultCount: 1,
+        groups: groups as never
+      })
+    ).toThrow(
+      "Attempt handoff finalization grouped reporting summary requires summary.groups entries to be objects."
+    );
+  });
+
+  it("should fail closed when a group results array entry throws through an accessor-shaped index", () => {
+    const results = [createBlockedReportReadyEntry()];
+    Object.defineProperty(results, "0", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+    const group = createBlockedProjectionGroup();
+    group.results = results as never;
+    group.resultCount = 1;
+    group.invokedResultCount = 0;
+    group.blockedResultCount = 1;
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedReportingSummary(
+        createGroupedProjectionSummary([group])
+      )
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedReportingSummary(
+        createGroupedProjectionSummary([group])
+      )
+    ).toThrow(
+      "Attempt handoff finalization grouped reporting summary requires group.results entries to be objects."
+    );
   });
 
   it("should still accept own grouped projection entries that shadow inherited array indexes", () => {
@@ -233,6 +356,66 @@ describe("selection handoff-finalization-grouped-reporting-summary helpers", () 
     expect(act).toThrow(ValidationError);
     expect(act).toThrow(
       "Attempt handoff finalization grouped reporting summary requires each group resultCount to match group.results.length."
+    );
+  });
+
+  it("should fail loudly when grouped projection results mix taskIds across groups after canonicalization", () => {
+    const act = () =>
+      deriveAttemptHandoffFinalizationGroupedReportingSummary(
+        createGroupedProjectionSummary([
+          createBlockedProjectionGroup({
+            results: [
+              createBlockedReportReadyEntry({
+                taskId: "task_shared",
+                attemptId: "att_blocked"
+              })
+            ]
+          }),
+          createInvokedProjectionGroup({
+            results: [
+              createInvokedReportReadyEntry({
+                taskId: " task_other ",
+                attemptId: "att_invoked"
+              })
+            ]
+          })
+        ])
+      );
+
+    expect(act).toThrow(ValidationError);
+    expect(act).toThrow(
+      "Attempt handoff finalization grouped reporting summary requires summary.groups results from a single taskId."
+    );
+  });
+
+  it("should fail loudly when grouped projection results reuse duplicate identities across groups after canonicalization", () => {
+    const act = () =>
+      deriveAttemptHandoffFinalizationGroupedReportingSummary(
+        createGroupedProjectionSummary([
+          createBlockedProjectionGroup({
+            results: [
+              createBlockedReportReadyEntry({
+                taskId: "task_shared",
+                attemptId: "att_dup",
+                runtime: "codex-cli"
+              })
+            ]
+          }),
+          createInvokedProjectionGroup({
+            results: [
+              createInvokedReportReadyEntry({
+                taskId: " task_shared ",
+                attemptId: " att_dup ",
+                runtime: " codex-cli "
+              })
+            ]
+          })
+        ])
+      );
+
+    expect(act).toThrow(ValidationError);
+    expect(act).toThrow(
+      "Attempt handoff finalization grouped reporting summary requires summary.groups results to use unique (taskId, attemptId, runtime) identities."
     );
   });
 

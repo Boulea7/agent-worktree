@@ -1,4 +1,9 @@
 import { ValidationError } from "../core/errors.js";
+import {
+  normalizeBatchWrapper,
+  readOptionalBatchWrapperProperty,
+  readRequiredBatchWrapperProperty
+} from "./runtime-state-batch-wrapper-guards.js";
 import { normalizeHeadlessTargetWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import { deriveExecutionSessionCloseRequest } from "./runtime-state-close-request.js";
 import type {
@@ -10,26 +15,45 @@ import type {
 export function deriveExecutionSessionSpawnHeadlessCloseRequest(
   input: ExecutionSessionSpawnHeadlessCloseRequestInput
 ): ExecutionSessionSpawnHeadlessCloseRequest {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) {
-    throw new ValidationError(
+  const normalizedInput =
+    normalizeBatchWrapper<ExecutionSessionSpawnHeadlessCloseRequestInput>(
+      input,
       "Execution session spawn headless close request input must be an object."
     );
-  }
-
   const headlessCloseTarget = normalizeHeadlessCloseTarget(
-    input.headlessCloseTarget
+    readRequiredBatchWrapperProperty<
+      ExecutionSessionSpawnHeadlessCloseRequestInput["headlessCloseTarget"]
+    >(
+      normalizedInput,
+      "headlessCloseTarget",
+      "Execution session spawn headless close request requires a headlessCloseTarget wrapper."
+    )
   );
+  const target =
+    readOptionalBatchWrapperProperty<
+      NonNullable<ExecutionSessionSpawnHeadlessCloseTarget["target"]>
+    >(
+      headlessCloseTarget,
+      "target",
+      "Execution session spawn headless close request requires headlessCloseTarget.target to be an object when provided."
+    );
 
-  if (headlessCloseTarget.target === undefined) {
+  if (target === undefined) {
     return {
       headlessCloseTarget
     };
   }
 
+  if (typeof target !== "object" || target === null || Array.isArray(target)) {
+    throw new ValidationError(
+      "Execution session spawn headless close request requires headlessCloseTarget.target to be an object when provided."
+    );
+  }
+
   return {
     headlessCloseTarget,
     request: deriveExecutionSessionCloseRequest({
-      target: headlessCloseTarget.target
+      target
     })
   };
 }

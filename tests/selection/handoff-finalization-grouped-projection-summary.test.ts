@@ -193,6 +193,43 @@ describe("selection handoff-finalization-grouped-projection-summary helpers", ()
     );
   });
 
+  it("should snapshot summary.results once before downstream grouped projection derivation reuses them", () => {
+    const canonicalResults = [createBlockedReportReadyEntry()];
+    let resultsReads = 0;
+
+    expect(
+      deriveAttemptHandoffFinalizationGroupedProjectionSummary({
+        reportBasis: "handoff_finalization_explanation_summary",
+        get results() {
+          resultsReads += 1;
+
+          if (resultsReads > 1) {
+            throw new Error("getter boom");
+          }
+
+          return canonicalResults;
+        },
+        invokedResults: [],
+        blockedResults: canonicalResults
+      } as never)
+    ).toEqual({
+      groupedProjectionBasis: "handoff_finalization_report_ready",
+      resultCount: 1,
+      invokedResultCount: 0,
+      blockedResultCount: 1,
+      groups: [
+        {
+          groupKey: "handoff_finalization_blocked_unsupported",
+          resultCount: 1,
+          invokedResultCount: 0,
+          blockedResultCount: 1,
+          results: [createBlockedReportReadyEntry()]
+        }
+      ]
+    });
+    expect(resultsReads).toBe(1);
+  });
+
   it("should fail loudly when report-ready results contain sparse slots", () => {
     const sparseResults = new Array<AttemptHandoffFinalizationReportReadyEntry>(1);
     const act = () =>
@@ -232,6 +269,98 @@ describe("selection handoff-finalization-grouped-projection-summary helpers", ()
     }
   });
 
+  it("should fail closed when reading report-ready entry fields throws through an accessor-shaped input", () => {
+    const entry = createBlockedReportReadyEntry();
+    Object.defineProperty(entry, "taskId", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedProjectionSummary(
+        createReportReadySummary([entry])
+      )
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedProjectionSummary(
+        createReportReadySummary([entry])
+      )
+    ).toThrow(
+      "Attempt handoff finalization grouped projection summary requires entry.taskId to be a non-empty string."
+    );
+  });
+
+  it("should fail closed when a report-ready results array entry throws through an accessor-shaped index", () => {
+    const results = [createBlockedReportReadyEntry()];
+    Object.defineProperty(results, "0", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedProjectionSummary({
+        reportBasis: "handoff_finalization_explanation_summary",
+        results: results as never,
+        invokedResults: [],
+        blockedResults: results as never
+      })
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedProjectionSummary({
+        reportBasis: "handoff_finalization_explanation_summary",
+        results: results as never,
+        invokedResults: [],
+        blockedResults: results as never
+      })
+    ).toThrow(
+      "Attempt handoff finalization grouped projection summary requires summary.results entries to be objects."
+    );
+  });
+
+  it("should fail closed when a report-ready entry only provides identity fields through the prototype chain", () => {
+    const entry = Object.create(createBlockedReportReadyEntry(), {
+      explanationCode: {
+        configurable: true,
+        enumerable: true,
+        value: "handoff_finalization_blocked_unsupported"
+      },
+      invoked: {
+        configurable: true,
+        enumerable: true,
+        value: false
+      },
+      blockingReasons: {
+        configurable: true,
+        enumerable: true,
+        value: ["handoff_finalization_unsupported"]
+      },
+      status: {
+        configurable: true,
+        enumerable: true,
+        value: "created"
+      }
+    });
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedProjectionSummary(
+        createReportReadySummary([entry as never])
+      )
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveAttemptHandoffFinalizationGroupedProjectionSummary(
+        createReportReadySummary([entry as never])
+      )
+    ).toThrow(
+      "Attempt handoff finalization grouped projection summary requires entry.taskId to be a non-empty string."
+    );
+  });
+
   it("should fail loudly when report-ready subgroups drift from the canonical filtered groups", () => {
     expect(() =>
       deriveAttemptHandoffFinalizationGroupedProjectionSummary({
@@ -246,6 +375,50 @@ describe("selection handoff-finalization-grouped-projection-summary helpers", ()
       })
     ).toThrow(
       "Attempt handoff finalization grouped projection summary requires summary.blockedResults to match the stable filtered blocked subgroup."
+    );
+  });
+
+  it("should fail loudly when report-ready results mix taskIds after canonicalization", () => {
+    const act = () =>
+      deriveAttemptHandoffFinalizationGroupedProjectionSummary(
+        createReportReadySummary([
+          createInvokedReportReadyEntry({
+            taskId: "task_shared",
+            attemptId: "att_invoked"
+          }),
+          createBlockedReportReadyEntry({
+            taskId: " task_other ",
+            attemptId: "att_blocked"
+          })
+        ])
+      );
+
+    expect(act).toThrow(ValidationError);
+    expect(act).toThrow(
+      "Attempt handoff finalization grouped projection summary requires summary.results from a single taskId."
+    );
+  });
+
+  it("should fail loudly when report-ready results reuse duplicate identities after canonicalization", () => {
+    const act = () =>
+      deriveAttemptHandoffFinalizationGroupedProjectionSummary(
+        createReportReadySummary([
+          createInvokedReportReadyEntry({
+            taskId: "task_shared",
+            attemptId: "att_dup",
+            runtime: "codex-cli"
+          }),
+          createBlockedReportReadyEntry({
+            taskId: " task_shared ",
+            attemptId: " att_dup ",
+            runtime: " codex-cli "
+          })
+        ])
+      );
+
+    expect(act).toThrow(ValidationError);
+    expect(act).toThrow(
+      "Attempt handoff finalization grouped projection summary requires summary.results to use unique (taskId, attemptId, runtime) identities."
     );
   });
 

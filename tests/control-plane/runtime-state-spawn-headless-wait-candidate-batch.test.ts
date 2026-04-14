@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   buildExecutionSessionView,
   deriveExecutionSessionSpawnHeadlessContextBatch,
@@ -14,6 +15,39 @@ import {
 describe(
   "control-plane runtime-state spawn-headless-wait-candidate-batch helpers",
   () => {
+    it("should fail loudly when the top-level headless-context batch input is malformed", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitCandidateBatch(undefined as never)
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitCandidateBatch(undefined as never)
+      ).toThrow(
+        "Execution session spawn headless wait candidate batch input must be an object."
+      );
+    });
+
+    it("should reject inherited headless-context batch wrappers", () => {
+      const inheritedInput = Object.create({
+        headlessContextBatch: deriveExecutionSessionSpawnHeadlessContextBatch({
+          headlessViewBatch: {
+            descendantCoverage: "complete",
+            headlessRecordBatch: {
+              results: []
+            },
+            view: buildExecutionSessionView([])
+          }
+        })
+      });
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitCandidateBatch(
+          inheritedInput as never
+        )
+      ).toThrow(
+        "Execution session spawn headless wait candidate batch requires headlessContextBatch to include headlessViewBatch and results."
+      );
+    });
+
     it("should return an empty ordered result list for an empty headless-context batch", () => {
       const headlessContextBatch = deriveExecutionSessionSpawnHeadlessContextBatch({
         headlessViewBatch: {
@@ -29,7 +63,8 @@ describe(
         headlessContextBatch
       }) as unknown as Record<string, unknown>;
 
-      expect(result.headlessContextBatch).toBe(headlessContextBatch);
+      expect(result.headlessContextBatch).toEqual(headlessContextBatch);
+      expect(result.headlessContextBatch).not.toBe(headlessContextBatch);
       expect(result.results).toEqual([]);
       expect(result).not.toHaveProperty("summary");
       expect(result).not.toHaveProperty("count");
@@ -85,12 +120,13 @@ describe(
       const typedResult = result as ExecutionSessionSpawnHeadlessWaitCandidateBatch &
         Record<string, unknown>;
 
-      expect(typedResult.headlessContextBatch).toBe(headlessContextBatch);
+      expect(typedResult.headlessContextBatch).toEqual(headlessContextBatch);
+      expect(typedResult.headlessContextBatch).not.toBe(headlessContextBatch);
       expect(typedResult.results).toHaveLength(2);
-      expect(typedResult.results[0]?.headlessContext).toBe(
+      expect(typedResult.results[0]?.headlessContext).toEqual(
         headlessContextBatch.results[0]
       );
-      expect(typedResult.results[1]?.headlessContext).toBe(
+      expect(typedResult.results[1]?.headlessContext).toEqual(
         headlessContextBatch.results[1]
       );
       expect(typedResult.results[0]?.candidate.context).toBe(
@@ -120,6 +156,57 @@ describe(
       expect(headlessContextBatch.results[0]).toBe(firstContext);
       expect(headlessContextBatch.results[1]).toBe(secondContext);
       expect(headlessContextBatch.headlessViewBatch.view).toBe(sharedView);
+    });
+
+    it("should fail loudly when the supplied headless-context batch wrapper is malformed", () => {
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitCandidateBatch({
+          headlessContextBatch: {} as never
+        })
+      ).toThrow(ValidationError);
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitCandidateBatch({
+          headlessContextBatch: {} as never
+        })
+      ).toThrow(
+        "Execution session spawn headless wait candidate batch requires headlessContextBatch to include headlessViewBatch and results."
+      );
+    });
+
+    it("should fail loudly when headlessContextBatch.results entries are sparse or non-object", () => {
+      const sparseResults = new Array(1);
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitCandidateBatch({
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildExecutionSessionView([])
+            },
+            results: sparseResults
+          } as never
+        })
+      ).toThrow(
+        "Execution session spawn headless wait candidate batch requires headlessContextBatch.results entries to be objects."
+      );
+
+      expect(() =>
+        deriveExecutionSessionSpawnHeadlessWaitCandidateBatch({
+          headlessContextBatch: {
+            headlessViewBatch: {
+              headlessRecordBatch: {
+                results: []
+              },
+              view: buildExecutionSessionView([])
+            },
+            results: [0]
+          } as never
+        })
+      ).toThrow(
+        "Execution session spawn headless wait candidate batch requires headlessContextBatch.results entries to be objects."
+      );
     });
   }
 );
