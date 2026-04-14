@@ -1,11 +1,35 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   deriveExecutionSessionSpawnEffectsBatch,
   type ExecutionSessionSpawnRequest
 } from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-effects-batch helpers", () => {
+  it("should fail loudly when the top-level spawn-effects batch input is malformed", () => {
+    expect(() =>
+      deriveExecutionSessionSpawnEffectsBatch(null as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnEffectsBatch([] as never)
+    ).toThrow(
+      "Execution session spawn effects batch input must be an object."
+    );
+  });
+
+  it("should fail closed when items only exist on the prototype chain", () => {
+    const input = Object.create({
+      items: []
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnEffectsBatch(input as never)
+    ).toThrow(
+      "Execution session spawn effects batch requires items to be an array."
+    );
+  });
+
   it("should return an empty batch result for an empty effects list", () => {
     expect(
       deriveExecutionSessionSpawnEffectsBatch({
@@ -200,6 +224,29 @@ describe("control-plane runtime-state spawn-effects-batch helpers", () => {
         ]
       })
     ).toThrow(/childAttemptId/i);
+  });
+
+  it("should reject sparse or inherited effects entries before later derivation runs", () => {
+    const items = new Array(1);
+    Object.setPrototypeOf(
+      items,
+      Object.assign([], {
+        0: {
+          childAttemptId: "att_child_proto",
+          request: createSpawnRequest({
+            sourceKind: "fork"
+          })
+        }
+      })
+    );
+
+    expect(() =>
+      deriveExecutionSessionSpawnEffectsBatch({
+        items: items as never
+      })
+    ).toThrow(
+      "Execution session spawn effects batch requires items entries to be objects."
+    );
   });
 });
 

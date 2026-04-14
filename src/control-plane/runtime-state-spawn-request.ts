@@ -1,4 +1,8 @@
 import { ValidationError } from "../core/errors.js";
+import {
+  normalizeBatchWrapper,
+  readRequiredBatchWrapperProperty
+} from "./runtime-state-batch-wrapper-guards.js";
 import { normalizeSessionGuardrails } from "./derive.js";
 import type {
   ExecutionSessionSpawnRequest,
@@ -9,10 +13,38 @@ import type {
 export function deriveExecutionSessionSpawnRequest(
   input: ExecutionSessionSpawnRequestInput
 ): ExecutionSessionSpawnRequest | undefined {
-  const sourceKind = normalizeSpawnRequestSourceKind(input.sourceKind);
+  const normalizedInput = normalizeBatchWrapper<ExecutionSessionSpawnRequestInput>(
+    input,
+    "Execution session spawn request input must be an object."
+  );
+  const candidate = readRequiredBatchWrapperProperty<
+    ExecutionSessionSpawnRequestInput["candidate"]
+  >(
+    normalizedInput,
+    "candidate",
+    "Execution session spawn request requires candidate to be an object."
+  );
+  if (
+    typeof candidate !== "object" ||
+    candidate === null ||
+    Array.isArray(candidate)
+  ) {
+    throw new ValidationError(
+      "Execution session spawn request requires candidate to be an object."
+    );
+  }
+  const sourceKind = normalizeSpawnRequestSourceKind(
+    readRequiredBatchWrapperProperty(
+      normalizedInput,
+      "sourceKind",
+      'Execution session spawn request sourceKind must be "fork" or "delegated".'
+    )
+  );
   const {
     candidate: { context, readiness }
-  } = input;
+  } = {
+    candidate
+  } as ExecutionSessionSpawnRequestInput;
 
   if (!readiness.canSpawn || context.record.sessionId === undefined) {
     return undefined;

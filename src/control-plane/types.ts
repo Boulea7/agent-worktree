@@ -1010,3 +1010,111 @@ export interface ExecutionSessionSpawnHeadlessCloseTargetApplyBatch {
   headlessCloseTargetBatch: ExecutionSessionSpawnHeadlessCloseTargetBatch;
   results: ExecutionSessionSpawnHeadlessCloseTargetApply[];
 }
+
+export const executionCoordinationTaskKinds = [
+  "delegated_work",
+  "blocked_child",
+  "verifier_handoff",
+  "review_handoff",
+  "closeout_readiness"
+] as const;
+
+export const executionCoordinationTaskStatuses = [
+  "pending",
+  "in_progress",
+  "blocked",
+  "completed",
+  "dropped"
+] as const;
+
+export type ExecutionCoordinationTaskKind =
+  (typeof executionCoordinationTaskKinds)[number];
+export type ExecutionCoordinationTaskStatus =
+  (typeof executionCoordinationTaskStatuses)[number];
+
+export interface ExecutionCoordinationTaskOwner {
+  attemptId: string;
+  runtime: string;
+}
+
+export interface ExecutionCoordinationTask {
+  blockingReasons: string[];
+  dependsOnTaskIds: string[];
+  id: string;
+  kind: ExecutionCoordinationTaskKind;
+  owner?: ExecutionCoordinationTaskOwner;
+  status: ExecutionCoordinationTaskStatus;
+  title: string;
+  updatedAt: string;
+}
+
+export interface ExecutionCoordinationTaskInput {
+  blockingReasons?: readonly string[];
+  dependsOnTaskIds?: readonly string[];
+  id: string;
+  kind: ExecutionCoordinationTaskKind;
+  owner?: ExecutionCoordinationTaskOwner;
+  status: ExecutionCoordinationTaskStatus;
+  title: string;
+  updatedAt: string;
+}
+
+export interface ExecutionCoordinationBoardInput {
+  tasks: readonly ExecutionCoordinationTaskInput[];
+}
+
+export interface ExecutionCoordinationBoardSummary {
+  blockedTaskCount: number;
+  blockedTaskIds: string[];
+  completedTaskCount: number;
+  completedTaskIds: string[];
+  dependencyBlockedTaskCount: number;
+  dependencyBlockedTaskIds: string[];
+  droppedTaskCount: number;
+  inProgressTaskCount: number;
+  pendingTaskCount: number;
+  readyTaskCount: number;
+  readyTaskIds: string[];
+  totalTaskCount: number;
+}
+
+export interface ExecutionCoordinationBoard {
+  summary: ExecutionCoordinationBoardSummary;
+  tasks: ExecutionCoordinationTask[];
+}
+
+export interface ExecutionCoordinationTaskFromSpawnCandidateInput {
+  candidate: ExecutionSessionSpawnCandidate;
+  dependsOnTaskIds?: readonly string[];
+  id: string;
+  requestedCount: number;
+  updatedAt: string;
+}
+
+export interface ExecutionCoordinationTaskFromSpawnHeadlessWaitCandidateInput {
+  dependsOnTaskIds?: readonly string[];
+  headlessWaitCandidate: ExecutionSessionSpawnHeadlessWaitCandidate;
+  id: string;
+  updatedAt: string;
+}
+
+export interface ExecutionCoordinationTaskFromPromotionDecisionInput {
+  dependsOnTaskIds?: readonly string[];
+  id: string;
+  summary: import("../selection/types.js").AttemptPromotionDecisionSummary;
+  updatedAt: string;
+}
+
+export interface ExecutionCoordinationTaskFromHandoffDecisionInput {
+  dependsOnTaskIds?: readonly string[];
+  id: string;
+  summary: import("../selection/types.js").AttemptHandoffDecisionSummary;
+  updatedAt: string;
+}
+
+export interface ExecutionCoordinationTaskFromCloseoutDecisionInput {
+  dependsOnTaskIds?: readonly string[];
+  id: string;
+  summary: import("../selection/types.js").AttemptHandoffFinalizationCloseoutDecisionSummary;
+  updatedAt: string;
+}

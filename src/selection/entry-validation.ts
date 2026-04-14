@@ -48,6 +48,31 @@ export function normalizeSelectionArrayProperty(
   return value;
 }
 
+export function normalizeSelectionStringArray(
+  value: unknown,
+  arrayMessage: string,
+  entryMessage: string
+): string[] {
+  validateSelectionArray(value, arrayMessage);
+  const normalized: string[] = [];
+
+  for (let index = 0; index < value.length; index += 1) {
+    if (!Object.prototype.hasOwnProperty.call(value, index)) {
+      throw new ValidationError(entryMessage);
+    }
+
+    const entry = readSelectionValue(value, String(index), entryMessage);
+
+    if (typeof entry !== "string") {
+      throw new ValidationError(entryMessage);
+    }
+
+    normalized.push(entry);
+  }
+
+  return normalized;
+}
+
 export function normalizeSelectionObjectProperty(
   container: object,
   key: string,

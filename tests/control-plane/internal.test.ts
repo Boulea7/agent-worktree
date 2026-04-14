@@ -2,6 +2,9 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 
 import * as controlPlane from "../../src/control-plane/internal.js";
 import type {
+  ExecutionCoordinationBoard,
+  ExecutionCoordinationTask,
+  ExecutionCoordinationTaskStatus,
   ExecutionSessionSpawnBatchHeadlessApply,
   ExecutionSessionSpawnBatchHeadlessApplyItems,
   ExecutionSessionCloseApply,
@@ -76,6 +79,12 @@ describe("control-plane internal exports", () => {
       "consumeExecutionSessionSpawnBatch",
       "consumeExecutionSessionWait",
       "consumeExecutionSessionWaitBatch",
+      "deriveExecutionCoordinationBoard",
+      "deriveExecutionCoordinationTaskFromCloseoutDecision",
+      "deriveExecutionCoordinationTaskFromHandoffDecision",
+      "deriveExecutionCoordinationTaskFromPromotionDecision",
+      "deriveExecutionCoordinationTaskFromSpawnCandidate",
+      "deriveExecutionCoordinationTaskFromSpawnHeadlessWaitCandidate",
       "deriveExecutionSessionCloseCandidate",
       "deriveExecutionSessionCloseConsumer",
       "deriveExecutionSessionCloseConsumerReadiness",
@@ -130,6 +139,8 @@ describe("control-plane internal exports", () => {
       "deriveSessionSnapshot",
       "executeExecutionSessionSpawnHeadless",
       "executeExecutionSessionSpawnHeadlessBatch",
+      "executionCoordinationTaskKinds",
+      "executionCoordinationTaskStatuses",
       "executionSessionCloseBlockingReasons",
       "executionSessionCloseConsumerBlockingReasons",
       "executionSessionContextSelectionKinds",
@@ -139,6 +150,7 @@ describe("control-plane internal exports", () => {
       "executionSessionWaitBlockingReasons",
       "executionSessionWaitConsumerBlockingReasons",
       "listChildExecutionSessions",
+      "normalizeExecutionCoordinationTask",
       "normalizeSessionGuardrails",
       "resolveExecutionSessionRecord",
       "sessionLifecycleEventKinds",
@@ -163,6 +175,9 @@ describe("control-plane internal exports", () => {
     type ControlPlaneInternalExports = {
       record: ExecutionSessionRecord;
       context: ExecutionSessionContext;
+      coordinationBoard: ExecutionCoordinationBoard;
+      coordinationTask: ExecutionCoordinationTask;
+      coordinationTaskStatus: ExecutionCoordinationTaskStatus;
       spawnBudget: ExecutionSessionSpawnBudget;
       spawnCandidate: ExecutionSessionSpawnCandidate;
       spawnBatchHeadlessApply: ExecutionSessionSpawnBatchHeadlessApply;

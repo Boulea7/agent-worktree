@@ -26,6 +26,19 @@ describe("control-plane runtime-state spawn-consume-batch helpers", () => {
     ).rejects.toThrow(/requires invokeSpawn to be a function/i);
   });
 
+  it("should fail closed when requests only exist on the prototype chain", async () => {
+    const input = Object.create({
+      requests: [],
+      invokeSpawn: async () => undefined
+    });
+
+    await expect(
+      consumeExecutionSessionSpawnBatch(input as never)
+    ).rejects.toThrow(
+      "Execution session spawn consume batch requires requests to be an array."
+    );
+  });
+
   it("should return an empty batch result for an empty request list", async () => {
     await expect(
       consumeExecutionSessionSpawnBatch({

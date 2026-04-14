@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   buildExecutionSessionView,
   deriveExecutionSessionSpawnCandidate,
@@ -8,6 +9,37 @@ import {
 import type { ExecutionSessionRecord } from "../../src/control-plane/types.js";
 
 describe("control-plane runtime-state spawn-target helpers", () => {
+  it("should fail loudly when the top-level spawn-target input is malformed", () => {
+    expect(() => deriveExecutionSessionSpawnTarget(null as never)).toThrow(
+      ValidationError
+    );
+    expect(() => deriveExecutionSessionSpawnTarget([] as never)).toThrow(
+      "Execution session spawn target input must be an object."
+    );
+  });
+
+  it("should fail closed when candidate only exists on the prototype chain", () => {
+    const input = Object.create({
+      candidate: deriveExecutionSessionSpawnCandidate({
+        view: buildExecutionSessionView([
+          createRecord({
+            attemptId: "att_active",
+            sessionId: "thr_active",
+            sourceKind: "direct",
+            lifecycleState: "active"
+          })
+        ]),
+        selector: {
+          attemptId: "att_active"
+        }
+      })
+    });
+
+    expect(() => deriveExecutionSessionSpawnTarget(input as never)).toThrow(
+      "Execution session spawn target requires candidate to be an object."
+    );
+  });
+
   it("should derive a spawn target from a spawnable candidate", () => {
     const candidate = deriveExecutionSessionSpawnCandidate({
       view: buildExecutionSessionView([

@@ -53,6 +53,48 @@ describe("control-plane runtime-state spawn-candidate helpers", () => {
     });
   });
 
+  it("should fail loudly when the top-level spawn-candidate input is malformed", () => {
+    const view = buildExecutionSessionView([]);
+
+    expect(() =>
+      deriveExecutionSessionSpawnCandidate(null as never)
+    ).toThrow(ValidationError);
+    expect(() =>
+      deriveExecutionSessionSpawnCandidate([] as never)
+    ).toThrow("Execution session spawn candidate input must be an object.");
+    expect(() =>
+      deriveExecutionSessionSpawnCandidate({
+        selector: {
+          attemptId: "att_active"
+        },
+        view: undefined
+      } as never)
+    ).toThrow("Execution session spawn candidate requires view to be an object.");
+    expect(() =>
+      deriveExecutionSessionSpawnCandidate({
+        selector: undefined,
+        view
+      } as never)
+    ).toThrow(
+      "Execution session spawn candidate requires selector to be an object."
+    );
+  });
+
+  it("should fail closed when selector only exists on the prototype chain", () => {
+    const input = Object.create({
+      selector: {
+        attemptId: "att_active"
+      },
+      view: buildExecutionSessionView([])
+    });
+
+    expect(() =>
+      deriveExecutionSessionSpawnCandidate(input as never)
+    ).toThrow(
+      "Execution session spawn candidate requires selector to be an object."
+    );
+  });
+
   it("should derive a spawn candidate from a sessionId selector", () => {
     const record = createRecord({
       attemptId: "att_active",

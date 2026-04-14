@@ -465,6 +465,77 @@ describe("selection promotion-target helpers", () => {
     ).toThrow(ValidationError);
   });
 
+  it("should reject sparse blockingReasons arrays whose canonical entry only exists on the prototype", () => {
+    const inheritedBlockingReasons = new Array(1);
+    Object.setPrototypeOf(
+      inheritedBlockingReasons,
+      Object.assign([], {
+        0: "required_checks_failed"
+      })
+    );
+    const summary = createPromotionDecisionSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "failed",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "failed"
+            }
+          ]
+        })
+      })
+    ]);
+
+    summary.blockingReasons =
+      inheritedBlockingReasons as AttemptPromotionDecisionSummary["blockingReasons"];
+    summary.canPromote = false;
+    summary.hasBlockingReasons = true;
+
+    expect(() => deriveAttemptPromotionTarget(summary)).toThrow(ValidationError);
+  });
+
+  it("should reject sparse check-name lists whose canonical entry only exists on the prototype", () => {
+    const summary = createPromotionDecisionSummary([
+      createPromotionCandidate({
+        attemptId: "att_failed",
+        verification: createVerification({
+          state: "failed",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "failed"
+            }
+          ]
+        })
+      })
+    ]);
+    const inheritedCheckNames = new Array(1);
+    Object.setPrototypeOf(
+      inheritedCheckNames,
+      Object.assign([], {
+        0: "lint"
+      })
+    );
+
+    summary.selected = {
+      ...summary.selected!,
+      blockingRequiredCheckNames:
+        inheritedCheckNames as AttemptPromotionDecisionSummary["selected"] extends {
+          blockingRequiredCheckNames: infer T;
+        }
+          ? T
+          : never
+    };
+    summary.canPromote = false;
+    summary.hasBlockingReasons = true;
+
+    expect(() => deriveAttemptPromotionTarget(summary)).toThrow(ValidationError);
+  });
+
   it("should fail loudly when candidateCount is inconsistent with selectedAttemptId or selected", () => {
     const emptySummary = {
       ...createPromotionDecisionSummary([]),

@@ -189,6 +189,13 @@ describe("control-plane index exports", () => {
     expect(controlPlane).not.toHaveProperty("normalizeHeadlessTargetBatchWrapper");
     expect(controlPlane).not.toHaveProperty("normalizeBatchWrapper");
     expect(controlPlane).not.toHaveProperty("normalizeBatchWrapperItems");
+    expect(controlPlane).not.toHaveProperty("deriveExecutionCoordinationBoard");
+    expect(controlPlane).not.toHaveProperty(
+      "deriveExecutionCoordinationTaskFromPromotionDecision"
+    );
+    expect(controlPlane).not.toHaveProperty(
+      "deriveExecutionCoordinationTaskFromSpawnCandidate"
+    );
   });
 });
 
@@ -338,6 +345,12 @@ type ControlPlaneIndexShouldNotExportCloseConsumerReadiness = import("../../src/
 
 // @ts-expect-error control-plane index must not export close consume results
 type ControlPlaneIndexShouldNotExportCloseConsume = import("../../src/control-plane/index.js").ExecutionSessionCloseConsume;
+
+// @ts-expect-error control-plane index must not export coordination board types
+type ControlPlaneIndexShouldNotExportExecutionCoordinationBoard = import("../../src/control-plane/index.js").ExecutionCoordinationBoard;
+
+// @ts-expect-error control-plane index must not export coordination task helpers
+type ControlPlaneIndexShouldNotExportExecutionCoordinationTaskHelper = typeof import("../../src/control-plane/index.js").deriveExecutionCoordinationBoard;
 
 // @ts-expect-error control-plane index must not export close consume batch results
 type ControlPlaneIndexShouldNotExportCloseConsumeBatch = import("../../src/control-plane/index.js").ExecutionSessionCloseConsumeBatch;

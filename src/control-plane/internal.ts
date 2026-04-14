@@ -52,6 +52,15 @@ export { deriveExecutionSessionSpawnHeadlessCloseRequest } from "./runtime-state
 export { deriveExecutionSessionSpawnHeadlessCloseRequestBatch } from "./runtime-state-spawn-headless-close-request-batch.js";
 export { applyExecutionSessionSpawnHeadlessCloseTarget } from "./runtime-state-spawn-headless-close-target-apply.js";
 export { applyExecutionSessionSpawnHeadlessCloseTargetBatch } from "./runtime-state-spawn-headless-close-target-apply-batch.js";
+export {
+  deriveExecutionCoordinationBoard,
+  deriveExecutionCoordinationTaskFromCloseoutDecision,
+  deriveExecutionCoordinationTaskFromHandoffDecision,
+  deriveExecutionCoordinationTaskFromPromotionDecision,
+  deriveExecutionCoordinationTaskFromSpawnCandidate,
+  deriveExecutionCoordinationTaskFromSpawnHeadlessWaitCandidate,
+  normalizeExecutionCoordinationTask
+} from "./runtime-state-coordination.js";
 export { deriveExecutionSessionSpawnReadiness } from "./runtime-state-spawn-readiness.js";
 export { deriveExecutionSessionSpawnLineage } from "./runtime-state-spawn-lineage.js";
 export { deriveExecutionSessionSpawnRecordedEvent } from "./runtime-state-spawn-recorded-event.js";
@@ -92,6 +101,8 @@ export {
 export {
   executionSessionContextSelectionKinds,
   executionSessionCloseBlockingReasons,
+  executionCoordinationTaskKinds,
+  executionCoordinationTaskStatuses,
   executionSessionCloseConsumerBlockingReasons,
   executionSessionRecordSources,
   executionSessionSpawnBlockingReasons,
@@ -99,6 +110,19 @@ export {
   executionSessionWaitBlockingReasons,
   executionSessionWaitConsumerBlockingReasons,
   type ExecutionSessionCloseBlockingReason,
+  type ExecutionCoordinationBoard,
+  type ExecutionCoordinationBoardInput,
+  type ExecutionCoordinationBoardSummary,
+  type ExecutionCoordinationTask,
+  type ExecutionCoordinationTaskFromCloseoutDecisionInput,
+  type ExecutionCoordinationTaskFromHandoffDecisionInput,
+  type ExecutionCoordinationTaskFromPromotionDecisionInput,
+  type ExecutionCoordinationTaskFromSpawnCandidateInput,
+  type ExecutionCoordinationTaskFromSpawnHeadlessWaitCandidateInput,
+  type ExecutionCoordinationTaskInput,
+  type ExecutionCoordinationTaskKind,
+  type ExecutionCoordinationTaskOwner,
+  type ExecutionCoordinationTaskStatus,
   type ExecutionSessionCloseApply,
   type ExecutionSessionCloseApplyBatch,
   type ExecutionSessionCloseApplyBatchInput,
