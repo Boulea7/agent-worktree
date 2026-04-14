@@ -15,6 +15,7 @@ This file is the repository-specific execution rules and boundary companion for 
 This repository is in an early implementation phase.
 The current public baseline is the thin Phase 4 compatibility baseline, built on the existing Phase 2 worktree lifecycle and bounded Phase 3 `codex-cli` execution foundations, while the current internal baseline now satisfies the current Phase 5 exit criteria and later continuation work sits above that baseline as bounded-parallelism Phase 6 prep.
 The current internal continuation now also includes spawn-side top-level fail-closed hardening plus an internal coordination-task substrate for delegated work, blocked child follow-up, verifier or review handoff checklists, and closeout-readiness summaries.
+That same internal continuation now also includes descendant-coverage truth helpers, shared candidate-context validation, and advisory coordination detail/grouping/ready-queue projections above the existing control-plane seams.
 This repository now has a usable Git `HEAD` baseline, so maintainer workflows should prefer non-destructive worktree isolation and commit-backed checkpoints for each completed thin slice.
 
 ## Future-Branch Read-First Rule
@@ -24,6 +25,7 @@ Before starting any Phase 6 or later implementation slice, read the future-branc
 - `docs/maintainers/future-super-agent-harness/README.md`
 - `docs/maintainers/future-super-agent-harness/reuse-map-from-local-upstreams-and-current-codebase.md`
 - `docs/maintainers/future-super-agent-harness/execution-and-control-plane.md`
+- `docs/maintainers/future-super-agent-harness/todo-and-task-tracking.md`
 - `docs/maintainers/future-super-agent-harness/sandbox-skills-and-extensibility.md`
 - `docs/maintainers/future-super-agent-harness/memory-state-and-persistence.md`
 - `docs/maintainers/future-super-agent-harness/vision-and-positioning.md`

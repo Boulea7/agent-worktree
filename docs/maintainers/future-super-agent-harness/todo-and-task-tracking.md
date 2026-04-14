@@ -5,6 +5,7 @@ Maintainer planning only. This document is a current planning hypothesis for a f
 ## Summary
 
 The future branch should include a lightweight todo and task-tracking capability, but it should be introduced as a control-plane feature for agent coordination rather than as a generic user-facing todo app.
+The current `main` branch already has a narrower internal coordination-task substrate; the future branch work here should build above that seed rather than describing `main` as if no internal coordination objects exist.
 
 ## Why It Belongs In The Future Branch
 

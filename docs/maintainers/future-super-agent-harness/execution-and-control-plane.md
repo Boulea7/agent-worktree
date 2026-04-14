@@ -90,6 +90,7 @@ The future branch should add lightweight task tracking as a control-plane helper
 - promotion-readiness checklists
 
 This should begin as an internal coordination primitive, not as a public todo application.
+The current `main` branch already has a narrower internal coordination-task seed for delegated work, blocked children, verifier or review handoffs, and closeout readiness; that seed is not a public todo or execution-status contract.
 
 ## Failure And Cleanup Semantics
 

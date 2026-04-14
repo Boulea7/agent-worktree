@@ -27,7 +27,7 @@ This directory is not a product promise for `main`.
 - not the current compatibility truth
 - not a replacement for `README.md`, `SPEC.md`, or `docs/specs/*`
 
-## Planned Documents
+## Current Planning Set
 
 - [Vision And Positioning](vision-and-positioning.md)
 - [Architecture Overview](architecture-overview.md)
