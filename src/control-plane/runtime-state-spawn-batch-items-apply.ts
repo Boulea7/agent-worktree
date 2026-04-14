@@ -46,7 +46,9 @@ export async function applyExecutionSessionSpawnBatchItems(
     );
   }
 
-  if (batchItems.items === undefined) {
+  const hasOwnItems = Object.prototype.hasOwnProperty.call(batchItems, "items");
+
+  if (!hasOwnItems || batchItems.items === undefined) {
     return {
       batchItems
     };

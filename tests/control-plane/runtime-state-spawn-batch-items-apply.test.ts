@@ -84,6 +84,44 @@ describe("control-plane runtime-state spawn-batch-items-apply helpers", () => {
     expect(result).not.toHaveProperty("headlessInput");
   });
 
+  it("should preserve batchItems unchanged when items only exist on the prototype chain", async () => {
+    const batchItems = Object.create({
+      items: [
+        {
+          childAttemptId: "att_child_proto",
+          request: {
+            parentAttemptId: "att_parent",
+            parentRuntime: "codex-cli",
+            parentSessionId: "thr_parent",
+            sourceKind: "fork"
+          }
+        }
+      ]
+    });
+    batchItems.plan = createPlan({
+      requestedCount: 1,
+      records: [
+        createRecord({
+          attemptId: "att_parent",
+          sessionId: "thr_parent",
+          sourceKind: "direct",
+          lifecycleState: "active"
+        })
+      ]
+    });
+    const invokeSpawn = vi.fn(async () => undefined);
+
+    await expect(
+      applyExecutionSessionSpawnBatchItems({
+        batchItems: batchItems as never,
+        invokeSpawn
+      })
+    ).resolves.toEqual({
+      batchItems
+    });
+    expect(invokeSpawn).not.toHaveBeenCalled();
+  });
+
   it("should bridge derived batch items into the existing spawn apply batch helper", async () => {
     const batchItems = deriveExecutionSessionSpawnBatchItems({
       plan: createPlan({

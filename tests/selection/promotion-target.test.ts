@@ -497,6 +497,43 @@ describe("selection promotion-target helpers", () => {
     expect(() => deriveAttemptPromotionTarget(summary)).toThrow(ValidationError);
   });
 
+  it("should snapshot blockingReasons once before canonical blocker comparison reuses them", () => {
+    const summary = createPromotionDecisionSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "failed",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "failed"
+            }
+          ]
+        })
+      })
+    ]);
+    let readCount = 0;
+
+    Object.defineProperty(summary, "blockingReasons", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        readCount += 1;
+
+        if (readCount > 1) {
+          throw new Error("getter boom");
+        }
+
+        return ["required_checks_failed"];
+      }
+    });
+    summary.canPromote = false;
+    summary.hasBlockingReasons = true;
+
+    expect(() => deriveAttemptPromotionTarget(summary)).not.toThrow();
+  });
+
   it("should reject sparse check-name lists whose canonical entry only exists on the prototype", () => {
     const summary = createPromotionDecisionSummary([
       createPromotionCandidate({
