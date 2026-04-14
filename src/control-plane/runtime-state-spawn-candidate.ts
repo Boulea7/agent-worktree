@@ -1,4 +1,8 @@
-import { deriveExecutionSessionContext } from "./runtime-state-context.js";
+import { ValidationError } from "../core/errors.js";
+import {
+  normalizeBatchWrapper,
+} from "./runtime-state-batch-wrapper-guards.js";
+import { deriveExecutionSessionCandidateContext } from "./runtime-state-candidate-context.js";
 import { deriveExecutionSessionSpawnBudget } from "./runtime-state-spawn-budget.js";
 import { deriveExecutionSessionSpawnReadiness } from "./runtime-state-spawn-readiness.js";
 import type {
@@ -9,9 +13,14 @@ import type {
 export function deriveExecutionSessionSpawnCandidate(
   input: ExecutionSessionSpawnCandidateInput
 ): ExecutionSessionSpawnCandidate | undefined {
-  const context = deriveExecutionSessionContext({
-    view: input.view,
-    selector: input.selector
+  const normalizedInput = normalizeBatchWrapper<ExecutionSessionSpawnCandidateInput>(
+    input,
+    "Execution session spawn candidate input must be an object."
+  );
+  const context = deriveExecutionSessionCandidateContext(normalizedInput, {
+    input: "Execution session spawn candidate input must be an object.",
+    selector: "Execution session spawn candidate requires selector to be an object.",
+    view: "Execution session spawn candidate requires view to be an object."
   });
 
   if (context === undefined) {
@@ -20,7 +29,7 @@ export function deriveExecutionSessionSpawnCandidate(
 
   const budget = deriveExecutionSessionSpawnBudget({
     context,
-    view: input.view
+    view: normalizedInput.view
   });
 
   return {
@@ -28,7 +37,7 @@ export function deriveExecutionSessionSpawnCandidate(
     context,
     readiness: deriveExecutionSessionSpawnReadiness({
       context,
-      view: input.view
+      view: normalizedInput.view
     })
   };
 }

@@ -7,7 +7,30 @@ import {
 } from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-apply helpers", () => {
-  it("should compose consume first and then derive effects", async () => {
+  it("should fail loudly when the top-level spawn-apply input is malformed", async () => {
+    await expect(
+      applyExecutionSessionSpawn(null as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyExecutionSessionSpawn([] as never)
+    ).rejects.toThrow("Execution session spawn apply input must be an object.");
+  });
+
+  it("should fail closed when request only exists on the prototype chain", async () => {
+    const input = Object.create({
+      request: createSpawnRequest(),
+    });
+    input.childAttemptId = "att_child_apply";
+    input.invokeSpawn = async () => undefined;
+
+    await expect(
+      applyExecutionSessionSpawn(input as never)
+    ).rejects.toThrow(
+      "Execution session spawn apply requires request to be an object."
+    );
+  });
+
+  it("should preflight effects before consuming spawn", async () => {
     const request = createSpawnRequest({
       sourceKind: "delegated",
       inheritedGuardrails: {

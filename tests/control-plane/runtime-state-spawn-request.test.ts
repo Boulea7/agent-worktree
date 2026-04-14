@@ -12,6 +12,38 @@ import type {
 } from "../../src/control-plane/types.js";
 
 describe("control-plane runtime-state spawn-request helpers", () => {
+  it("should fail loudly when the top-level spawn-request input is malformed", () => {
+    expect(() => deriveExecutionSessionSpawnRequest(null as never)).toThrow(
+      ValidationError
+    );
+    expect(() => deriveExecutionSessionSpawnRequest([] as never)).toThrow(
+      "Execution session spawn request input must be an object."
+    );
+  });
+
+  it("should fail closed when candidate only exists on the prototype chain", () => {
+    const input = Object.create({
+      candidate: deriveExecutionSessionSpawnCandidate({
+        view: buildExecutionSessionView([
+          createRecord({
+            attemptId: "att_active",
+            sessionId: "thr_active",
+            sourceKind: "direct",
+            lifecycleState: "active"
+          })
+        ]),
+        selector: {
+          attemptId: "att_active"
+        }
+      }),
+      sourceKind: "fork"
+    });
+
+    expect(() => deriveExecutionSessionSpawnRequest(input as never)).toThrow(
+      "Execution session spawn request requires candidate to be an object."
+    );
+  });
+
   it("should derive a fork spawn request from a spawnable candidate", () => {
     const candidate = deriveExecutionSessionSpawnCandidate({
       view: buildExecutionSessionView([

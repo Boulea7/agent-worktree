@@ -60,6 +60,17 @@ describe("selection handoff-finalization-consumer helpers", () => {
     ).toBeUndefined();
   });
 
+  it("should fail closed when request or resolver are inherited from the prototype", () => {
+    const inheritedInput = Object.create({
+      request: createFinalizationRequest(),
+      resolveHandoffFinalizationCapability: () => true
+    });
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationConsumer(inheritedInput as never)
+    ).toThrow(ValidationError);
+  });
+
   it("should derive a supported finalization consumer when the runtime resolver returns true", () => {
     expect(
       deriveAttemptHandoffFinalizationConsumer({
@@ -145,6 +156,19 @@ describe("selection handoff-finalization-consumer helpers", () => {
         resolveHandoffFinalizationCapability: (() => "yes") as never
       })
     ).toThrow(ValidationError);
+  });
+
+  it("should surface resolver exceptions directly instead of relabeling them as input-read failures", () => {
+    const expectedError = new Error("resolver boom");
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationConsumer({
+        request: createFinalizationRequest(),
+        resolveHandoffFinalizationCapability: () => {
+          throw expectedError;
+        }
+      })
+    ).toThrow(expectedError);
   });
 
   it("should fail loudly when resolveHandoffFinalizationCapability is not a function when provided", () => {

@@ -71,6 +71,26 @@ describe("selection handoff-apply helpers", () => {
     expect(invokeHandoff).not.toHaveBeenCalled();
   });
 
+  it("should fail closed when inherited apply wrapper fields or accessor-shaped callbacks are supplied", async () => {
+    const inheritedInput = Object.create({
+      request: createHandoffRequest(),
+      invokeHandoff: async () => undefined
+    });
+
+    await expect(applyAttemptHandoff(inheritedInput as never)).rejects.toThrow(
+      ValidationError
+    );
+
+    await expect(
+      applyAttemptHandoff({
+        request: createHandoffRequest(),
+        get invokeHandoff() {
+          throw new Error("getter boom");
+        }
+      } as never)
+    ).rejects.toThrow(ValidationError);
+  });
+
   it("should compose a supported handoff consumer and consume result for a supported request", async () => {
     const request = createHandoffRequest({
       status: "running",
@@ -264,7 +284,8 @@ describe("selection handoff-apply helpers", () => {
     });
     expect(result).not.toBeUndefined();
     expect(result?.consumer.request).not.toBe(request);
-    expect(result?.consume.request).toBe(result?.consumer.request);
+    expect(result?.consume.request).toEqual(result?.consumer.request);
+    expect(result?.consume.request).not.toBe(result?.consumer.request);
   });
 
   it("should keep the apply result shape minimal without leaking orchestration or persistence metadata", async () => {

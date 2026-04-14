@@ -1,12 +1,54 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   applyExecutionSessionSpawnHeadlessInput,
   type ExecutionSessionSpawnRequest
 } from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-headless-apply helpers", () => {
-  it("should compose spawn apply first and then derive headless input", async () => {
+  it("should fail loudly when the top-level spawn-headless-apply input is malformed", async () => {
+    await expect(
+      applyExecutionSessionSpawnHeadlessInput(null as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyExecutionSessionSpawnHeadlessInput([] as never)
+    ).rejects.toThrow(
+      "Execution session spawn headless apply input must be an object."
+    );
+  });
+
+  it("should fail closed when request only exists on the prototype chain", async () => {
+    const input = Object.create({
+      request: createSpawnRequest(),
+    });
+    input.childAttemptId = "att_child_headless_apply";
+    input.execution = {
+      prompt: "Reply with exactly: ok"
+    };
+    input.invokeSpawn = async () => undefined;
+
+    await expect(
+      applyExecutionSessionSpawnHeadlessInput(input as never)
+    ).rejects.toThrow(
+      "Execution session spawn headless apply requires request to be an object."
+    );
+  });
+
+  it("should fail loudly when execution is present but not an object", async () => {
+    await expect(
+      applyExecutionSessionSpawnHeadlessInput({
+        childAttemptId: "att_child_headless_apply",
+        request: createSpawnRequest(),
+        execution: "prompt only" as never,
+        invokeSpawn: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Execution session spawn headless apply requires execution to be an object."
+    );
+  });
+
+  it("should compose spawn apply and then derive headless input from preflighted effects", async () => {
     const abortController = new AbortController();
     const request = createSpawnRequest({
       sourceKind: "delegated",
@@ -200,7 +242,9 @@ describe("control-plane runtime-state spawn-headless-apply helpers", () => {
         },
         invokeSpawn
       } as const)
-    ).rejects.toThrow(expectedError);
+    ).rejects.toThrow(
+      "Execution session spawn headless apply requires execution to be an object."
+    );
     expect(invokeSpawn).not.toHaveBeenCalled();
   });
 

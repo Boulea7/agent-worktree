@@ -1,11 +1,44 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   applyExecutionSessionSpawnBatch,
   type ExecutionSessionSpawnRequest
 } from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-apply-batch helpers", () => {
+  it("should fail loudly when the top-level spawn-apply batch input is malformed", async () => {
+    await expect(
+      applyExecutionSessionSpawnBatch(null as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyExecutionSessionSpawnBatch([] as never)
+    ).rejects.toThrow(
+      "Execution session spawn apply batch input must be an object."
+    );
+    await expect(
+      applyExecutionSessionSpawnBatch({
+        items: [],
+        invokeSpawn: "nope"
+      } as never)
+    ).rejects.toThrow(
+      "Execution session spawn apply batch requires invokeSpawn to be a function."
+    );
+  });
+
+  it("should fail closed when items only exist on the prototype chain", async () => {
+    const input = Object.create({
+      items: [],
+      invokeSpawn: async () => undefined
+    });
+
+    await expect(
+      applyExecutionSessionSpawnBatch(input as never)
+    ).rejects.toThrow(
+      "Execution session spawn apply batch requires items to be an array."
+    );
+  });
+
   it("should return an empty batch result without invoking spawn", async () => {
     const invokeSpawn = vi.fn(async () => undefined);
 
@@ -163,6 +196,33 @@ describe("control-plane runtime-state spawn-apply-batch helpers", () => {
       })
     ).rejects.toThrow(expectedError);
     expect(invokedSessionIds).toEqual(["thr_parent_1", "thr_parent_2"]);
+  });
+
+  it("should fail before invoking when a sparse or inherited batch entry is encountered", async () => {
+    const invokeSpawn = vi.fn(async () => undefined);
+    const items = new Array(1);
+    Object.setPrototypeOf(
+      items,
+      Object.assign([], {
+        0: {
+          childAttemptId: "att_child_inherited",
+          request: createSpawnRequest({
+            parentAttemptId: "att_parent_inherited",
+            parentSessionId: "thr_parent_inherited"
+          })
+        }
+      })
+    );
+
+    await expect(
+      applyExecutionSessionSpawnBatch({
+        items: items as never,
+        invokeSpawn
+      })
+    ).rejects.toThrow(
+      "Execution session spawn apply batch requires items entries to be objects."
+    );
+    expect(invokeSpawn).not.toHaveBeenCalled();
   });
 
   it("should keep the batch result minimal and leave inputs untouched", async () => {

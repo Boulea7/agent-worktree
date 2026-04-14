@@ -1,4 +1,5 @@
 import { deriveExecutionSessionWaitReadiness } from "./runtime-state-readiness.js";
+import { deriveExecutionSessionDescendantCoverageSummary } from "./runtime-state-descendant-coverage.js";
 import { normalizeHeadlessContextWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import type {
   ExecutionSessionWaitReadiness,
@@ -13,15 +14,20 @@ export function deriveExecutionSessionSpawnHeadlessWaitCandidate(
     context: "Execution session spawn headless wait candidate",
     wrapperKey: "headlessContext"
   });
+  const coverageSummary = deriveExecutionSessionDescendantCoverageSummary({
+    record: normalizedInput.headlessContext.context.record,
+    view: normalizedInput.headlessContext.headlessView.view,
+    ...(normalizedInput.headlessContext.headlessView.descendantCoverage === undefined
+      ? {}
+      : {
+          descendantCoverage:
+            normalizedInput.headlessContext.headlessView.descendantCoverage
+        })
+  });
   const candidateReadiness: ExecutionSessionWaitReadiness =
     deriveExecutionSessionWaitReadiness({
       context: normalizedInput.headlessContext.context,
-      ...(normalizedInput.headlessContext.headlessView.descendantCoverage === undefined
-        ? {}
-        : {
-            descendantCoverage:
-              normalizedInput.headlessContext.headlessView.descendantCoverage
-          })
+      descendantCoverage: coverageSummary.coverage
     });
 
   return {

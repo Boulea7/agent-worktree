@@ -10,6 +10,8 @@ export {
   deriveExecutionSessionRecord
 } from "./runtime-state.js";
 export { deriveExecutionSessionContext } from "./runtime-state-context.js";
+export { deriveExecutionSessionCandidateContext } from "./runtime-state-candidate-context.js";
+export { deriveExecutionSessionDescendantCoverageSummary } from "./runtime-state-descendant-coverage.js";
 export { deriveExecutionSessionLifecycleDisposition } from "./runtime-state-lifecycle-disposition.js";
 export { deriveExecutionSessionSpawnCandidate } from "./runtime-state-spawn-candidate.js";
 export { deriveExecutionSessionSpawnBudget } from "./runtime-state-spawn-budget.js";
@@ -52,6 +54,24 @@ export { deriveExecutionSessionSpawnHeadlessCloseRequest } from "./runtime-state
 export { deriveExecutionSessionSpawnHeadlessCloseRequestBatch } from "./runtime-state-spawn-headless-close-request-batch.js";
 export { applyExecutionSessionSpawnHeadlessCloseTarget } from "./runtime-state-spawn-headless-close-target-apply.js";
 export { applyExecutionSessionSpawnHeadlessCloseTargetBatch } from "./runtime-state-spawn-headless-close-target-apply-batch.js";
+export {
+  deriveExecutionCoordinationBoard,
+  deriveExecutionCoordinationTaskFromCloseoutDecision,
+  deriveExecutionCoordinationTaskFromHandoffDecision,
+  deriveExecutionCoordinationTaskFromPromotionDecision,
+  deriveExecutionCoordinationTaskFromSpawnCandidate,
+  deriveExecutionCoordinationTaskFromSpawnHeadlessWaitCandidate,
+  normalizeExecutionCoordinationTask
+} from "./runtime-state-coordination.js";
+export {
+  deriveExecutionCoordinationTaskDetailFromCloseoutDecision,
+  deriveExecutionCoordinationTaskDetailFromHandoffDecision,
+  deriveExecutionCoordinationTaskDetailFromPromotionDecision,
+  deriveExecutionCoordinationTaskDetailFromSpawnCandidate,
+  deriveExecutionCoordinationTaskDetailFromSpawnHeadlessWaitCandidate
+} from "./runtime-state-coordination-details.js";
+export { deriveExecutionCoordinationGroups } from "./runtime-state-coordination-groups.js";
+export { deriveExecutionCoordinationReadyQueue } from "./runtime-state-coordination-ready-queue.js";
 export { deriveExecutionSessionSpawnReadiness } from "./runtime-state-spawn-readiness.js";
 export { deriveExecutionSessionSpawnLineage } from "./runtime-state-spawn-lineage.js";
 export { deriveExecutionSessionSpawnRecordedEvent } from "./runtime-state-spawn-recorded-event.js";
@@ -92,6 +112,8 @@ export {
 export {
   executionSessionContextSelectionKinds,
   executionSessionCloseBlockingReasons,
+  executionCoordinationTaskKinds,
+  executionCoordinationTaskStatuses,
   executionSessionCloseConsumerBlockingReasons,
   executionSessionRecordSources,
   executionSessionSpawnBlockingReasons,
@@ -99,6 +121,25 @@ export {
   executionSessionWaitBlockingReasons,
   executionSessionWaitConsumerBlockingReasons,
   type ExecutionSessionCloseBlockingReason,
+  type ExecutionCoordinationBoard,
+  type ExecutionCoordinationBoardInput,
+  type ExecutionCoordinationBoardSummary,
+  type ExecutionCoordinationGroup,
+  type ExecutionCoordinationGrouping,
+  type ExecutionCoordinationGroupingInput,
+  type ExecutionCoordinationReadyQueue,
+  type ExecutionCoordinationReadyQueueInput,
+  type ExecutionCoordinationTask,
+  type ExecutionCoordinationTaskDetail,
+  type ExecutionCoordinationTaskFromCloseoutDecisionInput,
+  type ExecutionCoordinationTaskFromHandoffDecisionInput,
+  type ExecutionCoordinationTaskFromPromotionDecisionInput,
+  type ExecutionCoordinationTaskFromSpawnCandidateInput,
+  type ExecutionCoordinationTaskFromSpawnHeadlessWaitCandidateInput,
+  type ExecutionCoordinationTaskInput,
+  type ExecutionCoordinationTaskKind,
+  type ExecutionCoordinationTaskOwner,
+  type ExecutionCoordinationTaskStatus,
   type ExecutionSessionCloseApply,
   type ExecutionSessionCloseApplyBatch,
   type ExecutionSessionCloseApplyBatchInput,
@@ -132,6 +173,8 @@ export {
   type ExecutionSessionContext,
   type ExecutionSessionContextInput,
   type ExecutionSessionContextSelectionKind,
+  type ExecutionSessionDescendantCoverageSummary,
+  type ExecutionSessionDescendantCoverageSummaryInput,
   type ExecutionSessionIndex,
   type ExecutionSessionLifecycleDisposition,
   type ExecutionSessionLifecycleDispositionInput,

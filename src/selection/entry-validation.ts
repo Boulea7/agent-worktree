@@ -38,6 +38,21 @@ export function readSelectionValue(
   }
 }
 
+export function readOwnedSelectionValue(
+  container: object,
+  key: string,
+  message: string
+): unknown {
+  if (
+    key in container &&
+    !Object.prototype.hasOwnProperty.call(container, key)
+  ) {
+    throw new ValidationError(message);
+  }
+
+  return readSelectionValue(container, key, message);
+}
+
 export function normalizeSelectionArrayProperty(
   container: object,
   key: string,
@@ -46,6 +61,67 @@ export function normalizeSelectionArrayProperty(
   const value = readSelectionValue(container, key, message);
   validateSelectionArray(value, message);
   return value;
+}
+
+export function normalizeSelectionStringArray(
+  value: unknown,
+  arrayMessage: string,
+  entryMessage: string
+): string[] {
+  validateSelectionArray(value, arrayMessage);
+  const normalized: string[] = [];
+
+  for (let index = 0; index < value.length; index += 1) {
+    if (!Object.prototype.hasOwnProperty.call(value, index)) {
+      throw new ValidationError(entryMessage);
+    }
+
+    const entry = readSelectionValue(value, String(index), entryMessage);
+
+    if (typeof entry !== "string") {
+      throw new ValidationError(entryMessage);
+    }
+
+    normalized.push(entry);
+  }
+
+  return normalized;
+}
+
+export function normalizeSelectionTrimmedStringArray(
+  value: unknown,
+  arrayMessage: string,
+  entryMessage: string,
+  trimmedMessage: string
+): string[] {
+  validateSelectionArray(value, arrayMessage);
+  const normalized: string[] = [];
+
+  for (let index = 0; index < value.length; index += 1) {
+    if (!Object.prototype.hasOwnProperty.call(value, index)) {
+      throw new ValidationError(entryMessage);
+    }
+
+    const entry = readSelectionValue(value, String(index), entryMessage);
+
+    if (typeof entry !== "string") {
+      throw new ValidationError(entryMessage);
+    }
+
+    const trimmedEntry = entry.trim();
+
+    if (trimmedEntry.length === 0) {
+      throw new ValidationError(entryMessage);
+    }
+
+    if (trimmedEntry !== entry) {
+      throw new ValidationError(trimmedMessage);
+    }
+
+    normalized.push(trimmedEntry);
+  }
+
+  return normalized;
 }
 
 export function normalizeSelectionObjectProperty(

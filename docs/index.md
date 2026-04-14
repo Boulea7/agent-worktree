@@ -64,11 +64,17 @@ For committed repository truth, start with `SPEC.md`, then `README.md`, then thi
 - [Development Phases](maintainers/development-phases.md)
 - [Automation Readiness](maintainers/automation-readiness.md)
 - [Future Super Agent Harness Planning (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/README.md)
+- [Future Harness Architecture Overview (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/architecture-overview.md)
+- [Future Harness Delegated Attempt Minimal Durable Contract (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/delegated-attempt-minimal-durable-contract.md)
 - [Future Harness Reuse Map (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/reuse-map-from-local-upstreams-and-current-codebase.md)
 - [Future Harness Execution and Control Plane (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/execution-and-control-plane.md)
+- [Future Harness Todo and Task Tracking (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/todo-and-task-tracking.md)
+- [Future Harness Failure and Cleanup Semantics (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/failure-and-cleanup-semantics.md)
+- [Future Harness Migration Notes (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/migration-from-current-agent-worktree.md)
 - [Future Harness Sandbox and Extensibility Notes (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/sandbox-skills-and-extensibility.md)
 - [Future Harness Memory and State Notes (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/memory-state-and-persistence.md)
 - [Future Harness Vision and Positioning (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/vision-and-positioning.md)
+- [Future Harness Thin-Slice Development Plan (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/thin-slice-development-plan.md)
 - [Future Harness Review Risks and Open Questions (maintainer-only, non-contractual)](maintainers/future-super-agent-harness/review-risks-and-open-questions.md)
 
 ## Decisions

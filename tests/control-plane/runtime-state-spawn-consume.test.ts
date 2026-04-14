@@ -7,6 +7,28 @@ import {
 } from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-consume helpers", () => {
+  it("should fail loudly when the top-level spawn-consume input is malformed", async () => {
+    await expect(
+      consumeExecutionSessionSpawn(null as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      consumeExecutionSessionSpawn([] as never)
+    ).rejects.toThrow("Execution session spawn consume input must be an object.");
+  });
+
+  it("should fail closed when request only exists on the prototype chain", async () => {
+    const input = Object.create({
+      request: createSpawnRequest(),
+      invokeSpawn: async () => undefined
+    });
+
+    await expect(
+      consumeExecutionSessionSpawn(input as never)
+    ).rejects.toThrow(
+      "Execution session spawn consume requires request to be an object."
+    );
+  });
+
   it("should invoke spawn exactly once for a valid spawn request", async () => {
     const request = createSpawnRequest();
     let seenRequest: ExecutionSessionSpawnRequest | undefined;

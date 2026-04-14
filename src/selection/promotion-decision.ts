@@ -15,6 +15,7 @@ import type {
 } from "./types.js";
 import {
   accessSelectionValue,
+  normalizeSelectionTrimmedStringArray,
   rethrowSelectionAccessError
 } from "./entry-validation.js";
 import {
@@ -63,7 +64,7 @@ export function deriveAttemptPromotionDecisionSummary(
     return {
       decisionBasis: ATTEMPT_PROMOTION_DECISION_BASIS,
       taskId: normalizedTaskId,
-      selectedAttemptId: normalizedSummary.selectedAttemptId,
+      selectedAttemptId: selected?.attemptId,
       selectedIdentity: deriveSelectedIdentity(normalizedTaskId, selected),
       candidateCount: normalizedSummary.candidates.length,
       comparableCandidateCount: countComparableCandidates(normalizedSummary.candidates),
@@ -88,17 +89,44 @@ export function deriveAttemptPromotionDecisionSummary(
 function normalizePromotionExplanationInput(
   summary: Record<string, unknown>
 ): AttemptPromotionExplanationSummary {
+  const readableObjectMessage =
+    "Attempt promotion decision summary requires summary to be a readable object.";
+  const candidates = accessSelectionValue(summary, "candidates");
+
+  if (!Array.isArray(candidates)) {
+    return {
+      explanationBasis: accessSelectionValue(summary, "explanationBasis") as AttemptPromotionExplanationSummary["explanationBasis"],
+      taskId: accessSelectionValue(summary, "taskId") as AttemptPromotionExplanationSummary["taskId"],
+      selectedAttemptId: accessSelectionValue(summary, "selectedAttemptId") as AttemptPromotionExplanationSummary["selectedAttemptId"],
+      selectedIdentity: normalizeSelectedIdentitySnapshot(
+        accessSelectionValue(summary, "selectedIdentity")
+      ),
+      candidateCount: accessSelectionValue(summary, "candidateCount") as AttemptPromotionExplanationSummary["candidateCount"],
+      comparableCandidateCount: accessSelectionValue(summary, "comparableCandidateCount") as AttemptPromotionExplanationSummary["comparableCandidateCount"],
+      promotionReadyCandidateCount: accessSelectionValue(summary, "promotionReadyCandidateCount") as AttemptPromotionExplanationSummary["promotionReadyCandidateCount"],
+      recommendedForPromotion: accessSelectionValue(summary, "recommendedForPromotion") as AttemptPromotionExplanationSummary["recommendedForPromotion"],
+      selected: accessSelectionValue(summary, "selected") as AttemptPromotionExplanationSummary["selected"],
+      candidates: candidates as AttemptPromotionExplanationSummary["candidates"]
+    };
+  }
+
+  validateCandidateEntries(candidates);
+
   return {
     explanationBasis: accessSelectionValue(summary, "explanationBasis") as AttemptPromotionExplanationSummary["explanationBasis"],
     taskId: accessSelectionValue(summary, "taskId") as AttemptPromotionExplanationSummary["taskId"],
     selectedAttemptId: accessSelectionValue(summary, "selectedAttemptId") as AttemptPromotionExplanationSummary["selectedAttemptId"],
-    selectedIdentity: accessSelectionValue(summary, "selectedIdentity") as AttemptPromotionExplanationSummary["selectedIdentity"],
+    selectedIdentity: normalizeSelectedIdentitySnapshot(
+      accessSelectionValue(summary, "selectedIdentity")
+    ),
     candidateCount: accessSelectionValue(summary, "candidateCount") as AttemptPromotionExplanationSummary["candidateCount"],
     comparableCandidateCount: accessSelectionValue(summary, "comparableCandidateCount") as AttemptPromotionExplanationSummary["comparableCandidateCount"],
     promotionReadyCandidateCount: accessSelectionValue(summary, "promotionReadyCandidateCount") as AttemptPromotionExplanationSummary["promotionReadyCandidateCount"],
     recommendedForPromotion: accessSelectionValue(summary, "recommendedForPromotion") as AttemptPromotionExplanationSummary["recommendedForPromotion"],
     selected: accessSelectionValue(summary, "selected") as AttemptPromotionExplanationSummary["selected"],
-    candidates: accessSelectionValue(summary, "candidates") as AttemptPromotionExplanationSummary["candidates"]
+    candidates: candidates.map((candidate) =>
+      normalizeExplanationCandidateSnapshot(candidate, readableObjectMessage)
+    )
   };
 }
 
@@ -160,7 +188,10 @@ function validatePromotionExplanationSummary(
         "Attempt promotion decision summary requires summary.selectedIdentity to be undefined when candidates are empty."
       );
     }
-  } else if (summary.selectedAttemptId !== summary.candidates[0]?.attemptId) {
+  } else if (
+    normalizeComparableString(summary.selectedAttemptId) !==
+    summary.candidates[0]?.attemptId
+  ) {
     throw new ValidationError(
       "Attempt promotion decision summary requires summary.selectedAttemptId to match the first candidate when candidates are present."
     );
@@ -334,6 +365,50 @@ function validateExplanationCandidate(
   validateCheckNameList(candidate.skippedCheckNames, "candidate.skippedCheckNames");
 }
 
+function normalizeExplanationCandidateSnapshot(
+  candidate: unknown,
+  _readableObjectMessage: string
+): AttemptPromotionExplanationCandidate {
+  if (!isRecord(candidate)) {
+    throw new ValidationError(
+      "Attempt promotion decision summary requires summary.candidates entries to be objects."
+    );
+  }
+
+  return {
+    attemptId: validateNonEmptyString(
+      accessSelectionValue(candidate, "attemptId"),
+      "candidate.attemptId"
+    ),
+    runtime: validateNonEmptyString(
+      accessSelectionValue(candidate, "runtime"),
+      "candidate.runtime"
+    ),
+    status: accessSelectionValue(candidate, "status") as AttemptPromotionExplanationCandidate["status"],
+    sourceKind: accessSelectionValue(candidate, "sourceKind") as AttemptPromotionExplanationCandidate["sourceKind"],
+    hasComparablePayload: accessSelectionValue(candidate, "hasComparablePayload") as AttemptPromotionExplanationCandidate["hasComparablePayload"],
+    isSelected: accessSelectionValue(candidate, "isSelected") as AttemptPromotionExplanationCandidate["isSelected"],
+    recommendedForPromotion: accessSelectionValue(candidate, "recommendedForPromotion") as AttemptPromotionExplanationCandidate["recommendedForPromotion"],
+    explanationCode: accessSelectionValue(candidate, "explanationCode") as AttemptPromotionExplanationCandidate["explanationCode"],
+    blockingRequiredCheckNames: normalizeCheckNameList(
+      accessSelectionValue(candidate, "blockingRequiredCheckNames"),
+      "candidate.blockingRequiredCheckNames"
+    ),
+    failedOrErrorCheckNames: normalizeCheckNameList(
+      accessSelectionValue(candidate, "failedOrErrorCheckNames"),
+      "candidate.failedOrErrorCheckNames"
+    ),
+    pendingCheckNames: normalizeCheckNameList(
+      accessSelectionValue(candidate, "pendingCheckNames"),
+      "candidate.pendingCheckNames"
+    ),
+    skippedCheckNames: normalizeCheckNameList(
+      accessSelectionValue(candidate, "skippedCheckNames"),
+      "candidate.skippedCheckNames"
+    )
+  };
+}
+
 function validateSelectedCandidate(
   selected: AttemptPromotionExplanationSummary["selected"],
   candidateCount: number
@@ -419,6 +494,26 @@ function validateSelectedIdentity(
       "Attempt promotion decision summary requires summary.selectedIdentity to match the first candidate."
     );
   }
+}
+
+function normalizeSelectedIdentitySnapshot(
+  selectedIdentity: unknown
+): AttemptPromotionExplanationSummary["selectedIdentity"] {
+  if (selectedIdentity === undefined) {
+    return undefined;
+  }
+
+  if (!isRecord(selectedIdentity)) {
+    throw new ValidationError(
+      "Attempt promotion decision summary requires summary.selectedIdentity to be an object when provided."
+    );
+  }
+
+  return {
+    taskId: accessSelectionValue(selectedIdentity, "taskId") as AttemptSelectedIdentity["taskId"],
+    attemptId: accessSelectionValue(selectedIdentity, "attemptId") as AttemptSelectedIdentity["attemptId"],
+    runtime: accessSelectionValue(selectedIdentity, "runtime") as AttemptSelectedIdentity["runtime"]
+  };
 }
 
 function deriveBlockingReasons(
@@ -595,11 +690,24 @@ function validateCheckNameList(
   }
 }
 
+function normalizeCheckNameList(
+  value: unknown,
+  fieldName: string
+): string[] {
+  return normalizeSelectionTrimmedStringArray(
+    value,
+    `Attempt promotion decision summary requires ${fieldName} to be an array of non-empty strings.`,
+    `Attempt promotion decision summary requires ${fieldName} to use non-empty string entries.`,
+    `Attempt promotion decision summary requires ${fieldName} to use trimmed non-empty string entries.`
+  );
+}
+
 function normalizeOptionalTaskId(
   value: AttemptPromotionExplanationSummary["taskId"]
 ): AttemptPromotionExplanationSummary["taskId"] {
   return value === undefined ? undefined : value.trim();
 }
+
 
 function normalizeComparableString(value: unknown): string | undefined {
   if (typeof value !== "string") {

@@ -208,7 +208,7 @@ Must test:
 
 - delegated-child preflight remains a bounded internal composition over existing context, lineage, inherited guardrails, capability checks, and explicit child inputs; it must not decide child branches, child worktrees, child runtime mode, prompt/task payloads, delegated-runtime approvals, or other actual spawn semantics
 - spawn-oriented composition keeps request shaping, additive lineage or marker projection, and any derived effects metadata minimal and internal-only; no helper becomes child-creation truth or terminal lifecycle truth
-- when a delegated-child composition step combines injected consumption with derived effects metadata, it must consume first and must not surface partial effects if the consume step fails
+- when a delegated-child composition step combines preflight validation or derived effects metadata with injected consumption, invalid child lineage or execution-seed input must fail before invocation while supported requests still invoke only the canonical request exactly once and must not surface partial apply metadata if consumption fails
 - invalid delegated-child inputs such as blank child attempt identifiers, parent/child identity collisions, invalid selector state, or invalid `sourceKind` fail loudly without wrapper error contracts
 - injected spawn invokers are called only through the bounded delegated-child consume or apply surfaces, exactly once per supported request; failures surface directly, empty batches do not synthesize work, ordered batches preserve input order, and supported batches fail fast on the first injected or derivation error without partial aggregation or summary-policy output
 - delegated-child and spawn-oriented tests continue to prove that request/readiness composition, branch/worktree planning boundaries, and public CLI or manifest contracts remain non-widening
@@ -316,6 +316,7 @@ The current public baseline satisfies this Phase 4 test slice through `doctor`, 
 
 - internal-only headless wait/close request, target-apply, and batch-wrapper tests for own-property-only ingress and snapshot reuse
 - internal-only headless context, wait/close candidate, and wait/close target tests for descendant-coverage defaults, nested wrapper snapshots, and trim-preserving target derivation
+- internal-only coordination-task tests for delegated work, blocked child follow-up, verifier/review handoff checklists, closeout-readiness tasks, and board-level ready or dependency-blocked summaries
 - internal-only barrel-boundary tests that keep newer P6 helper types and repo-internal surfaces out of the default barrels while preserving the intended public type allowlist
 
 ## Definition Of Done For Future Coding Tasks

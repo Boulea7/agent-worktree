@@ -21,6 +21,7 @@ import type {
 } from "./types.js";
 import {
   normalizeSelectionArrayProperty,
+  normalizeSelectionTrimmedStringArray,
   readSelectionValue,
   rethrowSelectionAccessError
 } from "./entry-validation.js";
@@ -53,8 +54,9 @@ export function deriveAttemptPromotionReport(
 
     validateAuditBasis(normalizedSummary);
     validateTaskId(normalizedSummary.taskId);
+    const normalizedTaskId = normalizeOptionalTaskId(normalizedSummary.taskId);
 
-    validatePromotionAuditSummary(normalizedSummary);
+    validatePromotionAuditSummary(normalizedSummary, normalizedTaskId);
 
     const candidates = normalizedSummary.candidates.map(
       clonePromotionAuditCandidate
@@ -72,12 +74,9 @@ export function deriveAttemptPromotionReport(
 
     return {
       reportBasis: ATTEMPT_PROMOTION_REPORT_BASIS,
-      taskId: normalizedSummary.taskId,
-      selectedAttemptId: normalizedSummary.selectedAttemptId,
-      selectedIdentity: deriveSelectedIdentity(
-        normalizedSummary.taskId,
-        candidates[0]
-      ),
+      taskId: normalizedTaskId,
+      selectedAttemptId: selected?.attemptId,
+      selectedIdentity: deriveSelectedIdentity(normalizedTaskId, candidates[0]),
       candidateCount: normalizedSummary.candidateCount,
       comparableCandidateCount: normalizedSummary.comparableCandidateCount,
       promotionReadyCandidateCount: normalizedSummary.promotionReadyCandidateCount,
@@ -99,52 +98,60 @@ export function deriveAttemptPromotionReport(
 function normalizePromotionAuditSummarySnapshot(
   summary: Record<string, unknown>
 ): AttemptPromotionAuditSummary {
+  const readableObjectMessage =
+    "Attempt promotion report requires summary to be a readable object.";
+  const candidates = normalizeSelectionArrayProperty(
+    summary,
+    "candidates",
+    "Attempt promotion report requires summary.candidates to be an array."
+  );
+
+  validateCandidateEntries(candidates);
+
   return {
     auditBasis: readSelectionValue(
       summary,
       "auditBasis",
-      "Attempt promotion report requires summary to be a readable object."
+      readableObjectMessage
     ) as AttemptPromotionAuditSummary["auditBasis"],
     taskId: readSelectionValue(
       summary,
       "taskId",
-      "Attempt promotion report requires summary to be a readable object."
+      readableObjectMessage
     ) as AttemptPromotionAuditSummary["taskId"],
     selectedAttemptId: readSelectionValue(
       summary,
       "selectedAttemptId",
-      "Attempt promotion report requires summary to be a readable object."
+      readableObjectMessage
     ) as AttemptPromotionAuditSummary["selectedAttemptId"],
-    selectedIdentity: readSelectionValue(
+    selectedIdentity: normalizeSelectedIdentitySnapshot(
       summary,
       "selectedIdentity",
-      "Attempt promotion report requires summary to be a readable object."
-    ) as AttemptPromotionAuditSummary["selectedIdentity"],
+      readableObjectMessage
+    ),
     candidateCount: readSelectionValue(
       summary,
       "candidateCount",
-      "Attempt promotion report requires summary to be a readable object."
+      readableObjectMessage
     ) as AttemptPromotionAuditSummary["candidateCount"],
     comparableCandidateCount: readSelectionValue(
       summary,
       "comparableCandidateCount",
-      "Attempt promotion report requires summary to be a readable object."
+      readableObjectMessage
     ) as AttemptPromotionAuditSummary["comparableCandidateCount"],
     promotionReadyCandidateCount: readSelectionValue(
       summary,
       "promotionReadyCandidateCount",
-      "Attempt promotion report requires summary to be a readable object."
+      readableObjectMessage
     ) as AttemptPromotionAuditSummary["promotionReadyCandidateCount"],
     recommendedForPromotion: readSelectionValue(
       summary,
       "recommendedForPromotion",
-      "Attempt promotion report requires summary to be a readable object."
+      readableObjectMessage
     ) as AttemptPromotionAuditSummary["recommendedForPromotion"],
-    candidates: normalizeSelectionArrayProperty(
-      summary,
-      "candidates",
-      "Attempt promotion report requires summary.candidates to be an array."
-    ) as AttemptPromotionAuditSummary["candidates"]
+    candidates: candidates.map((candidate) =>
+      normalizePromotionAuditCandidateSnapshot(candidate, readableObjectMessage)
+    )
   };
 }
 
@@ -168,7 +175,8 @@ function validateAuditBasis(summary: AttemptPromotionAuditSummary): void {
 }
 
 function validatePromotionAuditSummary(
-  summary: AttemptPromotionAuditSummary
+  summary: AttemptPromotionAuditSummary,
+  normalizedTaskId: AttemptPromotionAuditSummary["taskId"]
 ): void {
   if (!Array.isArray(summary.candidates)) {
     throw new ValidationError(
@@ -201,7 +209,10 @@ function validatePromotionAuditSummary(
         "Attempt promotion report requires summary.selectedIdentity to be undefined when candidates are empty."
       );
     }
-  } else if (summary.selectedAttemptId !== summary.candidates[0]?.attemptId) {
+  } else if (
+    normalizeComparableString(summary.selectedAttemptId) !==
+    summary.candidates[0]?.attemptId
+  ) {
     throw new ValidationError(
       "Attempt promotion report requires summary.selectedAttemptId to match the first candidate when candidates are present."
     );
@@ -209,11 +220,11 @@ function validatePromotionAuditSummary(
 
   summary.candidates.forEach(validatePromotionAuditCandidate);
   validateSelectedIdentity(
-    summary.taskId,
+    normalizedTaskId,
     summary.selectedIdentity,
     summary.candidates[0]
   );
-  validateCanonicalCandidateIdentity(summary.taskId, summary.candidates);
+  validateCanonicalCandidateIdentity(normalizedTaskId, summary.candidates);
 
   const comparableCandidateCount = summary.candidates.filter(
     (candidate) => candidate.summary.hasComparablePayload
@@ -311,6 +322,71 @@ function validatePromotionAuditCandidate(
   validateCheckNameList(candidate.skippedCheckNames, "candidate.skippedCheckNames");
 }
 
+function normalizePromotionAuditCandidateSnapshot(
+  candidate: unknown,
+  readableObjectMessage: string
+): AttemptPromotionAuditCandidate {
+  if (!isRecord(candidate)) {
+    throw new ValidationError(
+      "Attempt promotion report requires summary.candidates entries to be objects."
+    );
+  }
+
+  return {
+    attemptId: validateNonEmptyString(
+      readSelectionValue(candidate, "attemptId", readableObjectMessage),
+      "candidate.attemptId"
+    ),
+    runtime: validateNonEmptyString(
+      readSelectionValue(candidate, "runtime", readableObjectMessage),
+      "candidate.runtime"
+    ),
+    status: readSelectionValue(
+      candidate,
+      "status",
+      readableObjectMessage
+    ) as AttemptPromotionAuditCandidate["status"],
+    sourceKind: readSelectionValue(
+      candidate,
+      "sourceKind",
+      readableObjectMessage
+    ) as AttemptPromotionAuditCandidate["sourceKind"],
+    summary: normalizeAttemptVerificationSummarySnapshot(
+      readSelectionValue(candidate, "summary", readableObjectMessage),
+      readableObjectMessage
+    ),
+    recommendedForPromotion: readSelectionValue(
+      candidate,
+      "recommendedForPromotion",
+      readableObjectMessage
+    ) as AttemptPromotionAuditCandidate["recommendedForPromotion"],
+    blockingRequiredCheckNames: normalizeCheckNameList(
+      readSelectionValue(
+        candidate,
+        "blockingRequiredCheckNames",
+        readableObjectMessage
+      ),
+      "candidate.blockingRequiredCheckNames"
+    ),
+    failedOrErrorCheckNames: normalizeCheckNameList(
+      readSelectionValue(
+        candidate,
+        "failedOrErrorCheckNames",
+        readableObjectMessage
+      ),
+      "candidate.failedOrErrorCheckNames"
+    ),
+    pendingCheckNames: normalizeCheckNameList(
+      readSelectionValue(candidate, "pendingCheckNames", readableObjectMessage),
+      "candidate.pendingCheckNames"
+    ),
+    skippedCheckNames: normalizeCheckNameList(
+      readSelectionValue(candidate, "skippedCheckNames", readableObjectMessage),
+      "candidate.skippedCheckNames"
+    )
+  };
+}
+
 function clonePromotionAuditCandidate(
   candidate: AttemptPromotionAuditCandidate
 ): AttemptPromotionAuditCandidate {
@@ -374,7 +450,7 @@ function validateSelectedIdentity(
   if (
     taskId === undefined ||
     candidate === undefined ||
-    normalizedTaskId !== taskId ||
+    normalizedTaskId !== normalizeOptionalTaskId(taskId) ||
     normalizedAttemptId !== candidate.attemptId ||
     normalizedRuntime !== candidate.runtime
   ) {
@@ -382,6 +458,42 @@ function validateSelectedIdentity(
       "Attempt promotion report requires summary.selectedIdentity to match the first candidate."
     );
   }
+}
+
+function normalizeSelectedIdentitySnapshot(
+  container: Record<string, unknown>,
+  key: string,
+  readableObjectMessage: string
+): AttemptPromotionAuditSummary["selectedIdentity"] {
+  const selectedIdentity = readSelectionValue(container, key, readableObjectMessage);
+
+  if (selectedIdentity === undefined) {
+    return undefined;
+  }
+
+  if (!isRecord(selectedIdentity)) {
+    throw new ValidationError(
+      "Attempt promotion report requires summary.selectedIdentity to be an object when provided."
+    );
+  }
+
+  return {
+    taskId: readSelectionValue(
+      selectedIdentity,
+      "taskId",
+      readableObjectMessage
+    ) as AttemptSelectedIdentity["taskId"],
+    attemptId: readSelectionValue(
+      selectedIdentity,
+      "attemptId",
+      readableObjectMessage
+    ) as AttemptSelectedIdentity["attemptId"],
+    runtime: readSelectionValue(
+      selectedIdentity,
+      "runtime",
+      readableObjectMessage
+    ) as AttemptSelectedIdentity["runtime"]
+  };
 }
 
 function cloneAttemptVerificationSummary(
@@ -463,6 +575,78 @@ function validateAttemptVerificationSummary(
   validateVerificationCounts(summary.counts);
 }
 
+function normalizeAttemptVerificationSummarySnapshot(
+  summary: unknown,
+  readableObjectMessage: string
+): AttemptVerificationSummary {
+  if (!isRecord(summary)) {
+    throw new ValidationError(
+      "Attempt promotion report requires candidate.summary to be an object."
+    );
+  }
+
+  return {
+    sourceState: readSelectionValue(
+      summary,
+      "sourceState",
+      readableObjectMessage
+    ) as AttemptVerificationSummary["sourceState"],
+    overallOutcome: readSelectionValue(
+      summary,
+      "overallOutcome",
+      readableObjectMessage
+    ) as AttemptVerificationSummary["overallOutcome"],
+    requiredOutcome: readSelectionValue(
+      summary,
+      "requiredOutcome",
+      readableObjectMessage
+    ) as AttemptVerificationSummary["requiredOutcome"],
+    counts: normalizeVerificationCountsSnapshot(
+      readSelectionValue(summary, "counts", readableObjectMessage),
+      readableObjectMessage
+    ),
+    hasInvalidChecks: readSelectionValue(
+      summary,
+      "hasInvalidChecks",
+      readableObjectMessage
+    ) as AttemptVerificationSummary["hasInvalidChecks"],
+    hasComparablePayload: readSelectionValue(
+      summary,
+      "hasComparablePayload",
+      readableObjectMessage
+    ) as AttemptVerificationSummary["hasComparablePayload"],
+    isSelectionReady: readSelectionValue(
+      summary,
+      "isSelectionReady",
+      readableObjectMessage
+    ) as AttemptVerificationSummary["isSelectionReady"]
+  };
+}
+
+function normalizeVerificationCountsSnapshot(
+  counts: unknown,
+  readableObjectMessage: string
+): AttemptVerificationCounts {
+  if (!isRecord(counts)) {
+    throw new ValidationError(
+      "Attempt promotion report requires candidate.summary.counts to be an object."
+    );
+  }
+
+  return {
+    total: readSelectionValue(counts, "total", readableObjectMessage) as number,
+    valid: readSelectionValue(counts, "valid", readableObjectMessage) as number,
+    invalid: readSelectionValue(counts, "invalid", readableObjectMessage) as number,
+    required: readSelectionValue(counts, "required", readableObjectMessage) as number,
+    optional: readSelectionValue(counts, "optional", readableObjectMessage) as number,
+    passed: readSelectionValue(counts, "passed", readableObjectMessage) as number,
+    failed: readSelectionValue(counts, "failed", readableObjectMessage) as number,
+    pending: readSelectionValue(counts, "pending", readableObjectMessage) as number,
+    skipped: readSelectionValue(counts, "skipped", readableObjectMessage) as number,
+    error: readSelectionValue(counts, "error", readableObjectMessage) as number
+  };
+}
+
 function validateVerificationCounts(counts: unknown): void {
   if (!isRecord(counts)) {
     throw new ValidationError(
@@ -514,6 +698,33 @@ function validateCheckNameList(
       `Attempt promotion report requires ${fieldName} to use non-empty string entries.`
     );
   }
+}
+
+function normalizeCheckNameList(
+  value: unknown,
+  fieldName: string
+): string[] {
+  return normalizeSelectionTrimmedStringArray(
+    value,
+    `Attempt promotion report requires ${fieldName} to be an array of non-empty strings.`,
+    `Attempt promotion report requires ${fieldName} to use non-empty string entries.`,
+    `Attempt promotion report requires ${fieldName} to use trimmed non-empty string entries.`
+  );
+}
+
+function normalizeOptionalTaskId(
+  value: AttemptPromotionAuditSummary["taskId"]
+): AttemptPromotionAuditSummary["taskId"] {
+  return value === undefined ? undefined : value.trim();
+}
+
+function normalizeComparableString(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+  return normalized.length === 0 ? undefined : normalized;
 }
 
 function validateNonEmptyString(value: unknown, fieldName: string): string {

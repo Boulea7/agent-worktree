@@ -806,6 +806,207 @@ describe("selection promotion-report helpers", () => {
     );
   });
 
+  it("should fail loudly when candidate check-name arrays are sparse or carry surrounding whitespace", () => {
+    const baseSummary = createPromotionAuditSummary([
+      createPromotionCandidate({
+        attemptId: "att_pending",
+        verification: createVerification({
+          state: "pending",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
+        })
+      })
+    ]);
+    const sparsePendingCheckNames = new Array<string>(1);
+
+    expect(() =>
+      deriveAttemptPromotionReport({
+        ...baseSummary,
+        candidates: [
+          {
+            ...baseSummary.candidates[0],
+            pendingCheckNames: sparsePendingCheckNames
+          }
+        ]
+      } as AttemptPromotionAuditSummary)
+    ).toThrow(
+      "Attempt promotion report requires candidate.pendingCheckNames to use non-empty string entries."
+    );
+
+    expect(() =>
+      deriveAttemptPromotionReport({
+        ...baseSummary,
+        candidates: [
+          {
+            ...baseSummary.candidates[0],
+            pendingCheckNames: [" lint "]
+          }
+        ]
+      } as AttemptPromotionAuditSummary)
+    ).toThrow(
+      "Attempt promotion report requires candidate.pendingCheckNames to use trimmed non-empty string entries."
+    );
+  });
+
+  it("should fail closed when nested selected identity or candidate summary readers are accessor-shaped", () => {
+    const baseSummary = createPromotionAuditSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]);
+    const accessorSelectedIdentity = {
+      attemptId: "att_ready",
+      runtime: "codex-cli"
+    } as Record<string, unknown>;
+
+    Object.defineProperty(accessorSelectedIdentity, "taskId", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveAttemptPromotionReport({
+        ...baseSummary,
+        selectedIdentity:
+          accessorSelectedIdentity as unknown as AttemptPromotionAuditSummary["selectedIdentity"]
+      })
+    ).toThrow(
+      "Attempt promotion report requires summary to be a readable object."
+    );
+
+    const accessorCounts = {
+      total: 1,
+      valid: 1,
+      invalid: 0,
+      required: 1,
+      optional: 0,
+      passed: 1,
+      failed: 0,
+      pending: 0,
+      skipped: 0
+    } as Record<string, unknown>;
+
+    Object.defineProperty(accessorCounts, "error", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveAttemptPromotionReport({
+        ...baseSummary,
+        candidates: [
+          {
+            ...baseSummary.candidates[0],
+            summary: {
+              ...baseSummary.candidates[0]!.summary,
+              counts: accessorCounts
+            }
+          }
+        ]
+      } as unknown as AttemptPromotionAuditSummary)
+    ).toThrow(
+      "Attempt promotion report requires summary to be a readable object."
+    );
+  });
+
+  it("should canonicalize report task identity when summary fields carry surrounding whitespace", () => {
+    const baseSummary = createPromotionAuditSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]);
+
+    const report = deriveAttemptPromotionReport({
+      ...baseSummary,
+      taskId: " task_shared ",
+      selectedIdentity: {
+        taskId: " task_shared ",
+        attemptId: "att_ready",
+        runtime: "codex-cli"
+      }
+    });
+
+    expect(report.taskId).toBe("task_shared");
+    expect(report.selectedIdentity).toEqual({
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli"
+    });
+  });
+
+  it("should canonicalize candidate identity and selectedAttemptId when the selected audit candidate carries surrounding whitespace", () => {
+    const baseSummary = createPromotionAuditSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        runtime: "codex-cli",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]);
+
+    const report = deriveAttemptPromotionReport({
+      ...baseSummary,
+      selectedAttemptId: "  att_ready  ",
+      candidates: [
+        {
+          ...baseSummary.candidates[0]!,
+          attemptId: "  att_ready  ",
+          runtime: "  codex-cli  "
+        }
+      ]
+    });
+
+    expect(report.selectedAttemptId).toBe("att_ready");
+    expect(report.selectedIdentity).toEqual({
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli"
+    });
+    expect(report.selected?.attemptId).toBe("att_ready");
+    expect(report.selected?.runtime).toBe("codex-cli");
+    expect(report.candidates[0]?.attemptId).toBe("att_ready");
+    expect(report.candidates[0]?.runtime).toBe("codex-cli");
+  });
+
   it("should fail loudly when candidate.summary is not an object", () => {
     const baseSummary = createPromotionAuditSummary([
       createPromotionCandidate({

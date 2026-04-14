@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { ValidationError } from "../../src/core/errors.js";
 import {
   applyExecutionSessionSpawnBatch,
   applyExecutionSessionSpawnBatchItems,
@@ -12,6 +13,42 @@ import {
 } from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-batch-items-apply helpers", () => {
+  it("should fail loudly when the top-level spawn-batch-items-apply input is malformed", async () => {
+    await expect(
+      applyExecutionSessionSpawnBatchItems(null as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyExecutionSessionSpawnBatchItems([] as never)
+    ).rejects.toThrow(
+      "Execution session spawn batch-items apply input must be an object."
+    );
+  });
+
+  it("should fail closed when batchItems only exist on the prototype chain", async () => {
+    const input = Object.create({
+      batchItems: {
+        plan: createPlan({
+          requestedCount: 1,
+          records: [
+            createRecord({
+              attemptId: "att_parent",
+              sessionId: "thr_parent",
+              sourceKind: "direct",
+              lifecycleState: "active"
+            })
+          ]
+        })
+      },
+      invokeSpawn: async () => undefined
+    });
+
+    await expect(
+      applyExecutionSessionSpawnBatchItems(input as never)
+    ).rejects.toThrow(
+      "Execution session spawn batch-items apply requires batchItems to be an object."
+    );
+  });
+
   it("should preserve a blocked plan without invoking spawn or projecting apply results", async () => {
     const invokeSpawn = vi.fn(async () => undefined);
     const batchItems = deriveExecutionSessionSpawnBatchItems({
@@ -45,6 +82,44 @@ describe("control-plane runtime-state spawn-batch-items-apply helpers", () => {
     expect(result).not.toHaveProperty("scheduler");
     expect(result).not.toHaveProperty("manifest");
     expect(result).not.toHaveProperty("headlessInput");
+  });
+
+  it("should preserve batchItems unchanged when items only exist on the prototype chain", async () => {
+    const batchItems = Object.create({
+      items: [
+        {
+          childAttemptId: "att_child_proto",
+          request: {
+            parentAttemptId: "att_parent",
+            parentRuntime: "codex-cli",
+            parentSessionId: "thr_parent",
+            sourceKind: "fork"
+          }
+        }
+      ]
+    });
+    batchItems.plan = createPlan({
+      requestedCount: 1,
+      records: [
+        createRecord({
+          attemptId: "att_parent",
+          sessionId: "thr_parent",
+          sourceKind: "direct",
+          lifecycleState: "active"
+        })
+      ]
+    });
+    const invokeSpawn = vi.fn(async () => undefined);
+
+    await expect(
+      applyExecutionSessionSpawnBatchItems({
+        batchItems: batchItems as never,
+        invokeSpawn
+      })
+    ).resolves.toEqual({
+      batchItems
+    });
+    expect(invokeSpawn).not.toHaveBeenCalled();
   });
 
   it("should bridge derived batch items into the existing spawn apply batch helper", async () => {

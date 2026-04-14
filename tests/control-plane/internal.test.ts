@@ -2,6 +2,14 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 
 import * as controlPlane from "../../src/control-plane/internal.js";
 import type {
+  ExecutionCoordinationGroup,
+  ExecutionCoordinationGrouping,
+  ExecutionCoordinationReadyQueue,
+  ExecutionCoordinationTaskDetail,
+  ExecutionCoordinationBoard,
+  ExecutionCoordinationTask,
+  ExecutionCoordinationTaskStatus,
+  ExecutionSessionDescendantCoverageSummary,
   ExecutionSessionSpawnBatchHeadlessApply,
   ExecutionSessionSpawnBatchHeadlessApplyItems,
   ExecutionSessionCloseApply,
@@ -76,6 +84,21 @@ describe("control-plane internal exports", () => {
       "consumeExecutionSessionSpawnBatch",
       "consumeExecutionSessionWait",
       "consumeExecutionSessionWaitBatch",
+      "deriveExecutionCoordinationBoard",
+      "deriveExecutionCoordinationGroups",
+      "deriveExecutionCoordinationReadyQueue",
+      "deriveExecutionCoordinationTaskDetailFromCloseoutDecision",
+      "deriveExecutionCoordinationTaskDetailFromHandoffDecision",
+      "deriveExecutionCoordinationTaskDetailFromPromotionDecision",
+      "deriveExecutionCoordinationTaskDetailFromSpawnCandidate",
+      "deriveExecutionCoordinationTaskDetailFromSpawnHeadlessWaitCandidate",
+      "deriveExecutionSessionCandidateContext",
+      "deriveExecutionSessionDescendantCoverageSummary",
+      "deriveExecutionCoordinationTaskFromCloseoutDecision",
+      "deriveExecutionCoordinationTaskFromHandoffDecision",
+      "deriveExecutionCoordinationTaskFromPromotionDecision",
+      "deriveExecutionCoordinationTaskFromSpawnCandidate",
+      "deriveExecutionCoordinationTaskFromSpawnHeadlessWaitCandidate",
       "deriveExecutionSessionCloseCandidate",
       "deriveExecutionSessionCloseConsumer",
       "deriveExecutionSessionCloseConsumerReadiness",
@@ -130,6 +153,8 @@ describe("control-plane internal exports", () => {
       "deriveSessionSnapshot",
       "executeExecutionSessionSpawnHeadless",
       "executeExecutionSessionSpawnHeadlessBatch",
+      "executionCoordinationTaskKinds",
+      "executionCoordinationTaskStatuses",
       "executionSessionCloseBlockingReasons",
       "executionSessionCloseConsumerBlockingReasons",
       "executionSessionContextSelectionKinds",
@@ -139,13 +164,14 @@ describe("control-plane internal exports", () => {
       "executionSessionWaitBlockingReasons",
       "executionSessionWaitConsumerBlockingReasons",
       "listChildExecutionSessions",
+      "normalizeExecutionCoordinationTask",
       "normalizeSessionGuardrails",
       "resolveExecutionSessionRecord",
       "sessionLifecycleEventKinds",
       "sessionLifecycleStates",
       "sessionNodeKinds",
       "sessionSourceKinds"
-    ]);
+    ].sort());
   });
 
   it("should keep control-plane internals free of unrelated selection and verification helpers", () => {
@@ -163,6 +189,14 @@ describe("control-plane internal exports", () => {
     type ControlPlaneInternalExports = {
       record: ExecutionSessionRecord;
       context: ExecutionSessionContext;
+      coordinationBoard: ExecutionCoordinationBoard;
+      coordinationGroup: ExecutionCoordinationGroup;
+      coordinationGrouping: ExecutionCoordinationGrouping;
+      coordinationReadyQueue: ExecutionCoordinationReadyQueue;
+      coordinationTask: ExecutionCoordinationTask;
+      coordinationTaskDetail: ExecutionCoordinationTaskDetail;
+      coordinationTaskStatus: ExecutionCoordinationTaskStatus;
+      descendantCoverageSummary: ExecutionSessionDescendantCoverageSummary;
       spawnBudget: ExecutionSessionSpawnBudget;
       spawnCandidate: ExecutionSessionSpawnCandidate;
       spawnBatchHeadlessApply: ExecutionSessionSpawnBatchHeadlessApply;

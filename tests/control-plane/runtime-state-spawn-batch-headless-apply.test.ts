@@ -4,6 +4,7 @@ import type {
   HeadlessExecutionInput,
   HeadlessExecutionResult
 } from "../../src/adapters/types.js";
+import { ValidationError } from "../../src/core/errors.js";
 import {
   applyExecutionSessionCloseTargetBatch,
   applyExecutionSessionSpawnBatchHeadlessApply,
@@ -35,6 +36,30 @@ import {
 } from "../../src/control-plane/internal.js";
 
 describe("control-plane runtime-state spawn-batch-headless-apply helpers", () => {
+  it("should fail loudly when the top-level spawn-batch-headless-apply input is malformed", async () => {
+    await expect(
+      applyExecutionSessionSpawnBatchHeadlessApply(null as never)
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      applyExecutionSessionSpawnBatchHeadlessApply([] as never)
+    ).rejects.toThrow(
+      "Execution session spawn batch headless-apply input must be an object."
+    );
+  });
+
+  it("should fail closed when headlessApplyItems only exist on the prototype chain", async () => {
+    const input = Object.create({
+      headlessApplyItems: {},
+      invokeSpawn: async () => undefined
+    });
+
+    await expect(
+      applyExecutionSessionSpawnBatchHeadlessApply(input as never)
+    ).rejects.toThrow(
+      "Execution session spawn batch headless-apply requires headlessApplyItems to be an object."
+    );
+  });
+
   it("should preserve a blocked batch without invoking spawn or projecting apply results", async () => {
     const invokeSpawn = vi.fn(async () => undefined);
     const headlessApplyItems = {

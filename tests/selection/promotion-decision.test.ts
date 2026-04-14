@@ -343,6 +343,66 @@ describe("selection promotion-decision helpers", () => {
     });
   });
 
+  it("should preserve canonical candidate identity and selectedAttemptId through decision derivation", () => {
+    const report = deriveAttemptPromotionReport(
+      deriveAttemptPromotionAuditSummary(
+        deriveAttemptPromotionResult([
+          createPromotionCandidate({
+            attemptId: "att_ready",
+            runtime: "codex-cli",
+            verification: createVerification({
+              state: "verified",
+              checks: [
+                {
+                  name: "lint",
+                  required: true,
+                  status: "passed"
+                }
+              ]
+            })
+          })
+        ])
+      )
+    );
+    const explanation = deriveAttemptPromotionExplanationSummary({
+      ...report,
+      selectedAttemptId: "  att_ready  ",
+      selectedIdentity: {
+        taskId: "task_shared",
+        attemptId: "  att_ready  ",
+        runtime: "  codex-cli  "
+      },
+      candidates: [
+        {
+          ...report.candidates[0]!,
+          attemptId: "  att_ready  ",
+          runtime: "  codex-cli  "
+        }
+      ],
+      selected: {
+        ...report.selected!
+      }
+    });
+    const decision = deriveAttemptPromotionDecisionSummary(explanation);
+
+    expect(decision.selectedAttemptId).toBe("att_ready");
+    expect(decision.selectedIdentity).toEqual({
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli"
+    });
+    expect(decision.selected?.attemptId).toBe("att_ready");
+    expect(decision.selected?.runtime).toBe("codex-cli");
+    expect(deriveAttemptPromotionTarget(decision)).toEqual({
+      targetBasis: "promotion_decision_summary",
+      taskId: "task_shared",
+      attemptId: "att_ready",
+      runtime: "codex-cli",
+      status: "created",
+      sourceKind: undefined
+    });
+  });
+
   it("should fail loudly when comparableCandidateCount drifts from explanation candidates", () => {
     const summary = {
       ...createPromotionExplanationSummary([
@@ -811,6 +871,94 @@ describe("selection promotion-decision helpers", () => {
       })
     ).toThrow(
       "Attempt promotion decision summary requires candidate.blockingRequiredCheckNames to use non-empty string entries."
+    );
+  });
+
+  it("should fail loudly when candidate check-name arrays are sparse or carry surrounding whitespace", () => {
+    const summary = createPromotionExplanationSummary([
+      createPromotionCandidate({
+        attemptId: "att_blocked",
+        verification: createVerification({
+          state: "failed",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
+        })
+      })
+    ]);
+    const sparsePendingCheckNames = new Array<string>(1);
+
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...summary,
+        candidates: [
+          {
+            ...summary.candidates[0]!,
+            pendingCheckNames: sparsePendingCheckNames
+          }
+        ]
+      })
+    ).toThrow(
+      "Attempt promotion decision summary requires candidate.pendingCheckNames to use non-empty string entries."
+    );
+
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...summary,
+        candidates: [
+          {
+            ...summary.candidates[0]!,
+            blockingRequiredCheckNames: [" lint "],
+            pendingCheckNames: [" lint "]
+          }
+        ]
+      })
+    ).toThrow(
+      "Attempt promotion decision summary requires candidate.blockingRequiredCheckNames to use trimmed non-empty string entries."
+    );
+  });
+
+  it("should fail closed when nested selected identity readers are accessor-shaped", () => {
+    const summary = createPromotionExplanationSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]);
+    const accessorSelectedIdentity = {
+      attemptId: "att_ready",
+      runtime: "codex-cli"
+    } as Record<string, unknown>;
+
+    Object.defineProperty(accessorSelectedIdentity, "taskId", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...summary,
+        selectedIdentity:
+          accessorSelectedIdentity as unknown as AttemptPromotionExplanationSummary["selectedIdentity"]
+      })
+    ).toThrow(
+      "Attempt promotion decision summary requires summary to be a readable object."
     );
   });
 

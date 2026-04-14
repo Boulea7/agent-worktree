@@ -12,6 +12,8 @@ import type {
   AttemptHandoffRequest
 } from "./types.js";
 import {
+  readOwnedSelectionValue,
+  rethrowSelectionAccessError,
   validateSelectionObjectInput,
   validateSelectionOptionalFunction
 } from "./entry-validation.js";
@@ -23,54 +25,101 @@ export function deriveAttemptHandoffConsumer(input: {
   request: AttemptHandoffRequest | undefined;
   resolveHandoffCapability?: AttemptHandoffCapabilityResolver;
 }): AttemptHandoffConsumer | undefined {
-  validateSelectionObjectInput(
-    input,
-    "Attempt handoff consumer input must be an object."
-  );
-  validateSelectionOptionalFunction(
-    input.resolveHandoffCapability,
-    "Attempt handoff consumer requires resolveHandoffCapability to be a function when provided."
-  );
-  const { request } = input;
+  try {
+    validateSelectionObjectInput(
+      input,
+      "Attempt handoff consumer input must be an object."
+    );
+    const resolveHandoffCapability = readOwnedSelectionValue(
+      input,
+      "resolveHandoffCapability",
+      "Attempt handoff consumer input must be a readable object."
+    );
+    validateSelectionOptionalFunction(
+      resolveHandoffCapability,
+      "Attempt handoff consumer requires resolveHandoffCapability to be a function when provided."
+    );
+    const request = readOwnedSelectionValue(
+      input,
+      "request",
+      "Attempt handoff consumer input must be a readable object."
+    );
 
-  if (request === undefined) {
-    return undefined;
-  }
-
-  validateSelectionObjectInput(
-    request,
-    "Attempt handoff consumer requires request to be an object when provided."
-  );
-
-  const taskId = normalizeRequiredString(request.taskId, "request.taskId");
-  const attemptId = normalizeRequiredString(request.attemptId, "request.attemptId");
-  const runtime = normalizeRequiredString(request.runtime, "request.runtime");
-  validateAttemptStatus(request.status);
-  validateAttemptSourceKind(request.sourceKind);
-
-  const handoffSupported = normalizeHandoffCapability(
-    input.resolveHandoffCapability === undefined
-      ? false
-      : input.resolveHandoffCapability(runtime)
-  );
-  const blockingReasons: AttemptHandoffConsumerBlockingReason[] =
-    handoffSupported ? [] : ["handoff_unsupported"];
-
-  return {
-    request: {
-      taskId,
-      attemptId,
-      runtime,
-      status: request.status,
-      sourceKind: request.sourceKind
-    },
-    readiness: {
-      blockingReasons,
-      canConsumeHandoff: blockingReasons.length === 0,
-      hasBlockingReasons: blockingReasons.length > 0,
-      handoffSupported
+    if (request === undefined) {
+      return undefined;
     }
-  };
+
+    validateSelectionObjectInput(
+      request,
+      "Attempt handoff consumer requires request to be an object when provided."
+    );
+
+    const taskId = normalizeRequiredString(
+      readOwnedSelectionValue(
+        request,
+        "taskId",
+        "Attempt handoff consumer input must be a readable object."
+      ),
+      "request.taskId"
+    );
+    const attemptId = normalizeRequiredString(
+      readOwnedSelectionValue(
+        request,
+        "attemptId",
+        "Attempt handoff consumer input must be a readable object."
+      ),
+      "request.attemptId"
+    );
+    const runtime = normalizeRequiredString(
+      readOwnedSelectionValue(
+        request,
+        "runtime",
+        "Attempt handoff consumer input must be a readable object."
+      ),
+      "request.runtime"
+    );
+    const status = readOwnedSelectionValue(
+      request,
+      "status",
+      "Attempt handoff consumer input must be a readable object."
+    );
+    const sourceKind = readOwnedSelectionValue(
+      request,
+      "sourceKind",
+      "Attempt handoff consumer input must be a readable object."
+    );
+    validateAttemptStatus(status);
+    validateAttemptSourceKind(sourceKind);
+
+    const handoffSupported = normalizeHandoffCapability(
+      resolveHandoffCapability === undefined
+        ? false
+        : (resolveHandoffCapability as AttemptHandoffCapabilityResolver)(runtime)
+    );
+    const blockingReasons: AttemptHandoffConsumerBlockingReason[] =
+      handoffSupported ? [] : ["handoff_unsupported"];
+
+    return {
+      request: {
+        taskId,
+        attemptId,
+        runtime,
+        status: status as AttemptStatus,
+        sourceKind: sourceKind as AttemptSourceKind | undefined
+      },
+      readiness: {
+        blockingReasons,
+        canConsumeHandoff: blockingReasons.length === 0,
+        hasBlockingReasons: blockingReasons.length > 0,
+        handoffSupported
+      }
+    };
+  } catch (error) {
+    rethrowSelectionAccessError(
+      error,
+      "Attempt handoff consumer input must be a readable object."
+    );
+  }
 }
 
 function normalizeHandoffCapability(value: unknown): boolean {

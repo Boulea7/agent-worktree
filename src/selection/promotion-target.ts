@@ -1,4 +1,5 @@
 import { ValidationError } from "../core/errors.js";
+import { normalizeSelectionStringArray } from "./entry-validation.js";
 import {
   attemptSourceKinds,
   attemptStatuses,
@@ -139,21 +140,25 @@ function normalizeSelectedCandidateInput(
     isSelected: accessSelectionValue(candidate, "isSelected") as boolean,
     recommendedForPromotion: accessSelectionValue(candidate, "recommendedForPromotion") as boolean,
     explanationCode: accessSelectionValue(candidate, "explanationCode") as AttemptPromotionExplanationCode,
-    blockingRequiredCheckNames: normalizeStringArrayField(
+    blockingRequiredCheckNames: normalizeSelectionStringArray(
       accessSelectionValue(candidate, "blockingRequiredCheckNames"),
-      "Attempt promotion target requires summary.selected.blockingRequiredCheckNames to be an array of non-empty strings."
+      "Attempt promotion target requires summary.selected.blockingRequiredCheckNames to be an array of non-empty strings.",
+      "Attempt promotion target requires summary.selected.blockingRequiredCheckNames to use non-empty string entries."
     ),
-    failedOrErrorCheckNames: normalizeStringArrayField(
+    failedOrErrorCheckNames: normalizeSelectionStringArray(
       accessSelectionValue(candidate, "failedOrErrorCheckNames"),
-      "Attempt promotion target requires summary.selected.failedOrErrorCheckNames to be an array of non-empty strings."
+      "Attempt promotion target requires summary.selected.failedOrErrorCheckNames to be an array of non-empty strings.",
+      "Attempt promotion target requires summary.selected.failedOrErrorCheckNames to use non-empty string entries."
     ),
-    pendingCheckNames: normalizeStringArrayField(
+    pendingCheckNames: normalizeSelectionStringArray(
       accessSelectionValue(candidate, "pendingCheckNames"),
-      "Attempt promotion target requires summary.selected.pendingCheckNames to be an array of non-empty strings."
+      "Attempt promotion target requires summary.selected.pendingCheckNames to be an array of non-empty strings.",
+      "Attempt promotion target requires summary.selected.pendingCheckNames to use non-empty string entries."
     ),
-    skippedCheckNames: normalizeStringArrayField(
+    skippedCheckNames: normalizeSelectionStringArray(
       accessSelectionValue(candidate, "skippedCheckNames"),
-      "Attempt promotion target requires summary.selected.skippedCheckNames to be an array of non-empty strings."
+      "Attempt promotion target requires summary.selected.skippedCheckNames to be an array of non-empty strings.",
+      "Attempt promotion target requires summary.selected.skippedCheckNames to use non-empty string entries."
     )
   };
 }
@@ -390,16 +395,15 @@ function validateBoolean(value: unknown, fieldName: string): void {
 }
 
 function validateBlockingReasons(values: unknown): void {
-  if (!Array.isArray(values)) {
-    throw new ValidationError(
-      "Attempt promotion target requires summary.blockingReasons to be an array."
-    );
-  }
+  const normalizedValues = normalizeSelectionStringArray(
+    values,
+    "Attempt promotion target requires summary.blockingReasons to be an array.",
+    "Attempt promotion target requires summary.blockingReasons to use the existing promotion decision blocker vocabulary."
+  );
 
   if (
-    values.some(
+    normalizedValues.some(
       (value) =>
-        typeof value !== "string" ||
         !validBlockingReasons.has(value as AttemptPromotionDecisionBlockingReason)
     )
   ) {
@@ -556,48 +560,17 @@ function validateCheckNameList(
   values: readonly string[],
   fieldName: string
 ): void {
-  if (!Array.isArray(values)) {
-    throw new ValidationError(
-      `Attempt promotion target requires ${fieldName} to be an array of non-empty strings.`
-    );
-  }
+  const normalizedValues = normalizeSelectionStringArray(
+    values,
+    `Attempt promotion target requires ${fieldName} to be an array of non-empty strings.`,
+    `Attempt promotion target requires ${fieldName} to use non-empty string entries.`
+  );
 
-  if (
-    values.some(
-      (value) => typeof value !== "string" || value.trim().length === 0
-    )
-  ) {
+  if (normalizedValues.some((value) => value.trim().length === 0)) {
     throw new ValidationError(
       `Attempt promotion target requires ${fieldName} to use non-empty string entries.`
     );
   }
-}
-
-function normalizeStringArrayField(
-  value: unknown,
-  message: string
-): string[] {
-  if (!Array.isArray(value)) {
-    throw new ValidationError(message);
-  }
-
-  const normalized: string[] = [];
-
-  for (let index = 0; index < value.length; index += 1) {
-    if (!Object.prototype.hasOwnProperty.call(value, index)) {
-      throw new ValidationError(message);
-    }
-
-    const entry = accessSelectionValue(value, String(index));
-
-    if (typeof entry !== "string") {
-      throw new ValidationError(message);
-    }
-
-    normalized.push(entry);
-  }
-
-  return normalized;
 }
 
 function validateNonNegativeInteger(value: unknown, fieldName: string): void {
