@@ -1,4 +1,5 @@
 import { deriveExecutionSessionCloseReadiness } from "./runtime-state-close-readiness.js";
+import { deriveExecutionSessionDescendantCoverageSummary } from "./runtime-state-descendant-coverage.js";
 import { normalizeHeadlessContextWrapper } from "./runtime-state-headless-wrapper-guards.js";
 import type {
   ExecutionSessionCloseReadiness,
@@ -13,15 +14,16 @@ export function deriveExecutionSessionSpawnHeadlessCloseCandidate(
     context: "Execution session spawn headless close candidate",
     wrapperKey: "headlessContext"
   });
+  const coverageSummary = deriveExecutionSessionDescendantCoverageSummary({
+    record: normalizedInput.headlessContext.context.record,
+    view: normalizedInput.headlessContext.headlessView.view,
+    descendantCoverage:
+      normalizedInput.headlessContext.headlessView.descendantCoverage
+  });
   const candidateReadiness: ExecutionSessionCloseReadiness =
     deriveExecutionSessionCloseReadiness({
       context: normalizedInput.headlessContext.context,
-      ...(normalizedInput.headlessContext.headlessView.descendantCoverage === undefined
-        ? {}
-        : {
-            descendantCoverage:
-              normalizedInput.headlessContext.headlessView.descendantCoverage
-          }),
+      descendantCoverage: coverageSummary.coverage,
       ...(normalizedInput.resolveSessionLifecycleCapability === undefined
         ? {}
         : {

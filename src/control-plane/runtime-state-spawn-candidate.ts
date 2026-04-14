@@ -1,9 +1,8 @@
 import { ValidationError } from "../core/errors.js";
 import {
   normalizeBatchWrapper,
-  readRequiredBatchWrapperProperty
 } from "./runtime-state-batch-wrapper-guards.js";
-import { deriveExecutionSessionContext } from "./runtime-state-context.js";
+import { deriveExecutionSessionCandidateContext } from "./runtime-state-candidate-context.js";
 import { deriveExecutionSessionSpawnBudget } from "./runtime-state-spawn-budget.js";
 import { deriveExecutionSessionSpawnReadiness } from "./runtime-state-spawn-readiness.js";
 import type {
@@ -18,37 +17,10 @@ export function deriveExecutionSessionSpawnCandidate(
     input,
     "Execution session spawn candidate input must be an object."
   );
-  const selector = readRequiredBatchWrapperProperty<
-    ExecutionSessionSpawnCandidateInput["selector"]
-  >(
-    normalizedInput,
-    "selector",
-    "Execution session spawn candidate requires selector to be an object."
-  );
-  if (
-    typeof selector !== "object" ||
-    selector === null ||
-    Array.isArray(selector)
-  ) {
-    throw new ValidationError(
-      "Execution session spawn candidate requires selector to be an object."
-    );
-  }
-  const view = readRequiredBatchWrapperProperty<
-    ExecutionSessionSpawnCandidateInput["view"]
-  >(
-    normalizedInput,
-    "view",
-    "Execution session spawn candidate requires view to be an object."
-  );
-  if (typeof view !== "object" || view === null || Array.isArray(view)) {
-    throw new ValidationError(
-      "Execution session spawn candidate requires view to be an object."
-    );
-  }
-  const context = deriveExecutionSessionContext({
-    view,
-    selector
+  const context = deriveExecutionSessionCandidateContext(normalizedInput, {
+    input: "Execution session spawn candidate input must be an object.",
+    selector: "Execution session spawn candidate requires selector to be an object.",
+    view: "Execution session spawn candidate requires view to be an object."
   });
 
   if (context === undefined) {
@@ -57,7 +29,7 @@ export function deriveExecutionSessionSpawnCandidate(
 
   const budget = deriveExecutionSessionSpawnBudget({
     context,
-    view
+    view: normalizedInput.view
   });
 
   return {
@@ -65,7 +37,7 @@ export function deriveExecutionSessionSpawnCandidate(
     context,
     readiness: deriveExecutionSessionSpawnReadiness({
       context,
-      view
+      view: normalizedInput.view
     })
   };
 }

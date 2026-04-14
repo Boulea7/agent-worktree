@@ -352,6 +352,18 @@ type ControlPlaneIndexShouldNotExportExecutionCoordinationBoard = import("../../
 // @ts-expect-error control-plane index must not export coordination task helpers
 type ControlPlaneIndexShouldNotExportExecutionCoordinationTaskHelper = typeof import("../../src/control-plane/index.js").deriveExecutionCoordinationBoard;
 
+// @ts-expect-error control-plane index must not export descendant coverage summary types
+type ControlPlaneIndexShouldNotExportExecutionSessionDescendantCoverageSummary = import("../../src/control-plane/index.js").ExecutionSessionDescendantCoverageSummary;
+
+// @ts-expect-error control-plane index must not export shared candidate-context helpers
+type ControlPlaneIndexShouldNotExportExecutionSessionCandidateContextHelper = typeof import("../../src/control-plane/index.js").deriveExecutionSessionCandidateContext;
+
+// @ts-expect-error control-plane index must not export coordination grouping helpers
+type ControlPlaneIndexShouldNotExportExecutionCoordinationGroupsHelper = typeof import("../../src/control-plane/index.js").deriveExecutionCoordinationGroups;
+
+// @ts-expect-error control-plane index must not export coordination ready-queue helpers
+type ControlPlaneIndexShouldNotExportExecutionCoordinationReadyQueueHelper = typeof import("../../src/control-plane/index.js").deriveExecutionCoordinationReadyQueue;
+
 // @ts-expect-error control-plane index must not export close consume batch results
 type ControlPlaneIndexShouldNotExportCloseConsumeBatch = import("../../src/control-plane/index.js").ExecutionSessionCloseConsumeBatch;
 

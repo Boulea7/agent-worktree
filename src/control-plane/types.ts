@@ -83,6 +83,20 @@ export type ExecutionSessionSpawnRequestSourceKind =
   (typeof executionSessionSpawnRequestSourceKinds)[number];
 export type ExecutionSessionDescendantCoverage = "complete" | "incomplete";
 
+export interface ExecutionSessionDescendantCoverageSummaryInput {
+  descendantCoverage?: ExecutionSessionDescendantCoverage;
+  record: ExecutionSessionRecord;
+  view: ExecutionSessionView;
+}
+
+export interface ExecutionSessionDescendantCoverageSummary {
+  blockingReason?: ExecutionSessionWaitBlockingReason;
+  coverage: ExecutionSessionDescendantCoverage;
+  descendantAttemptIds: string[];
+  descendantCount: number;
+  isDefaulted: boolean;
+}
+
 export interface SessionLifecycleCapabilityResolver {
   (runtime: string): boolean;
 }
@@ -1081,6 +1095,61 @@ export interface ExecutionCoordinationBoardSummary {
 export interface ExecutionCoordinationBoard {
   summary: ExecutionCoordinationBoardSummary;
   tasks: ExecutionCoordinationTask[];
+}
+
+export interface ExecutionCoordinationTaskDetail {
+  blockedResultCount?: number;
+  blockingReasons: string[];
+  canAdvance?: boolean;
+  childCount?: number;
+  comparableCandidateCount?: number;
+  descendantAttemptIds?: string[];
+  descendantCount?: number;
+  descendantCoverage?: ExecutionSessionDescendantCoverage;
+  descendantCoverageDefaulted?: boolean;
+  id: string;
+  kind: ExecutionCoordinationTaskKind;
+  lineageDepth?: number;
+  lineageDepthKnown?: boolean;
+  owner?: ExecutionCoordinationTaskOwner;
+  promotionReadyCandidateCount?: number;
+  remainingChildSlots?: number;
+  remainingDepthAllowance?: number;
+  reportingDisposition?: string;
+  requestedCount?: number;
+  resultCount?: number;
+  selectedAttemptId?: string;
+  taskId?: string;
+}
+
+export interface ExecutionCoordinationGroup {
+  blockedTaskIds: string[];
+  dependencyBlockedTaskIds: string[];
+  groupKey: string;
+  inProgressTaskIds: string[];
+  kind: ExecutionCoordinationTaskKind;
+  ownerAttemptId?: string;
+  readyTaskIds: string[];
+  taskIds: string[];
+}
+
+export interface ExecutionCoordinationGroupingInput {
+  board: ExecutionCoordinationBoard;
+}
+
+export interface ExecutionCoordinationGrouping {
+  groups: ExecutionCoordinationGroup[];
+}
+
+export interface ExecutionCoordinationReadyQueueInput {
+  board: ExecutionCoordinationBoard;
+}
+
+export interface ExecutionCoordinationReadyQueue {
+  followUpReadyTaskIds: string[];
+  readyNowTaskIds: string[];
+  waitingOnCoverageTaskIds: string[];
+  waitingOnDependenciesTaskIds: string[];
 }
 
 export interface ExecutionCoordinationTaskFromSpawnCandidateInput {
