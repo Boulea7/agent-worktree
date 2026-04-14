@@ -16,10 +16,14 @@ export function deriveExecutionCoordinationGroups(
   );
 
   for (const task of input.board.tasks) {
-    const groupKey = `${task.kind}:${task.owner?.attemptId ?? "unowned"}`;
+    const ownerKey =
+      task.owner === undefined
+        ? "unowned"
+        : `${task.owner.attemptId}:${task.owner.runtime}`;
+    const groupKey = `${task.kind}:${ownerKey}`;
     const group =
       groupsByKey.get(groupKey) ??
-      createGroup(groupKey, task.kind, task.owner?.attemptId);
+      createGroup(groupKey, task.kind, task.owner);
 
     group.taskIds.push(task.id);
 
@@ -51,12 +55,17 @@ export function deriveExecutionCoordinationGroups(
 function createGroup(
   groupKey: string,
   kind: ExecutionCoordinationTask["kind"],
-  ownerAttemptId: string | undefined
+  owner: ExecutionCoordinationTask["owner"]
 ): ExecutionCoordinationGroup {
   return {
     groupKey,
     kind,
-    ...(ownerAttemptId === undefined ? {} : { ownerAttemptId }),
+    ...(owner === undefined
+      ? {}
+      : {
+          ownerAttemptId: owner.attemptId,
+          ownerRuntime: owner.runtime
+        }),
     taskIds: [],
     readyTaskIds: [],
     inProgressTaskIds: [],

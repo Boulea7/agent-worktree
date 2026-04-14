@@ -35,6 +35,19 @@ describe("control-plane runtime-state spawn-headless-apply helpers", () => {
     );
   });
 
+  it("should fail loudly when execution is present but not an object", async () => {
+    await expect(
+      applyExecutionSessionSpawnHeadlessInput({
+        childAttemptId: "att_child_headless_apply",
+        request: createSpawnRequest(),
+        execution: "prompt only" as never,
+        invokeSpawn: async () => undefined
+      })
+    ).rejects.toThrow(
+      "Execution session spawn headless apply requires execution to be an object."
+    );
+  });
+
   it("should compose spawn apply and then derive headless input from preflighted effects", async () => {
     const abortController = new AbortController();
     const request = createSpawnRequest({
@@ -229,7 +242,9 @@ describe("control-plane runtime-state spawn-headless-apply helpers", () => {
         },
         invokeSpawn
       } as const)
-    ).rejects.toThrow(expectedError);
+    ).rejects.toThrow(
+      "Execution session spawn headless apply requires execution to be an object."
+    );
     expect(invokeSpawn).not.toHaveBeenCalled();
   });
 

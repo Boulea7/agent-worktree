@@ -41,7 +41,18 @@ export async function applyExecutionSessionSpawnHeadlessInput(
       "Execution session spawn headless apply requires request to be an object."
     );
   }
-  if (!Object.prototype.hasOwnProperty.call(normalizedInput, "execution")) {
+  const execution = readRequiredBatchWrapperProperty<
+    ExecutionSessionSpawnHeadlessApplyInput["execution"]
+  >(
+    normalizedInput,
+    "execution",
+    "Execution session spawn headless apply requires execution to be an object."
+  );
+  if (
+    typeof execution !== "object" ||
+    execution === null ||
+    Array.isArray(execution)
+  ) {
     throw new ValidationError(
       "Execution session spawn headless apply requires execution to be an object."
     );
@@ -68,7 +79,7 @@ export async function applyExecutionSessionSpawnHeadlessInput(
   const headlessInput = deriveExecutionSessionSpawnHeadlessInput({
     effects: preflightEffects,
     get execution() {
-      return normalizedInput.execution;
+      return execution;
     }
   });
   const apply = await applyExecutionSessionSpawn({

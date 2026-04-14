@@ -158,6 +158,19 @@ describe("selection handoff-finalization-consumer helpers", () => {
     ).toThrow(ValidationError);
   });
 
+  it("should surface resolver exceptions directly instead of relabeling them as input-read failures", () => {
+    const expectedError = new Error("resolver boom");
+
+    expect(() =>
+      deriveAttemptHandoffFinalizationConsumer({
+        request: createFinalizationRequest(),
+        resolveHandoffFinalizationCapability: () => {
+          throw expectedError;
+        }
+      })
+    ).toThrow(expectedError);
+  });
+
   it("should fail loudly when resolveHandoffFinalizationCapability is not a function when provided", () => {
     expect(() =>
       deriveAttemptHandoffFinalizationConsumer({

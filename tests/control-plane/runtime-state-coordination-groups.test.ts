@@ -40,9 +40,10 @@ describe("control-plane runtime-state coordination group helpers", () => {
     expect(deriveExecutionCoordinationGroups({ board })).toEqual({
       groups: [
         {
-          groupKey: "delegated_work:att_parent",
+          groupKey: "delegated_work:att_parent:codex-cli",
           kind: "delegated_work",
           ownerAttemptId: "att_parent",
+          ownerRuntime: "codex-cli",
           taskIds: ["spawn-a", "spawn-b"],
           readyTaskIds: ["spawn-a"],
           inProgressTaskIds: [],
@@ -52,12 +53,61 @@ describe("control-plane runtime-state coordination group helpers", () => {
         {
           groupKey: "review_handoff:unowned",
           kind: "review_handoff",
-          ownerAttemptId: undefined,
           taskIds: ["review"],
           readyTaskIds: [],
           inProgressTaskIds: [],
           blockedTaskIds: [],
           dependencyBlockedTaskIds: ["review"]
+        }
+      ]
+    });
+  });
+
+  it("should keep groups separate when the same owner attempt appears under different runtimes", () => {
+    const board = deriveExecutionCoordinationBoard({
+      tasks: [
+        createTask({
+          id: "spawn-codex",
+          kind: "delegated_work",
+          owner: {
+            attemptId: "att_parent",
+            runtime: "codex-cli"
+          }
+        }),
+        createTask({
+          id: "spawn-gemini",
+          kind: "delegated_work",
+          owner: {
+            attemptId: "att_parent",
+            runtime: "gemini-cli"
+          }
+        })
+      ]
+    });
+
+    expect(deriveExecutionCoordinationGroups({ board })).toEqual({
+      groups: [
+        {
+          groupKey: "delegated_work:att_parent:codex-cli",
+          kind: "delegated_work",
+          ownerAttemptId: "att_parent",
+          ownerRuntime: "codex-cli",
+          taskIds: ["spawn-codex"],
+          readyTaskIds: ["spawn-codex"],
+          inProgressTaskIds: [],
+          blockedTaskIds: [],
+          dependencyBlockedTaskIds: []
+        },
+        {
+          groupKey: "delegated_work:att_parent:gemini-cli",
+          kind: "delegated_work",
+          ownerAttemptId: "att_parent",
+          ownerRuntime: "gemini-cli",
+          taskIds: ["spawn-gemini"],
+          readyTaskIds: ["spawn-gemini"],
+          inProgressTaskIds: [],
+          blockedTaskIds: [],
+          dependencyBlockedTaskIds: []
         }
       ]
     });

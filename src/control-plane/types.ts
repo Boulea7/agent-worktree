@@ -1129,6 +1129,7 @@ export interface ExecutionCoordinationGroup {
   inProgressTaskIds: string[];
   kind: ExecutionCoordinationTaskKind;
   ownerAttemptId?: string;
+  ownerRuntime?: string;
   readyTaskIds: string[];
   taskIds: string[];
 }
