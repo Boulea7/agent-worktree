@@ -21,6 +21,7 @@ import type {
 } from "./types.js";
 import {
   accessSelectionValue,
+  normalizeSelectionTrimmedStringArray,
   rethrowSelectionAccessError
 } from "./entry-validation.js";
 import {
@@ -93,17 +94,49 @@ export function deriveAttemptPromotionExplanationSummary(
 function normalizePromotionReportInput(
   report: Record<string, unknown>
 ): AttemptPromotionReport {
+  const readableObjectMessage =
+    "Attempt promotion explanation summary requires report to be a readable object.";
+  const candidates = accessSelectionValue(report, "candidates");
+
+  if (!Array.isArray(candidates)) {
+    return {
+      reportBasis: accessSelectionValue(report, "reportBasis") as AttemptPromotionReport["reportBasis"],
+      taskId: accessSelectionValue(report, "taskId") as AttemptPromotionReport["taskId"],
+      selectedAttemptId: accessSelectionValue(report, "selectedAttemptId") as AttemptPromotionReport["selectedAttemptId"],
+      selectedIdentity: normalizeSelectedIdentitySnapshot(
+        accessSelectionValue(report, "selectedIdentity"),
+        readableObjectMessage
+      ),
+      candidateCount: accessSelectionValue(report, "candidateCount") as AttemptPromotionReport["candidateCount"],
+      comparableCandidateCount: accessSelectionValue(report, "comparableCandidateCount") as AttemptPromotionReport["comparableCandidateCount"],
+      promotionReadyCandidateCount: accessSelectionValue(report, "promotionReadyCandidateCount") as AttemptPromotionReport["promotionReadyCandidateCount"],
+      recommendedForPromotion: accessSelectionValue(report, "recommendedForPromotion") as AttemptPromotionReport["recommendedForPromotion"],
+      selected: accessSelectionValue(report, "selected") as AttemptPromotionReport["selected"],
+      candidates: candidates as AttemptPromotionReport["candidates"],
+      promotionReadyCandidates: accessSelectionValue(report, "promotionReadyCandidates") as AttemptPromotionReport["promotionReadyCandidates"],
+      nonPromotionReadyCandidates: accessSelectionValue(report, "nonPromotionReadyCandidates") as AttemptPromotionReport["nonPromotionReadyCandidates"],
+      pendingCandidates: accessSelectionValue(report, "pendingCandidates") as AttemptPromotionReport["pendingCandidates"]
+    };
+  }
+
+  validateCandidateEntries(candidates);
+
   return {
     reportBasis: accessSelectionValue(report, "reportBasis") as AttemptPromotionReport["reportBasis"],
     taskId: accessSelectionValue(report, "taskId") as AttemptPromotionReport["taskId"],
     selectedAttemptId: accessSelectionValue(report, "selectedAttemptId") as AttemptPromotionReport["selectedAttemptId"],
-    selectedIdentity: accessSelectionValue(report, "selectedIdentity") as AttemptPromotionReport["selectedIdentity"],
+    selectedIdentity: normalizeSelectedIdentitySnapshot(
+      accessSelectionValue(report, "selectedIdentity"),
+      readableObjectMessage
+    ),
     candidateCount: accessSelectionValue(report, "candidateCount") as AttemptPromotionReport["candidateCount"],
     comparableCandidateCount: accessSelectionValue(report, "comparableCandidateCount") as AttemptPromotionReport["comparableCandidateCount"],
     promotionReadyCandidateCount: accessSelectionValue(report, "promotionReadyCandidateCount") as AttemptPromotionReport["promotionReadyCandidateCount"],
     recommendedForPromotion: accessSelectionValue(report, "recommendedForPromotion") as AttemptPromotionReport["recommendedForPromotion"],
     selected: accessSelectionValue(report, "selected") as AttemptPromotionReport["selected"],
-    candidates: accessSelectionValue(report, "candidates") as AttemptPromotionReport["candidates"],
+    candidates: candidates.map((candidate) =>
+      normalizePromotionAuditCandidateSnapshot(candidate, readableObjectMessage)
+    ),
     promotionReadyCandidates: accessSelectionValue(report, "promotionReadyCandidates") as AttemptPromotionReport["promotionReadyCandidates"],
     nonPromotionReadyCandidates: accessSelectionValue(report, "nonPromotionReadyCandidates") as AttemptPromotionReport["nonPromotionReadyCandidates"],
     pendingCandidates: accessSelectionValue(report, "pendingCandidates") as AttemptPromotionReport["pendingCandidates"]
@@ -384,6 +417,45 @@ function validatePromotionAuditCandidate(
   validateCheckNameList(candidate.skippedCheckNames, "candidate.skippedCheckNames");
 }
 
+function normalizePromotionAuditCandidateSnapshot(
+  candidate: unknown,
+  readableObjectMessage: string
+): AttemptPromotionAuditCandidate {
+  if (!isRecord(candidate)) {
+    throw new ValidationError(
+      "Attempt promotion explanation summary requires report.candidates entries to be objects."
+    );
+  }
+
+  return {
+    attemptId: accessSelectionValue(candidate, "attemptId") as AttemptPromotionAuditCandidate["attemptId"],
+    runtime: accessSelectionValue(candidate, "runtime") as AttemptPromotionAuditCandidate["runtime"],
+    status: accessSelectionValue(candidate, "status") as AttemptPromotionAuditCandidate["status"],
+    sourceKind: accessSelectionValue(candidate, "sourceKind") as AttemptPromotionAuditCandidate["sourceKind"],
+    summary: normalizeAttemptVerificationSummarySnapshot(
+      accessSelectionValue(candidate, "summary"),
+      readableObjectMessage
+    ),
+    recommendedForPromotion: accessSelectionValue(candidate, "recommendedForPromotion") as AttemptPromotionAuditCandidate["recommendedForPromotion"],
+    blockingRequiredCheckNames: normalizeCheckNameList(
+      accessSelectionValue(candidate, "blockingRequiredCheckNames"),
+      "candidate.blockingRequiredCheckNames"
+    ),
+    failedOrErrorCheckNames: normalizeCheckNameList(
+      accessSelectionValue(candidate, "failedOrErrorCheckNames"),
+      "candidate.failedOrErrorCheckNames"
+    ),
+    pendingCheckNames: normalizeCheckNameList(
+      accessSelectionValue(candidate, "pendingCheckNames"),
+      "candidate.pendingCheckNames"
+    ),
+    skippedCheckNames: normalizeCheckNameList(
+      accessSelectionValue(candidate, "skippedCheckNames"),
+      "candidate.skippedCheckNames"
+    )
+  };
+}
+
 function deriveExplanationCandidate(
   candidate: AttemptPromotionAuditCandidate,
   taskId: AttemptPromotionReport["taskId"],
@@ -482,6 +554,27 @@ function validateSelectedIdentity(
       "Attempt promotion explanation summary requires report.selectedIdentity to match the first candidate."
     );
   }
+}
+
+function normalizeSelectedIdentitySnapshot(
+  selectedIdentity: unknown,
+  readableObjectMessage: string
+): AttemptPromotionReport["selectedIdentity"] {
+  if (selectedIdentity === undefined) {
+    return undefined;
+  }
+
+  if (!isRecord(selectedIdentity)) {
+    throw new ValidationError(
+      "Attempt promotion explanation summary requires report.selectedIdentity to be an object when provided."
+    );
+  }
+
+  return {
+    taskId: accessSelectionValue(selectedIdentity, "taskId") as AttemptSelectedIdentity["taskId"],
+    attemptId: accessSelectionValue(selectedIdentity, "attemptId") as AttemptSelectedIdentity["attemptId"],
+    runtime: accessSelectionValue(selectedIdentity, "runtime") as AttemptSelectedIdentity["runtime"]
+  };
 }
 
 function cloneExplanationCandidate(
@@ -671,6 +764,54 @@ function validateAttemptVerificationSummary(summary: unknown): void {
   validateVerificationCounts(summary.counts);
 }
 
+function normalizeAttemptVerificationSummarySnapshot(
+  summary: unknown,
+  readableObjectMessage: string
+): AttemptVerificationSummary {
+  if (!isRecord(summary)) {
+    throw new ValidationError(
+      "Attempt promotion explanation summary requires candidate.summary to be an object."
+    );
+  }
+
+  return {
+    sourceState: accessSelectionValue(summary, "sourceState") as AttemptVerificationSummary["sourceState"],
+    overallOutcome: accessSelectionValue(summary, "overallOutcome") as AttemptVerificationSummary["overallOutcome"],
+    requiredOutcome: accessSelectionValue(summary, "requiredOutcome") as AttemptVerificationSummary["requiredOutcome"],
+    counts: normalizeVerificationCountsSnapshot(
+      accessSelectionValue(summary, "counts"),
+      readableObjectMessage
+    ),
+    hasInvalidChecks: accessSelectionValue(summary, "hasInvalidChecks") as AttemptVerificationSummary["hasInvalidChecks"],
+    hasComparablePayload: accessSelectionValue(summary, "hasComparablePayload") as AttemptVerificationSummary["hasComparablePayload"],
+    isSelectionReady: accessSelectionValue(summary, "isSelectionReady") as AttemptVerificationSummary["isSelectionReady"]
+  };
+}
+
+function normalizeVerificationCountsSnapshot(
+  counts: unknown,
+  _readableObjectMessage: string
+): AttemptVerificationCounts {
+  if (!isRecord(counts)) {
+    throw new ValidationError(
+      "Attempt promotion explanation summary requires candidate.summary.counts to be an object."
+    );
+  }
+
+  return {
+    total: accessSelectionValue(counts, "total") as number,
+    valid: accessSelectionValue(counts, "valid") as number,
+    invalid: accessSelectionValue(counts, "invalid") as number,
+    required: accessSelectionValue(counts, "required") as number,
+    optional: accessSelectionValue(counts, "optional") as number,
+    passed: accessSelectionValue(counts, "passed") as number,
+    failed: accessSelectionValue(counts, "failed") as number,
+    pending: accessSelectionValue(counts, "pending") as number,
+    skipped: accessSelectionValue(counts, "skipped") as number,
+    error: accessSelectionValue(counts, "error") as number
+  };
+}
+
 function validateVerificationCounts(counts: unknown): void {
   if (!isRecord(counts)) {
     throw new ValidationError(
@@ -722,6 +863,18 @@ function validateCheckNameList(
       `Attempt promotion explanation summary requires ${fieldName} to use non-empty string entries.`
     );
   }
+}
+
+function normalizeCheckNameList(
+  value: unknown,
+  fieldName: string
+): string[] {
+  return normalizeSelectionTrimmedStringArray(
+    value,
+    `Attempt promotion explanation summary requires ${fieldName} to be an array of non-empty strings.`,
+    `Attempt promotion explanation summary requires ${fieldName} to use non-empty string entries.`,
+    `Attempt promotion explanation summary requires ${fieldName} to use trimmed non-empty string entries.`
+  );
 }
 
 function validateNonEmptyString(value: unknown, fieldName: string): string {

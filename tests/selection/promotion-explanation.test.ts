@@ -670,6 +670,130 @@ describe("selection promotion-explanation helpers", () => {
     );
   });
 
+  it("should fail closed when nested selected identity, candidate summary, or counts readers are accessor-shaped", () => {
+    const report = createPromotionReport([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]);
+    const accessorSelectedIdentity = {
+      attemptId: "att_ready",
+      runtime: "codex-cli"
+    } as Record<string, unknown>;
+
+    Object.defineProperty(accessorSelectedIdentity, "taskId", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveAttemptPromotionExplanationSummary({
+        ...report,
+        selectedIdentity:
+          accessorSelectedIdentity as AttemptPromotionReport["selectedIdentity"]
+      })
+    ).toThrow(
+      "Attempt promotion explanation summary requires report to be a readable object."
+    );
+
+    const accessorCounts = {
+      total: 1,
+      valid: 1,
+      invalid: 0,
+      required: 1,
+      optional: 0,
+      passed: 1,
+      failed: 0,
+      pending: 0,
+      skipped: 0
+    } as Record<string, unknown>;
+
+    Object.defineProperty(accessorCounts, "error", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveAttemptPromotionExplanationSummary({
+        ...report,
+        candidates: [
+          {
+            ...report.candidates[0]!,
+            summary: {
+              ...report.candidates[0]!.summary,
+              counts: accessorCounts
+            }
+          }
+        ]
+      } as AttemptPromotionReport)
+    ).toThrow(
+      "Attempt promotion explanation summary requires report to be a readable object."
+    );
+  });
+
+  it("should fail loudly when report candidate check-name arrays are sparse or carry surrounding whitespace", () => {
+    const report = createPromotionReport([
+      createPromotionCandidate({
+        attemptId: "att_pending",
+        verification: createVerification({
+          state: "pending",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
+        })
+      })
+    ]);
+    const sparsePendingCheckNames = new Array<string>(1);
+
+    expect(() =>
+      deriveAttemptPromotionExplanationSummary({
+        ...report,
+        candidates: [
+          {
+            ...report.candidates[0]!,
+            pendingCheckNames: sparsePendingCheckNames
+          }
+        ]
+      } as AttemptPromotionReport)
+    ).toThrow(
+      "Attempt promotion explanation summary requires candidate.pendingCheckNames to use non-empty string entries."
+    );
+
+    expect(() =>
+      deriveAttemptPromotionExplanationSummary({
+        ...report,
+        candidates: [
+          {
+            ...report.candidates[0]!,
+            pendingCheckNames: [" lint "]
+          }
+        ]
+      } as AttemptPromotionReport)
+    ).toThrow(
+      "Attempt promotion explanation summary requires candidate.pendingCheckNames to use trimmed non-empty string entries."
+    );
+  });
+
   it("should fail loudly when the supplied promotion report container is malformed", () => {
     expect(() =>
       deriveAttemptPromotionExplanationSummaryDirect(null as never)

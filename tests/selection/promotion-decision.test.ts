@@ -814,6 +814,94 @@ describe("selection promotion-decision helpers", () => {
     );
   });
 
+  it("should fail loudly when candidate check-name arrays are sparse or carry surrounding whitespace", () => {
+    const summary = createPromotionExplanationSummary([
+      createPromotionCandidate({
+        attemptId: "att_blocked",
+        verification: createVerification({
+          state: "failed",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "pending"
+            }
+          ]
+        })
+      })
+    ]);
+    const sparsePendingCheckNames = new Array<string>(1);
+
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...summary,
+        candidates: [
+          {
+            ...summary.candidates[0]!,
+            pendingCheckNames: sparsePendingCheckNames
+          }
+        ]
+      })
+    ).toThrow(
+      "Attempt promotion decision summary requires candidate.pendingCheckNames to use non-empty string entries."
+    );
+
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...summary,
+        candidates: [
+          {
+            ...summary.candidates[0]!,
+            blockingRequiredCheckNames: [" lint "],
+            pendingCheckNames: [" lint "]
+          }
+        ]
+      })
+    ).toThrow(
+      "Attempt promotion decision summary requires candidate.blockingRequiredCheckNames to use trimmed non-empty string entries."
+    );
+  });
+
+  it("should fail closed when nested selected identity readers are accessor-shaped", () => {
+    const summary = createPromotionExplanationSummary([
+      createPromotionCandidate({
+        attemptId: "att_ready",
+        verification: createVerification({
+          state: "verified",
+          checks: [
+            {
+              name: "lint",
+              required: true,
+              status: "passed"
+            }
+          ]
+        })
+      })
+    ]);
+    const accessorSelectedIdentity = {
+      attemptId: "att_ready",
+      runtime: "codex-cli"
+    } as Record<string, unknown>;
+
+    Object.defineProperty(accessorSelectedIdentity, "taskId", {
+      configurable: true,
+      enumerable: true,
+      get() {
+        throw new Error("getter boom");
+      }
+    });
+
+    expect(() =>
+      deriveAttemptPromotionDecisionSummary({
+        ...summary,
+        selectedIdentity:
+          accessorSelectedIdentity as AttemptPromotionExplanationSummary["selectedIdentity"]
+      })
+    ).toThrow(
+      "Attempt promotion decision summary requires summary to be a readable object."
+    );
+  });
+
   it("should fail loudly when summary.candidates reuse a normalized (taskId, attemptId, runtime) identity", () => {
     const summary = createPromotionExplanationSummary([
       createPromotionCandidate({

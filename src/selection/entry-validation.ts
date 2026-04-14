@@ -73,6 +73,42 @@ export function normalizeSelectionStringArray(
   return normalized;
 }
 
+export function normalizeSelectionTrimmedStringArray(
+  value: unknown,
+  arrayMessage: string,
+  entryMessage: string,
+  trimmedMessage: string
+): string[] {
+  validateSelectionArray(value, arrayMessage);
+  const normalized: string[] = [];
+
+  for (let index = 0; index < value.length; index += 1) {
+    if (!Object.prototype.hasOwnProperty.call(value, index)) {
+      throw new ValidationError(entryMessage);
+    }
+
+    const entry = readSelectionValue(value, String(index), entryMessage);
+
+    if (typeof entry !== "string") {
+      throw new ValidationError(entryMessage);
+    }
+
+    const trimmedEntry = entry.trim();
+
+    if (trimmedEntry.length === 0) {
+      throw new ValidationError(entryMessage);
+    }
+
+    if (trimmedEntry !== entry) {
+      throw new ValidationError(trimmedMessage);
+    }
+
+    normalized.push(trimmedEntry);
+  }
+
+  return normalized;
+}
+
 export function normalizeSelectionObjectProperty(
   container: object,
   key: string,
